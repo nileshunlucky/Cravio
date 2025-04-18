@@ -395,6 +395,8 @@ async def run_ffmpeg_async(command):
 
 async def run_ffmpeg_pipeline_async(inputs, outputs, filters=None):
     """Run ffmpeg commands asynchronously using ffmpeg-python"""
+    filters = filters or {}
+
     try:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
@@ -402,7 +404,8 @@ async def run_ffmpeg_pipeline_async(inputs, outputs, filters=None):
             lambda: ffmpeg.input(inputs).output(outputs, **filters).run(overwrite_output=True)
         )
     except ffmpeg.Error as e:
-        print(f"FFmpeg error: {e.stderr.decode()}")
+        err_msg = e.stderr.decode(errors="ignore") if e.stderr else str(e)
+        print(f"FFmpeg error: {err_msg}")
         raise
 
 
