@@ -15,6 +15,9 @@ import shutil
 from typing import Optional
 from db import users_collection  # Using your existing MongoDB setup
 import requests
+# Add at top
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 router = APIRouter()
 OUTPUT_FOLDER = "output"
@@ -383,6 +386,26 @@ def generate_caption(title: str) -> str:
     except Exception as e:
         raise Exception(f"Error generating caption: {str(e)}")
 
+# Create an executor pool (add to router setup)
+executor = ThreadPoolExecutor(max_workers=2)
+
+async def run_ffmpeg_async(command):
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(executor, subprocess.run, command, {'check': True})
+
+async def run_ffmpeg_pipeline_async(inputs, outputs, filters=None):
+    """Run ffmpeg commands asynchronously using ffmpeg-python"""
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            executor,
+            lambda: ffmpeg.input(inputs).output(outputs, **filters).run(overwrite_output=True)
+        )
+    except ffmpeg.Error as e:
+        print(f"FFmpeg error: {e.stderr.decode()}")
+        raise
+
+
 @router.post("/generate-content")
 async def generate_content(prompt: str = Form(...)):
     print(f"Received prompt: {prompt}")
@@ -448,12 +471,16 @@ async def create_reddit_post(
 
         # Step 6: Combine both audios using ffmpeg
         combined_audio_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_combined.mp3")
-        ffmpeg.input(f'concat:{title_audio_path}|{script_audio_path}').output(
-            combined_audio_path, codec='copy'
-        ).run(overwrite_output=True)
+        # ffmpeg.input(f'concat:{title_audio_path}|{script_audio_path}').output(
+        #     combined_audio_path, codec='copy'
+        # ).run(overwrite_output=True)
+        await run_ffmpeg_pipeline_async(
+            inputs=f'concat:{title_audio_path}|{script_audio_path}',
+            outputs=combined_audio_path,
+            filters={'codec': 'copy'}
+        )
         temporary_files.append(combined_audio_path)
-
-        total_duration = title_duration + script_duration
+        
 
         print(f"Gameplay video name: {video}")
 
@@ -511,24 +538,39 @@ async def create_reddit_post(
         
         if crop_params:
             # Apply crop filter to achieve 9:16 aspect ratio
-            ffmpeg.input(gameplay_video_path).filter('crop', new_width, new_height, x_offset, y_offset).output(
-                muted_video_path, **{'c:v': 'libx264', 'an': None}  # 'an' = no audio
-            ).run(overwrite_output=True)
+            # ffmpeg.input(gameplay_video_path).filter('crop', new_width, new_height, x_offset, y_offset).output(
+            #     muted_video_path, **{'c:v': 'libx264', 'an': None}  # 'an' = no audio
+            # ).run(overwrite_output=True)
+            await run_ffmpeg_pipeline_async(
+                inputs=gameplay_video_path,
+                outputs=muted_video_path,
+                filters={'vf': crop_params, 'c:v': 'libx264', 'an': None}
+            )
         else:
             # Copy as is if already correct ratio
-            ffmpeg.input(gameplay_video_path).output(
-                muted_video_path, **{'c:v': 'copy', 'an': None}
-            ).run(overwrite_output=True)
+            # ffmpeg.input(gameplay_video_path).output(
+            #     muted_video_path, **{'c:v': 'copy', 'an': None}
+            # ).run(overwrite_output=True)
+            await run_ffmpeg_pipeline_async(
+                inputs=gameplay_video_path,
+                outputs=muted_video_path,
+                filters={'c:v': 'copy', 'an': None}
+            )
         temporary_files.append(muted_video_path)
 
         # Step 8: Combine muted video and combined audio
         final_output_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_final.mp4")
-        ffmpeg.output(
-            ffmpeg.input(muted_video_path),
-            ffmpeg.input(combined_audio_path),
-            final_output_path,
-            **{'vcodec': 'libx264', 'acodec': 'aac', 'shortest': None, 'preset': 'ultrafast'}
-        ).run(overwrite_output=True)
+        # ffmpeg.output(
+        #     ffmpeg.input(muted_video_path),
+        #     ffmpeg.input(combined_audio_path),
+        #     final_output_path,
+        #     **{'vcodec': 'libx264', 'acodec': 'aac', 'shortest': None, 'preset': 'ultrafast'}
+        # ).run(overwrite_output=True)
+        await run_ffmpeg_pipeline_async(
+            inputs=[muted_video_path, combined_audio_path],
+            outputs=final_output_path,
+            filters={'vcodec': 'libx264', 'acodec': 'aac', 'preset': 'ultrafast', 'threads': 1}
+        )
         temporary_files.append(final_output_path)
 
         # Step 9: Create colored ASS format subtitles
@@ -578,6 +620,11 @@ async def create_reddit_post(
                 "-filter_complex", 
                 f"[0:v][1:v]overlay={x_position}:{y_position}:enable='between(t,0,{title_duration})'",
                 "-c:a", "copy",
+                # In all video processing commands add:
+                "-threads", "1",
+                "-preset", "ultrafast",
+                "-tune", "fastdecode",
+                "-x264-params", "threads=1:lookahead-threads=1",
                 overlay_output_path
             ]
             
@@ -603,6 +650,11 @@ async def create_reddit_post(
                 "-vf", f"ass={subtitles_path_esc}",
                 "-c:a", "copy",
                 "-c:v", "libx264",
+                # In all video processing commands add:
+                '-threads', '1',
+                '-preset', 'ultrafast',
+                '-tune', 'fastdecode',
+                '-x264-params', 'threads=1:lookahead-threads=1',
                 final_with_subs_path
             ]
             
