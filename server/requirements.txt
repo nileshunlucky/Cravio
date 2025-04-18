@@ -12,3 +12,4 @@ srt
 cloudinary
 requests
 uvicorn
+python-multipart
