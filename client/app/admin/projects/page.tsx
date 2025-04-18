@@ -35,7 +35,7 @@ export default function ProjectPage() {
       
       setLoading(true)
       try {
-        const res = await fetch(`http://localhost:8000/user/${email}`)
+        const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`)
         const data = await res.json()
         if (data.videos) {
           // Sort videos by created_at in descending order to show the latest first

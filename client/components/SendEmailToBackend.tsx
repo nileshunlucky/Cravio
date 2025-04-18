@@ -12,7 +12,7 @@ export default function SendEmailToBackend() {
 
       const email = user.emailAddresses[0].emailAddress
 
-      const res = await fetch('http://127.0.0.1:8000/add-user', {
+      const res = await fetch('https://cravio-ai.onrender.com/add-user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

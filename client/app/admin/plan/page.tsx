@@ -118,7 +118,7 @@ const Plans: React.FC = () => {
   };
 
   const handleSubscribe = async (planId: string) => {
-    const res = await fetch('http://localhost:8000/create-subscription', {
+    const res = await fetch('https://cravio-ai.onrender.com/create-subscription', {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -139,7 +139,7 @@ const Plans: React.FC = () => {
       handler: async function (response: RazorpayResponse) {
         // Send request to the server to update the user's credits
         try {
-          const userRes = await fetch('http://localhost:8000/update-credits', {
+          const userRes = await fetch('https://cravio-ai.onrender.com/update-credits', {
             method: "POST",
             headers: {
               "Content-Type": "application/json"

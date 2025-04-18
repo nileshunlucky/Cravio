@@ -13,3 +13,4 @@ cloudinary
 requests
 uvicorn
 python-multipart
+email-validator

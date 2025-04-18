@@ -92,7 +92,7 @@ const handleGenerate = async () => {
         }
         
         // Send the API request
-        const response = await fetch('http://localhost:8000/create-reddit-post', {
+        const response = await fetch('https://cravio-ai.onrender.com/create-reddit-post', {
             method: 'POST',
             body: formData,
         });
