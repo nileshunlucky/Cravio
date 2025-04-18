@@ -107,7 +107,7 @@ const Plans: React.FC = () => {
       theme: {
         color: "#6366f1"
       },
-      handler: async function (response: any) {
+      handler: async function (response: Response) {
         // Send request to the server to update the user's credits
         try {
           const userRes = await fetch('http://localhost:8000/update-credits', {
@@ -123,6 +123,7 @@ const Plans: React.FC = () => {
   
           const userData = await userRes.json();
           console.log("success", userData)
+          console.log("response", response)
           toast.success("Thanks for Subscribing us")
           router.push("/admin/dashboard")
         } catch (error) {
@@ -239,7 +240,7 @@ const Plans: React.FC = () => {
       >
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold mb-2">Frequently asked questions</h2>
-          <p className="text-gray-500 dark:text-gray-400">Still have questions? Can't find the answer you're looking for?</p>
+          <p className="text-gray-500 dark:text-gray-400">Still have questions? Can&apos;t find the answer you&apos;re looking for?</p>
         </div>
 
         <Accordion type="single" collapsible className="mb-12">
@@ -260,7 +261,7 @@ const Plans: React.FC = () => {
 
         <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg text-center">
           <h3 className="text-xl font-semibold mb-2">Please chat to our friendly team</h3>
-          <p className="mb-4 text-gray-500 dark:text-gray-400">We're here to help with any questions you might have.</p>
+          <p className="mb-4 text-gray-500 dark:text-gray-400">We&apos;re here to help with any questions you might have.</p>
           <a href="mailto:cravio.ai@gmail.com"><Button className="flex items-center">
             <MessageSquare className="h-5 w-5 mr-2" />
             Get in touch

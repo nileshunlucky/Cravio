@@ -26,5 +26,10 @@ export default function SendEmailToBackend() {
     sendEmail()
   }, [user])
 
-  return
+  return (
+    <div>
+        {/* Add your JSX content here */}
+        <p>Send Email Component</p>
+    </div>
+);
 }

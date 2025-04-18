@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -9,7 +8,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 const Page = () => {
-  const router = useRouter()
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 w-full">

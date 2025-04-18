@@ -5,7 +5,7 @@ import SendEmailToBackend  from "@/components/SendEmailToBackend"
 import { SignedIn } from "@clerk/nextjs"
 import Navbar from "@/components/Navbar"
 
-const page = () => {
+const Page = () => {
     // get user request /user/{email}
     useEffect(() => {
         const fetchUser = async () => {
@@ -32,4 +32,4 @@ const page = () => {
   )
 }
 
-export default page
+export default Page
