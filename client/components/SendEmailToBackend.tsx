@@ -20,7 +20,7 @@ export default function SendEmailToBackend() {
         body: JSON.stringify({ email }),
       })
 
-      const data = await res.json()
+      await res.json()
     }
 
     sendEmail()
