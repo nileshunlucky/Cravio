@@ -136,7 +136,7 @@ const Plans: React.FC = () => {
       },
     };
 
-    const razor = new (window as any).Razorpay(options);
+    const razor = new (window as unknown as { Razorpay: new (options: any) => any }).Razorpay(options);
     razor.open();
   };
 

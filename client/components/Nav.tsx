@@ -7,7 +7,6 @@ import {
   SignUpButton,
   SignedOut,
   SignedIn,
-  UserButton,
 } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button'; // From ShadCN UI
 import { motion } from 'framer-motion';
