@@ -10,7 +10,7 @@ app = FastAPI()
 # Allow CORS for your frontend (update this with your Next.js domain)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # or "https://your-frontend.vercel.app"
+    allow_origins=["http://localhost:3000","https://cravioai.vercel.app"],  # or "https://your-frontend.vercel.app"
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
