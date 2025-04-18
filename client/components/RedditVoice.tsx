@@ -16,7 +16,15 @@ const voices = [
   { id: 'sage', name: 'Sage', gender: 'Male', lang: 'English', preview: '/voice/sage.mpeg' },
 ]
 
-const RedditVoice = ({ value, onChange, onSubmit, onBack, loading }: any) => {
+type RedditVoiceProps = {
+  value: string
+  onChange: (voiceId: string) => void
+  onSubmit: () => void
+  onBack: () => void
+  loading: boolean
+}
+
+const RedditVoice = ({ value, onChange, onSubmit, onBack, loading }: RedditVoiceProps) => {
   const [selected, setSelected] = useState(value || '')
   const [playing, setPlaying] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)

@@ -10,7 +10,13 @@ const videos = [
   { title: 'Minecraft', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1744903105/Gameplay/minecraft.mp4' }
 ]
 
-const RedditVideo = ({ value, onChange, onNext, onBack }: any) => {
+type RedditVideoProps = {
+  value: number
+  onChange: (videoUrl: string) => void
+  onNext: () => void
+  onBack: () => void
+}
+const RedditVideo = ({ value, onChange, onNext, onBack }: RedditVideoProps) => {
   const [selected, setSelected] = useState(value || 0)
   const handleNext = () => {
     onChange(videos[selected]?.video || 'fortnite.mp4')  // Passing only the filename

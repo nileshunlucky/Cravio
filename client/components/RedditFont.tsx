@@ -16,7 +16,14 @@ const fontStyles = [
   { label: 'yellow', className: 'text-[32px] font-bold text-yellow-500' },
 ]
 
-const RedditFont = ({ value, onChange, onNext, onBack }: any) => {
+type RedditFontProps = {
+  value: number
+  onChange: (label: string) => void
+  onNext: () => void
+  onBack: () => void
+}
+
+const RedditFont = ({ value, onChange, onNext, onBack }: RedditFontProps) => {
   const [selected, setSelected] = useState(value || 0)
 
   const handleNext = () => {

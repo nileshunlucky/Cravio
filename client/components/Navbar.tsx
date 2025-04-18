@@ -2,12 +2,10 @@
 
 import React from 'react'
 import { UserButton } from '@clerk/nextjs'
-import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
 import Link from 'next/link'
 
 const Navbar = ({ credits = 0 }: { credits: number }) => {
-  const { user } = useUser()
 
   return (
     <nav className="w-full bg-white border-b shadow-sm py-4 px-6 flex items-center justify-between">
