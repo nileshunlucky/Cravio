@@ -1,0 +1,28 @@
+# Node.js
+node_modules/
+dist/
+.next/
+
+# Python
+*.pyc
+*.pyo
+__pycache__/
+venv/
+.env
+
+# Environment variables
+.env
+
+# IDE and Editor folders
+.vscode/
+.idea/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.swp
