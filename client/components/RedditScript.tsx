@@ -84,7 +84,9 @@ const RedditStory: React.FC<RedditStoryProps> = ({ onChange, onNext, onSetFields
       {/* Input Section */}
       <div className="flex items-center gap-4">
         <label className="cursor-pointer">
-          <img
+          <Image
+            width={48}
+            height={48}
             src={avatarUrl || '/reddit.png'}
             alt="avatar"
             className="w-12 h-12 rounded-full object-cover border"
@@ -160,7 +162,9 @@ const RedditStory: React.FC<RedditStoryProps> = ({ onChange, onNext, onSetFields
       <Label className="text-sm text-neutral-700">Reddit-Style Preview</Label>
       <div className="border rounded-md bg-white shadow-sm p-4 space-y-4">
         <div className="flex items-center gap-3">
-          <img
+          <Image
+            width={40}
+            height={40}
             src={avatarUrl || '/reddit.png'}
             alt="avatar"
             className="w-10 h-10 rounded-full object-cover border"
