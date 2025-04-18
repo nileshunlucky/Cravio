@@ -17,14 +17,14 @@ const fontStyles = [
 ]
 
 type RedditFontProps = {
-  value: number
+  value: string
   onChange: (label: string) => void
   onNext: () => void
   onBack: () => void
 }
 
 const RedditFont = ({ value, onChange, onNext, onBack }: RedditFontProps) => {
-  const [selected, setSelected] = useState(value || 0)
+  const [selected, setSelected] = useState(value ? fontStyles.findIndex(style => style.label === value) : 0)
 
   const handleNext = () => {
     onChange(fontStyles[selected]?.label || 'red')

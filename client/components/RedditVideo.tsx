@@ -11,13 +11,13 @@ const videos = [
 ]
 
 type RedditVideoProps = {
-  value: number
+  value: string
   onChange: (videoUrl: string) => void
   onNext: () => void
   onBack: () => void
 }
 const RedditVideo = ({ value, onChange, onNext, onBack }: RedditVideoProps) => {
-  const [selected, setSelected] = useState(value || 0)
+  const [selected, setSelected] = useState<number>(value ? parseInt(value, 10) : 0)
   const handleNext = () => {
     onChange(videos[selected]?.video || 'fortnite.mp4')  // Passing only the filename
     onNext()

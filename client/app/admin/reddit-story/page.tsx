@@ -13,7 +13,7 @@ const Page = () => {
     const userEmail = user?.emailAddresses[0]?.emailAddress || '' // Get the user's email address
     const [font, setFont] = useState('')
     const [script, setScript] = useState('')
-    const [avatar, setAvatar] = useState<string | File>('')
+    const [avatar, setAvatar] = useState<string | File>('') 
     const [title, setTitle] = useState('')
     const [username, setUsername] = useState('')
     const [video, setVideo] = useState('')
