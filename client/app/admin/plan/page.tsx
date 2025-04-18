@@ -11,6 +11,35 @@ import { useUser } from '@clerk/clerk-react';
 import { useRouter} from 'next/navigation';
 import toast,  { Toaster } from 'react-hot-toast';
 
+// Define types for Razorpay
+interface RazorpayOptions {
+  key: string;
+  subscription_id: string;
+  name: string;
+  description: string;
+  theme: { color: string };
+  handler: (response: RazorpayResponse) => void;
+  prefill: {
+    name: string;
+    email: string;
+  };
+}
+
+interface RazorpayResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayWindow extends Window {
+  Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
+}
+
+interface RazorpayInstance {
+  open(): void;
+  on(event: string, callback: (data: RazorpayResponse) => void): void;
+}
+
 interface PricingPlan {
   name: string;
   price: number;
@@ -99,7 +128,7 @@ const Plans: React.FC = () => {
 
     const data = await res.json();
 
-    const options = {
+    const options : RazorpayOptions = {
       key: "rzp_test_nUEI4VJr01kHD5",
       subscription_id: data.id,
       name: "Cravio AI",
@@ -107,7 +136,7 @@ const Plans: React.FC = () => {
       theme: {
         color: "#6366f1"
       },
-      handler: async function (response: Response) {
+      handler: async function (response: RazorpayResponse) {
         // Send request to the server to update the user's credits
         try {
           const userRes = await fetch('http://localhost:8000/update-credits', {
@@ -136,7 +165,7 @@ const Plans: React.FC = () => {
       },
     };
 
-    const razor = new (window as unknown as { Razorpay: new (options: any) => any }).Razorpay(options);
+    const razor = new ((window as unknown) as RazorpayWindow).Razorpay(options);
     razor.open();
   };
 
