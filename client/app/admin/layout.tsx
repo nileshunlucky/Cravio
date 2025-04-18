@@ -18,7 +18,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       
 
       try {
-        const res = await fetch(`http://localhost:8000/user/${email}`)
+        const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`)
         const data = await res.json()
         setCredits(data.credits)
       } catch (error) {

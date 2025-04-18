@@ -2,14 +2,17 @@
 
 import React, {useEffect} from 'react'
 import SendEmailToBackend  from "@/components/SendEmailToBackend"
-import { SignedIn } from "@clerk/nextjs"
+import { SignedIn , useUser} from "@clerk/nextjs"
 import Navbar from "@/components/Navbar"
 
 const Page = () => {
+    const { user } = useUser()
     // get user request /user/{email}
     useEffect(() => {
+      if (!user?.primaryEmailAddress?.emailAddress) return
+      const email = user.primaryEmailAddress.emailAddress
         const fetchUser = async () => {
-            const response = await fetch('/api/user', {
+            const response = await fetch(`https://cravio-ai.onrender.com/user/${email}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
