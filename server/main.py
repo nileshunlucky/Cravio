@@ -5,6 +5,7 @@ from pydantic import BaseModel, EmailStr
 from db import users_collection
 from reddit_story import router as reddit_router
 from subscription import router as subscription_router
+import uvicorn
 
 app = FastAPI()
 
@@ -40,10 +41,5 @@ def add_user(user: UserEmail):
 app.include_router(reddit_router)
 app.include_router(subscription_router)
 
-# Add a check to use the port specified by Render
-import uvicorn
-
 if __name__ == "__main__":
-    # Fetch port from environment variable or default to 8000
-    port = int(os.getenv("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, workers=2, timeout=300) 

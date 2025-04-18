@@ -400,20 +400,42 @@ async def run_ffmpeg_pipeline_async(inputs, outputs, filters=None):
     try:
         loop = asyncio.get_event_loop()
         
-        # Check if inputs is a list and handle properly
+        # Handle inputs based on type
         if isinstance(inputs, list):
+            # For multiple inputs
             input_streams = None
             for input_path in inputs:
+                stream = ffmpeg.input(input_path)
                 if input_streams is None:
-                    input_streams = ffmpeg.input(input_path)
+                    input_streams = stream
                 else:
-                    input_streams = ffmpeg.concat(input_streams, ffmpeg.input(input_path))
+                    input_streams = ffmpeg.concat(input_streams, stream, v=1, a=1)
+            
+            # Add consistent performance flags to all operations
+            filters.update({
+                'preset': 'ultrafast',
+                'threads': '1',
+                'tune': 'fastdecode'
+            })
+            
             return await loop.run_in_executor(
                 executor,
                 lambda: input_streams.output(outputs, **filters).run(overwrite_output=True)
             )
+        elif isinstance(inputs, str) and inputs.startswith('concat:'):
+            # Special handling for concat protocol
+            return await loop.run_in_executor(
+                executor,
+                lambda: ffmpeg.input(inputs).output(outputs, **filters).run(overwrite_output=True)
+            )
         else:
-            # Handle single input as before
+            # Single input
+            filters.update({
+                'preset': 'ultrafast',
+                'threads': '1',
+                'tune': 'fastdecode'
+            })
+            
             return await loop.run_in_executor(
                 executor,
                 lambda: ffmpeg.input(inputs).output(outputs, **filters).run(overwrite_output=True)
@@ -521,6 +543,16 @@ async def create_reddit_post(
                  return JSONResponse(
                      status_code=404, 
                      content={"error": f"Could not download video from URL: {video}"}
+                 )
+        else:
+             # It's a local path or filename
+             gameplay_path = os.path.join(GAMEPLAY_FOLDER, video)
+             if os.path.exists(gameplay_path):
+                 gameplay_video_path = gameplay_path
+             else:
+                 return JSONResponse(
+                     status_code=404,
+                     content={"error": f"Video file not found: {video}"}
                  )
 
         # Process video to match 9:16 aspect ratio
