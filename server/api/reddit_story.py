@@ -1,7 +1,6 @@
 from fastapi import APIRouter, UploadFile, Form, BackgroundTasks
 from fastapi.responses import JSONResponse
 import os
-import openai
 from tasks.reddit_story_task import create_reddit_post_task, generate_script, generate_title, generate_caption
 from celery_config import celery_app
 import tempfile
@@ -60,7 +59,7 @@ async def create_reddit_post(
                 shutil.copyfileobj(avatar.file, buffer)
         
         # Generate caption for the post
-        caption = generate_caption(title, script)
+        caption = generate_caption(title)
         
         # Create a unique identifier for this task
         task_id = str(uuid.uuid4())
