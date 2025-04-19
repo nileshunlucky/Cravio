@@ -1,22 +1,17 @@
-from fastapi import APIRouter, UploadFile, Form
-from fastapi.responses import JSONResponse
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 import os
 import openai
 import ffmpeg
-import srt
 import datetime
 import subprocess
-import re
 import cloudinary
 import cloudinary.uploader
 import shutil
-from typing import Optional
-from db import users_collection  # Using your existing MongoDB setup
 import requests
+from celery_config import celery_app
+from db import users_collection  # Using your existing MongoDB setup
 
-router = APIRouter()
 OUTPUT_FOLDER = "output"
 ASSETS_FOLDER = "assets"
 GAMEPLAY_FOLDER = "gameplays"
@@ -73,12 +68,13 @@ def load_font(font_path, size):
     except:
         return ImageFont.load_default()
 
-async def create_avatar_image(avatar_file: UploadFile = None):
+def create_avatar_image(avatar_path=None):
     """
     Creates an avatar image. Uses the provided avatar if available, otherwise defaults.
     """
-    if avatar_file:
-        avatar_bytes = await avatar_file.read()
+    if avatar_path and os.path.exists(avatar_path):
+        with open(avatar_path, "rb") as f:
+            avatar_bytes = f.read()
         avatar_img = Image.open(BytesIO(avatar_bytes)).convert("RGBA").resize((80, 80))
     else:
         avatar_img = Image.open(DEFAULT_AVATAR_PATH).convert("RGBA").resize((80, 80))
@@ -383,39 +379,21 @@ def generate_caption(title: str) -> str:
     except Exception as e:
         raise Exception(f"Error generating caption: {str(e)}")
 
-@router.post("/generate-content")
-async def generate_content(prompt: str = Form(...)):
-    print(f"Received prompt: {prompt}")
-    """
-    This endpoint generates a title and a script based on the provided prompt.
-    It first uses GPT-3.5-turbo to generate a title, then uses the title to generate a script.
-    """
-    try:
-        # Generate title
-        title = generate_title(prompt)
-        
-        # Generate script using the title
-        script = generate_script(title)
-        
-        # Return the title and script as a JSON response
-        return JSONResponse(content={"title": title, "script": script})
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
-
-@router.post("/create-reddit-post")
-async def create_reddit_post(
-    avatar: UploadFile = None,
-    username: str = Form(...),
-    title: str = Form(...),
-    script: str = Form(...),
-    voice: str = Form(...),
-    video: str = Form(...),
-    font: str = Form(...),
-    user_email: str = Form(...)
+@celery_app.task(name="create_reddit_post_task")
+def create_reddit_post_task(
+    avatar_path: str,
+    username: str,
+    title: str,
+    script: str,
+    voice: str,
+    video: str,
+    font: str,
+    user_email: str
 ):
     """
-    Handles the creation of a Reddit post by generating an image with avatar, title, username, and other icons.
-    Then creates a video with the post overlay and narration, uploads to Cloudinary and saves to database.
+    Celery task to handle the creation of a Reddit post by generating an image with avatar, title, 
+    username, and other icons. Then creates a video with the post overlay and narration, 
+    uploads to Cloudinary and saves to database.
     """
     temporary_files = []  # List to track files for cleanup
     
@@ -424,7 +402,7 @@ async def create_reddit_post(
         sanitized_username = safe_filename(username)
 
         # Step 2: Create the avatar image
-        avatar_img = await create_avatar_image(avatar)
+        avatar_img = create_avatar_image(avatar_path)
 
         # Step 3: Create the Reddit post layout
         reddit_post_img = create_reddit_post_layout(title, username, avatar_img)
@@ -455,28 +433,34 @@ async def create_reddit_post(
 
         total_duration = title_duration + script_duration
 
-        print(f"Gameplay video name: {video}")
-
-# Step 7: Process the video URL
-# Check if the video is a full URL or just a filename
+        # Step 7: Process the video URL
+        # Check if the video is a full URL or just a filename
         if video.startswith("http"):
-    # It's a full Cloudinary URL - download it first
-    
-    # Create a temporary file for the downloaded video
-             downloaded_video_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_downloaded_video.mp4")
+            # It's a full Cloudinary URL - download it first
+            
+            # Create a temporary file for the downloaded video
+            downloaded_video_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_downloaded_video.mp4")
 
-    # Download the video
-             response = requests.get(video, stream=True)
-             if response.status_code == 200:
-                 with open(downloaded_video_path, 'wb') as f:
-                  shutil.copyfileobj(response.raw, f)
-                  gameplay_video_path = downloaded_video_path  # Now defined here
-                  temporary_files.append(downloaded_video_path)
-             else:
-                 return JSONResponse(
-                     status_code=404, 
-                     content={"error": f"Could not download video from URL: {video}"}
-                 )
+            # Download the video
+            response = requests.get(video, stream=True)
+            if response.status_code == 200:
+                with open(downloaded_video_path, 'wb') as f:
+                    shutil.copyfileobj(response.raw, f)
+                gameplay_video_path = downloaded_video_path  # Now defined here
+                temporary_files.append(downloaded_video_path)
+            else:
+                return {
+                    "status": "error", 
+                    "message": f"Could not download video from URL: {video}"
+                }
+        else:
+            # It's just a filename - use the path in gameplay folder
+            gameplay_video_path = os.path.join(GAMEPLAY_FOLDER, video)
+            if not os.path.exists(gameplay_video_path):
+                return {
+                    "status": "error", 
+                    "message": f"Video file not found: {gameplay_video_path}"
+                }
 
         # Process video to match 9:16 aspect ratio
         video_width, video_height = get_video_dimensions(gameplay_video_path)
@@ -615,7 +599,7 @@ async def create_reddit_post(
             import traceback
             traceback.print_exc()
             
-         # NEW STEP: Generate caption based on the title
+        # NEW STEP: Generate caption based on the title
         try:
             caption = generate_caption(title)
             print(f"Generated caption: {caption}")
@@ -641,11 +625,12 @@ async def create_reddit_post(
         # Step 12: Clean up temporary files
         cleanup_output_files(temporary_files)
         
-        # Return only the cloudinary URL
-        return JSONResponse({
+        # Return only the cloudinary URL and caption
+        return {
+            "status": "success",
             "url": cloudinary_url,
             "caption": caption
-        })
+        }
         
     except Exception as e:
         print(f"General error: {str(e)}")
@@ -655,4 +640,7 @@ async def create_reddit_post(
         # Clean up any temporary files that were created before the error
         cleanup_output_files(temporary_files)
         
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return {
+            "status": "error",
+            "message": str(e)
+        }

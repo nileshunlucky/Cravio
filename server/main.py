@@ -3,9 +3,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from db import users_collection
-from reddit_story import router as reddit_router
+from api.reddit_story import router as reddit_router
 from subscription import router as subscription_router
-import uvicorn
 
 app = FastAPI()
 
@@ -40,6 +39,3 @@ def add_user(user: UserEmail):
 
 app.include_router(reddit_router)
 app.include_router(subscription_router)
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, workers=2, timeout=300) 
