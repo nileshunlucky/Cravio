@@ -385,6 +385,7 @@ def create_reddit_post_task(
     username: str,
     title: str,
     script: str,
+    caption: str,
     voice: str,
     video: str,
     font: str,
@@ -598,14 +599,6 @@ def create_reddit_post_task(
             print(f"Error in overlay/subtitle step: {str(e)}")
             import traceback
             traceback.print_exc()
-            
-        # NEW STEP: Generate caption based on the title
-        try:
-            caption = generate_caption(title)
-            print(f"Generated caption: {caption}")
-        except Exception as e:
-            print(f"Error generating caption: {str(e)}")
-            caption = None  # If caption generation fails, we'll still continue
 
         # Step 10: Upload the final video to Cloudinary
         cloudinary_url = upload_to_cloudinary(final_output_path, user_email)
