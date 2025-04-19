@@ -2,7 +2,7 @@ from celery import Celery
 import os
 
 # Get Redis URL from environment variable or use a default
-redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+redis_url = os.getenv("REDIS_URL")
 
 # Create Celery app
 celery_app = Celery(
