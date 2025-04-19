@@ -61,12 +61,8 @@ async def create_reddit_post(
         # Generate caption for the post
         caption = generate_caption(title)
         
-        # Create a unique identifier for this task
-        task_id = str(uuid.uuid4())
-        
         # Queue the task in Celery
         task = create_reddit_post_task.delay(
-            task_id=task_id,
             username=username,
             title=title,
             script=script,
@@ -79,7 +75,7 @@ async def create_reddit_post(
         )
         
         return JSONResponse(content={
-            "task_id": task_id,
+            "task_id": task.id,
             "status": "processing",
             "message": "Your Reddit post is being created. You will be notified via email when it's ready."
         })
