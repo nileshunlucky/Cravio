@@ -1,6 +1,8 @@
 from celery import Celery
 import os
 import logging
+import ssl
+
 # Get Redis URL from environment variable or use a default
 REDIS_URL = os.getenv("REDIS_URL")
 
@@ -25,7 +27,7 @@ celery_app.conf.update(
     redis_max_connections=20,
     worker_prefetch_multiplier=1,
     task_time_limit=300,  # Give tasks up to 5 minutes
-    task_soft_time_limit=240 ,
+    task_soft_time_limit=240,
     result_expires=3600,  # Results expire after 1 hour
     task_serializer='json',
     accept_content=['json'],
@@ -34,7 +36,7 @@ celery_app.conf.update(
     enable_utc=True,
 )
 
-# Add this after your celery_app creation
+# Add this after your celery_app creation for SSL configuration
 celery_app.conf.broker_transport_options = {
     'retry_policy': {
         'timeout': 5.0,
@@ -42,5 +44,7 @@ celery_app.conf.broker_transport_options = {
         'interval_start': 0.2,
         'interval_step': 0.5,
         'interval_max': 3.0,
-    }
+    },
+    # SSL configuration
+    'ssl_cert_reqs': ssl.CERT_NONE,  # You can set this to CERT_REQUIRED or CERT_OPTIONAL if needed
 }
