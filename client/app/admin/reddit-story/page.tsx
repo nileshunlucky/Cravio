@@ -100,6 +100,19 @@ const Page = () => {
             const { task_id } = await response.json();
             console.log('Task ID:', task_id);
 
+            // Make the POST request
+            const debug = await fetch('https://cravio-ai.onrender.com/create-reddit-post', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server responded with ${response.status}: ${await response.text()}`);
+            }
+
+            const debugResponse = await debug.json();
+            console.log('Debug response:', debugResponse.task_id);
+
             // Polling function to check task status
             const pollTaskStatus = async (taskId: string): Promise<any> => {
                 return new Promise((resolve, reject) => {
@@ -114,6 +127,10 @@ const Page = () => {
 
                             const statusData = await statusResponse.json();
                             console.log('Task status:', statusData);
+
+                            if (statusData.status === 'pending' && statusData.meta?.status) {
+                                setProgressMessage(statusData.meta.status);
+                            }
 
                             // 🔥 Update progress message from meta
                             if (statusData.status === 'PROGRESS' && statusData.meta?.status) {

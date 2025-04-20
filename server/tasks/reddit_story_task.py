@@ -379,7 +379,7 @@ def generate_caption(title: str) -> str:
     except Exception as e:
         raise Exception(f"Error generating caption: {str(e)}")
 
-@celery_app.task(name="create_reddit_post_task")
+@celery_app.task(name="create_reddit_post_task", bind=True, max_retries=3)
 def create_reddit_post_task(
     avatar_path: str,
     username: str,

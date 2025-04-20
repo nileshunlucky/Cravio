@@ -15,12 +15,12 @@ celery_app = Celery(
 # Optional: Configure Celery with additional settings
 celery_app.conf.update(
     broker_connection_retry=True,
-broker_connection_retry_on_startup=True,
-broker_connection_timeout=10,
-broker_pool_limit=10,
-broker_heartbeat=30,
-redis_max_connections=20,
-worker_prefetch_multiplier=1,
+    broker_connection_retry_on_startup=True,
+    broker_connection_timeout=10,
+    broker_pool_limit=10,
+    broker_heartbeat=30,
+    redis_max_connections=20,
+    worker_prefetch_multiplier=1,
     task_time_limit=300,  # Give tasks up to 5 minutes
     task_soft_time_limit=240 ,
     result_expires=3600,  # Results expire after 1 hour
