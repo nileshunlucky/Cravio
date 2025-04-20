@@ -88,7 +88,7 @@ const Page = () => {
             }
 
             // Make the POST request
-            const response = await fetch('https://cravio-ai.onrender.com/create-reddit-post', {
+            const response = await fetch('http://localhost:8000/create-reddit-post', {
                 method: 'POST',
                 body: formData,
             });
@@ -105,7 +105,7 @@ const Page = () => {
                 return new Promise((resolve, reject) => {
                     const interval = setInterval(async () => {
                         try {
-                            const statusResponse = await fetch(`https://cravio-ai.onrender.com/task-status/${taskId}`);
+                            const statusResponse = await fetch(`http://localhost:8000/task-status/${taskId}`);
                             if (!statusResponse.ok) {
                                 clearInterval(interval);
                                 reject(new Error(`Error fetching status: ${statusResponse.status}`));

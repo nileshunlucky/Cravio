@@ -40,14 +40,6 @@ async def create_reddit_post(
     avatar_path = None
 
     try:
-        print("📩 Incoming Reddit post request:")
-        print("👤 Username:", username)
-        print("📝 Title:", title)
-        print("🎤 Voice:", voice)
-        print("📹 Video:", video)
-        print("🔠 Font:", font)
-        print("📧 Email:", user_email)
-        print("📁 Avatar received:", bool(avatar))
 
         # Save avatar if present
         if avatar:
@@ -66,6 +58,7 @@ async def create_reddit_post(
 
         # Enqueue the task
         task = create_reddit_post_task.delay(
+            avatar_path=avatar_path,
             username=username,
             title=title,
             script=script,
@@ -73,7 +66,6 @@ async def create_reddit_post(
             voice=voice,
             video=video,
             font=font,
-            avatar_path=avatar_path,
             user_email=user_email
         )
 

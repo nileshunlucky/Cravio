@@ -380,17 +380,17 @@ def generate_caption(title: str) -> str:
         raise Exception(f"Error generating caption: {str(e)}")
 
 @celery_app.task(name="create_reddit_post_task", bind=True)
-def create_reddit_post_task(
-    avatar_path: str,
-    username: str,
-    title: str,
-    script: str,
-    caption: str,
-    voice: str,
-    video: str,
-    font: str,
-    user_email: str
-):
+def create_reddit_post_task(self, **kwargs):
+    avatar_path = kwargs.get("avatar_path")
+    username = kwargs.get("username")
+    title = kwargs.get("title")
+    script = kwargs.get("script")
+    caption = kwargs.get("caption")
+    voice = kwargs.get("voice")
+    video = kwargs.get("video")
+    font = kwargs.get("font")
+    user_email = kwargs.get("user_email")
+    
     """
     Celery task to handle the creation of a Reddit post by generating an image with avatar, title, 
     username, and other icons. Then creates a video with the post overlay and narration, 
