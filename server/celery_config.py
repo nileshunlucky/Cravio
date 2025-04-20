@@ -21,6 +21,7 @@ celery_app.conf.update(
     broker_connection_timeout=10,
     broker_pool_limit=10,
     broker_heartbeat=30,
+    task_track_started=True,
     redis_max_connections=20,
     worker_prefetch_multiplier=1,
     task_time_limit=300,  # Give tasks up to 5 minutes
