@@ -103,10 +103,20 @@ async def get_task_status(task_id: str):
                 'status': 'pending',
                 'message': 'Task is waiting for execution'
             }
+        elif task.state == 'PROGRESS':
+            response = {
+                'status': 'progress',
+                'message': 'Task is in progress'
+            }
         elif task.state == 'FAILURE':
             response = {
                 'status': 'failed',
                 'message': str(task.info)
+            }
+        elif task.state == 'SUCCESS':
+            response = {
+                'status': 'success',
+                'result': task.info
             }
         else:
             response = {

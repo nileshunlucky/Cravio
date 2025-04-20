@@ -20,7 +20,7 @@ const Page = () => {
     const [voice, setVoice] = useState('')
     const [loading, setLoading] = useState(false)
     const [fileUrl, setFileUrl] = useState<string | null>(null)
-    const [progressMessage, setProgressMessage] = useState('');
+    const [progressMessage, setProgressMessage] = useState('')
 
     // State for tracking the current step
     const [currentStep, setCurrentStep] = useState(1)
@@ -103,38 +103,48 @@ const Page = () => {
             // Polling function to check task status
             const pollTaskStatus = async (taskId: string): Promise<any> => {
                 return new Promise((resolve, reject) => {
-                    const interval = setInterval(async () => {
-                        try {
-                            const statusResponse = await fetch(`https://cravio-ai.onrender.com/task-status/${taskId}`);
-                            if (!statusResponse.ok) {
-                                clearInterval(interval);
-                                reject(new Error(`Error fetching status: ${statusResponse.status}`));
-                                return;
-                            }
-
-                            const statusData = await statusResponse.json();
-                            console.log('Task status:', statusData);
-
-                            // 🔥 Update progress message from meta
-                            if (statusData.status === 'PROGRESS' && statusData.meta?.status) {
-                                setProgressMessage(statusData.meta.status);
-                            }
-
-                            if (statusData.status === 'success' || statusData.status === 'completed') {
-                                clearInterval(interval);
-                                resolve(statusData.result);
-                            } else if (statusData.status === 'failed') {
-                                clearInterval(interval);
-                                reject(new Error(statusData.message || 'Task failed'));
-                            }
-                        } catch (err) {
-                            clearInterval(interval);
-                            reject(err);
-                        }
-                    }, 3000); // poll every 3 seconds
+                  const interval = setInterval(async () => {
+                    try {
+                      const res = await fetch(
+                        `https://cravio-ai.onrender.com/task-status/${taskId}`
+                      );
+                      if (!res.ok) {
+                        clearInterval(interval);
+                        return reject(new Error(`Error fetching status: ${res.status}`));
+                      }
+              
+                      const statusData = await res.json();
+                      console.log('Task status:', statusData);
+              
+                      // update progress if in-progress
+                      if (statusData.status === 'progress') {
+                        setProgressMessage(statusData.message);
+                      }
+              
+                      // completed
+                      if (statusData.status === 'success') {
+                        clearInterval(interval);
+                        return resolve(statusData.result);
+                      }
+              
+                      // failed
+                      if (statusData.status === 'failure' || statusData.status === 'failed') {
+                        clearInterval(interval);
+                        return reject(
+                          new Error(statusData.message || 'Task failed')
+                        );
+                      }
+                      // else: still 'pending'—do nothing, keep polling
+              
+                    } catch (err) {
+                      clearInterval(interval);
+                      reject(err);
+                    }
+                  }, 5000); // poll every 5s
                 });
-            };
-
+              };
+              
+            
             const result = await pollTaskStatus(task_id);
             console.log('Task result:', result);
             setFileUrl(result.file_url); // Assuming the result contains the file URL
@@ -146,7 +156,6 @@ const Page = () => {
             setFileUrl(null); // Reset file URL on error
         }
     }
-
 
     // Show LoadingAndDownload only when loading or when fileUrl is available
     const showLoadingAndDownload = loading || fileUrl !== null
