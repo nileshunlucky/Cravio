@@ -54,7 +54,7 @@ const RedditStory: React.FC<RedditStoryProps> = ({ onChange, onNext, onSetFields
 
     // API request to generate title and script
     try {
-      const response = await fetch('http://localhost:8000/generate-content', {
+      const response = await fetch('https://cravio-ai.onrender.com/generate-content', {
         method: 'POST',
         body: formDataToSend,
       })
