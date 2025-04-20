@@ -1,9 +1,9 @@
 from celery import Celery
 import os
-import logging
 import ssl
+import logging
 
-REDIS_URL = os.getenv("REDIS_URL")  # should be rediss://....
+REDIS_URL = os.getenv("REDIS_URL")  # e.g., rediss://default:<password>@<host>:6379
 
 celery_app = Celery(
     "reddit_story_app",
@@ -33,14 +33,11 @@ celery_app.conf.update(
     enable_utc=True,
 )
 
-# In your Celery configuration
-celery_app.conf.broker_use_ssl = {
-    'ssl_cert_reqs': ssl.CERT_REQUIRED,
-    'ssl_ca_certs': '/path/to/ca/cert.pem',  # Path to CA certificate
-}
-
-# Similar for result backend
-celery_app.conf.redis_backend_use_ssl = {
-    'ssl_cert_reqs': ssl.CERT_REQUIRED,
-    'ssl_ca_certs': '/path/to/ca/cert.pem',
-}
+# Only add SSL config if using `rediss://`
+if REDIS_URL.startswith("rediss://"):
+    celery_app.conf.broker_use_ssl = {
+        "ssl_cert_reqs": ssl.CERT_NONE  # or CERT_REQUIRED if needed, usually NONE is okay for Render
+    }
+    celery_app.conf.redis_backend_use_ssl = {
+        "ssl_cert_reqs": ssl.CERT_NONE
+    }
