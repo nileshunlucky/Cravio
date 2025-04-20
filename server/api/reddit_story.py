@@ -16,7 +16,7 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 # make post request for title and script by ai
 @router.post("/generate-content")
-async def generate_content(prompt: str):
+async def generate_content(prompt: str  = Form(...)):
     try:
         title = generate_title(prompt)
         script = generate_script(title)
