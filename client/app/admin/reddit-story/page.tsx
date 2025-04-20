@@ -6,21 +6,21 @@ import RedditFont from '@/components/RedditFont' // Ensure the path is correct
 import RedditVideo from '@/components/RedditVideo' // Ensure the path is correct
 import RedditVoice from '@/components/RedditVoice' // Ensure the path is correct
 import LoadingAndDownload from '@/components/LoadingAndDownload'
-import {useUser} from "@clerk/nextjs"
+import { useUser } from "@clerk/nextjs"
 
 const Page = () => {
     const { user } = useUser()
     const userEmail = user?.emailAddresses[0]?.emailAddress || '' // Get the user's email address
     const [font, setFont] = useState('')
     const [script, setScript] = useState('')
-    const [avatar, setAvatar] = useState<string | File>('') 
+    const [avatar, setAvatar] = useState<string | File>('')
     const [title, setTitle] = useState('')
     const [username, setUsername] = useState('')
     const [video, setVideo] = useState('')
     const [voice, setVoice] = useState('')
     const [loading, setLoading] = useState(false)
     const [fileUrl, setFileUrl] = useState<string | null>(null)
-    
+
 
     // State for tracking the current step
     const [currentStep, setCurrentStep] = useState(1)
@@ -55,97 +55,97 @@ const Page = () => {
         setCurrentStep((prevStep) => Math.max(prevStep - 1, 1)) // Ensure the step doesn't go below 1
     }
 
-// Modify the handleGenerate function in your Page component:
+    // Modify the handleGenerate function in your Page component:
 
-const handleGenerate = async () => {
-    setLoading(true);
-  
-    try {
-      const formData = new FormData();
-  
-      // Append form fields
-      formData.append('username', username);
-      formData.append('title', title);
-      formData.append('script', script);
-      formData.append('voice', voice);
-      formData.append('video', video);
-      formData.append('font', font);
-      formData.append('user_email', userEmail);
-  
-      // Handle avatar (File or URL)
-      if (avatar instanceof File) {
-        formData.append('avatar', avatar);
-      } else if (typeof avatar === 'string' && avatar) {
+    const handleGenerate = async () => {
+        setLoading(true);
+
         try {
-          const response = await fetch(avatar);
-          const blob = await response.blob();
-          const file = new File([blob], 'avatar.jpg', { type: blob.type });
-          formData.append('avatar', file);
-        } catch (err) {
-          console.warn('Failed to convert avatar URL to file. Sending as string.');
-          formData.append('avatar', avatar);
-        }
-      }
-  
-      // Make the POST request
-      const response = await fetch('https://cravio-ai.onrender.com/create-reddit-post', {
-        method: 'POST',
-        body: formData,
-      });
-  
-      if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}: ${await response.text()}`);
-      }
-  
-      const { task_id } = await response.json();
-      console.log('Task ID:', task_id);
-  
-      // Polling function to check task status
-      const pollTaskStatus = async (taskId: string): Promise<any> => {
-        return new Promise((resolve, reject) => {
-          const interval = setInterval(async () => {
-            try {
-              const statusResponse = await fetch(`https://cravio-ai.onrender.com/task-status/${taskId}`);
-              if (!statusResponse.ok) {
-                clearInterval(interval);
-                reject(new Error(`Error fetching status: ${statusResponse.status}`));
-                return;
-              }
-  
-              const statusData = await statusResponse.json();
-              console.log('Task status:', statusData);
-  
-              if (statusData.status === 'success' || statusData.status === 'completed') {
-                clearInterval(interval);
-                resolve(statusData.result);
-              } else if (statusData.status === 'failed') {
-                clearInterval(interval);
-                reject(new Error(statusData.message || 'Task failed'));
-              }
-              // If pending or processing, continue polling
-            } catch (err) {
-              clearInterval(interval);
-              reject(err);
+            const formData = new FormData();
+
+            // Append form fields
+            formData.append('username', username);
+            formData.append('title', title);
+            formData.append('script', script);
+            formData.append('voice', voice);
+            formData.append('video', video);
+            formData.append('font', font);
+            formData.append('user_email', userEmail);
+
+            // Handle avatar (File or URL)
+            if (avatar instanceof File) {
+                formData.append('avatar', avatar);
+            } else if (typeof avatar === 'string' && avatar) {
+                try {
+                    const response = await fetch(avatar);
+                    const blob = await response.blob();
+                    const file = new File([blob], 'avatar.jpg', { type: blob.type });
+                    formData.append('avatar', file);
+                } catch (err) {
+                    console.warn('Failed to convert avatar URL to file. Sending as string.');
+                    formData.append('avatar', avatar);
+                }
             }
-          }, 3000); // 3 seconds
-        });
-      };
-  
-      const result = await pollTaskStatus(task_id);
-  
-      console.log('Final Result:', result);
-  
-      // Set the file URL or video URL
-      setFileUrl(result?.fileUrl || result?.videoUrl);
-  
-    } catch (error) {
-      console.error('Error generating video:', error);
-      alert('Failed to generate video. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
+
+            // Make the POST request
+            const response = await fetch('https://cravio-ai.onrender.com/create-reddit-post', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server responded with ${response.status}: ${await response.text()}`);
+            }
+
+            const { task_id } = await response.json();
+            console.log('Task ID:', task_id);
+
+            // Polling function to check task status
+            const pollTaskStatus = async (taskId: string): Promise<any> => {
+                return new Promise((resolve, reject) => {
+                    const interval = setInterval(async () => {
+                        try {
+                            const statusResponse = await fetch(`https://cravio-ai.onrender.com/task-status/${taskId}`);
+                            if (!statusResponse.ok) {
+                                clearInterval(interval);
+                                reject(new Error(`Error fetching status: ${statusResponse.status}`));
+                                return;
+                            }
+
+                            const statusData = await statusResponse.json();
+                            console.log('Task status:', statusData);
+
+                            if (statusData.status === 'success' || statusData.status === 'completed') {
+                                clearInterval(interval);
+                                resolve(statusData.result);
+                            } else if (statusData.status === 'failed') {
+                                clearInterval(interval);
+                                reject(new Error(statusData.message || 'Task failed'));
+                            }
+                            // If pending or processing, continue polling
+                        } catch (err) {
+                            clearInterval(interval);
+                            reject(err);
+                        }
+                    }, 3000); // 3 seconds
+                });
+            };
+
+            const result = await pollTaskStatus(task_id);
+
+            console.log('Final Result:', result);
+
+            // Set the file URL or video URL
+            setFileUrl(result?.fileUrl || result?.videoUrl);
+
+        } catch (error) {
+            console.error('Error generating video:', error);
+            alert('Failed to generate video. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     // Show LoadingAndDownload only when loading or when fileUrl is available
     const showLoadingAndDownload = loading || fileUrl !== null
@@ -160,7 +160,7 @@ const handleGenerate = async () => {
                             {/* Step circle */}
                             <div
                                 className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 z-10
-          ${currentStep === step
+          ${currentStep === step 
                                         ? 'bg-blue-500 text-white'
                                         : currentStep > step
                                             ? 'bg-black text-white'
