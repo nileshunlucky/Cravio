@@ -149,6 +149,7 @@ const Page = () => {
 
     // Show LoadingAndDownload only when loading or when fileUrl is available
     const showLoadingAndDownload = loading || fileUrl !== null
+    const showVoiceForm = currentStep === 4 && !showLoadingAndDownload;
 
     return (
         <div className="container mx-auto py-8 md:w-[70%] w-full">
@@ -160,7 +161,7 @@ const Page = () => {
                             {/* Step circle */}
                             <div
                                 className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 z-10
-          ${currentStep === step 
+          ${currentStep === step
                                         ? 'bg-blue-500 text-white'
                                         : currentStep > step
                                             ? 'bg-black text-white'
@@ -212,7 +213,7 @@ const Page = () => {
                     />
                 )}
 
-                {currentStep === 4 && !showLoadingAndDownload && (
+                {showVoiceForm && (
                     <RedditVoice
                         value={voice}
                         onChange={handleVoiceChange}
