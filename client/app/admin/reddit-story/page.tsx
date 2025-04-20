@@ -20,8 +20,6 @@ const Page = () => {
     const [voice, setVoice] = useState('')
     const [loading, setLoading] = useState(false)
     const [fileUrl, setFileUrl] = useState<string | null>(null)
-    const [progressMessage, setProgressMessage] = useState('')
-    const [taskId, setTaskId] = useState('')
 
     // State for tracking the current step
     const [currentStep, setCurrentStep] = useState(1)
@@ -58,7 +56,6 @@ const Page = () => {
 
     const handleGenerate = async () => {
         setLoading(true);
-        setProgressMessage('Preparing your request...');
 
         try {
             const formData = new FormData();
@@ -98,8 +95,6 @@ const Page = () => {
             }
 
             const { task_id } = await response.json();
-            setTaskId(task_id);
-            setProgressMessage(`Processing task: ${task_id}`);
             console.log('Task ID:', task_id);
 
             // Polling function to check task status
@@ -117,11 +112,6 @@ const Page = () => {
                 
                             const statusData = await res.json();
                             console.log('Task status:', statusData);
-                
-                            // update progress if in-progress
-                            if (statusData.status === 'progress') {
-                                setProgressMessage(statusData.message || `Processing task: ${taskId}`);
-                            }
                 
                             // completed
                             if (statusData.status === 'success') {
@@ -149,11 +139,9 @@ const Page = () => {
             const result = await pollTaskStatus(task_id);
             console.log('Task result:', result);
             setFileUrl(result.file_url); // Assuming the result contains the file URL
-            setProgressMessage('Generation completed successfully!');
 
         } catch (err) {
             console.error('Error during generation:', err);
-            setProgressMessage(`Error: ${err instanceof Error ? err.message : 'Unknown error occurred'}`);
             setFileUrl(null); // Reset file URL on error
         }
     }
@@ -201,10 +189,6 @@ const Page = () => {
                             fileUrl={fileUrl} 
                             isLoading={loading} 
                         />
-                        <div className="mt-6 text-center">
-                            <p className="text-xl mb-2">{progressMessage}</p>
-                            {taskId && <p className="text-sm text-gray-600">Task ID: {taskId}</p>}
-                        </div>
                     </div>
                 ) : (
                     /* Only show step components when not loading */

@@ -16,7 +16,7 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 # make post request for title and script by ai
 @router.post("/generate-content")
-async def generate_content(prompt: str  = Form(...)):
+async def generate_content(prompt: str):
     try:
         title = generate_title(prompt)
         script = generate_script(title)
@@ -102,85 +102,39 @@ async def create_reddit_post(
 
 @router.get("/task-status/{task_id}")
 async def get_task_status(task_id: str):
+    """
+    Get the status of a task by its ID.
+    """
     try:
         task = celery_app.AsyncResult(task_id)
         
-        # Initialize response structure
-        response = {
-            'status': task.state.lower(),
-            'task_id': task_id,
-            'percent_complete': 0
-        }
-
-        print(f"Task state: {task.state}, info: {task.info}")
-
-        # Check active workers
-        print(celery_app.control.inspect().active())
-        
         if task.state == 'PENDING':
-            response.update({
+            response = {
+                'status': 'pending',
                 'message': 'Task is waiting for execution'
-            })
-        
-        elif task.state in ['STARTED', 'PROGRESS']:
-            # Extract the meta information provided by update_state
-            if isinstance(task.info, dict):
-                # Get the status message
-                message = task.info.get('status', 'Task is in progress')
-                # Get percent complete
-                percent_complete = task.info.get('percent_complete', 0)
-                # Add any additional metadata
-                for key, value in task.info.items():
-                    if key not in ['status', 'percent_complete']:
-                        response[key] = value
-            else:
-                message = 'Task is in progress'
-                percent_complete = 0
-            
-            response.update({
-                'message': message,
-                'percent_complete': percent_complete
-            })
-        
+            }
+        elif task.state == 'PROGRESS':
+            response = {
+                'status': 'progress',
+                'message': 'Task is in progress'
+            }
         elif task.state == 'FAILURE':
-            response.update({
-                'message': str(task.info) if task.info else 'Task failed'
-            })
-        
+            response = {
+                'status': 'failed',
+                'message': str(task.info)
+            }
         elif task.state == 'SUCCESS':
-            # When task is successful, set percent_complete to 100
-            if isinstance(task.info, dict):
-                result = task.info
-                percent_complete = task.info.get('percent_complete', 100)
-            else:
-                result = task.info
-                percent_complete = 100
-            
-            response.update({
-                'result': result,
-                'percent_complete': percent_complete
-            })
-        
+            response = {
+                'status': 'success',
+                'result': task.info
+            }
         else:
-            # Handle any other states
-            if isinstance(task.info, dict):
-                message = task.info.get('status', '')
-                percent_complete = task.info.get('percent_complete', 0)
-                # Include all other fields from task.info
-                for key, value in task.info.items():
-                    if key not in ['status', 'percent_complete']:
-                        response[key] = value
-            else:
-                message = str(task.info) if task.info else ''
-                percent_complete = 0
-            
-            response.update({
-                'message': message,
-                'percent_complete': percent_complete
-            })
+            response = {
+                'status': task.state.lower(),
+                'message': task.info.get('status', '') if isinstance(task.info, dict) else '',
+                'result': task.info.get('result', '') if isinstance(task.info, dict) else task.info
+            }
         
         return JSONResponse(content=response)
-    
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
-
