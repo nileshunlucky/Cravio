@@ -1,6 +1,6 @@
 from celery import Celery
 import os
-
+import logging
 # Get Redis URL from environment variable or use a default
 REDIS_URL = os.getenv("REDIS_URL")
 
@@ -11,6 +11,8 @@ celery_app = Celery(
     backend=REDIS_URL,
     include=['tasks.reddit_story_task']  # Include the task modules here
 )
+
+logging.basicConfig(level=logging.INFO)
 
 # Optional: Configure Celery with additional settings
 celery_app.conf.update(

@@ -11,6 +11,9 @@ import shutil
 import requests
 from celery_config import celery_app
 from db import users_collection  # Using your existing MongoDB setup
+import logging
+
+logger = logging.getLogger(__name__)
 
 OUTPUT_FOLDER = "output"
 ASSETS_FOLDER = "assets"
@@ -391,6 +394,7 @@ def create_reddit_post_task(self, **kwargs):
     font = kwargs.get("font")
     user_email = kwargs.get("user_email")
 
+    logger.info(f"Task started with avatar_path={avatar_path} and username={username}")
     print(f"Task started with avatar_path={avatar_path} and username={username}")
     self.update_state(state='PROGRESS', meta={'status': 'Creating Reddit post'})
 
@@ -403,38 +407,39 @@ def create_reddit_post_task(self, **kwargs):
     
     try:
         # Step 1: Sanitize the username for file path safety
-        celery_app.update_state(state='PROGRESS', meta={'status': 'Sanitizing username'})
+        logger.info(f"Sanitizing username: {username}")
         sanitized_username = safe_filename(username)
 
         # Step 2: Create the avatar image
-        celery_app.update_state(state='PROGRESS', meta={'status': 'Creating avatar image'})
+        logger.info(f"Creating avatar image for {avatar_path}")
         avatar_img = create_avatar_image(avatar_path)
 
         # Step 3: Create the Reddit post layout
-        celery_app.update_state(state='PROGRESS', meta={'status': 'Creating Reddit post layout'})
+        logger.info(f"Creating Reddit post layout for {title}")
         reddit_post_img = create_reddit_post_layout(title, username, avatar_img)
 
         # Save the post image
+        logger.info(f"Saved Reddit post image to {output_path}")
         output_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_reddit_post.png")
         reddit_post_img.save(output_path, format="PNG")
         temporary_files.append(output_path)
 
         # Step 4: Convert title to audio using OpenAI TTS
-        celery_app.update_state(state='PROGRESS', meta={'status': 'Converting title to audio'})
+        logger.info(f"Converting title to audio using OpenAI TTS")
         title_audio_response = convert_to_audio(title, voice)
         title_audio_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_title.mp3")
         title_duration = save_audio_and_get_duration(title_audio_response, title_audio_path)
         temporary_files.append(title_audio_path)
 
         # Step 5: Convert script to audio
-        celery_app.update_state(state='PROGRESS', meta={'status': 'Converting script to audio'})
+        logger.info(f"Converting script to audio")
         script_audio_response = convert_to_audio(script, voice)
         script_audio_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_script.mp3")
         script_duration = save_audio_and_get_duration(script_audio_response, script_audio_path)
         temporary_files.append(script_audio_path)
 
         # Step 6: Combine both audios using ffmpeg
-        celery_app.update_state(state='PROGRESS', meta={'status': 'Combining audio files'})
+        logger.info(f"Combining both audios using ffmpeg")
         combined_audio_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_combined.mp3")
         ffmpeg.input(f'concat:{title_audio_path}|{script_audio_path}').output(
             combined_audio_path, codec='copy'
@@ -445,7 +450,7 @@ def create_reddit_post_task(self, **kwargs):
 
         # Step 7: Process the video URL
         # Check if the video is a full URL or just a filename
-        celery_app.update_state(state='PROGRESS', meta={'status': 'Processing video'})
+        logger.info(f"Processing video URL: {video}")
         if video.startswith("http"):
             # It's a full Cloudinary URL - download it first
             
@@ -527,7 +532,7 @@ def create_reddit_post_task(self, **kwargs):
         temporary_files.append(final_output_path)
 
         # Step 9: Create colored ASS format subtitles
-        celery_app.update_state(state='PROGRESS', meta={'status': 'Creating subtitles'})
+        logger.info("Creating ASS subtitles...")
         try:
             # Get color code for the specified font
             color_code = font_name_to_color_code(font)
@@ -612,11 +617,11 @@ def create_reddit_post_task(self, **kwargs):
             traceback.print_exc()
 
         # Step 10: Upload the final video to Cloudinary
-        celery_app.update_state(state='PROGRESS', meta={'status': 'Uploading to Cloudinary'})
+        logger.info("Uploading video to Cloudinary...")
         cloudinary_url = upload_to_cloudinary(final_output_path, user_email)
         
         # Step 11: Save video details to MongoDB
-        celery_app.update_state(state='PROGRESS', meta={'status': 'Saving video details to MongoDB'})
+        logger.info("Saving video details to MongoDB...")
         save_success = save_video_to_mongodb(
             user_email=user_email,
             video_url=cloudinary_url,
@@ -629,7 +634,7 @@ def create_reddit_post_task(self, **kwargs):
             print(f"Warning: Could not save video data for user {user_email} to MongoDB")
         
         # Step 12: Clean up temporary files
-        celery_app.update_state(state='PROGRESS', meta={'status': 'Cleaning up temporary files'})
+        logger.info("Cleaning up temporary files...")
         cleanup_output_files(temporary_files)
         
         # Return only the cloudinary URL and caption
