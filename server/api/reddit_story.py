@@ -118,21 +118,13 @@ async def get_task_status(task_id: str):
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-@router.get("/debug-task")
-async def debug_task():
-    """Test endpoint to verify task execution"""
+@router.delete("/cancel-task/{task_id}")
+async def cancel_task(task_id: str):
+    """
+    Cancel a running task by its ID.
+    """
     try:
-        test_task = create_reddit_post_task.delay(
-            username="debug_user",
-            title="Debug Title",
-            script="Debug Script",
-            caption="Debug Caption",
-            voice="alloy",
-            video="test.mp4",
-            font="arial",
-            user_email="debug@example.com",
-            avatar_path=None
-        )
-        return {"task_id": test_task.id}
+        celery_app.control.revoke(task_id, terminate=True)
+        return JSONResponse(content={"status": "cancelled", "message": f"Task {task_id} has been cancelled"})
     except Exception as e:
-        return {"error": str(e)}
+        return JSONResponse(status_code=500, content={"error": str(e)})
