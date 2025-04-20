@@ -8,6 +8,7 @@ import shutil
 import uuid
 import traceback
 from fastapi import HTTPException
+from db import users_collection
 
 router = APIRouter()
 OUTPUT_FOLDER = "output"
@@ -24,6 +25,14 @@ async def create_reddit_post(
     font: str = Form(...),
     user_email: str = Form(...)
 ):
+    # check user have 10 credits or not
+    user = users_collection.find_one({"email": user_email})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.get("credits", 0) < 10:
+        raise HTTPException(status_code=400, detail="Not enough credits")
+    # deduct 10 credits
+    users_collection.update_one({"email": user_email}, {"$inc": {"credits": -10}})
     """
     Handles the creation of a Reddit post asynchronously using Celery.
     It immediately returns a task ID and processes the job in the background.
