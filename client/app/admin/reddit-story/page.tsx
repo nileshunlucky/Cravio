@@ -59,61 +59,93 @@ const Page = () => {
 
 const handleGenerate = async () => {
     setLoading(true);
-    
+  
     try {
-        // Create FormData object to handle the file upload and other form fields
-        const formData = new FormData();
-        
-        // Add all required form fields
-        formData.append('username', username);
-        formData.append('title', title);
-        formData.append('script', script);
-        formData.append('voice', voice);
-        formData.append('video', video);
-        formData.append('font', font);
-        formData.append('user_email', userEmail); // You'll need to add a state for this
-        
-        // If avatar is a file object (from file input)
-        if (avatar instanceof File) {
-            formData.append('avatar', avatar);
-        } 
-        // If avatar is a string URL or base64, you may need to fetch and convert it to a file
-        if (typeof avatar === 'string' && avatar) {
+      const formData = new FormData();
+  
+      // Append form fields
+      formData.append('username', username);
+      formData.append('title', title);
+      formData.append('script', script);
+      formData.append('voice', voice);
+      formData.append('video', video);
+      formData.append('font', font);
+      formData.append('user_email', userEmail);
+  
+      // Handle avatar (File or URL)
+      if (avatar instanceof File) {
+        formData.append('avatar', avatar);
+      } else if (typeof avatar === 'string' && avatar) {
+        try {
+          const response = await fetch(avatar);
+          const blob = await response.blob();
+          const file = new File([blob], 'avatar.jpg', { type: blob.type });
+          formData.append('avatar', file);
+        } catch (err) {
+          console.warn('Failed to convert avatar URL to file. Sending as string.');
+          formData.append('avatar', avatar);
+        }
+      }
+  
+      // Make the POST request
+      const response = await fetch('https://cravio-ai.onrender.com/create-reddit-post', {
+        method: 'POST',
+        body: formData,
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}: ${await response.text()}`);
+      }
+  
+      const { task_id } = await response.json();
+      console.log('Task ID:', task_id);
+  
+      // Polling function to check task status
+      const pollTaskStatus = async (taskId: string): Promise<any> => {
+        return new Promise((resolve, reject) => {
+          const interval = setInterval(async () => {
             try {
-                const response = await fetch(avatar);
-                const blob = await response.blob();
-                const file = new File([blob], 'avatar.jpg', { type: blob.type });
-                formData.append('avatar', file);
-            } catch (error) {
-                console.error('Error processing avatar URL:', error);
-                // Fallback: Send as string if conversion fails
-                formData.append('avatar', avatar);
+              const statusResponse = await fetch(`https://cravio-ai.onrender.com/task-status/${taskId}`);
+              if (!statusResponse.ok) {
+                clearInterval(interval);
+                reject(new Error(`Error fetching status: ${statusResponse.status}`));
+                return;
+              }
+  
+              const statusData = await statusResponse.json();
+              console.log('Task status:', statusData);
+  
+              if (statusData.status === 'success' || statusData.status === 'completed') {
+                clearInterval(interval);
+                resolve(statusData.result);
+              } else if (statusData.status === 'failed') {
+                clearInterval(interval);
+                reject(new Error(statusData.message || 'Task failed'));
+              }
+              // If pending or processing, continue polling
+            } catch (err) {
+              clearInterval(interval);
+              reject(err);
             }
-        }
-        
-        // Send the API request
-        const response = await fetch('https://cravio-ai.onrender.com/create-reddit-post', {
-            method: 'POST',
-            body: formData,
+          }, 3000); // 3 seconds
         });
-        
-        if (!response.ok) {
-            throw new Error(`Server responded with ${response.status}: ${await response.text()}`);
-        }
-        
-        const data = await response.json();
-        console.log('Success:', data);
-        
-        // Set the file URL from the response
-        setFileUrl(data.fileUrl || data.videoUrl);
-        
+      };
+  
+      const result = await pollTaskStatus(task_id);
+  
+      console.log('Final Result:', result);
+  
+      // Set the file URL or video URL
+      setFileUrl(result?.fileUrl || result?.videoUrl);
+  
     } catch (error) {
-        console.error('Error generating video:', error);
-        alert('Failed to generate video. Please try again.');
+      console.error('Error generating video:', error);
+      alert('Failed to generate video. Please try again.');
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
+  
 
     // Show LoadingAndDownload only when loading or when fileUrl is available
     const showLoadingAndDownload = loading || fileUrl !== null
@@ -180,7 +212,7 @@ const handleGenerate = async () => {
                     />
                 )}
 
-                {currentStep === 4 && (
+                {currentStep === 4 && !showLoadingAndDownload && (
                     <RedditVoice
                         value={voice}
                         onChange={handleVoiceChange}

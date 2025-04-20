@@ -6,29 +6,12 @@ from celery_config import celery_app
 import tempfile
 import shutil
 import uuid
+import traceback
+from fastapi import HTTPException
 
 router = APIRouter()
 OUTPUT_FOLDER = "output"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-
-@router.post("/generate-content")
-async def generate_content(prompt: str = Form(...)):
-    print(f"Received prompt: {prompt}")
-    """
-    This endpoint generates a title and a script based on the provided prompt.
-    It first uses GPT-3.5-turbo to generate a title, then uses the title to generate a script.
-    """
-    try:
-        # Generate title
-        title = generate_title(prompt)
-        
-        # Generate script using the title
-        script = generate_script(title)
-        
-        # Return the title and script as a JSON response
-        return JSONResponse(content={"title": title, "script": script})
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
 
 @router.post("/create-reddit-post")
 async def create_reddit_post(
@@ -46,22 +29,34 @@ async def create_reddit_post(
     Handles the creation of a Reddit post asynchronously using Celery.
     It immediately returns a task ID and processes the job in the background.
     """
+    avatar_path = None
+
     try:
-        # Save avatar file temporarily if provided
-        avatar_path = None
+        print("📩 Incoming Reddit post request:")
+        print("👤 Username:", username)
+        print("📝 Title:", title)
+        print("🎤 Voice:", voice)
+        print("📹 Video:", video)
+        print("🔠 Font:", font)
+        print("📧 Email:", user_email)
+        print("📁 Avatar received:", bool(avatar))
+
+        # Save avatar if present
         if avatar:
-            # Create a temp file for the avatar
             tmp_dir = tempfile.mkdtemp()
-            avatar_path = os.path.join(tmp_dir, "avatar_" + str(uuid.uuid4()) + os.path.splitext(avatar.filename)[1])
-            
-            # Save the avatar file
+            extension = os.path.splitext(avatar.filename)[1] if avatar.filename else ".png"
+            avatar_path = os.path.join(tmp_dir, f"avatar_{uuid.uuid4()}{extension}")
+
             with open(avatar_path, "wb") as buffer:
                 shutil.copyfileobj(avatar.file, buffer)
-        
+
+            print(f"✅ Avatar saved at: {avatar_path}")
+
         # Generate caption for the post
         caption = generate_caption(title)
-        
-        # Queue the task in Celery
+        print("🧠 Caption generated:", caption)
+
+        # Enqueue the task
         task = create_reddit_post_task.delay(
             username=username,
             title=title,
@@ -73,18 +68,27 @@ async def create_reddit_post(
             avatar_path=avatar_path,
             user_email=user_email
         )
-        
+
+        print("📦 Task queued:", task.id)
+
         return JSONResponse(content={
             "task_id": task.id,
             "status": "processing",
             "message": "Your Reddit post is being created. You will be notified via email when it's ready."
         })
-        
+
     except Exception as e:
+        # Clean up avatar file if it exists
         if avatar_path and os.path.exists(avatar_path):
-            # Clean up temp files if they exist
-            shutil.rmtree(os.path.dirname(avatar_path))
-        return JSONResponse(status_code=500, content={"error": str(e)})
+            shutil.rmtree(os.path.dirname(avatar_path), ignore_errors=True)
+
+        print("❌ Exception occurred in /create-reddit-post:")
+        traceback.print_exc()  # Shows full traceback in logs
+
+        raise HTTPException(status_code=500, detail={
+            "error": str(e),
+            "detail": "Internal server error occurred."
+        })
 
 @router.get("/task-status/{task_id}")
 async def get_task_status(task_id: str):
