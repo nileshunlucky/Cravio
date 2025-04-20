@@ -14,6 +14,16 @@ router = APIRouter()
 OUTPUT_FOLDER = "output"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
+# make post request for title and script by ai
+@router.post("/generate-content")
+async def generate_content(prompt: str):
+    try:
+        title = generate_title(prompt)
+        script = generate_script(title)
+        return {"title": title, "script": script}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/create-reddit-post")
 async def create_reddit_post(
     avatar: UploadFile = None,
@@ -26,7 +36,7 @@ async def create_reddit_post(
     user_email: str = Form(...)
 ):
     # check user have 10 credits or not
-    user = users_collection.find_one({"email": user_email})
+    user = users_collection.find_one({"email": user_email}) 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if user.get("credits", 0) < 10:
