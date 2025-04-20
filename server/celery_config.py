@@ -33,11 +33,14 @@ celery_app.conf.update(
     enable_utc=True,
 )
 
-# ✅ Secure both broker and backend with SSL options
+# In your Celery configuration
 celery_app.conf.broker_use_ssl = {
-    'ssl_cert_reqs': ssl.CERT_NONE  # or CERT_REQUIRED if using real certs
+    'ssl_cert_reqs': ssl.CERT_REQUIRED,
+    'ssl_ca_certs': '/path/to/ca/cert.pem',  # Path to CA certificate
 }
 
+# Similar for result backend
 celery_app.conf.redis_backend_use_ssl = {
-    'ssl_cert_reqs': ssl.CERT_NONE
+    'ssl_cert_reqs': ssl.CERT_REQUIRED,
+    'ssl_ca_certs': '/path/to/ca/cert.pem',
 }

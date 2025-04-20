@@ -111,6 +111,11 @@ async def get_task_status(task_id: str):
             'task_id': task_id,
             'percent_complete': 0
         }
+
+        print(f"Task state: {task.state}, info: {task.info}")
+
+        # Check active workers
+        print(celery_app.control.inspect().active())
         
         if task.state == 'PENDING':
             response.update({
