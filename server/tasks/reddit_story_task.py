@@ -381,6 +381,7 @@ def generate_caption(title: str) -> str:
 
 @celery_app.task(name="create_reddit_post_task")
 def create_reddit_post_task(
+    self,
     avatar_path: str,
     username: str,
     title: str,
@@ -400,12 +401,15 @@ def create_reddit_post_task(
     
     try:
         # Step 1: Sanitize the username for file path safety
+        self.update_state(state='PROGRESS', meta={'status': 'Sanitizing username'})
         sanitized_username = safe_filename(username)
 
         # Step 2: Create the avatar image
+        self.update_state(state='PROGRESS', meta={'status': 'Creating avatar image'})
         avatar_img = create_avatar_image(avatar_path)
 
         # Step 3: Create the Reddit post layout
+        self.update_state(state='PROGRESS', meta={'status': 'Creating Reddit post layout'})
         reddit_post_img = create_reddit_post_layout(title, username, avatar_img)
 
         # Save the post image
@@ -414,18 +418,21 @@ def create_reddit_post_task(
         temporary_files.append(output_path)
 
         # Step 4: Convert title to audio using OpenAI TTS
+        self.update_state(state='PROGRESS', meta={'status': 'Converting title to audio'})
         title_audio_response = convert_to_audio(title, voice)
         title_audio_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_title.mp3")
         title_duration = save_audio_and_get_duration(title_audio_response, title_audio_path)
         temporary_files.append(title_audio_path)
 
         # Step 5: Convert script to audio
+        self.update_state(state='PROGRESS', meta={'status': 'Converting script to audio'})
         script_audio_response = convert_to_audio(script, voice)
         script_audio_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_script.mp3")
         script_duration = save_audio_and_get_duration(script_audio_response, script_audio_path)
         temporary_files.append(script_audio_path)
 
         # Step 6: Combine both audios using ffmpeg
+        self.update_state(state='PROGRESS', meta={'status': 'Combining audio files'})
         combined_audio_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_combined.mp3")
         ffmpeg.input(f'concat:{title_audio_path}|{script_audio_path}').output(
             combined_audio_path, codec='copy'
@@ -436,6 +443,7 @@ def create_reddit_post_task(
 
         # Step 7: Process the video URL
         # Check if the video is a full URL or just a filename
+        self.update_state(state='PROGRESS', meta={'status': 'Processing video'})
         if video.startswith("http"):
             # It's a full Cloudinary URL - download it first
             
@@ -517,6 +525,7 @@ def create_reddit_post_task(
         temporary_files.append(final_output_path)
 
         # Step 9: Create colored ASS format subtitles
+        self.update_state(state='PROGRESS', meta={'status': 'Creating subtitles'})
         try:
             # Get color code for the specified font
             color_code = font_name_to_color_code(font)
@@ -601,9 +610,11 @@ def create_reddit_post_task(
             traceback.print_exc()
 
         # Step 10: Upload the final video to Cloudinary
+        self.update_state(state='PROGRESS', meta={'status': 'Uploading to Cloudinary'})
         cloudinary_url = upload_to_cloudinary(final_output_path, user_email)
         
         # Step 11: Save video details to MongoDB
+        self.update_state(state='PROGRESS', meta={'status': 'Saving video details to MongoDB'})
         save_success = save_video_to_mongodb(
             user_email=user_email,
             video_url=cloudinary_url,
@@ -616,6 +627,7 @@ def create_reddit_post_task(
             print(f"Warning: Could not save video data for user {user_email} to MongoDB")
         
         # Step 12: Clean up temporary files
+        self.update_state(state='PROGRESS', meta={'status': 'Cleaning up temporary files'})
         cleanup_output_files(temporary_files)
         
         # Return only the cloudinary URL and caption

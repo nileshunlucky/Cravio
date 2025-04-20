@@ -20,7 +20,7 @@ const Page = () => {
     const [voice, setVoice] = useState('')
     const [loading, setLoading] = useState(false)
     const [fileUrl, setFileUrl] = useState<string | null>(null)
-
+    const [progressMessage, setProgressMessage] = useState('');
 
     // State for tracking the current step
     const [currentStep, setCurrentStep] = useState(1)
@@ -115,6 +115,11 @@ const Page = () => {
                             const statusData = await statusResponse.json();
                             console.log('Task status:', statusData);
 
+                            // 🔥 Update progress message from meta
+                            if (statusData.status === 'PROGRESS' && statusData.meta?.status) {
+                                setProgressMessage(statusData.meta.status);
+                            }
+
                             if (statusData.status === 'success' || statusData.status === 'completed') {
                                 clearInterval(interval);
                                 resolve(statusData.result);
@@ -122,29 +127,25 @@ const Page = () => {
                                 clearInterval(interval);
                                 reject(new Error(statusData.message || 'Task failed'));
                             }
-                            // If pending or processing, continue polling
                         } catch (err) {
                             clearInterval(interval);
                             reject(err);
                         }
-                    }, 3000); // 3 seconds
+                    }, 3000); // poll every 3 seconds
                 });
             };
 
             const result = await pollTaskStatus(task_id);
+            console.log('Task result:', result);
+            setFileUrl(result.file_url); // Assuming the result contains the file URL
 
-            console.log('Final Result:', result);
-
-            // Set the file URL or video URL
-            setFileUrl(result?.fileUrl || result?.videoUrl);
-
-        } catch (error) {
-            console.error('Error generating video:', error);
-            alert('Failed to generate video. Please try again.');
-        } finally {
             setLoading(false);
+        } catch (err) {
+            console.error('Error during generation:', err);
+            setLoading(false);
+            setFileUrl(null); // Reset file URL on error
         }
-    };
+    }
 
 
     // Show LoadingAndDownload only when loading or when fileUrl is available
@@ -227,6 +228,9 @@ const Page = () => {
                 {showLoadingAndDownload && (
                     <div className={``}>
                         <LoadingAndDownload fileUrl={fileUrl} isLoading={loading} />
+                        {loading && progressMessage && (
+                            <p className="text-center mt-4 text-sm">{progressMessage}</p>
+                        )}
                     </div>
                 )}
             </div>
