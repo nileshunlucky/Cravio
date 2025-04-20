@@ -15,7 +15,6 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 @router.post("/create-reddit-post")
 async def create_reddit_post(
-    background_tasks: BackgroundTasks,
     avatar: UploadFile = None,
     username: str = Form(...),
     title: str = Form(...),
