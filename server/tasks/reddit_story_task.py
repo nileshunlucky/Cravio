@@ -390,7 +390,10 @@ def create_reddit_post_task(self, **kwargs):
     video = kwargs.get("video")
     font = kwargs.get("font")
     user_email = kwargs.get("user_email")
-    
+
+    print(f"Task started with avatar_path={avatar_path} and username={username}")
+    self.update_state(state='PROGRESS', meta={'status': 'Creating Reddit post'})
+
     """
     Celery task to handle the creation of a Reddit post by generating an image with avatar, title, 
     username, and other icons. Then creates a video with the post overlay and narration, 

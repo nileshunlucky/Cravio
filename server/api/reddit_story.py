@@ -118,14 +118,3 @@ async def get_task_status(task_id: str):
         return JSONResponse(content=response)
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
-
-@router.delete("/cancel-task/{task_id}")
-async def cancel_task(task_id: str):
-    """
-    Cancel a running task by its ID.
-    """
-    try:
-        celery_app.control.revoke(task_id, terminate=True)
-        return JSONResponse(content={"status": "cancelled", "message": f"Task {task_id} has been cancelled"})
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
