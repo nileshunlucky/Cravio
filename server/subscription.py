@@ -7,7 +7,7 @@ from typing import Union
 import traceback
 from bson.objectid import ObjectId
 from db import users_collection 
-import datetime
+from datetime import datetime
 
 load_dotenv()
 
