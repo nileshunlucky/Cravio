@@ -136,7 +136,7 @@ async def add_paypal(request: Request, body: PayPalEmailRequest):
 # Function to send an email
 def send_email(subject, body, receiver_email="cravio.ai@gmail.com"):
     try:
-        sender_email = "cravio.ai@gmail.com"  # Use your email here
+        sender_email = "nileshinde001@gmail.com"  # Use your email here
         password = os.getenv("GMAIL_PASSWORD")  # Use App Password if 2FA is enabled on your Gmail
 
         # Prepare the email content
