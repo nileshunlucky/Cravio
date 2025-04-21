@@ -17,8 +17,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class UserEmail(BaseModel):
-    email: EmailStr
 
 # Get user by email
 @app.get("/user/{email}")
@@ -29,25 +27,27 @@ def get_user(email: str):
         return user
     raise HTTPException(status_code=404, detail="User not found")
 
-from fastapi import Query
+class UserReferral(BaseModel):
+    email: EmailStr
+    referredBy: str = None  
 
 @app.post("/add-user")
-def add_user(user: UserEmail, referredBy: str = Query(default=None)):
+def save_referral(data: UserReferral = Body(...)):  # Expect referral data in the body
     # 1. Check if the user already exists
-    existing = users_collection.find_one({"email": user.email})
+    existing = users_collection.find_one({"email": data.email})
     if existing:
         return {"message": "User already exists"}
 
-    user_data = {"email": user.email}
+    user_data = {"email": data.email}
 
     # 2. Validate referredBy if provided
-    if referredBy:
+    if data.referredBy:
         # Check if referredBy is a valid ref_code in another user
-        ref_user = users_collection.find_one({"ref_code": referredBy})
+        ref_user = users_collection.find_one({"ref_code": data.referredBy})
         if not ref_user:
             return {"message": "Invalid referral code"}
 
-        user_data["referredBy"] = referredBy
+        user_data["referredBy"] = data.referredBy
 
     # 3. Insert the user
     users_collection.insert_one(user_data)
