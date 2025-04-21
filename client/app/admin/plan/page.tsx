@@ -59,7 +59,7 @@ const Plans: React.FC = () => {
       name: 'BASIC',
       price: 9.99,
       credit: 250,
-      planId: "plan_QK2MZMFl8YNDIL",
+      planId: "plan_QLjO4aUd0kgvdx",
       description: 'Perfect for beginners and small projects',
       features: ['250 Credits', 'HD resolution', 'Email support'],
       videos: 25
@@ -68,7 +68,7 @@ const Plans: React.FC = () => {
       name: 'PRO',
       price: 24.9,
       credit: 700,
-      planId: "plan_QK2N7YA92UpU0U",
+      planId: "plan_QLjOSlbc9e8LUs",
       description: 'Ideal for professionals and growing businesses',
       features: ['700 Credits', '4K resolution', 'Priority email & chat support'],
       videos: 70,
@@ -78,7 +78,7 @@ const Plans: React.FC = () => {
       name: 'PREMIUM',
       price: 49.9,
       credit: 1500,
-      planId: "plan_QK2NPKAHlxEkRz",
+      planId: "plan_QLjOiOlriagyoQ",
       description: 'Everything you need for enterprise-level content',
       features: ['1500 Credits', '4K resolution', '24/7 priority support',],
       videos: 150
