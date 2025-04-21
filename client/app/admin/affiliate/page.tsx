@@ -134,7 +134,7 @@ const AffiliateDashboard = () => {
                                 </Button>
                             </div>
                             <p><strong>Commission Rate:</strong> 20%</p>
-                            <p><strong>Balance:</strong> ${userData?.balance}</p>
+                            <p><strong>Balance:</strong> ${userData?.balance || 0}</p>
                         </>
                     )}
                 </CardContent>
