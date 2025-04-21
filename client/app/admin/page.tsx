@@ -11,9 +11,8 @@ const Page = () => {
       const refferedBy = localStorage.getItem("referrer");
       const email = user?.primaryEmailAddress?.emailAddress;
 
-      if (email && refferedBy) {
         try {
-          const res = await fetch("https://cravio-ai.onrender.com/save-referral", {
+          const res = await fetch("https://cravio-ai.onrender.com/add-user", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -25,7 +24,6 @@ const Page = () => {
           console.log("Referral sent:", data);
         } catch (error) {
           console.error("Failed to send referral:", error);
-        }
       }
     };
 

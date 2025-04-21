@@ -1,5 +1,4 @@
-import os
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from db import users_collection
@@ -17,6 +16,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# add routers
+app.include_router(reddit_router)
+app.include_router(subscription_router)
 
 # Get user by email
 @app.get("/user/{email}")
