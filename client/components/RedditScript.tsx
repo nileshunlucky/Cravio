@@ -49,14 +49,14 @@ const RedditStory: React.FC<RedditStoryProps> = ({ onChange, onNext, onSetFields
       setLoading(false) // Stop loading state
       return; 
     } // Make sure there's a prompt
-    const formDataToSend = new FormData();
-    formDataToSend.append('prompt', prompt);
+    // const formDataToSend = new FormData();
+    // formDataToSend.append('prompt', prompt);
 
     // API request to generate title and script
     try {
       const response = await fetch('https://cravio-ai.onrender.com/generate-content', {
         method: 'POST',
-        body: formDataToSend,
+        body: JSON.stringify({ prompt }),
       })
 
       if (!response.ok) {

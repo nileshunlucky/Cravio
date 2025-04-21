@@ -9,16 +9,20 @@ import uuid
 import traceback
 from fastapi import HTTPException
 from db import users_collection
+from pydantic import BaseModel
 
 router = APIRouter()
 OUTPUT_FOLDER = "output"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
+class PromptRequest(BaseModel):
+    prompt: str
+
 # make post request for title and script by ai
 @router.post("/generate-content")
-async def generate_content(prompt: str):
+async def generate_content(request: PromptRequest):
     try:
-        title = generate_title(prompt)
+        title = generate_title(request.prompt)
         script = generate_script(title)
         return {"title": title, "script": script}
     except Exception as e:
