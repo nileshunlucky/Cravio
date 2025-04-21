@@ -11,13 +11,14 @@ export default function SendEmailToBackend() {
       if (!user?.emailAddresses?.[0]?.emailAddress) return
 
       const email = user.emailAddresses[0].emailAddress
+      const referralCode = localStorage.getItem("referrer");
 
       const res = await fetch('https://cravio-ai.onrender.com/add-user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, referredBy: referralCode, }),
       })
 
       await res.json()

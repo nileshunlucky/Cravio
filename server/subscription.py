@@ -6,6 +6,7 @@ from pydantic import BaseModel
 import traceback
 from bson.objectid import ObjectId
 from db import users_collection 
+import datetime
 
 load_dotenv()
 
@@ -15,10 +16,6 @@ router = APIRouter()
 class SubscriptionRequest(BaseModel):
     plan_id: str
 
-# Update Credits Request Model
-class UpdateCreditsRequest(BaseModel):
-    user_email: str
-    credits: int
 
 # Razorpay client initialization
 razorpay_client = razorpay.Client(
@@ -41,24 +38,63 @@ async def create_subscription(request: SubscriptionRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-# Update Credits Route
+
+# Update Credits Request Model
+class UpdateCreditsRequest(BaseModel):
+    user_email: str
+    credits: int
+    subscription_id: str
+    price: int
 @router.post("/update-credits")
 async def update_credits(request: UpdateCreditsRequest):
     try:
         # Find the user by email
         user = users_collection.find_one({"email": request.user_email})
-        
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        
-        # Update the user's credits
+
+        # 1. Update user's credits
         new_credits = user.get("credits", 0) + request.credits
-        users_collection.update_one({"email": request.user_email}, {"$set": {"credits": new_credits}})
-        
-        return {"success": True, "message": "Credits updated successfully", "credits": new_credits}
-    
+
+        # 2. Add the subscription ID to user's purchases
+        updated_purchases = user.get("purchases", [])
+        updated_purchases.append({
+            "subscription_id": request.subscription_id,
+            "price": request.price,
+            "date": datetime.utcnow()
+        })
+
+        update_fields = {
+            "credits": new_credits,
+            "purchases": updated_purchases
+        }
+
+        # 3. Reward referrer (20% of price)
+        referred_by_code = user.get("referredBy")
+        if referred_by_code:
+            commission = round(0.2 * request.price, 2)
+
+            referrer = users_collection.find_one({"ref_code": referred_by_code})
+            if referrer:
+                ref_balance = referrer.get("balance", 0) + commission
+                users_collection.update_one(
+                    {"ref_code": referred_by_code},
+                    {"$set": {"balance": ref_balance}}
+                )
+
+        # 4. Final user update
+        users_collection.update_one(
+            {"email": request.user_email},
+            {"$set": update_fields}
+        )
+
+        return {
+            "success": True,
+            "message": "Credits updated and referral processed.",
+            "credits": new_credits
+        }
+
     except Exception as e:
         print("Error updating credits:", str(e))
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
-

@@ -1,4 +1,5 @@
 from PIL import Image, ImageDraw, ImageFont
+from fastapi import HTTPException
 from io import BytesIO
 import os
 import openai
@@ -242,7 +243,7 @@ def upload_to_cloudinary(file_path: str, user_email: str) -> str:
         
         # Return the secure URL
         return upload_result['secure_url']
-    except Exception as e:
+    except HTTPException as e:
         print(f"Error uploading to Cloudinary: {str(e)}")
         raise
 
@@ -253,7 +254,7 @@ def cleanup_output_files(file_paths: list):
             if os.path.exists(file_path):
                 os.remove(file_path)
                 print(f"Removed file: {file_path}")
-        except Exception as e:
+        except HTTPException as e:
             print(f"Error removing file {file_path}: {str(e)}")
 
 def save_video_to_mongodb(user_email: str, video_url: str, title: str, script: str = None, caption: str = None):
@@ -291,7 +292,7 @@ def save_video_to_mongodb(user_email: str, video_url: str, title: str, script: s
             
         return True
         
-    except Exception as e:
+    except HTTPException as e:
         print(f"Error saving to MongoDB: {str(e)}")
         import traceback
         traceback.print_exc()
@@ -321,8 +322,8 @@ def generate_title(prompt: str) -> str:
         )
         title = response.choices[0].message.content.strip()
         return title
-    except Exception as e:
-        raise Exception(f"Error generating title: {str(e)}")
+    except HTTPException as e:
+        raise HTTPException(f"Error generating title: {str(e)}")
 
 # Create a function to generate the script based on the title
 def generate_script(title: str) -> str:
@@ -350,8 +351,8 @@ def generate_script(title: str) -> str:
         )
         script = response.choices[0].message.content.strip()
         return script
-    except Exception as e:
-        raise Exception(f"Error generating script: {str(e)}")
+    except HTTPException as e:
+        raise HTTPException(f"Error generating script: {str(e)}")
 
 # Create a function to generate captions based on the title
 def generate_caption(title: str) -> str:
@@ -376,8 +377,8 @@ def generate_caption(title: str) -> str:
         )
         caption = response.choices[0].message.content.strip()
         return caption
-    except Exception as e:
-        raise Exception(f"Error generating caption: {str(e)}")
+    except HTTPException as e:
+        raise HTTPException(f"Error generating caption: {str(e)}")
     
 
 @celery_app.task(name="create_reddit_post_task", bind=True)
@@ -608,7 +609,7 @@ def create_reddit_post_task(self, **kwargs):
             temporary_files.append(final_with_subs_path)
             final_output_path = final_with_subs_path
             
-        except Exception as e:
+        except HTTPException as e:
             print(f"Error in overlay/subtitle step: {str(e)}")
             import traceback
             traceback.print_exc()
@@ -641,7 +642,7 @@ def create_reddit_post_task(self, **kwargs):
             "caption": caption
         }
         
-    except Exception as e:
+    except HTTPException as e:
         print(f"General error: {str(e)}")
         import traceback
         traceback.print_exc()

@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar"
 import SendEmailToBackend from "@/components/SendEmailToBackend"
 import { SignedIn, useUser } from "@clerk/nextjs"
 import React, { useEffect, useState } from "react"
+import { Toaster } from "sonner";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { user } = useUser()
@@ -41,6 +42,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <SendEmailToBackend />
         </SignedIn>
         {children}
+        <Toaster position="top-right" richColors />
       </div>
     </SidebarProvider>
   )

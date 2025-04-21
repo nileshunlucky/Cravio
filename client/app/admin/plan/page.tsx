@@ -146,7 +146,9 @@ const Plans: React.FC = () => {
             },
             body: JSON.stringify({
               user_email: user?.primaryEmailAddress?.emailAddress,
-              credits: pricingPlans.find(plan => plan.planId === planId)?.credit
+              credits: pricingPlans.find(plan => plan.planId === planId)?.credit,
+              subscription_id: data.id,
+              price: pricingPlans.find(plan => plan.planId === planId)?.price
             })
           });
   

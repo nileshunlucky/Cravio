@@ -1,4 +1,4 @@
-import { LayoutDashboard, Folder, CircleFadingArrowUp} from "lucide-react"
+import { LayoutDashboard, Folder, CircleFadingArrowUp, Handshake} from "lucide-react"
 
 import {
   Sidebar,
@@ -28,6 +28,11 @@ const items = [
     title: "Plan",
     url: "/admin/plan",
     icon: CircleFadingArrowUp ,
+  },
+  {
+    title: "Affiliate",
+    url: "/admin/affiliate",
+    icon: Handshake ,
   },
 ]
 

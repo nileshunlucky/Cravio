@@ -1,12 +1,21 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 
 const Landing = () => {
+  // In useEffect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      localStorage.setItem('referrer', ref); // Store it temporarily
+    }
+  }, []);
+
   return (
     <section className="w-full px-6 py-24 flex flex-col md:flex-row items-center justify-between gap-10 bg-white">
       {/* TEXT */}

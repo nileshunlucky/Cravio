@@ -20,6 +20,7 @@ const Page = () => {
     const [voice, setVoice] = useState('')
     const [loading, setLoading] = useState(false)
     const [fileUrl, setFileUrl] = useState<string | null>(null)
+    const [progressMessage, setProgressMessage] = useState('')
 
     // State for tracking the current step
     const [currentStep, setCurrentStep] = useState(1)
@@ -53,6 +54,8 @@ const Page = () => {
     const handleBackStep = () => {
         setCurrentStep((prevStep) => Math.max(prevStep - 1, 1)) // Ensure the step doesn't go below 1
     }
+
+    // Modify the handleGenerate function in your Page component:
 
     const handleGenerate = async () => {
         setLoading(true);
@@ -100,136 +103,144 @@ const Page = () => {
             // Polling function to check task status
             const pollTaskStatus = async (taskId: string): Promise<any> => {
                 return new Promise((resolve, reject) => {
-                    const interval = setInterval(async () => {
-                        try {
-                            const res = await fetch(
-                                `https://cravio-ai.onrender.com/task-status/${taskId}`
-                            );
-                            if (!res.ok) {
-                                clearInterval(interval);
-                                return reject(new Error(`Error fetching status: ${res.status}`));
-                            }
-                
-                            const statusData = await res.json();
-                            console.log('Task status:', statusData);
-                
-                            // completed
-                            if (statusData.status === 'success') {
-                                clearInterval(interval);
-                                return resolve(statusData.result);
-                            }
-                
-                            // failed
-                            if (statusData.status === 'failure' || statusData.status === 'failed') {
-                                clearInterval(interval);
-                                return reject(
-                                    new Error(statusData.message || 'Task failed')
-                                );
-                            }
-                            // else: still 'pending'—do nothing, keep polling
-                
-                        } catch (err) {
-                            clearInterval(interval);
-                            reject(err);
-                        }
-                    }, 5000); // poll every 5s
-                });
-            };
+                  const interval = setInterval(async () => {
+                    try {
+                      const res = await fetch(
+                        `https://cravio-ai.onrender.com/task-status/${taskId}`
+                      );
+                      if (!res.ok) {
+                        clearInterval(interval);
+                        return reject(new Error(`Error fetching status: ${res.status}`));
+                      }
               
+                      const statusData = await res.json();
+                      console.log('Task status:', statusData);
+              
+                      // update progress if in-progress
+                      if (statusData.status === 'progress') {
+                        setProgressMessage(statusData.message);
+                      }
+              
+                      // completed
+                      if (statusData.status === 'success') {
+                        clearInterval(interval);
+                        return resolve(statusData.result);
+                      }
+              
+                      // failed
+                      if (statusData.status === 'failure' || statusData.status === 'failed') {
+                        clearInterval(interval);
+                        return reject(
+                          new Error(statusData.message || 'Task failed')
+                        );
+                      }
+                      // else: still 'pending'—do nothing, keep polling
+              
+                    } catch (err) {
+                      clearInterval(interval);
+                      reject(err);
+                    }
+                  }, 5000); // poll every 5s
+                });
+              };
+              
+            
             const result = await pollTaskStatus(task_id);
             console.log('Task result:', result);
             setFileUrl(result.file_url); // Assuming the result contains the file URL
 
+            setLoading(false);
         } catch (err) {
             console.error('Error during generation:', err);
+            setLoading(false);
             setFileUrl(null); // Reset file URL on error
         }
     }
 
+    // Show LoadingAndDownload only when loading or when fileUrl is available
+    const showLoadingAndDownload = loading || fileUrl !== null
+    const showVoiceForm = currentStep === 4 && !showLoadingAndDownload;
+
     return (
         <div className="container mx-auto py-8 md:w-[70%] w-full">
-            {/* Only display steps indicator when not loading */}
-            {!loading && fileUrl === null && (
-                <div className="md:mb-8">
-                    <div className="flex items-center w-full max-w-md mx-auto px-4 md:px-0 mb-6">
-                        {[1, 2, 3, 4].map((step, index) => (
-                            <React.Fragment key={step}>
-                                {/* Step circle */}
-                                <div
-                                    className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 z-10
-                                    ${currentStep === step
+            {/* Step indicator */}
+            <div className="md:mb-8">
+                <div className="flex items-center w-full max-w-md mx-auto px-4 md:px-0 mb-6">
+                    {[1, 2, 3, 4].map((step, index) => (
+                        <React.Fragment key={step}>
+                            {/* Step circle */}
+                            <div
+                                className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 z-10
+          ${currentStep === step
                                         ? 'bg-blue-500 text-white'
                                         : currentStep > step
                                             ? 'bg-black text-white'
                                             : 'bg-gray-200 text-gray-600'}`}
-                                >
-                                    <span className="text-xs sm:text-sm">{step}</span>
-                                </div>
+                            >
+                                <span className="text-xs sm:text-sm">{step}</span>
+                            </div>
 
-                                {/* Connector line (not on the last item) */}
-                                {index < 3 && (
-                                    <div className="flex-1 h-1 mx-1 sm:mx-2">
-                                        <div
-                                            className={`h-full ${currentStep > step ? 'bg-black' : 'bg-gray-200'}`}
-                                        ></div>
-                                    </div>
-                                )}
-                            </React.Fragment>
-                        ))}
-                    </div>
+                            {/* Connector line (not on the last item) */}
+                            {index < 3 && (
+                                <div className="flex-1 h-1 mx-1 sm:mx-2">
+                                    <div
+                                        className={`h-full ${currentStep > step ? 'bg-black' : 'bg-gray-200'}`}
+                                    ></div>
+                                </div>
+                            )}
+                        </React.Fragment>
+                    ))}
                 </div>
-            )}
+            </div>
 
             {/* Content area */}
             <div className="relative p-5">
-                {/* Show LoadingAndDownload when loading or when fileUrl is available */}
-                {(loading || fileUrl !== null) ? (
-                    <div>
-                        <LoadingAndDownload 
-                            fileUrl={fileUrl} 
-                            isLoading={loading} 
-                        />
+                {/* Conditional rendering based on currentStep */}
+                {currentStep === 1 && (
+                    <RedditScript
+                        value={script}
+                        onChange={handleScriptChange}
+                        onNext={handleNextStep}
+                        onSetFields={handleSetFields}
+                    />
+                )}
+
+                {currentStep === 2 && (
+                    <RedditFont
+                        value={font}
+                        onChange={handleFontChange}
+                        onNext={handleNextStep}
+                        onBack={handleBackStep}
+                    />
+                )}
+
+                {currentStep === 3 && (
+                    <RedditVideo
+                        value={video}
+                        onChange={handleVideoChange}
+                        onNext={handleNextStep}
+                        onBack={handleBackStep}
+                    />
+                )}
+
+                {showVoiceForm && (
+                    <RedditVoice
+                        value={voice}
+                        onChange={handleVoiceChange}
+                        onSubmit={handleGenerate}
+                        onBack={handleBackStep}
+                        loading={loading}
+                    />
+                )}
+
+                {/* Loading and Download component */}
+                {showLoadingAndDownload && (
+                    <div className={``}>
+                        <LoadingAndDownload fileUrl={fileUrl} isLoading={loading} />
+                        {loading && progressMessage && (
+                            <p className="text-center mt-4 text-xl">{progressMessage}</p>
+                        )}
                     </div>
-                ) : (
-                    /* Only show step components when not loading */
-                    <>
-                        {currentStep === 1 && (
-                            <RedditScript
-                                value={script}
-                                onChange={handleScriptChange}
-                                onNext={handleNextStep}
-                                onSetFields={handleSetFields}
-                            />
-                        )}
-
-                        {currentStep === 2 && (
-                            <RedditFont
-                                value={font}
-                                onChange={handleFontChange}
-                                onNext={handleNextStep}
-                                onBack={handleBackStep}
-                            />
-                        )}
-
-                        {currentStep === 3 && (
-                            <RedditVideo
-                                value={video}
-                                onChange={handleVideoChange}
-                                onNext={handleNextStep}
-                                onBack={handleBackStep}
-                            />
-                        )}
-
-                        {currentStep === 4 && (
-                            <RedditVoice
-                                value={voice}
-                                onChange={handleVoiceChange}
-                                onSubmit={handleGenerate}
-                                onBack={handleBackStep}
-                                loading={loading}
-                            />
-                        )}
-                    </>
                 )}
             </div>
         </div>
