@@ -148,7 +148,7 @@ const Plans: React.FC = () => {
               user_email: user?.primaryEmailAddress?.emailAddress,
               credits: pricingPlans.find(plan => plan.planId === planId)?.credit,
               subscription_id: data.id,
-              price: pricingPlans.find(plan => plan.planId === planId)?.price
+              price: Math.round(pricingPlans.find(plan => plan.planId === planId)?.price || 0)
             })
           });
   
@@ -156,7 +156,10 @@ const Plans: React.FC = () => {
           console.log("success", userData)
           console.log("response", response)
           toast.success("Thanks for Subscribing us")
-          router.push("/admin/dashboard")
+          // deplay 3 sec then router.push("/admin/dashboard")
+          setTimeout(() => {
+            router.push("/admin/dashboard")
+          }, 3000);
         } catch (error) {
           console.error(error)
         }

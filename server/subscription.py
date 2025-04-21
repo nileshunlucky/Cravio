@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import razorpay
 import os
 from pydantic import BaseModel
+from typing import Union
 import traceback
 from bson.objectid import ObjectId
 from db import users_collection 
@@ -44,7 +45,8 @@ class UpdateCreditsRequest(BaseModel):
     user_email: str
     credits: int
     subscription_id: str
-    price: int
+    price: Union[int, float] 
+
 @router.post("/update-credits")
 async def update_credits(request: UpdateCreditsRequest):
     try:
