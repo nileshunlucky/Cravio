@@ -4,6 +4,12 @@ from pydantic import BaseModel, EmailStr
 from db import users_collection
 from api.reddit_story import router as reddit_router
 from subscription import router as subscription_router
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from datetime import datetime
+import pytz
+import os
 
 app = FastAPI()
 
@@ -109,3 +115,101 @@ async def save_referral(data: ReferralRequest):
     except Exception as e:
         print("Error saving referral:", e)
         raise HTTPException(status_code=500, detail="Internal Server Error")
+
+class PayPalEmailRequest(BaseModel):
+    paypal_email: EmailStr
+
+@app.post("/affiliate/add-paypal")
+async def add_paypal(request: Request, body: PayPalEmailRequest):
+    email = request.headers.get("X-User-Email")
+    if not email:
+        raise HTTPException(status_code=400, detail="User email header missing")
+
+    user = users_collection.find_one({"email": email})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    users_collection.update_one({"email": email}, {"$set": {"paypal_email": body.paypal_email}})
+    return {"success": True, "message": "PayPal email added successfully."}
+
+# Function to send an email
+def send_email(subject, body, receiver_email="cravio.ai@gmail.com"):
+    try:
+        sender_email = "cravio.ai@gmail.com"  # Use your email here
+        password = os.getenv("GMAIL_PASSWORD")  # Use App Password if 2FA is enabled on your Gmail
+
+        # Prepare the email content
+        msg = MIMEMultipart()
+        msg["From"] = sender_email
+        msg["To"] = receiver_email
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body, "plain"))
+
+        # Send the email using SMTP
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(sender_email, password)
+            server.sendmail(sender_email, receiver_email, msg.as_string())
+
+        print("Email sent successfully")
+
+    except Exception as e:
+        print("Error sending email:", e)
+
+# Endpoint for withdrawal
+@app.post("/affiliate/withdraw")
+async def withdraw_balance(request: Request):
+    email = request.headers.get("X-User-Email")
+    if not email:
+        raise HTTPException(status_code=400, detail="User email header missing")
+
+    user = users_collection.find_one({"email": email})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    balance = user.get("balance", 0)
+    paypal_email = user.get("paypal_email")
+
+    if not paypal_email:
+        return {"success": False, "message": "PayPal email not added. Please add it first."}
+
+    if balance < 25:
+        return {"success": False, "message": "Minimum withdrawal amount is $25."}
+
+    # Deduct the amount from the user's balance
+    users_collection.update_one({"email": email}, {"$inc": {"balance": -balance}})
+
+    # Prepare email content to notify you about the withdrawal
+    subject = "Withdrawal Successful"
+    # Get current time in IST (India Standard Time)
+    ist = pytz.timezone('Asia/Kolkata')
+    withdrawal_time = datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')
+
+    body = f"""
+    A withdrawal has been made from your app:
+
+    User Email: {email}
+    PayPal Email: {paypal_email}
+    Amount: ${balance}
+    
+    Date & Time (IST): {withdrawal_time}
+    """
+
+    # Send email to notify about the withdrawal
+    send_email(subject, body)
+
+     # Add the withdrawal to the database (assuming the "withdrawals" collection exists)
+    withdrawal_data = {
+        "amount": balance,
+        "status": "pending",  # Set the default status to "pending"
+        "timestamp": withdrawal_time
+    }
+    
+    # Add this withdrawal data to the user's "withdrawals" history
+    users_collection.update_one(
+        {"email": email},
+        {"$push": {"withdrawals": withdrawal_data}}
+    )
+    return {
+        "success": True,
+        "message": f"Withdrawal of ${balance} successful. Sent to {paypal_email}.",
+    }
