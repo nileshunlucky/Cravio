@@ -12,6 +12,7 @@ import shutil
 import requests
 from celery_config import celery_app
 from db import users_collection  # Using your existing MongoDB setup
+import time
 
 OUTPUT_FOLDER = "output"
 ASSETS_FOLDER = "assets"
@@ -379,7 +380,12 @@ def generate_caption(title: str) -> str:
         return caption
     except HTTPException as e:
         raise HTTPException(f"Error generating caption: {str(e)}")
-    
+
+@celery_app.task
+def add(x, y):
+    time.sleep(5)
+    return x + y
+
 
 @celery_app.task(name="create_reddit_post_task", bind=True)
 def create_reddit_post_task(self, **kwargs):

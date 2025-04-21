@@ -64,6 +64,8 @@ const RedditStory: React.FC<RedditStoryProps> = ({ onChange, onNext, onSetFields
       }
 
       const data = await response.json()
+      console.log(data)
+      console.log(data.task_id)
       setTitle(data.title)
       setScript(data.script)
       toast.success('Content generated successfully!')
