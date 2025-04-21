@@ -10,6 +10,7 @@ from email.mime.text import MIMEText
 from datetime import datetime
 import pytz
 import os
+from typing import Optional
 
 app = FastAPI()
 
@@ -37,7 +38,7 @@ def get_user(email: str):
 
 class UserReferral(BaseModel):
     email: EmailStr
-    referredBy: str = None  
+    referredBy: Optional[str] = None   
 
 @app.post("/add-user")
 def save_referral(data: UserReferral = Body(...)):  # Expect referral data in the body

@@ -17,10 +17,11 @@ interface AffiliateUser {
     commissionEarned: number;
     balance: number;
     paypal?: string; // Added the missing 'paypal' property
+    paypal_email: string
 }
 
 interface Withdrawal {
-    date: string;
+    timestamp: string;
     amount: number;
     status: string; // "Pending", "Completed", or other possible statuses
 }
@@ -87,7 +88,7 @@ const AffiliateDashboard = () => {
     };
 
     const handleWithdraw = async () => {
-        if (!userData?.paypal) {
+        if (!userData?.paypal_email) {
             alert("Please add a PayPal email first.");
             return;
         }
@@ -216,7 +217,7 @@ const AffiliateDashboard = () => {
                         <Input
                             placeholder="Enter PayPal email"
                             type="email"
-                            value={paypalEmail}
+                            value={userData?.paypal_email || paypalEmail}
                             onChange={(e) => setPaypalEmail(e.target.value)}
                             className="rounded-xl"
                         />
@@ -234,7 +235,7 @@ const AffiliateDashboard = () => {
                     <Button
                         onClick={handleWithdraw}
                         className="rounded-xl bg-black text-white hover:bg-gray-800"
-                        disabled={withdrawing || (userData?.balance || 0) < 25}
+                        disabled={withdrawing}
                     >
                         {withdrawing ? "Processing..." : "Withdraw Balance"}
                     </Button>
@@ -258,7 +259,7 @@ const AffiliateDashboard = () => {
                         <tbody>
                             {withdrawals?.map((withdrawal, index) => (
                                 <tr key={index}>
-                                    <td className="border p-2">{withdrawal.date}</td>
+                                    <td className="border p-2">{withdrawal.timestamp}</td>
                                     <td className="border p-2">${withdrawal.amount}</td>
                                     <td className="border p-2">{withdrawal.status}</td>
                                 </tr>
