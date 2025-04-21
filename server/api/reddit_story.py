@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, Form, BackgroundTasks
 from fastapi.responses import JSONResponse
 import os
-from tasks.reddit_story_task import create_reddit_post_task, generate_script, generate_title, generate_caption, add
+from tasks.reddit_story_task import create_reddit_post_task, generate_script, generate_title, generate_caption, simulate_script_generation
 from celery_config import celery_app
 import tempfile
 import shutil
@@ -25,8 +25,8 @@ async def generate_content(request: PromptRequest):
         title = generate_title(request.prompt)
         script = generate_script(title)
         
-        # Then call it
-        result = add.delay(4, 4)
+        result = simulate_script_generation.delay(title)
+
         return {"title": title, "script": script, "task_id": result.id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -43,40 +43,71 @@ const RedditStory: React.FC<RedditStoryProps> = ({ onChange, onNext, onSetFields
   }
 
   const generateContent = async () => {
-    setLoading(true) // Start loading state
+    setLoading(true)
+  
     if (!prompt) {
-      toast.error('Please enter a prompt.'); // Notify user to enter a prompt
-      setLoading(false) // Stop loading state
-      return; 
-    } // Make sure there's a prompt
-    // const formDataToSend = new FormData();
-    // formDataToSend.append('prompt', prompt);
-
-    // API request to generate title and script
+      toast.error('Please enter a prompt.')
+      setLoading(false)
+      return
+    }
+  
     try {
       const response = await fetch('https://cravio-ai.onrender.com/generate-content', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ prompt }),
       })
-
+  
       if (!response.ok) {
         throw new Error('Failed to generate content')
       }
-
+  
       const data = await response.json()
-      console.log(data)
-      console.log(data.task_id)
+      const taskId = data.task_id
       setTitle(data.title)
       setScript(data.script)
-      toast.success('Content generated successfully!')
-      setPromptHidden(true) // Hide the prompt input after generation
-      setLoading(false) // Stop loading state
+  
+      // Step 1: Show success message
+      toast.success('Content generated. Checking task status...')
+      setPromptHidden(true)
+  
+      // Step 2: Now call the task status API
+      const checkStatus = async () => {
+        try {
+          const statusRes = await fetch(`https://cravio-ai.onrender.com/task-status/${taskId}`)
+          const statusData = await statusRes.json()
+  
+          console.log('Task status:', statusData)
+  
+          if (statusData.status === 'success') {
+            toast.success('Background task completed successfully!')
+            // Optional: update UI with statusData.result if needed
+          } else if (statusData.status === 'failed') {
+            toast.error('Background task failed: ' + statusData.message)
+          } else {
+            // Retry if still in progress or pending
+            setTimeout(checkStatus, 2000) // retry after 2 seconds
+          }
+        } catch (statusError) {
+          toast.error('Error checking task status.')
+          console.error(statusError)
+        } finally {
+          setLoading(false)
+        }
+      }
+  
+      // Start checking status
+      checkStatus()
+  
     } catch (error) {
       toast.error('Error generating content. Please try again.')
       console.error(error)
-      setLoading(false) // Stop loading state
+      setLoading(false)
     }
   }
+  
 
   return (
     <div className="min-h-screen w-full space-y-6">

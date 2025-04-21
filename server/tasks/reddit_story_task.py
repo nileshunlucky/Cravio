@@ -381,11 +381,13 @@ def generate_caption(title: str) -> str:
     except HTTPException as e:
         raise HTTPException(f"Error generating caption: {str(e)}")
 
-@celery_app.task
-def add(x, y):
+@celery_app.task(name="simulate_script_generation")
+def simulate_script_generation(title):
     time.sleep(5)
-    return x + y
-
+    return {
+        "status": "completed",
+        "message": f"Simulated generation for title: {title}"
+    }
 
 @celery_app.task(name="create_reddit_post_task", bind=True)
 def create_reddit_post_task(self, **kwargs):
