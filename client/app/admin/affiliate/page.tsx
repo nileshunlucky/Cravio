@@ -50,7 +50,7 @@ const AffiliateDashboard = () => {
     const handleCustomRefCode = async () => {
         if (!customCode || updatingCode || userData?.ref_code) return;
         setUpdatingCode(true);
-        const res = await fetch("/api/affiliate/custom-code", {
+        const res = await fetch("https://cravio-ai.onrender.com/affiliate/custom-code", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

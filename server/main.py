@@ -79,3 +79,31 @@ async def set_custom_ref_code(request: Request, body: RefCodeRequest):
     # Update user's ref_code
     users_collection.update_one({"email": email}, {"$set": {"ref_code": body.ref_code}})
     return {"success": True, "message": "Referral code set successfully."}
+
+class ReferralRequest(BaseModel):
+    email: EmailStr
+    refferedBy: str
+
+@app.post("/save-referral")
+async def save_referral(data: ReferralRequest):
+    try:
+        # Check if user already exists
+        existing = users_collection.find_one({"email": data.email})
+        if existing:
+            return {"success": False, "message": "User already exists"}
+
+        # If referrer is provided, check validity
+        user_data = {"email": data.email}
+        if data.refferedBy:
+            ref_user = users_collection.find_one({"ref_code": data.refferedBy})
+            if not ref_user:
+                return {"success": False, "message": "Invalid referrer code"}
+            user_data["referredBy"] = data.refferedBy
+
+        # Insert the new user
+        users_collection.insert_one(user_data)
+        return {"success": True, "message": "User with referral saved"}
+
+    except Exception as e:
+        print("Error saving referral:", e)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
