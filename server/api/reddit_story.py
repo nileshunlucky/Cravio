@@ -31,6 +31,10 @@ async def generate_content(request: PromptRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+res = simulate_script_generation.apply_async(args=["Test Title"])
+print(res.status)  # Should be PENDING
+print(res.get(timeout=10))  # Should be SUCCESS
+
 @router.post("/create-reddit-post")
 async def create_reddit_post(
     avatar: UploadFile = None,

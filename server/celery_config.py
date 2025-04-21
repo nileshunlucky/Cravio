@@ -1,19 +1,22 @@
 from celery import Celery
 import os
-import logging
 import ssl
+import logging
 
-REDIS_URL = os.getenv("REDIS_URL")  # should be rediss://....
+logging.basicConfig(level=logging.INFO)
 
+# Get Redis URL from environment
+REDIS_URL = os.getenv("REDIS_URL")  # Example: rediss://:<password>@<host>:<port>
+
+# Initialize Celery app
 celery_app = Celery(
     "reddit_story_app",
     broker=REDIS_URL,
     backend=REDIS_URL,
-    include=["tasks.reddit_story_task"]
+    include=["api.tasks.reddit_story_task"]
 )
 
-logging.basicConfig(level=logging.INFO)
-
+# Update Celery configuration for production settings
 celery_app.conf.update(
     broker_connection_retry=True,
     broker_connection_retry_on_startup=True,
@@ -33,11 +36,20 @@ celery_app.conf.update(
     enable_utc=True,
 )
 
-# ✅ Secure both broker and backend with SSL options
+# SSL configuration for secure production connection
 celery_app.conf.broker_use_ssl = {
-    'ssl_cert_reqs': ssl.CERT_NONE  # or CERT_REQUIRED if using real certs
+    'ssl_cert_reqs': ssl.CERT_REQUIRED,  # Ensure the certificate is required
+    'ssl_ca_certs': '/path/to/ca.pem',   # Path to CA certificate
+    'ssl_certfile': '/path/to/client_cert.pem',  # Path to client certificate
+    'ssl_keyfile': '/path/to/client_key.pem',    # Path to client private key
+    'ssl_version': ssl.PROTOCOL_TLSv1_2  # Force TLSv1.2 (more secure)
 }
 
 celery_app.conf.redis_backend_use_ssl = {
-    'ssl_cert_reqs': ssl.CERT_NONE
+    'ssl_cert_reqs': ssl.CERT_REQUIRED,  # Require certificate
+    'ssl_ca_certs': '/path/to/ca.pem',   # Path to CA certificate
+    'ssl_certfile': '/path/to/client_cert.pem',  # Path to client certificate
+    'ssl_keyfile': '/path/to/client_key.pem',    # Path to client private key
+    'ssl_version': ssl.PROTOCOL_TLSv1_2  # Ensure TLSv1.2 is used
 }
+
