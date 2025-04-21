@@ -129,7 +129,7 @@ const Plans: React.FC = () => {
     const data = await res.json();
 
     const options : RazorpayOptions = {
-      key: "rzp_test_nUEI4VJr01kHD5",
+      key: "rzp_live_UEdAvXjUa5ylU2",
       subscription_id: data.id,
       name: "Cravio AI",
       description: "AI Video Subscription",

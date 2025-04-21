@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from dotenv import load_dotenv
 import razorpay
 import os
@@ -8,6 +8,7 @@ import traceback
 from bson.objectid import ObjectId
 from db import users_collection 
 from datetime import datetime
+import hmac, hashlib
 
 load_dotenv()
 
@@ -100,3 +101,88 @@ async def update_credits(request: UpdateCreditsRequest):
         print("Error updating credits:", str(e))
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+def verify_signature(payload_body: bytes, received_signature: str) -> bool:
+    secret = os.getenv("RAZORPAY_KEY_SECRET")  # Set this in your dashboard & .env
+    expected_signature = hmac.new(
+        key=bytes(secret, 'utf-8'),
+        msg=payload_body,
+        digestmod=hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected_signature, received_signature)
+
+
+@router.post("/razorpay-webhook")
+async def razorpay_webhook(request: Request):
+    try:
+        body = await request.body()
+        signature = request.headers.get('x-razorpay-signature')
+
+        if not signature or not verify_signature(body, signature):
+            raise HTTPException(status_code=400, detail="Invalid signature")
+
+        payload = await request.json()
+        event = payload.get("event")
+        print("Webhook event received:", event)
+
+        if event == "subscription.charged":
+            payload_data = payload["payload"]["payment"]["entity"]
+            subscription_id = payload_data["subscription_id"]
+            email = payload_data["email"]
+            amount = payload_data["amount"] / 100  # Razorpay sends in paisa (INR)
+
+            # 🎯 Credit logic based on INR amount
+            if amount == 860:
+                credits = 250
+            elif amount == 2150:
+                credits = 700
+            elif amount == 4300:
+                credits = 1500
+            else:
+                credits = 0
+
+            user = users_collection.find_one({"email": email})
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+
+            # 1. Add credits and purchase
+            users_collection.update_one(
+                {"email": email},
+                {
+                    "$inc": {"credits": credits},
+                    "$push": {
+                        "purchases": {
+                            "subscription_id": subscription_id,
+                            "price": amount,
+                            "date": datetime.utcnow()
+                        }
+                    }
+                }
+            )
+
+            # 2. Handle referral reward in USD
+            referred_by_code = user.get("referredBy")
+            if referred_by_code:
+                commission_inr = round(0.2 * amount, 2)
+                usd_rate = 85  # 1 USD = ₹85
+                commission_usd = round(commission_inr / usd_rate, 2)
+
+                referrer = users_collection.find_one({"ref_code": referred_by_code})
+                if referrer:
+                    users_collection.update_one(
+                        {"ref_code": referred_by_code},
+                        {"$inc": {"balance": commission_usd}}
+                    )
+                    print(f"🎁 Referrer credited ${commission_usd} (₹{commission_inr})")
+
+            print(f"✅ {email} received {credits} credits for ₹{amount}")
+
+        elif event == "payment.failed":
+            print("❌ Payment failed:", payload["payload"]["payment"]["entity"])
+        
+        return {"status": "ok"}
+
+    except Exception as e:
+        print("Webhook error:", str(e))
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Webhook error")
