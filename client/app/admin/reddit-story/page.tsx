@@ -7,7 +7,9 @@ import RedditVideo from '@/components/RedditVideo' // Ensure the path is correct
 import RedditVoice from '@/components/RedditVoice' // Ensure the path is correct
 import LoadingAndDownload from '@/components/LoadingAndDownload'
 import { useUser } from "@clerk/nextjs"
-
+type TaskResult = {
+    file_url: string
+  }
 const Page = () => {
     const { user } = useUser()
     const userEmail = user?.emailAddresses[0]?.emailAddress || '' // Get the user's email address
@@ -81,10 +83,9 @@ const Page = () => {
                     const blob = await response.blob();
                     const file = new File([blob], 'avatar.jpg', { type: blob.type });
                     formData.append('avatar', file);
-                } catch (err) {
-                    console.warn('Failed to convert avatar URL to file. Sending as string.');
-                    formData.append('avatar', avatar);
-                }
+                } catch {
+                    formData.append('avatar', avatar)
+                  }          
             }
 
             // Make the POST request
@@ -101,7 +102,7 @@ const Page = () => {
             console.log('Task ID:', task_id);
 
             // Polling function to check task status
-            const pollTaskStatus = async (taskId: string): Promise<any> => {
+            const pollTaskStatus = async (taskId: string): Promise<TaskResult> => {
                 return new Promise((resolve, reject) => {
                   const interval = setInterval(async () => {
                     try {
