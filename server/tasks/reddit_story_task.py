@@ -171,15 +171,15 @@ def save_audio_and_get_duration(audio_response, path: str) -> float:
 def font_name_to_color_code(font_name):
     color_map = {
         "white": "FFFFFF",
-        "yellow": "00FFFF",
-        "blue": "FF0000",
-        "red": "0000FF",
+        "yellow": "FFFF00",
+        "blue": "0000FF",
+        "red": "FF0000",
         "green": "00FF00",
         "purple": "800080",
         "black": "000000",
-        "orange": "00A5FF",
+        "orange": "FFA500",
         "gray": "808080",
-        "pink": "CBC0FF",
+        "pink": "FFC0CB",
     }
     return color_map.get(font_name.lower(), "FFFFFF")
 
@@ -609,7 +609,12 @@ def create_reddit_post_task(
                 ]
                 
                 # Set a timeout for the process
-                subprocess.run(overlay_cmd, check=True, timeout=300)
+                # Modify subtitle and overlay command execution to capture errors
+                try:
+                    subprocess.run(overlay_cmd, check=True, timeout=300, stderr=subprocess.PIPE)
+                except subprocess.CalledProcessError as e:
+                    print(f"Overlay failed: {e.stderr.decode()}")
+                    raise
                 temporary_files.append(overlay_output_path)
                 
                 # Update path for final step
