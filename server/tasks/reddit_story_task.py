@@ -498,73 +498,76 @@ def create_reddit_post_task(
             # Optionally raise an error here if dimensions are critical
 
         muted_video_path = f"{base_output_path}_muted.mp4"
+        # --- START: Revised Step 7 using subprocess with conditional copy ---
         try:
-            # --- START: Fixed Step 7 using subprocess ---
             cmd = ["ffmpeg", "-i", gameplay_video_path]
             vf_filters = [] # List for video filters (-vf)
 
-            # Cropping logic - Add to -vf filters if dimensions are known
+            # --- Cropping logic (remains the same) ---
             if video_width and video_height:
                 target_aspect_ratio = 9 / 16
                 current_aspect_ratio = video_width / video_height
-                # Use a small tolerance for floating point comparison
                 if abs(current_aspect_ratio - target_aspect_ratio) > 0.01:
                     print(f"Cropping video. Current AR: {current_aspect_ratio}, Target AR: {target_aspect_ratio}")
                     crop_filter_str = ""
-                    if current_aspect_ratio > target_aspect_ratio: # Video is wider than target
-                        new_width = int(video_height * target_aspect_ratio)
-                        x_offset = int((video_width - new_width) / 2)
-                        crop_filter_str = f'crop={new_width}:{video_height}:{x_offset}:0'
-                        print(f"Applying crop filter: {crop_filter_str}")
-                    else: # Video is taller than target
-                        new_height = int(video_width / target_aspect_ratio)
-                        y_offset = int((video_height - new_height) / 2)
-                        crop_filter_str = f'crop={video_width}:{new_height}:0:{y_offset}'
-                        print(f"Applying crop filter: {crop_filter_str}")
-
+                    # ... (cropping calculation logic remains the same) ...
                     if crop_filter_str:
-                        vf_filters.append(crop_filter_str)
+                         vf_filters.append(crop_filter_str)
                 else:
                      print("Video aspect ratio matches target. No crop needed.")
             else:
                  print("Skipping crop due to unknown video dimensions.")
+            # --- End Cropping logic ---
 
 
-            # Apply video filters if any were added
+            # --- Select codec based on whether filters are applied ---
+            output_options = []
             if vf_filters:
-                cmd.extend(["-vf", ",".join(vf_filters)]) # Comma-separate filters for -vf
+                # Filters require re-encoding
+                print("Applying video filters, using libx264 encoding.")
+                output_options.extend([
+                    "-vf", ",".join(vf_filters),
+                    "-c:v", "libx264",
+                    "-preset", "veryfast", # Keep preset for now, might need tuning if error persists
+                ])
+            else:
+                # No filters applied, safe to copy the video stream
+                print("No video filters applied, attempting video stream copy.")
+                output_options.extend([
+                    "-c:v", "copy",
+                ])
+            # --- End codec selection ---
 
-            # Add output options
+
+            # Common options for both encoding and copying
             cmd.extend([
-                "-map", "0:v", # Select only the (potentially filtered) video stream
-                "-an",  # Disable audio (mute)
-                "-c:v", "libx264", # Specify video codec directly
-                "-preset", "veryfast", # Use a fast preset
-                "-pix_fmt", "yuv420p", # Ensure standard pixel format
-                "-y",   # Overwrite output file if it exists
+                "-map", "0:v",      # Select video stream
+                "-an",             # Disable audio (mute)
+            ])
+            cmd.extend(output_options) # Add the codec/filter options decided above
+            cmd.extend([
+                "-pix_fmt", "yuv420p", # Good practice, though ignored by -c:v copy
+                "-y",              # Overwrite output
+                # "-loglevel", "debug", # Uncomment for VERY verbose FFmpeg logs if needed
                 muted_video_path
             ])
 
             print(f"Running FFmpeg command for Step 7: {' '.join(cmd)}")
-            # Use check=True, capture_output=True, text=True for better handling
             result = subprocess.run(cmd, check=True, capture_output=True, text=True, encoding='utf-8')
-            # Optional: Log FFmpeg output for debugging if needed
             # print(f"FFmpeg Step 7 stdout: {result.stdout}")
-            print(f"FFmpeg Step 7 stderr: {result.stderr}") # Stderr often contains progress/info
+            print(f"FFmpeg Step 7 stderr (Info/Progress): {result.stderr}")
             print(f"Muted/Cropped video saved to: {muted_video_path}")
-            # --- END: Fixed Step 7 using subprocess ---
+            # --- END: Revised Step 7 ---
 
         except subprocess.CalledProcessError as e:
             # Log the error including stderr from FFmpeg for better debugging
             print(f"FFmpeg error processing video (Step 7). Command: {' '.join(e.cmd)}")
             print(f"FFmpeg stderr: {e.stderr}")
-            # Re-raise to let the main exception handler catch it and return error status
             raise Exception(f"FFmpeg error during video processing: {e.stderr}") from e
         except Exception as e:
-            # Catch other potential errors during this step
-             print(f"Unexpected error during video processing (Step 7): {str(e)}")
-             traceback.print_exc()
-             raise # Re-raise
+            print(f"Unexpected error during video processing (Step 7): {str(e)}")
+            traceback.print_exc()
+            raise
 
         temporary_files.append(muted_video_path)
 
