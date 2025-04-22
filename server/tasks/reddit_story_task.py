@@ -526,7 +526,7 @@ def create_reddit_post_task(
         subtitles_path = f"{base_output_path}_subtitles.ass"
         final_with_overlay_path = f"{base_output_path}_final_with_overlay.mp4"
         final_with_subs_path = f"{base_output_path}_final_with_subs.mp4"
-        final_video_path = final_with_audio_path  # Initialize
+        final_output_path = final_with_audio_path  # Initialize
 
         try:
             color_code = font_name_to_color_code(font)
@@ -535,7 +535,7 @@ def create_reddit_post_task(
                 subtitle_file.write(ass_subtitles)
             temporary_files.append(subtitles_path)
 
-            # Add overlay image at the beginning of the video
+            # Add overlay image at the beginning of the video using subprocess
             video_width_final, video_height_final = get_video_dimensions(final_with_audio_path)
             if video_width_final and video_height_final:
                 target_image_width = int(video_width_final * 0.9)
@@ -548,31 +548,46 @@ def create_reddit_post_task(
                 x_position = (video_width_final - target_image_width) // 2
                 y_position = (video_height_final - target_image_height) // 2
 
+                overlay_cmd = [
+                    "ffmpeg",
+                    "-i", final_with_audio_path,
+                    "-i", resized_output_path,
+                    "-filter_complex", f"[0:v][1:v]overlay={x_position}:{y_position}:enable='between(t,0,{title_duration})'",
+                    "-c:v", "libx264",
+                    "-preset", "veryfast",
+                    "-acodec", "copy",
+                    "-y",  # Overwrite output file if it exists
+                    final_with_overlay_path
+                ]
                 try:
-                    ffmpeg.input(final_with_audio_path).input(resized_output_path).filter('overlay', x=x_position, y=y_position, enable=f'between(t,0,{title_duration})').output(
-                        final_with_overlay_path, vcodec='libx264', acodec='copy', preset='veryfast', overwrite_output=True
-                    ).run(capture_stdout=True, capture_stderr=True)
+                    subprocess.run(overlay_cmd, check=True, capture_stdout=True, capture_stderr=True)
                     temporary_files.append(final_with_overlay_path)
                     final_video_path = final_with_overlay_path
-                except ffmpeg.Error as e:
-                    print(f"FFmpeg error adding overlay: {e.stderr.decode('utf8')}")
+                except subprocess.CalledProcessError as e:
+                    print(f"FFmpeg error adding overlay: {e.stderr.decode()}")
                     # Fallback: Continue with the video that has audio
             else:
                 # Fallback: Continue with the video that has audio
                 pass
 
-            # Now add subtitles to the video (either with or without overlay)
+            # Now add subtitles using subprocess
             subtitles_path_esc = subtitles_path.replace('\\', '\\\\\\\\') if platform.system() == 'Windows' else subtitles_path.replace(':', r'\:')
+            subtitle_cmd = [
+                "ffmpeg",
+                "-i", final_video_path,
+                "-vf", f"subtitles={subtitles_path_esc}:force_style='FontSize=150,PrimaryColour=&H00{color_code},Alignment=2'",
+                "-c:v", "libx264",
+                "-preset", "veryfast",
+                "-c:a", "aac",
+                "-y",  # Overwrite output file if it exists
+                final_with_subs_path
+            ]
             try:
-                ffmpeg.input(final_video_path).output(
-                    final_with_subs_path,
-                    vf=f'subtitles={subtitles_path_esc}:force_style=\'FontSize=150,PrimaryColour=&H00{color_code},Alignment=2\'',
-                    vcodec='libx264', acodec='aac', preset='veryfast', overwrite_output=True
-                ).run(capture_stdout=True, capture_stderr=True)
+                subprocess.run(subtitle_cmd, check=True, capture_stdout=True, capture_stderr=True)
                 temporary_files.append(final_with_subs_path)
                 final_output_path = final_with_subs_path
-            except ffmpeg.Error as e:
-                print(f"FFmpeg error adding subtitles: {e.stderr.decode('utf8')}")
+            except subprocess.CalledProcessError as e:
+                print(f"FFmpeg error adding subtitles: {e.stderr.decode()}")
                 final_output_path = final_video_path # Fallback: Use the video without subtitles
 
         except Exception as e:
