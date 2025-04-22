@@ -244,16 +244,12 @@ def get_video_dimensions(video_path):
     return None, None
 
 def upload_to_cloudinary(file_path: str, user_email: str) -> str:
-    """Upload a video file to Cloudinary under the 'Cravio' folder and return the secure URL."""
+    """Upload a file to Cloudinary and return the URL"""
     try:
-        # Sanitize email for use in public_id
-        safe_email = user_email.replace("@", "_at_").replace(".", "_dot_")
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-
-        # Final public_id inside Cravio folder
-        public_id = f"reddit_videos/{safe_email}/{timestamp}"
-
-        # Upload video to Cloudinary inside 'Cravio' folder
+        public_id = f"reddit_videos/{user_email}/{timestamp}"
+        
+        # Upload the file to Cloudinary
         upload_result = cloudinary.uploader.upload(
             file_path,
             resource_type="video",
@@ -261,13 +257,12 @@ def upload_to_cloudinary(file_path: str, user_email: str) -> str:
             overwrite=True,
             folder="Cravio"
         )
-
-        # Return the secure URL of uploaded video
+        
+        # Return the secure URL
         return upload_result['secure_url']
-
-    except Exception as e:
+    except HTTPException as e:
         print(f"Error uploading to Cloudinary: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to upload video to Cloudinary.")
+        raise
 
 def cleanup_output_files(file_paths: list):
     """Remove temporary files after processing"""
