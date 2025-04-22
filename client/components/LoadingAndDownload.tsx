@@ -11,9 +11,10 @@ import Image from 'next/image'
 type Props = {
   fileUrl: string | null
   isLoading: boolean
+  progress: number | string
 }
 
-const LoadingAndDownload = ({ fileUrl, isLoading }: Props) => {
+const LoadingAndDownload = ({ fileUrl, isLoading, progress }: Props) => {
   const [showDownload, setShowDownload] = useState(false)
   const router = useRouter()
 
@@ -37,17 +38,50 @@ const LoadingAndDownload = ({ fileUrl, isLoading }: Props) => {
                 transition={{ duration: 0.4 }}
                 className="flex flex-col items-center justify-center space-y-6"
               >
-                <div className="relative w-36 h-36 flex items-center justify-center">
-                  <div className="absolute inset-0 animate-spin-slow rounded-full border-t-4 border-black opacity-30"></div>
-                  <div className="absolute inset-0 animate-spin rounded-full border-t-4 border-zinc-500"></div>
-                  <Image
-                    src="/logo.png"
-                    alt="Logo"
-                    width={80}
-                    height={80}
-                    className="rounded-full z-10"
-                  />
+                <div className="relative w-36 h-36">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle
+                      cx="72"
+                      cy="72"
+                      r="60"
+                      stroke="#e5e7eb" // Tailwind gray-200
+                      strokeWidth="12"
+                      fill="none"
+                    />
+                    <motion.circle
+                      cx="72"
+                      cy="72"
+                      r="60"
+                      stroke="#000000"
+                      strokeWidth="12"
+                      fill="none"
+                      strokeDasharray={2 * Math.PI * 60}
+                      strokeDashoffset={
+                        2 * Math.PI * 60 * (1 - (typeof progress === 'number' ? progress : 0) / 100)
+                      }
+                      initial={{ strokeDashoffset: 2 * Math.PI * 60 }}
+                      animate={{
+                        strokeDashoffset:
+                          2 * Math.PI * 60 * (1 - (typeof progress === 'number' ? progress : 0) / 100),
+                      }}
+                      transition={{ duration: 0.5 }}
+                    />
+                  </svg>
+
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <Image
+                      src="/logo.png"
+                      alt="Logo"
+                      width={40}
+                      height={40}
+                      className="rounded-full z-10 mb-1"
+                    />
+                    <p className="text-sm font-semibold text-black">
+                      {typeof progress === 'number' ? `${progress}%` : '0%'}
+                    </p>
+                  </div>
                 </div>
+
                 <p className="text-lg font-medium text-black text-center">Processing your Reddit post…</p>
               </motion.div>
             ) : showDownload && fileUrl ? (

@@ -22,7 +22,7 @@ const Page = () => {
     const [voice, setVoice] = useState('')
     const [loading, setLoading] = useState(false)
     const [fileUrl, setFileUrl] = useState<string | null>(null)
-    const [progressMessage, setProgressMessage] = useState('')
+    const [progress, setProgress] = useState('')
 
     // State for tracking the current step
     const [currentStep, setCurrentStep] = useState(1)
@@ -119,7 +119,7 @@ const Page = () => {
               
                       // update progress if in-progress
                       if (statusData.status === 'progress') {
-                        setProgressMessage(statusData.percent_complete);
+                        setProgress(statusData.percent_complete);
                       }
               
                       // completed
@@ -237,10 +237,7 @@ const Page = () => {
                 {/* Loading and Download component */}
                 {showLoadingAndDownload && (
                     <div className={``}>
-                        <LoadingAndDownload fileUrl={fileUrl} isLoading={loading} />
-                        {loading && progressMessage && (
-                            <p className="text-center mt-4 text-xl">{progressMessage} %</p>
-                        )}
+                        <LoadingAndDownload fileUrl={fileUrl} isLoading={loading} progress={progress}/>
                     </div>
                 )}
             </div>
