@@ -485,30 +485,35 @@ def create_reddit_post_task(
             if not os.path.exists(gameplay_video_path):
                 return {"status": "error", "message": f"Video file not found: {gameplay_video_path}"}
 
-        # Process video to match 9:16 aspect ratio
+        # Get video dimensions
         video_width, video_height = get_video_dimensions(gameplay_video_path)
-        crop_params = None
-        if video_width and video_height:
-            target_aspect_ratio = 9 / 16
-            current_aspect_ratio = video_width / video_height
-            if abs(current_aspect_ratio - target_aspect_ratio) > 0.01:
-                if current_aspect_ratio > target_aspect_ratio:
-                    new_width = int(video_height * target_aspect_ratio)
-                    x_offset = int((video_width - new_width) / 2)
-                    crop_params = f"crop={new_width}:{video_height}:{x_offset}:0"
-                else:
-                    new_height = int(video_width / target_aspect_ratio)
-                    y_offset = int((video_height - new_height) / 2)
-                    crop_params = f"crop={video_width}:{new_height}:0:{y_offset}"
 
         muted_video_path = f"{base_output_path}_muted.mp4"
         try:
             input_video = ffmpeg.input(gameplay_video_path)
-            if crop_params:
-                input_video = input_video.filter('crop', crop_params)
-            input_video.output(muted_video_path, an=None, vcodec='libx264').run(overwrite_output=True, capture_stdout=True, capture_stderr=True)
+            video_stream = input_video['v']
+
+            processed_video = video_stream
+            if video_width and video_height:
+                target_aspect_ratio = 9 / 16
+                current_aspect_ratio = video_width / video_height
+                if abs(current_aspect_ratio - target_aspect_ratio) > 0.01:
+                    if current_aspect_ratio > target_aspect_ratio:
+                        new_width = int(video_height * target_aspect_ratio)
+                        x_offset = int((video_width - new_width) / 2)
+                        processed_video = processed_video.filter('crop', f'{new_width}:{video_height}:{x_offset}:0')
+                    else:
+                        new_height = int(video_width / target_aspect_ratio)
+                        y_offset = int((video_height - new_height) / 2)
+                        processed_video = processed_video.filter('crop', f'{video_width}:{new_height}:0:{y_offset}')
+
+            (
+                ffmpeg
+                .output(processed_video, muted_video_path, an=True, vcodec='libx264', preset='veryfast')
+                .run(overwrite_output=True, capture_stdout=True, capture_stderr=True)
+            )
         except ffmpeg.Error as e:
-            print(f"FFmpeg error processing video aspect ratio: {e.stderr.decode('utf8')}")
+            print(f"FFmpeg error processing video: {e.stderr.decode('utf8')}")
             raise
         temporary_files.append(muted_video_path)
 
