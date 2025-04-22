@@ -398,7 +398,18 @@ def generate_caption(title: str) -> str:
         raise HTTPException(f"Error generating caption: {str(e)}")
 
 @celery_app.task(name="create_reddit_post_task", bind=True)
-def create_reddit_post_task(self, avatar_path, username, title, script, caption, voice, video, font, user_email):
+def create_reddit_post_task(
+    self,
+    avatar_path,
+    username,
+    title,
+    script,
+    caption,
+    voice,
+    video,
+    font,
+    user_email
+):
     # Now you can use them as regular variables
     print(avatar_path, username, title, script, caption, voice, video, font, user_email)
 
