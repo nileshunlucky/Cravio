@@ -72,19 +72,17 @@ async def create_reddit_post(
         caption = generate_caption(title)
         print("🧠 Caption generated:", caption)
 
-        # Enqueue the task
-        task = create_reddit_post_task.delay(
-            avatar_path=avatar_path,
-            username=username,
-            title=title,
-            script=script,
-            caption=caption,
-            voice=voice,
-            video=video,
-            font=font,
-            user_email=user_email
-        )
-        
+        task = create_reddit_post_task.apply_async(kwargs={
+            "avatar_path": avatar_path,
+            "username": username,
+            "title": title,
+            "script": script,
+            "caption": caption,
+            "voice": voice,
+            "video": video,
+            "font": font,
+            "user_email": user_email
+        })
 
         print("📦 Task queued:", task.id)
 

@@ -65,41 +65,12 @@ const RedditStory: React.FC<RedditStoryProps> = ({ onChange, onNext, onSetFields
       }
   
       const data = await response.json()
-      const taskId = data.task_id
       setTitle(data.title)
       setScript(data.script)
   
       // Step 1: Show success message
       toast.success('Content generated. Checking task status...')
       setPromptHidden(true)
-  
-      // Step 2: Now call the task status API
-      const checkStatus = async () => {
-        try {
-          const statusRes = await fetch(`https://cravio-ai.onrender.com/task-status/${taskId}`)
-          const statusData = await statusRes.json()
-  
-          console.log('Task status:', statusData)
-  
-          if (statusData.status === 'success') {
-            toast.success('Background task completed successfully!')
-            // Optional: update UI with statusData.result if needed
-          } else if (statusData.status === 'failed') {
-            toast.error('Background task failed: ' + statusData.message)
-          } else {
-            // Retry if still in progress or pending
-            setTimeout(checkStatus, 2000) // retry after 2 seconds
-          }
-        } catch (statusError) {
-          toast.error('Error checking task status.')
-          console.error(statusError)
-        } finally {
-          setLoading(false)
-        }
-      }
-  
-      // Start checking status
-      checkStatus()
   
     } catch (error) {
       toast.error('Error generating content. Please try again.')
