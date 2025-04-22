@@ -13,6 +13,22 @@ import requests
 from celery_config import celery_app
 from db import users_collection  # Using your existing MongoDB setup
 import time
+# tasks/reddit_story_task.py
+from celery import shared_task
+import time
+
+@shared_task(name="create_reddit_post_task")
+def create_reddit_post_task(data=None):
+    """A simple task that will work regardless of Reddit API access"""
+    print(f"Processing task with data: {data}")
+    time.sleep(5)  # Simulate work
+    return {"status": "success", "processed_data": data}
+
+@shared_task(name="debug_task")
+def debug_task():
+    """Simple debug task to verify Celery worker functionality"""
+    print("Debug task executed successfully!")
+    return "Debug task completed"
 
 OUTPUT_FOLDER = "output"
 ASSETS_FOLDER = "assets"

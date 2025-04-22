@@ -1,30 +1,28 @@
 from celery import Celery
-import os
-import logging
 import ssl
 
-logging.basicConfig(level=logging.INFO)
+# Secure SSL context
+ssl_context = {
+    'ssl_cert_reqs': ssl.CERT_REQUIRED,  # Validate SSL certs in production
+    'ssl_ca_certs': '/etc/ssl/certs/ca-certificates.crt',  # Adjust path if you're on a different OS or container
+}
 
-# Get Redis URL from environment
-REDIS_URL = os.getenv("REDIS_URL")  # Example: rediss://default:<password>@<host>:6379
-
-# Initialize Celery
 celery_app = Celery(
     "reddit_story_app",
-    broker=REDIS_URL,
-    backend=REDIS_URL,
+    broker="rediss://default:AV_tAAIjcDFkYzYyMDY1ZmE1MTI0OTE4ODY3ZmIwZjNkMDY0MjJjMnAxMA@present-wren-24557.upstash.io:6379",
+    backend="rediss://default:AV_tAAIjcDFkYzYyMDY1ZmE1MTI0OTE4ODY3ZmIwZjNkMDY0MjJjMnAxMA@present-wren-24557.upstash.io:6379",
     include=["tasks.reddit_story_task"]
 )
 
-# Basic Celery config
 celery_app.conf.update(
     broker_connection_retry=True,
     broker_connection_retry_on_startup=True,
-    broker_connection_timeout=10,
+    broker_connection_timeout=30,
     broker_pool_limit=10,
     broker_heartbeat=30,
+    broker_use_ssl=ssl_context,
+    redis_backend_use_ssl=ssl_context,
     task_track_started=True,
-    redis_max_connections=20,
     worker_prefetch_multiplier=1,
     task_time_limit=300,
     task_soft_time_limit=240,
@@ -34,14 +32,5 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
+    redis_max_connections=20,
 )
-
-celery_app.conf.broker_use_ssl = {
-    "ssl_cert_reqs": ssl.CERT_REQUIRED,  # <--- Validate certs
-    "ssl_ca_certs": "/etc/ssl/certs/ca-certificates.crt"  # Use system CA bundle
-}
-
-celery_app.conf.redis_backend_use_ssl = {
-    "ssl_cert_reqs": ssl.CERT_REQUIRED,
-    "ssl_ca_certs": "/etc/ssl/certs/ca-certificates.crt"
-}
