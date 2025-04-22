@@ -11,46 +11,6 @@ from datetime import datetime
 import pytz
 import os
 from typing import Optional
-# test_celery.py
-from celery_config import celery_app
-from tasks.reddit_story_task import debug_task, create_reddit_post_task
-import time
-
-# Submit debug task
-print("Submitting debug task...")
-result = debug_task.delay()
-print(f"Debug task submitted with ID: {result.id}")
-print(f"Initial task status: {result.status}")
-
-# Wait and check status
-time.sleep(3)
-print(f"Status after 3 seconds: {result.status}")
-
-# Submit a real task
-print("\nSubmitting Reddit post task...")
-test_data = {"title": "Test post", "content": "Test content"}
-real_result = create_reddit_post_task.delay(test_data)
-print(f"Reddit task submitted with ID: {real_result.id}")
-print(f"Initial task status: {real_result.status}")
-
-# Wait and check status
-time.sleep(3)
-print(f"Status after 3 seconds: {real_result.status}")
-
-# Try to get results
-print("\nAttempting to get results (may timeout if worker isn't processing tasks)...")
-try:
-    debug_result = result.get(timeout=10)
-    print(f"Debug task result: {debug_result}")
-except Exception as e:
-    print(f"Error getting debug task result: {str(e)}")
-
-try:
-    reddit_result = real_result.get(timeout=10)
-    print(f"Reddit task result: {reddit_result}")
-except Exception as e:
-    print(f"Error getting Reddit task result: {str(e)}")
-
 
 app = FastAPI()
 
