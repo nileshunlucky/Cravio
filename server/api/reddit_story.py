@@ -120,9 +120,11 @@ async def get_task_status(task_id: str):
                 'message': 'Task is waiting for execution'
             }
         elif task.state == 'PROGRESS':
+            meta = task.info or {}
             response = {
                 'status': 'progress',
-                'message': 'Task is in progress'
+                'message': meta.get('status', 'Task is in progress'),
+                'percent_complete': meta.get('percent_complete', 0)
             }
         elif task.state == 'FAILURE':
             response = {

@@ -411,8 +411,6 @@ def create_reddit_post_task(
     user_email=None
 ):
     # Now you can use them as regular variables
-    print(avatar_path, username, title, script, caption, voice, video, font, user_email)
-
     print(f"Task started with avatar_path={avatar_path} and username={username}")
     self.update_state(state='PROGRESS', meta={'status': 'Creating Reddit post', 'percent_complete': 0})
 
@@ -547,8 +545,9 @@ def create_reddit_post_task(
         ).run(overwrite_output=True)
         temporary_files.append(final_output_path)
 
-        # Step 9: Create colored ASS format subtitles
-        self.update_state(state='PROGRESS', meta={'status': 'Creating subtitles', 'percent_complete': 90})
+        # Step 9: Create colored ASS format subtitles and add overlay
+        self.update_state(state='PROGRESS', meta={'status': 'Creating subtitles and overlay', 'percent_complete': 90})
+        
         try:
             # Get color code for the specified font
             color_code = font_name_to_color_code(font)
@@ -561,102 +560,115 @@ def create_reddit_post_task(
                 subtitle_file.write(ass_subtitles)
             temporary_files.append(subtitles_path)
             
-            # Now add the overlay image at the beginning of the video
-            # Get updated dimensions after any cropping
+            # Get video dimensions
             video_width, video_height = get_video_dimensions(final_output_path)
             
-            # Calculate overlay position
-            overlay_width, overlay_height = Image.open(output_path).size
-            
-            # Adjust image width to 90% of the video width
-            target_image_width = int(video_width * 0.9)
+            # Resize the Reddit post image to fit nicely on the video
+            resized_output_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_resized_reddit_post.png")
+            target_image_width = int(video_width * 0.85)  # Use 85% of video width
             target_image_height = int(reddit_post_img.height * (target_image_width / reddit_post_img.width))
             resized_reddit_post_img = reddit_post_img.resize((target_image_width, target_image_height))
-            
-            # Calculate overlay position based on resized image dimensions
-            overlay_width = target_image_width
-            overlay_height = target_image_height
-            x_position = (video_width - overlay_width) // 2
-            y_position = (video_height - overlay_height) // 2
-            
-            # Save resized Reddit post image
-            resized_output_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_resized_reddit_post.png")
             resized_reddit_post_img.save(resized_output_path, format="PNG")
             temporary_files.append(resized_output_path)
             
-            # Create complex filtergraph for overlay
-            overlay_output_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_with_overlay.mp4")
+            # Calculate position to center the overlay
+            x_position = (video_width - target_image_width) // 2
+            y_position = (video_height - target_image_height) // 2
             
-            # Modified: Split the process into steps with lower memory usage
-            # 1. First, create a temporary video file with the overlay
-            try:
-                # Add memory limitation and more efficient encoding
-                overlay_cmd = [
+            # Create the enhanced video with overlay and subtitles
+            enhanced_output_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_enhanced.mp4")
+            
+            # Convert Windows backslashes to forward slashes for FFmpeg compatibility
+            subtitle_file_path = subtitles_path.replace('\\', '/')
+            overlay_file_path = resized_output_path.replace('\\', '/')
+            
+            # Define a slightly longer overlay duration to ensure visibility
+            overlay_duration = title_duration + 3  # Add 3 seconds to ensure visibility
+            
+            # Create a filter complex for both overlay and subtitles
+            filter_complex = (
+                f"[0:v][1:v]overlay={x_position}:{y_position}:enable='between(t,0,{overlay_duration})',"
+                f"subtitles='{subtitle_file_path}':force_style='FontSize=24,PrimaryColour=&H{color_code}'"
+            )
+            
+            # Run the FFmpeg command with both effects
+            ffmpeg_cmd = [
+                "ffmpeg",
+                "-i", final_output_path,
+                "-i", overlay_file_path,
+                "-filter_complex", filter_complex,
+                "-c:a", "copy",
+                "-c:v", "libx264",
+                "-preset", "medium",
+                "-y",
+                enhanced_output_path
+            ]
+            
+            # Execute the command and capture output for debugging
+            process = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
+            
+            if process.returncode == 0:
+                # Success - update the final output path
+                print("Successfully added overlay and subtitles")
+                temporary_files.append(enhanced_output_path)
+                final_output_path = enhanced_output_path
+            else:
+                # Print error for debugging
+                print(f"FFmpeg error: {process.stderr}")
+                print("Trying alternative approach for subtitles...")
+                
+                # Try another approach using the ASS file directly
+                alternative_output_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_alt_approach.mp4")
+                
+                alt_cmd = [
                     "ffmpeg",
                     "-i", final_output_path,
-                    "-i", resized_output_path,
-                    # Add memory limit
+                    "-i", overlay_file_path,
                     "-filter_complex", 
-                    f"[0:v][1:v]overlay={x_position}:{y_position}:enable='between(t,0,{title_duration})'",
-                    # Use faster preset and lower bitrate to reduce memory usage
-                    "-c:v", "libx264", 
-                    "-preset", "veryfast",
-                    "-b:v", "2M",
-                    "-c:a", "copy",
-                    overlay_output_path
-                ]
-                
-                # Set a timeout for the process
-                subprocess.run(overlay_cmd, check=True, timeout=300)
-                temporary_files.append(overlay_output_path)
-                
-                # Update path for final step
-                final_output_path = overlay_output_path
-            except subprocess.TimeoutExpired:
-                print("Overlay process timed out, continuing with original video")
-                # Continue with the original video if the overlay fails
-            except subprocess.CalledProcessError as e:
-                print(f"Overlay process failed: {e}, continuing with original video")
-                # Continue with the original video if the overlay fails
-            
-            # Now add subtitles
-            final_with_subs_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_final_with_subs.mp4")
-            
-            # Ensure the subtitles file path is properly escaped for the command
-            if os.name == 'nt':  # Windows
-                subtitles_path_esc = subtitles_path.replace('\\', '\\\\\\\\')
-            else:  # Unix-like
-                subtitles_path_esc = subtitles_path.replace('\\', '\\\\').replace(':', '\\:')
-            
-            # Build the subtitle command with ASS - with optimized parameters
-            try:
-                subtitle_cmd = [
-                    "ffmpeg",
-                    "-i", final_output_path,
-                    "-vf", f"ass={subtitles_path_esc}",
+                    f"[0:v][1:v]overlay={x_position}:{y_position}:enable='between(t,0,{overlay_duration})',ass='{subtitle_file_path}'",
                     "-c:a", "copy",
                     "-c:v", "libx264",
-                    "-preset", "veryfast",  # Faster encoding
-                    "-b:v", "2M",  # Lower bitrate
-                    final_with_subs_path
+                    "-preset", "medium",
+                    "-y",
+                    alternative_output_path
                 ]
                 
-                # Set a timeout for the process
-                subprocess.run(subtitle_cmd, check=True, timeout=300)
-                temporary_files.append(final_with_subs_path)
-                final_output_path = final_with_subs_path
-            except subprocess.TimeoutExpired:
-                print("Subtitle process timed out, continuing with previous video")
-                # Continue with the previous video if adding subtitles fails
-            except subprocess.CalledProcessError as e:
-                print(f"Subtitle process failed: {e}, continuing with previous video")
-                # Continue with the previous video if adding subtitles fails
-            
+                try:
+                    subprocess.run(alt_cmd, check=True)
+                    print("Alternative approach successful")
+                    temporary_files.append(alternative_output_path)
+                    final_output_path = alternative_output_path
+                except subprocess.CalledProcessError:
+                    print("Alternative approach also failed, trying overlay only...")
+                    
+                    # If all else fails, just add the overlay without subtitles
+                    overlay_only_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_overlay_only.mp4")
+                    
+                    overlay_cmd = [
+                        "ffmpeg",
+                        "-i", final_output_path,
+                        "-i", overlay_file_path,
+                        "-filter_complex", 
+                        f"[0:v][1:v]overlay={x_position}:{y_position}:enable='between(t,0,{overlay_duration})'",
+                        "-c:a", "copy",
+                        "-c:v", "libx264",
+                        "-preset", "medium",
+                        "-y",
+                        overlay_only_path
+                    ]
+                    
+                    try:
+                        subprocess.run(overlay_cmd, check=True)
+                        print("Added overlay only (no subtitles)")
+                        temporary_files.append(overlay_only_path)
+                        final_output_path = overlay_only_path
+                    except:
+                        print("All approaches failed, using original video")
         except Exception as e:
-            print(f"Error in overlay/subtitle step: {str(e)}")
+            print(f"Error processing effects: {str(e)}")
             import traceback
             traceback.print_exc()
-            # Continue with the base video if this step fails
+            # Continue with original video if all attempts fail
 
         # Step 10: Upload the final video to Cloudinary
         self.update_state(state='PROGRESS', meta={'status': 'Uploading to Cloudinary', 'percent_complete': 95})

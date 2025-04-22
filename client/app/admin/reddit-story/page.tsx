@@ -8,7 +8,7 @@ import RedditVoice from '@/components/RedditVoice' // Ensure the path is correct
 import LoadingAndDownload from '@/components/LoadingAndDownload'
 import { useUser } from "@clerk/nextjs"
 type TaskResult = {
-    file_url: string
+    url: string
   }
 const Page = () => {
     const { user } = useUser()
@@ -148,7 +148,7 @@ const Page = () => {
             
             const result = await pollTaskStatus(task_id);
             console.log('Task result:', result);
-            setFileUrl(result.file_url); // Assuming the result contains the file URL
+            setFileUrl(result?.url); // Assuming the result contains the file URL
 
             setLoading(false);
         } catch (err) {
