@@ -42,7 +42,7 @@ cloudinary.config(
   api_secret = os.getenv("CLOUDINARY_API_SECRET") 
 )
 
-DEFAULT_AVATAR_PATH = os.path.join(ASSETS_FOLDER, "default-avatar.png")
+DEFAULT_AVATAR_PATH = os.path.join(ASSETS_FOLDER, "reddit.png")
 
 # Function to safely handle file paths, replacing slashes with an underscore
 def safe_filename(username: str) -> str:
