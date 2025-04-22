@@ -13,6 +13,7 @@ import requests
 from celery_config import celery_app
 from db import users_collection  # Using your existing MongoDB setup
 import time
+import platform
 # tasks/reddit_story_task.py
 from celery import shared_task
 import time
@@ -410,265 +411,178 @@ def create_reddit_post_task(
     font=None,
     user_email=None
 ):
-    # Now you can use them as regular variables
-    print(avatar_path, username, title, script, caption, voice, video, font, user_email)
-
     print(f"Task started with avatar_path={avatar_path} and username={username}")
     self.update_state(state='PROGRESS', meta={'status': 'Creating Reddit post', 'percent_complete': 0})
 
-    """
-    Celery task to handle the creation of a Reddit post by generating an image with avatar, title, 
-    username, and other icons. Then creates a video with the post overlay and narration, 
-    uploads to Cloudinary and saves to database.
-    """
     temporary_files = []  # List to track files for cleanup
-    
+    sanitized_username = safe_filename(username)
+    base_output_path = os.path.join(OUTPUT_FOLDER, sanitized_username)
+
     try:
-        # Step 1: Sanitize the username for file path safety
+        # Step 1: Sanitize the username for file path safety (already done)
         self.update_state(state='PROGRESS', meta={'status': 'Sanitizing username', 'percent_complete': 10})
-        sanitized_username = safe_filename(username)
 
         # Step 2: Create the avatar image
         self.update_state(state='PROGRESS', meta={'status': 'Creating avatar image', 'percent_complete': 20})
         avatar_img = create_avatar_image(avatar_path)
 
         # Step 3: Create the Reddit post layout
-        self.update_state(state='PROGRESS', meta={'status': 'Creating Reddit post layout' , 'percent_complete': 30})
+        self.update_state(state='PROGRESS', meta={'status': 'Creating Reddit post layout', 'percent_complete': 30})
         reddit_post_img = create_reddit_post_layout(title, username, avatar_img)
 
         # Save the post image
+        reddit_post_image_path = f"{base_output_path}_reddit_post.png"
         self.update_state(state='PROGRESS', meta={'status': 'Saving Reddit post image', 'percent_complete': 40})
-        output_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_reddit_post.png")
-        reddit_post_img.save(output_path, format="PNG")
-        temporary_files.append(output_path)
+        reddit_post_img.save(reddit_post_image_path, format="PNG")
+        temporary_files.append(reddit_post_image_path)
 
         # Step 4: Convert title to audio using OpenAI TTS
+        title_audio_path = f"{base_output_path}_title.mp3"
         self.update_state(state='PROGRESS', meta={'status': 'Converting title to audio', 'percent_complete': 50})
         title_audio_response = convert_to_audio(title, voice)
-        title_audio_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_title.mp3")
         title_duration = save_audio_and_get_duration(title_audio_response, title_audio_path)
         temporary_files.append(title_audio_path)
 
         # Step 5: Convert script to audio
+        script_audio_path = f"{base_output_path}_script.mp3"
         self.update_state(state='PROGRESS', meta={'status': 'Converting script to audio', 'percent_complete': 60})
         script_audio_response = convert_to_audio(script, voice)
-        script_audio_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_script.mp3")
         script_duration = save_audio_and_get_duration(script_audio_response, script_audio_path)
         temporary_files.append(script_audio_path)
 
         # Step 6: Combine both audios using ffmpeg
+        combined_audio_path = f"{base_output_path}_combined.mp3"
         self.update_state(state='PROGRESS', meta={'status': 'Combining audio', 'percent_complete': 70})
-        combined_audio_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_combined.mp3")
-        ffmpeg.input(f'concat:{title_audio_path}|{script_audio_path}').output(
-            combined_audio_path, codec='copy'
-        ).run(overwrite_output=True)
+        try:
+            ffmpeg.input(title_audio_path).input(script_audio_path).output(
+                combined_audio_path, acodec='aac', **{'filter_complex': 'concat=n=2:v=0:a=1'}
+            ).run(overwrite_output=True, capture_stdout=True, capture_stderr=True)
+        except ffmpeg.Error as e:
+            print(f"FFmpeg error combining audio: {e.stderr.decode('utf8')}")
+            raise
         temporary_files.append(combined_audio_path)
 
         total_duration = title_duration + script_duration
 
         # Step 7: Process the video URL
-        # Check if the video is a full URL or just a filename
         self.update_state(state='PROGRESS', meta={'status': 'Processing video URL', 'percent_complete': 80})
         if video.startswith("http"):
-            # It's a full Cloudinary URL - download it first
-            
-            # Create a temporary file for the downloaded video
-            downloaded_video_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_downloaded_video.mp4")
-
-            # Download the video
-            response = requests.get(video, stream=True)
-            if response.status_code == 200:
+            downloaded_video_path = f"{base_output_path}_downloaded_video.mp4"
+            try:
+                response = requests.get(video, stream=True)
+                response.raise_for_status()  # Raise an exception for bad status codes
                 with open(downloaded_video_path, 'wb') as f:
-                    shutil.copyfileobj(response.raw, f)
-                gameplay_video_path = downloaded_video_path  # Now defined here
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                gameplay_video_path = downloaded_video_path
                 temporary_files.append(downloaded_video_path)
-            else:
-                return {
-                    "status": "error", 
-                    "message": f"Could not download video from URL: {video}"
-                }
+            except requests.exceptions.RequestException as e:
+                return {"status": "error", "message": f"Could not download video from URL: {video} - {e}"}
         else:
-            # It's just a filename - use the path in gameplay folder
             gameplay_video_path = os.path.join(GAMEPLAY_FOLDER, video)
             if not os.path.exists(gameplay_video_path):
-                return {
-                    "status": "error", 
-                    "message": f"Video file not found: {gameplay_video_path}"
-                }
+                return {"status": "error", "message": f"Video file not found: {gameplay_video_path}"}
 
         # Process video to match 9:16 aspect ratio
         video_width, video_height = get_video_dimensions(gameplay_video_path)
-        
+        crop_params = None
         if video_width and video_height:
-            # Calculate target dimensions for 9:16 aspect ratio
-            target_aspect_ratio = 9/16
+            target_aspect_ratio = 9 / 16
             current_aspect_ratio = video_width / video_height
-            
-            if abs(current_aspect_ratio - target_aspect_ratio) > 0.01:  # If not already 9:16
-                # Determine new dimensions
-                if current_aspect_ratio > target_aspect_ratio:  # too wide
+            if abs(current_aspect_ratio - target_aspect_ratio) > 0.01:
+                if current_aspect_ratio > target_aspect_ratio:
                     new_width = int(video_height * target_aspect_ratio)
-                    new_height = video_height
-                    # Center crop
                     x_offset = int((video_width - new_width) / 2)
-                    y_offset = 0
-                else:  # too tall
-                    new_width = video_width
+                    crop_params = f"crop={new_width}:{video_height}:{x_offset}:0"
+                else:
                     new_height = int(video_width / target_aspect_ratio)
-                    # Center crop
-                    x_offset = 0
                     y_offset = int((video_height - new_height) / 2)
-                
-                crop_params = f"crop={new_width}:{new_height}:{x_offset}:{y_offset}"
-            else:
-                crop_params = None
-        else:
-            crop_params = None
-        
-        muted_video_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_muted.mp4")
-        
-        if crop_params:
-            # Apply crop filter to achieve 9:16 aspect ratio
-            ffmpeg.input(gameplay_video_path).filter('crop', new_width, new_height, x_offset, y_offset).output(
-                muted_video_path, **{'c:v': 'libx264', 'an': None}  # 'an' = no audio
-            ).run(overwrite_output=True)
-        else:
-            # Copy as is if already correct ratio
-            ffmpeg.input(gameplay_video_path).output(
-                muted_video_path, **{'c:v': 'copy', 'an': None}
-            ).run(overwrite_output=True)
+                    crop_params = f"crop={video_width}:{new_height}:0:{y_offset}"
+
+        muted_video_path = f"{base_output_path}_muted.mp4"
+        try:
+            input_video = ffmpeg.input(gameplay_video_path)
+            if crop_params:
+                input_video = input_video.filter('crop', crop_params)
+            input_video.output(muted_video_path, an=None, vcodec='libx264').run(overwrite_output=True, capture_stdout=True, capture_stderr=True)
+        except ffmpeg.Error as e:
+            print(f"FFmpeg error processing video aspect ratio: {e.stderr.decode('utf8')}")
+            raise
         temporary_files.append(muted_video_path)
 
         # Step 8: Combine muted video and combined audio
-        final_output_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_final.mp4")
-        ffmpeg.output(
-            ffmpeg.input(muted_video_path),
-            ffmpeg.input(combined_audio_path),
-            final_output_path,
-            **{'vcodec': 'libx264', 'acodec': 'aac', 'shortest': None, 'preset': 'ultrafast'}
-        ).run(overwrite_output=True)
-        temporary_files.append(final_output_path)
-
-        # Step 9: Create colored ASS format subtitles
-        self.update_state(state='PROGRESS', meta={'status': 'Creating subtitles', 'percent_complete': 90})
+        final_with_audio_path = f"{base_output_path}_final_with_audio.mp4"
         try:
-            # Get color code for the specified font
+            ffmpeg.input(muted_video_path).input(combined_audio_path).output(
+                final_with_audio_path, vcodec='libx264', acodec='aac', shortest=None, preset='ultrafast'
+            ).run(overwrite_output=True, capture_stdout=True, capture_stderr=True)
+        except ffmpeg.Error as e:
+            print(f"FFmpeg error combining video and audio: {e.stderr.decode('utf8')}")
+            raise
+        temporary_files.append(final_with_audio_path)
+
+        # Step 9: Create colored ASS format subtitles and overlay
+        self.update_state(state='PROGRESS', meta={'status': 'Creating subtitles and overlay', 'percent_complete': 90})
+        subtitles_path = f"{base_output_path}_subtitles.ass"
+        try:
             color_code = font_name_to_color_code(font)
-            
-            # Create ASS format subtitles
             ass_subtitles = generate_styled_ass_subtitles(script, title_duration, script_duration, color_code)
-            subtitles_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_subtitles.ass")
-            
             with open(subtitles_path, "w", encoding='utf-8') as subtitle_file:
                 subtitle_file.write(ass_subtitles)
             temporary_files.append(subtitles_path)
-            
-            # Now add the overlay image at the beginning of the video
-            # Get updated dimensions after any cropping
-            video_width, video_height = get_video_dimensions(final_output_path)
-            
-            # Calculate overlay position
-            overlay_width, overlay_height = Image.open(output_path).size
-            
-            # Adjust image width to 90% of the video width
-            target_image_width = int(video_width * 0.9)
-            target_image_height = int(reddit_post_img.height * (target_image_width / reddit_post_img.width))
-            resized_reddit_post_img = reddit_post_img.resize((target_image_width, target_image_height))
-            
-            # Calculate overlay position based on resized image dimensions
-            overlay_width = target_image_width
-            overlay_height = target_image_height
-            x_position = (video_width - overlay_width) // 2
-            y_position = (video_height - overlay_height) // 2
-            
-            # Save resized Reddit post image
-            resized_output_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_resized_reddit_post.png")
-            resized_reddit_post_img.save(resized_output_path, format="PNG")
-            temporary_files.append(resized_output_path)
-            
-            # Create complex filtergraph for overlay
-            overlay_output_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_with_overlay.mp4")
-            
-            # Modified: Split the process into steps with lower memory usage
-            # 1. First, create a temporary video file with the overlay
-            try:
-                # Add memory limitation and more efficient encoding
-                overlay_cmd = [
-                    "ffmpeg",
-                    "-i", final_output_path,
-                    "-i", resized_output_path,
-                    # Add memory limit
-                    "-filter_complex", 
-                    f"[0:v][1:v]overlay={x_position}:{y_position}:enable='between(t,0,{title_duration})'",
-                    # Use faster preset and lower bitrate to reduce memory usage
-                    "-c:v", "libx264", 
-                    "-preset", "veryfast",
-                    "-b:v", "2M",
-                    "-c:a", "copy",
-                    overlay_output_path
-                ]
-                
-                # Set a timeout for the process
-                # Modify subtitle and overlay command execution to capture errors
+
+            # Add overlay image at the beginning of the video
+            video_width_final, video_height_final = get_video_dimensions(final_with_audio_path)
+            if video_width_final and video_height_final:
+                target_image_width = int(video_width_final * 0.9)
+                target_image_height = int(reddit_post_img.height * (target_image_width / reddit_post_img.width))
+                resized_reddit_post_img = reddit_post_img.resize((target_image_width, target_image_height))
+                resized_output_path = f"{base_output_path}_resized_reddit_post.png"
+                resized_reddit_post_img.save(resized_output_path, format="PNG")
+                temporary_files.append(resized_output_path)
+
+                # Calculate center positions for the overlay image
+                x_position = (video_width_final - target_image_width) // 2
+                y_position = (video_height_final - target_image_height) // 2
+
+                final_with_overlay_path = f"{base_output_path}_final_with_overlay.mp4"
                 try:
-                    subprocess.run(overlay_cmd, check=True, timeout=300, stderr=subprocess.PIPE)
-                except subprocess.CalledProcessError as e:
-                    print(f"Overlay failed: {e.stderr.decode()}")
-                    raise
-                temporary_files.append(overlay_output_path)
-                
-                # Update path for final step
-                final_output_path = overlay_output_path
-            except subprocess.TimeoutExpired:
-                print("Overlay process timed out, continuing with original video")
-                # Continue with the original video if the overlay fails
-            except subprocess.CalledProcessError as e:
-                print(f"Overlay process failed: {e}, continuing with original video")
-                # Continue with the original video if the overlay fails
-            
-            # Now add subtitles
-            final_with_subs_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_final_with_subs.mp4")
-            
-            # Ensure the subtitles file path is properly escaped for the command
-            if os.name == 'nt':  # Windows
-                subtitles_path_esc = subtitles_path.replace('\\', '\\\\\\\\')
-            else:  # Unix-like
-                subtitles_path_esc = subtitles_path.replace('\\', '\\\\').replace(':', '\\:')
-            
-            # Build the subtitle command with ASS - with optimized parameters
+                    ffmpeg.input(final_with_audio_path).input(resized_output_path).filter('overlay', x=x_position, y=y_position, enable=f'between(t,0,{title_duration})').output(
+                        final_with_overlay_path, vcodec='libx264', acodec='copy', preset='veryfast'
+                    ).run(overwrite_output=True, capture_stdout=True, capture_stderr=True)
+                    temporary_files.append(final_with_overlay_path)
+                    final_video_path = final_with_overlay_path
+                except ffmpeg.Error as e:
+                    print(f"FFmpeg error adding overlay: {e.stderr.decode('utf8')}")
+                    final_video_path = final_with_audio_path # Continue without overlay if it fails
+            else:
+                final_video_path = final_with_audio_path # Continue without overlay if dimensions can't be determined
+
+            # Now add subtitles, ensuring alignment is centered
+            final_with_subs_path = f"{base_output_path}_final_with_subs.mp4"
+            subtitles_path_esc = subtitles_path.replace('\\', '\\\\\\\\') if platform.system() == 'Windows' else subtitles_path.replace(':', r'\:')
             try:
-                subtitle_cmd = [
-                    "ffmpeg",
-                    "-i", final_output_path,
-                    "-vf", f"ass={subtitles_path_esc}",
-                    "-c:a", "copy",
-                    "-c:v", "libx264",
-                    "-preset", "veryfast",  # Faster encoding
-                    "-b:v", "2M",  # Lower bitrate
-                    final_with_subs_path
-                ]
-                
-                # Set a timeout for the process
-                subprocess.run(subtitle_cmd, check=True, timeout=300)
+                ffmpeg.input(final_video_path).output(
+                    final_with_subs_path,
+                    vf=f'subtitles={subtitles_path_esc}:force_style=\'FontSize=150,PrimaryColour=&H00{color_code},Alignment=2\'',
+                    vcodec='libx264', acodec='aac', preset='veryfast'
+                ).run(overwrite_output=True, capture_stdout=True, capture_stderr=True)
                 temporary_files.append(final_with_subs_path)
                 final_output_path = final_with_subs_path
-            except subprocess.TimeoutExpired:
-                print("Subtitle process timed out, continuing with previous video")
-                # Continue with the previous video if adding subtitles fails
-            except subprocess.CalledProcessError as e:
-                print(f"Subtitle process failed: {e}, continuing with previous video")
-                # Continue with the previous video if adding subtitles fails
-            
+            except ffmpeg.Error as e:
+                print(f"FFmpeg error adding subtitles: {e.stderr.decode('utf8')}")
+                final_output_path = final_video_path # Continue without subtitles if it fails
+
         except Exception as e:
             print(f"Error in overlay/subtitle step: {str(e)}")
             import traceback
             traceback.print_exc()
-            # Continue with the base video if this step fails
+            final_output_path = final_with_audio_path # Fallback to video with audio
 
         # Step 10: Upload the final video to Cloudinary
         self.update_state(state='PROGRESS', meta={'status': 'Uploading to Cloudinary', 'percent_complete': 95})
         cloudinary_url = upload_to_cloudinary(final_output_path, user_email)
-        
+
         # Step 11: Save video details to MongoDB
         self.update_state(state='PROGRESS', meta={'status': 'Saving to MongoDB', 'percent_complete': 100})
         save_success = save_video_to_mongodb(
@@ -678,30 +592,26 @@ def create_reddit_post_task(
             script=script,
             caption=caption
         )
-        
+
         if not save_success:
             print(f"Warning: Could not save video data for user {user_email} to MongoDB")
-        
-        # Step 12: Clean up temporary files
-        self.update_state(state='PROGRESS', meta={'status': 'Cleaning up temporary files', 'percent_complete': 100})
-        cleanup_output_files(temporary_files)
-        
+
         # Return only the cloudinary URL and caption
         return {
             "status": "success",
             "url": cloudinary_url,
             "caption": caption
         }
-        
+
     except Exception as e:
         print(f"General error: {str(e)}")
         import traceback
         traceback.print_exc()
-        
-        # Clean up any temporary files that were created before the error
-        cleanup_output_files(temporary_files)
-        
         return {
             "status": "error",
             "message": str(e)
         }
+    finally:
+        # Step 12: Clean up temporary files
+        self.update_state(state='PROGRESS', meta={'status': 'Cleaning up temporary files', 'percent_complete': 100})
+        cleanup_output_files(temporary_files)
