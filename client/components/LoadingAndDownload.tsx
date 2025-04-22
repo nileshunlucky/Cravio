@@ -76,12 +76,11 @@ const LoadingAndDownload = ({ fileUrl, isLoading, progress }: Props) => {
                       height={40}
                       className="rounded-full z-10 mb-1"
                     />
-                    <p className="text-sm font-semibold text-black">
-                      {typeof progress === 'number' ? `${progress}%` : '0%'}
-                    </p>
                   </div>
+                  <p className="text-sm font-semibold text-black">
+                    {typeof progress === 'number' ? `${progress}%` : '0%'}
+                  </p>
                 </div>
-
                 <p className="text-lg font-medium text-black text-center">Processing your Reddit post…</p>
               </motion.div>
             ) : showDownload && fileUrl ? (
