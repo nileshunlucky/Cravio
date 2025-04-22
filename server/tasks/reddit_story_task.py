@@ -456,14 +456,16 @@ def create_reddit_post_task(
         try:
             input_title = ffmpeg.input(title_audio_path)
             input_script = ffmpeg.input(script_audio_path)
-            ffmpeg.output(
-                input_title, input_script,
-                combined_audio_path, acodec='aac',
-                **{'filter_complex': '[0:a][1:a]concat=n=2:v=0:a=1[out]', 'map': '[out]', 'loglevel': 'error'}
-            ).run(overwrite_output=True, capture_stdout=True, capture_stderr=True)
+
+            # Concatenate the two audio files and output to a new file
+            ffmpeg.concat(input_title, input_script, v=0, a=1) \
+                .output(combined_audio_path, acodec='aac', loglevel='error') \
+                .run(overwrite_output=True, capture_stdout=True, capture_stderr=True)
+
         except ffmpeg.Error as e:
             print(f"FFmpeg error combining audio: {e.stderr.decode('utf8')}")
             raise
+
         temporary_files.append(combined_audio_path)
 
         total_duration = title_duration + script_duration
