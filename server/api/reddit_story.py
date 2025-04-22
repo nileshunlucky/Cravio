@@ -73,8 +73,18 @@ async def create_reddit_post(
         print("🧠 Caption generated:", caption)
 
         task = create_reddit_post_task.apply_async(
-       args=[avatar_path, username, title, script, caption, voice, video, font, user_email]
-       )
+        kwargs={
+        "avatar_path": avatar_path,
+        "username": username,
+        "title": title,
+        "script": script,
+        "caption": caption,
+        "voice": voice,
+        "video": video,
+        "font": font,
+        "user_email": user_email
+        }
+        )
 
         print("📦 Task queued:", task.id)
 
