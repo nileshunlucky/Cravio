@@ -36,11 +36,12 @@ celery_app.conf.update(
     enable_utc=True,
 )
 
-# SSL config for Upstash (no certs needed)
 celery_app.conf.broker_use_ssl = {
-    "ssl_cert_reqs": ssl.CERT_NONE
+    "ssl_cert_reqs": ssl.CERT_REQUIRED,  # <--- Validate certs
+    "ssl_ca_certs": "/etc/ssl/certs/ca-certificates.crt"  # Use system CA bundle
 }
 
 celery_app.conf.redis_backend_use_ssl = {
-    "ssl_cert_reqs": ssl.CERT_NONE
+    "ssl_cert_reqs": ssl.CERT_REQUIRED,
+    "ssl_ca_certs": "/etc/ssl/certs/ca-certificates.crt"
 }
