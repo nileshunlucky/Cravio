@@ -119,7 +119,7 @@ const Page = () => {
               
                       // update progress if in-progress
                       if (statusData.status === 'progress') {
-                        setProgressMessage(statusData.message);
+                        setProgressMessage(statusData.percent_complete);
                       }
               
                       // completed
@@ -239,7 +239,7 @@ const Page = () => {
                     <div className={``}>
                         <LoadingAndDownload fileUrl={fileUrl} isLoading={loading} />
                         {loading && progressMessage && (
-                            <p className="text-center mt-4 text-xl">{progressMessage}</p>
+                            <p className="text-center mt-4 text-xl">{progressMessage} %</p>
                         )}
                     </div>
                 )}
