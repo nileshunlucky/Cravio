@@ -466,55 +466,106 @@ def create_reddit_post_task(
 
         total_duration = title_duration + script_duration
 
-        # Step 7: Process the video URL
-        self.update_state(state='PROGRESS', meta={'status': 'Processing video URL', 'percent_complete': 80})
+        # Step 7: Process the video URL (Download/Locate and Mute/Crop)
+        self.update_state(state='PROGRESS', meta={'status': 'Processing background video', 'percent_complete': 80})
         if video.startswith("http"):
             downloaded_video_path = f"{base_output_path}_downloaded_video.mp4"
             try:
-                response = requests.get(video, stream=True)
+                print(f"Downloading video from: {video}")
+                response = requests.get(video, stream=True, timeout=60) # Added timeout
                 response.raise_for_status()  # Raise an exception for bad status codes
                 with open(downloaded_video_path, 'wb') as f:
                     for chunk in response.iter_content(chunk_size=8192):
                         f.write(chunk)
+                print(f"Video downloaded successfully to: {downloaded_video_path}")
                 gameplay_video_path = downloaded_video_path
                 temporary_files.append(downloaded_video_path)
             except requests.exceptions.RequestException as e:
+                print(f"Could not download video from URL: {video} - {e}")
                 return {"status": "error", "message": f"Could not download video from URL: {video} - {e}"}
         else:
             gameplay_video_path = os.path.join(GAMEPLAY_FOLDER, video)
             if not os.path.exists(gameplay_video_path):
+                print(f"Video file not found: {gameplay_video_path}")
                 return {"status": "error", "message": f"Video file not found: {gameplay_video_path}"}
 
-        # Get video dimensions
+        # Get video dimensions using ffmpeg.probe
+        print(f"Probing video dimensions for: {gameplay_video_path}")
         video_width, video_height = get_video_dimensions(gameplay_video_path)
+        if not video_width or not video_height:
+            # Handle error or proceed without cropping if dimensions are unknown
+            print(f"Warning: Could not get video dimensions for {gameplay_video_path}. Proceeding without crop.")
+            # Optionally raise an error here if dimensions are critical
 
         muted_video_path = f"{base_output_path}_muted.mp4"
         try:
-            input_video = ffmpeg.input(gameplay_video_path)
-            video_stream = input_video['v']
+            # --- START: Fixed Step 7 using subprocess ---
+            cmd = ["ffmpeg", "-i", gameplay_video_path]
+            vf_filters = [] # List for video filters (-vf)
 
-            processed_video = video_stream
+            # Cropping logic - Add to -vf filters if dimensions are known
             if video_width and video_height:
                 target_aspect_ratio = 9 / 16
                 current_aspect_ratio = video_width / video_height
+                # Use a small tolerance for floating point comparison
                 if abs(current_aspect_ratio - target_aspect_ratio) > 0.01:
-                    if current_aspect_ratio > target_aspect_ratio:
+                    print(f"Cropping video. Current AR: {current_aspect_ratio}, Target AR: {target_aspect_ratio}")
+                    crop_filter_str = ""
+                    if current_aspect_ratio > target_aspect_ratio: # Video is wider than target
                         new_width = int(video_height * target_aspect_ratio)
                         x_offset = int((video_width - new_width) / 2)
-                        processed_video = processed_video.filter('crop', f'{new_width}:{video_height}:{x_offset}:0')
-                    else:
+                        crop_filter_str = f'crop={new_width}:{video_height}:{x_offset}:0'
+                        print(f"Applying crop filter: {crop_filter_str}")
+                    else: # Video is taller than target
                         new_height = int(video_width / target_aspect_ratio)
                         y_offset = int((video_height - new_height) / 2)
-                        processed_video = processed_video.filter('crop', f'{video_width}:{new_height}:0:{y_offset}')
+                        crop_filter_str = f'crop={video_width}:{new_height}:0:{y_offset}'
+                        print(f"Applying crop filter: {crop_filter_str}")
 
-            (
-                ffmpeg
-                .output(processed_video, muted_video_path, an=True, vcodec='libx264', preset='veryfast')
-                .run(overwrite_output=True, capture_stdout=True, capture_stderr=True)
-            )
-        except ffmpeg.Error as e:
-            print(f"FFmpeg error processing video: {e.stderr.decode('utf8')}")
-            raise
+                    if crop_filter_str:
+                        vf_filters.append(crop_filter_str)
+                else:
+                     print("Video aspect ratio matches target. No crop needed.")
+            else:
+                 print("Skipping crop due to unknown video dimensions.")
+
+
+            # Apply video filters if any were added
+            if vf_filters:
+                cmd.extend(["-vf", ",".join(vf_filters)]) # Comma-separate filters for -vf
+
+            # Add output options
+            cmd.extend([
+                "-map", "0:v", # Select only the (potentially filtered) video stream
+                "-an",  # Disable audio (mute)
+                "-c:v", "libx264", # Specify video codec directly
+                "-preset", "veryfast", # Use a fast preset
+                "-pix_fmt", "yuv420p", # Ensure standard pixel format
+                "-y",   # Overwrite output file if it exists
+                muted_video_path
+            ])
+
+            print(f"Running FFmpeg command for Step 7: {' '.join(cmd)}")
+            # Use check=True, capture_output=True, text=True for better handling
+            result = subprocess.run(cmd, check=True, capture_output=True, text=True, encoding='utf-8')
+            # Optional: Log FFmpeg output for debugging if needed
+            # print(f"FFmpeg Step 7 stdout: {result.stdout}")
+            print(f"FFmpeg Step 7 stderr: {result.stderr}") # Stderr often contains progress/info
+            print(f"Muted/Cropped video saved to: {muted_video_path}")
+            # --- END: Fixed Step 7 using subprocess ---
+
+        except subprocess.CalledProcessError as e:
+            # Log the error including stderr from FFmpeg for better debugging
+            print(f"FFmpeg error processing video (Step 7). Command: {' '.join(e.cmd)}")
+            print(f"FFmpeg stderr: {e.stderr}")
+            # Re-raise to let the main exception handler catch it and return error status
+            raise Exception(f"FFmpeg error during video processing: {e.stderr}") from e
+        except Exception as e:
+            # Catch other potential errors during this step
+             print(f"Unexpected error during video processing (Step 7): {str(e)}")
+             traceback.print_exc()
+             raise # Re-raise
+
         temporary_files.append(muted_video_path)
 
         # Step 8: Combine muted video and combined audio
