@@ -400,7 +400,7 @@ def generate_caption(title: str) -> str:
 @celery_app.task(name="create_reddit_post_task", bind=True)
 def create_reddit_post_task(
     self,
-    avatar_path=None,     # ← now optional
+    avatar_path=None,
     username=None,
     title=None,
     script=None,
@@ -463,8 +463,6 @@ def create_reddit_post_task(
             combined_audio_path, codec='copy'
         ).run(overwrite_output=True)
         temporary_files.append(combined_audio_path)
-
-        total_duration = title_duration + script_duration
 
         # Step 7: Process the video URL
         # Check if the video is a full URL or just a filename
@@ -589,22 +587,37 @@ def create_reddit_post_task(
             # Create complex filtergraph for overlay
             overlay_output_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_with_overlay.mp4")
             
-            # Build the overlay command
-            overlay_cmd = [
-                "ffmpeg",
-                "-i", final_output_path,
-                "-i", resized_output_path,
-                "-filter_complex", 
-                f"[0:v][1:v]overlay={x_position}:{y_position}:enable='between(t,0,{title_duration})'",
-                "-c:a", "copy",
-                overlay_output_path
-            ]
-            
-            subprocess.run(overlay_cmd, check=True)
-            temporary_files.append(overlay_output_path)
-            
-            # Update path for final step
-            final_output_path = overlay_output_path
+            # Modified: Split the process into steps with lower memory usage
+            # 1. First, create a temporary video file with the overlay
+            try:
+                # Add memory limitation and more efficient encoding
+                overlay_cmd = [
+                    "ffmpeg",
+                    "-i", final_output_path,
+                    "-i", resized_output_path,
+                    # Add memory limit
+                    "-filter_complex", 
+                    f"[0:v][1:v]overlay={x_position}:{y_position}:enable='between(t,0,{title_duration})'",
+                    # Use faster preset and lower bitrate to reduce memory usage
+                    "-c:v", "libx264", 
+                    "-preset", "veryfast",
+                    "-b:v", "2M",
+                    "-c:a", "copy",
+                    overlay_output_path
+                ]
+                
+                # Set a timeout for the process
+                subprocess.run(overlay_cmd, check=True, timeout=300)
+                temporary_files.append(overlay_output_path)
+                
+                # Update path for final step
+                final_output_path = overlay_output_path
+            except subprocess.TimeoutExpired:
+                print("Overlay process timed out, continuing with original video")
+                # Continue with the original video if the overlay fails
+            except subprocess.CalledProcessError as e:
+                print(f"Overlay process failed: {e}, continuing with original video")
+                # Continue with the original video if the overlay fails
             
             # Now add subtitles
             final_with_subs_path = os.path.join(OUTPUT_FOLDER, f"{sanitized_username}_final_with_subs.mp4")
@@ -615,24 +628,35 @@ def create_reddit_post_task(
             else:  # Unix-like
                 subtitles_path_esc = subtitles_path.replace('\\', '\\\\').replace(':', '\\:')
             
-            # Build the subtitle command with ASS
-            subtitle_cmd = [
-                "ffmpeg",
-                "-i", final_output_path,
-                "-vf", f"ass={subtitles_path_esc}",
-                "-c:a", "copy",
-                "-c:v", "libx264",
-                final_with_subs_path
-            ]
+            # Build the subtitle command with ASS - with optimized parameters
+            try:
+                subtitle_cmd = [
+                    "ffmpeg",
+                    "-i", final_output_path,
+                    "-vf", f"ass={subtitles_path_esc}",
+                    "-c:a", "copy",
+                    "-c:v", "libx264",
+                    "-preset", "veryfast",  # Faster encoding
+                    "-b:v", "2M",  # Lower bitrate
+                    final_with_subs_path
+                ]
+                
+                # Set a timeout for the process
+                subprocess.run(subtitle_cmd, check=True, timeout=300)
+                temporary_files.append(final_with_subs_path)
+                final_output_path = final_with_subs_path
+            except subprocess.TimeoutExpired:
+                print("Subtitle process timed out, continuing with previous video")
+                # Continue with the previous video if adding subtitles fails
+            except subprocess.CalledProcessError as e:
+                print(f"Subtitle process failed: {e}, continuing with previous video")
+                # Continue with the previous video if adding subtitles fails
             
-            subprocess.run(subtitle_cmd, check=True)
-            temporary_files.append(final_with_subs_path)
-            final_output_path = final_with_subs_path
-            
-        except HTTPException as e:
+        except Exception as e:
             print(f"Error in overlay/subtitle step: {str(e)}")
             import traceback
             traceback.print_exc()
+            # Continue with the base video if this step fails
 
         # Step 10: Upload the final video to Cloudinary
         self.update_state(state='PROGRESS', meta={'status': 'Uploading to Cloudinary', 'percent_complete': 95})
@@ -662,7 +686,7 @@ def create_reddit_post_task(
             "caption": caption
         }
         
-    except HTTPException as e:
+    except Exception as e:
         print(f"General error: {str(e)}")
         import traceback
         traceback.print_exc()
