@@ -454,9 +454,12 @@ def create_reddit_post_task(
         self.update_state(state='PROGRESS', meta={'status': 'Combining audio', 'percent_complete': 70})
         combined_audio_path = f"{base_output_path}_combined.mp3"
         try:
-            ffmpeg.input(title_audio_path).input(script_audio_path).output(
+            input_title = ffmpeg.input(title_audio_path)
+            input_script = ffmpeg.input(script_audio_path)
+            ffmpeg.output(
+                input_title, input_script,
                 combined_audio_path, acodec='aac',
-                **{'filter_complex': 'concat=n=2:v=0:a=1', 'loglevel': 'error'}
+                **{'filter_complex': '[0:a][1:a]concat=n=2:v=0:a=1[out]', 'map': '[out]', 'loglevel': 'error'}
             ).run(overwrite_output=True, capture_stdout=True, capture_stderr=True)
         except ffmpeg.Error as e:
             print(f"FFmpeg error combining audio: {e.stderr.decode('utf8')}")
