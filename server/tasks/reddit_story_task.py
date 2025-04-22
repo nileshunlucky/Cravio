@@ -451,11 +451,12 @@ def create_reddit_post_task(
         temporary_files.append(script_audio_path)
 
         # Step 6: Combine both audios using ffmpeg
-        combined_audio_path = f"{base_output_path}_combined.mp3"
         self.update_state(state='PROGRESS', meta={'status': 'Combining audio', 'percent_complete': 70})
+        combined_audio_path = f"{base_output_path}_combined.mp3"
         try:
             ffmpeg.input(title_audio_path).input(script_audio_path).output(
-                combined_audio_path, acodec='aac', **{'filter_complex': 'concat=n=2:v=0:a=1'}
+                combined_audio_path, acodec='aac',
+                **{'filter_complex': 'concat=n=2:v=0:a=1', 'loglevel': 'error'}
             ).run(overwrite_output=True, capture_stdout=True, capture_stderr=True)
         except ffmpeg.Error as e:
             print(f"FFmpeg error combining audio: {e.stderr.decode('utf8')}")
