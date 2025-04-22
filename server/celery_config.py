@@ -13,7 +13,7 @@ celery_app = Celery(
     "reddit_story_app",
     broker=REDIS_URL,
     backend=REDIS_URL,
-    include=["api.tasks.reddit_story_task"]
+    include=["tasks.reddit_story_task"]
 )
 
 # Basic Celery config

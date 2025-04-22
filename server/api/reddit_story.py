@@ -25,7 +25,7 @@ async def generate_content(request: PromptRequest):
         title = generate_title(request.prompt)
         script = generate_script(title)
 
-        return {"title": title, "script": script, "task_id": result.id}
+        return {"title": title, "script": script}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
