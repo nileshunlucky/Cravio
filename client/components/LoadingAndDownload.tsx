@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -38,46 +36,48 @@ const LoadingAndDownload = ({ fileUrl, isLoading, progress }: Props) => {
                 transition={{ duration: 0.4 }}
                 className="flex flex-col items-center justify-center space-y-6"
               >
-                <div className="relative w-36 h-36">
+                <div className="relative w-48 h-48">
+                  {/* Progress Circle */}
                   <svg className="w-full h-full transform -rotate-90">
                     <circle
-                      cx="72"
-                      cy="72"
-                      r="60"
+                      cx="96"
+                      cy="96"
+                      r="80"
                       stroke="#e5e7eb" // Tailwind gray-200
                       strokeWidth="12"
                       fill="none"
                     />
                     <motion.circle
-                      cx="72"
-                      cy="72"
-                      r="60"
+                      cx="96"
+                      cy="96"
+                      r="80"
                       stroke="#000000"
                       strokeWidth="12"
                       fill="none"
-                      strokeDasharray={2 * Math.PI * 60}
-                      strokeDashoffset={
-                        2 * Math.PI * 60 * (1 - (typeof progress === 'number' ? progress : 0) / 100)
-                      }
-                      initial={{ strokeDashoffset: 2 * Math.PI * 60 }}
+                      strokeDasharray={2 * Math.PI * 80}
+                      strokeDashoffset={2 * Math.PI * 80 * (1 - (typeof progress === 'number' ? progress : 0) / 100)}
+                      initial={{ strokeDashoffset: 2 * Math.PI * 80 }}
                       animate={{
                         strokeDashoffset:
-                          2 * Math.PI * 60 * (1 - (typeof progress === 'number' ? progress : 0) / 100),
+                          2 * Math.PI * 80 * (1 - (typeof progress === 'number' ? progress : 0) / 100),
                       }}
                       transition={{ duration: 0.5 }}
                     />
                   </svg>
 
+                  {/* Logo in the center */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <Image
                       src="/logo.png"
                       alt="Logo"
-                      width={40}
-                      height={40}
+                      width={60}
+                      height={60}
                       className="rounded-full z-10 mb-1"
                     />
                   </div>
-                  <p className="text-sm font-semibold text-black">
+
+                  {/* Progress percentage */}
+                  <p className="text-lg font-semibold text-black mt-2">
                     {typeof progress === 'number' ? `${progress}%` : '0%'}
                   </p>
                 </div>
