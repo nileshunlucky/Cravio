@@ -450,22 +450,18 @@ def create_reddit_post_task(
         script_duration = save_audio_and_get_duration(script_audio_response, script_audio_path)
         temporary_files.append(script_audio_path)
 
-        # Step 6: Combine both audios using ffmpeg
+        # Step 6: Combine both audios using direct file copy
         self.update_state(state='PROGRESS', meta={'status': 'Combining audio', 'percent_complete': 70})
         combined_audio_path = f"{base_output_path}_combined.mp3"
         try:
-            input_title = ffmpeg.input(title_audio_path)
-            input_script = ffmpeg.input(script_audio_path)
-
-            # Concatenate the two audio files and output to a new file
-            ffmpeg.concat(input_title, input_script, v=0, a=1) \
-                .output(combined_audio_path, acodec='aac', loglevel='error') \
-                .run(overwrite_output=True, capture_stdout=True, capture_stderr=True)
-
-        except ffmpeg.Error as e:
-            print(f"FFmpeg error combining audio: {e.stderr.decode('utf8')}")
+            with open(combined_audio_path, 'wb') as outfile:
+                with open(title_audio_path, 'rb') as infile:
+                    shutil.copyfileobj(infile, outfile)
+                with open(script_audio_path, 'rb') as infile:
+                    shutil.copyfileobj(infile, outfile)
+        except Exception as e:
+            print(f"Error combining audio using copy protocol: {e}")
             raise
-
         temporary_files.append(combined_audio_path)
 
         total_duration = title_duration + script_duration
