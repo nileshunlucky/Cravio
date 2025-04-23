@@ -567,7 +567,8 @@ def create_reddit_post_task(
                '-c:v', 'libx264',
                '-crf', '23',  # Better quality control
                '-preset', 'medium',  # Better memory usage than ultrafast
-               '-threads', '2',  # Limit CPU threads
+               '-threads', '1',  # Limit CPU threads
+               '-s', '1280x720',
                '-c:a', 'aac',
                '-shortest',
                '-max_muxing_queue_size', '9999',  # Prevent muxer errors
