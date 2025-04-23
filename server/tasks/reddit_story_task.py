@@ -94,7 +94,7 @@ def create_reddit_post_layout(title, username, avatar_img):
     """
     # Load fonts
     font_username = load_font(FONT_PATH, 40)
-    font_title = load_font(FONT_PATH, 55)
+    font_title = load_font(FONT_PATH, 50)
 
     max_width = 920
     wrapped_title = wrap_text(title, font_title, max_width)
@@ -174,16 +174,16 @@ def font_name_to_color_code(font_name):
 
 # Modified function to center subtitles vertically and use one word per second timing
 def generate_styled_ass_subtitles(script_text, start_time_sec, total_duration_sec, color_code):
-    """Generate ASS format subtitles with styling - centered vertically with one word per second"""
+    """Generate ASS format subtitles with styling - centered with one word at a time"""
     words = script_text.strip().split()
     
-    # Force one word per second timing instead of distributing across total duration
+    # Force one word per second timing
     duration_per_word = 1.0  # Exactly one second per word
     
     # Ensure color code is in correct format
     color_code = color_code.lstrip("&H").upper()
     
-    # ASS header with centered position (Alignment=5 means centered horizontally and vertically)
+    # ASS header with centered position
     ass_header = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: 1080
@@ -198,7 +198,7 @@ Style: Default,Arial,150,&H00{color_code},&H000000FF,&H00000000,&H80000000,1,0,0
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     
-    # Generate events - one word per second
+    # Generate events - one word at a time
     events = []
     for i, word in enumerate(words):
         start = start_time_sec + i * duration_per_word
@@ -219,8 +219,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             int((end % 1) * 100)
         )
         
-        # Using {\\an5} positioning tag for center alignment (redundant with style but ensures it works)
-        event_line = f"Dialogue: 0,{start_str},{end_str},Default,,0,0,0,,{{\\an5}}{word}"
+        # Each word gets its own dialogue entry with center alignment
+        event_line = f"Dialogue: 0,{start_str},{end_str},Default,,0,0,0,,{word}"
         events.append(event_line)
     
     return ass_header + "\n".join(events)
@@ -650,10 +650,10 @@ def create_reddit_post_task(
                 # 1. Overlays the image for the title duration
                 # 2. Then applies subtitles (using the ASS file) for the entire video
         
-                subtitles_path_escaped = subtitles_path.replace(':', '\\:')
+                subtitles_path_escaped = subtitles_path.replace(':', '\\:').replace('\\', '\\\\')
                 filter_complex = (
-                    f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})', "
-                    f"ass='{subtitles_path_escaped}'"
+                  f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})', "
+                  f"subtitles='{subtitles_path_escaped}':force_style='Alignment=5,FontSize=150'"
                 )
         
                 combined_cmd = [
@@ -716,11 +716,30 @@ def create_reddit_post_task(
                             # Create a subtitle directly in the filter
                             # This bypasses the ASS file and just puts text on the video
                             # Also update the hardcoded subtitle fallback in your ffmpeg filter:
-                            subtitles_filter = (
-                                f"drawtext=text='{script}':fontcolor={font.lower()}:fontsize=30:"
-                                f"x=(w-text_w)/2:y=(h-text_h)/2:enable='gt(t,{title_duration})'"  # y=(h-text_h)/2 centers vertically
-                            )
-                    
+
+                            # Create a complex filter chain with multiple drawtext filters, one for each word
+                            words = script.split()
+                            drawtext_filters = []
+
+                            for i, word in enumerate(words):
+                                start_time = title_duration + i  # Start after title, then one second per word
+                                end_time = start_time + 1  # Show each word for one second
+    
+                                # Escape single quotes in the word for the filter
+                                safe_word = word.replace("'", "\\'")
+    
+                                # Create a drawtext filter for this word
+                                filter_text = (
+                                    f"drawtext=text='{safe_word}':fontcolor={font.lower()}:fontsize=30:"
+                                    f"x=(w-text_w)/2:y=(h-text_h)/2:"
+                                    f"enable='between(t,{start_time},{end_time})'"
+                                )
+                                drawtext_filters.append(filter_text)
+
+                            # Join all filters with commas
+                            subtitles_filter = ",".join(drawtext_filters)
+
+                            # Use this in the hardcoded_subs_cmd filter
                             hardcoded_subs_cmd = [
                                 "ffmpeg",
                                 "-i", final_with_overlay_path,
