@@ -559,18 +559,27 @@ def create_reddit_post_task(
         self.update_state(state='PROGRESS', meta={'status': 'Combining video and audio', 'percent_complete': 85})
 
         try:
-            print(f"Combining video '{muted_video_path}' and audio '{combined_audio_path}' using ffmpeg-python")
+            # Construct the ffmpeg command
+           command = [
+               'ffmpeg', 
+               '-i', muted_video_path,  # Input video
+               '-i', combined_audio_path,  # Input audio
+               '-c:v', 'libx264',  # Video codec
+               '-c:a', 'aac',  # Audio codec
+               '-shortest',  # Use the shortest stream (video or audio)
+               '-preset', 'ultrafast',  # Preset for encoding speed
+               final_with_audio_path  # Output file
+           ]
+    
+            # Print the command for debugging
+           print(f"Combining video '{muted_video_path}' and audio '{combined_audio_path}' using subprocess: {command}")
+    
+           # Run the subprocess command
+           subprocess.run(command, check=True)
 
-            (
-                ffmpeg
-                .input(muted_video_path)
-                .input(combined_audio_path)
-                .output(final_with_audio_path, vcodec='libx264', acodec='aac', shortest=True, preset='ultrafast')
-                .run()
-            )
-
-            print(f"Combined video with audio saved to: {final_with_audio_path}")
-            temporary_files.append(final_with_audio_path)
+           # After successful combination
+           print(f"Combined video with audio saved to: {final_with_audio_path}")
+           temporary_files.append(final_with_audio_path)
 
         except ffmpeg.Error as e:
             print(f"FFmpeg error (ffmpeg-python) combining video/audio:\nStdout: {e.stdout.decode()}\nStderr: {e.stderr.decode()}")
