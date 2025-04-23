@@ -188,7 +188,7 @@ WrapStyle: 0
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,150,&H00{color_code},&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,2,0,5,10,10,10,1
+Style: Default,Arial,150,&H00{color_code},&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,2,0,2,10,10,10,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -230,7 +230,7 @@ def get_video_dimensions(video_path):
         return width, height
     return None, None
 
-def upload_to_cloudinary(file_path: str, user_email: str) -> str:
+def upload_to_cloudinary(file_path: str, user_email: str, resized_output_path: str) -> str:
     """Upload a file to Cloudinary and return the URL"""
     try:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -241,6 +241,15 @@ def upload_to_cloudinary(file_path: str, user_email: str) -> str:
             file_path,
             resource_type="video",
             public_id=public_id,
+            overwrite=True,
+            folder="Cravio"
+        )
+        # Upload image
+        image_public_id = f"reddit_images/{user_email}/{timestamp}_image"
+        cloudinary.uploader.upload(
+            resized_output_path,
+            resource_type="image",
+            public_id=image_public_id,
             overwrite=True,
             folder="Cravio"
         )
@@ -647,7 +656,7 @@ def create_reddit_post_task(
             subtitle_cmd = [
                 "ffmpeg",
                 "-i", final_video_path,
-                "-vf", f"subtitles={subtitles_path_esc}",
+                "-vf", f"subtitles={subtitles_path_esc}:force_style='Alignment=2,MarginV=300'",
                 "-c:v", "libx264",
                 "-preset", "veryfast",
                 "-c:a", "aac",
@@ -668,7 +677,7 @@ def create_reddit_post_task(
 
         # Step 10: Upload the final video to Cloudinary
         self.update_state(state='PROGRESS', meta={'status': 'Uploading to Cloudinary', 'percent_complete': 95})
-        cloudinary_url = upload_to_cloudinary(final_output_path, user_email)
+        cloudinary_url = upload_to_cloudinary(final_output_path, user_email, resized_output_path)
 
         # Step 11: Save video details to MongoDB
         self.update_state(state='PROGRESS', meta={'status': 'Saving to MongoDB', 'percent_complete': 100})
