@@ -172,16 +172,18 @@ def font_name_to_color_code(font_name):
     }
     return color_map.get(font_name.lower(), "FFFFFF")
 
+# Modified function to center subtitles vertically and use one word per second timing
 def generate_styled_ass_subtitles(script_text, start_time_sec, total_duration_sec, color_code):
-    """Generate ASS format subtitles with styling"""
+    """Generate ASS format subtitles with styling - centered vertically with one word per second"""
     words = script_text.strip().split()
-    num_words = len(words)
-    duration_per_word = total_duration_sec / num_words
+    
+    # Force one word per second timing instead of distributing across total duration
+    duration_per_word = 1.0  # Exactly one second per word
     
     # Ensure color code is in correct format
     color_code = color_code.lstrip("&H").upper()
     
-    # ASS header
+    # ASS header with centered position (Alignment=5 means centered horizontally and vertically)
     ass_header = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: 1080
@@ -190,17 +192,17 @@ WrapStyle: 0
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,150,&H00{color_code},&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,2,0,2,10,10,10,1
+Style: Default,Arial,150,&H00{color_code},&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,2,0,5,10,10,10,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     
-    # Generate events
+    # Generate events - one word per second
     events = []
     for i, word in enumerate(words):
         start = start_time_sec + i * duration_per_word
-        end = start_time_sec + (i + 1) * duration_per_word
+        end = start + duration_per_word
         
         # Format times as h:mm:ss.cc
         start_str = "{:d}:{:02d}:{:02d}.{:02d}".format(
@@ -217,7 +219,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             int((end % 1) * 100)
         )
         
-        event_line = f"Dialogue: 0,{start_str},{end_str},Default,,0,0,0,,{word}"
+        # Using {\\an5} positioning tag for center alignment (redundant with style but ensures it works)
+        event_line = f"Dialogue: 0,{start_str},{end_str},Default,,0,0,0,,{{\\an5}}{word}"
         events.append(event_line)
     
     return ass_header + "\n".join(events)
@@ -712,9 +715,10 @@ def create_reddit_post_task(
                             
                             # Create a subtitle directly in the filter
                             # This bypasses the ASS file and just puts text on the video
+                            # Also update the hardcoded subtitle fallback in your ffmpeg filter:
                             subtitles_filter = (
                                 f"drawtext=text='{script}':fontcolor={font.lower()}:fontsize=30:"
-                                f"x=(w-text_w)/2:y=h-text_h-20:enable='gt(t,{title_duration})'"
+                                f"x=(w-text_w)/2:y=(h-text_h)/2:enable='gt(t,{title_duration})'"  # y=(h-text_h)/2 centers vertically
                             )
                     
                             hardcoded_subs_cmd = [
