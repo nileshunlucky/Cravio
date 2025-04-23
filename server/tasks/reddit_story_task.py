@@ -172,18 +172,19 @@ def font_name_to_color_code(font_name):
     }
     return color_map.get(font_name.lower(), "FFFFFF")
 
-# Modified function to center subtitles vertically and use one word per second timing
 def generate_styled_ass_subtitles(script_text, start_time_sec, total_duration_sec, color_code):
-    """Generate ASS format subtitles with styling - centered with one word at a time"""
+    """Generate ASS format subtitles with styling - centered with one word at a time and proper timing"""
     words = script_text.strip().split()
     
-    # Force one word per second timing
-    duration_per_word = 1.0  # Exactly one second per word
+    # Calculate appropriate word duration to fit within script duration
+    # This ensures all words will be shown during the script audio
+    word_count = len(words)
+    duration_per_word = total_duration_sec / word_count if word_count > 0 else 1.0
     
     # Ensure color code is in correct format
     color_code = color_code.lstrip("&H").upper()
     
-    # ASS header with centered position
+    # ASS header with centered position and increased font size
     ass_header = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: 1080
@@ -192,13 +193,13 @@ WrapStyle: 0
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,150,&H00{color_code},&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,2,0,5,10,10,10,1
+Style: Default,Arial,250,&H00{color_code},&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,2,0,5,10,10,10,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     
-    # Generate events - one word at a time
+    # Generate events - one word at a time distributed over script duration
     events = []
     for i, word in enumerate(words):
         start = start_time_sec + i * duration_per_word
@@ -235,7 +236,7 @@ def get_video_dimensions(video_path):
         return width, height
     return None, None
 
-def upload_to_cloudinary(file_path: str, user_email: str, resized_output_path: str) -> str:
+def upload_to_cloudinary(file_path: str, user_email: str) -> str:
     """Upload a file to Cloudinary and return the URL"""
     try:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -246,15 +247,6 @@ def upload_to_cloudinary(file_path: str, user_email: str, resized_output_path: s
             file_path,
             resource_type="video",
             public_id=public_id,
-            overwrite=True,
-            folder="Cravio"
-        )
-        # Upload image
-        image_public_id = f"reddit_images/{user_email}/{timestamp}_image"
-        cloudinary.uploader.upload(
-            resized_output_path,
-            resource_type="image",
-            public_id=image_public_id,
             overwrite=True,
             folder="Cravio"
         )
@@ -653,7 +645,7 @@ def create_reddit_post_task(
                 subtitles_path_escaped = subtitles_path.replace(':', '\\:').replace('\\', '\\\\')
                 filter_complex = (
                   f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})', "
-                  f"subtitles='{subtitles_path_escaped}':force_style='Alignment=5,FontSize=150'"
+                  f"subtitles='{subtitles_path_escaped}':force_style='Alignment=5,FontSize=250'"
                 )
         
                 combined_cmd = [
@@ -717,20 +709,24 @@ def create_reddit_post_task(
                             # This bypasses the ASS file and just puts text on the video
                             # Also update the hardcoded subtitle fallback in your ffmpeg filter:
 
-                            # Create a complex filter chain with multiple drawtext filters, one for each word
+                            # And update the hardcoded subtitle approach (fallback):
                             words = script.split()
-                            drawtext_filters = []
+                            word_count = len(words)
+                            # Calculate word duration to fit within script duration
+                            duration_per_word = script_duration / word_count if word_count > 0 else 1.0
 
+                            drawtext_filters = []
                             for i, word in enumerate(words):
-                                start_time = title_duration + i  # Start after title, then one second per word
-                                end_time = start_time + 1  # Show each word for one second
+                                # Distribute words evenly across script duration
+                                start_time = title_duration + (i * duration_per_word)
+                                end_time = title_duration + ((i + 1) * duration_per_word)
     
                                 # Escape single quotes in the word for the filter
                                 safe_word = word.replace("'", "\\'")
     
-                                # Create a drawtext filter for this word
+                                # Create a drawtext filter with larger font size
                                 filter_text = (
-                                    f"drawtext=text='{safe_word}':fontcolor={font.lower()}:fontsize=30:"
+                                    f"drawtext=text='{safe_word}':fontcolor={font.lower()}:fontsize=60:"  # Increased font size
                                     f"x=(w-text_w)/2:y=(h-text_h)/2:"
                                     f"enable='between(t,{start_time},{end_time})'"
                                 )
@@ -778,7 +774,7 @@ def create_reddit_post_task(
 
         # Step 10: Upload the final video to Cloudinary
         self.update_state(state='PROGRESS', meta={'status': 'Uploading to Cloudinary', 'percent_complete': 95})
-        cloudinary_url = upload_to_cloudinary(final_output_path, user_email, resized_output_path)
+        cloudinary_url = upload_to_cloudinary(final_output_path, user_email)
 
         # Step 11: Save video details to MongoDB
         self.update_state(state='PROGRESS', meta={'status': 'Saving to MongoDB', 'percent_complete': 100})
