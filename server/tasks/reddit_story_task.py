@@ -561,14 +561,17 @@ def create_reddit_post_task(
         try:
             # Construct the ffmpeg command
            command = [
-               'ffmpeg', 
-               '-i', muted_video_path,  # Input video
-               '-i', combined_audio_path,  # Input audio
-               '-c:v', 'libx264',  # Video codec
-               '-c:a', 'aac',  # Audio codec
-               '-shortest',  # Use the shortest stream (video or audio)
-               '-preset', 'ultrafast',  # Preset for encoding speed
-               final_with_audio_path  # Output file
+               'ffmpeg',
+               '-i', muted_video_path,
+               '-i', combined_audio_path,
+               '-c:v', 'libx264',
+               '-crf', '23',  # Better quality control
+               '-preset', 'medium',  # Better memory usage than ultrafast
+               '-threads', '2',  # Limit CPU threads
+               '-c:a', 'aac',
+               '-shortest',
+               '-max_muxing_queue_size', '9999',  # Prevent muxer errors
+               final_with_audio_path
            ]
     
             # Print the command for debugging
@@ -681,7 +684,7 @@ def create_reddit_post_task(
         return {
             "status": "success",
             "url": cloudinary_url,
-            "caption": caption
+            "caption": caption,
         }
 
     except Exception as e:
