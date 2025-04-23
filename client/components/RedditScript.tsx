@@ -130,7 +130,7 @@ const RedditStory: React.FC<RedditStoryProps> = ({ onChange, onNext, onSetFields
           onChange={(e) => setScript(e.target.value)}
           placeholder="Write your video script..."
           required
-          maxLength={300}
+          maxLength={150}
         />
       </div>
 

@@ -31,7 +31,7 @@ export default function ProjectPage() {
   const deleteOldVideos = async () => {
     try {
       const res = await fetch('https://cravio-ai.onrender.com/delete_old_videos', {
-        method: 'DELETE',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },

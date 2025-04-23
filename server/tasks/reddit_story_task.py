@@ -347,14 +347,14 @@ def generate_script(title: str) -> str:
                 - Conversational tone with natural speech patterns
                 - Include realistic details and emotional elements
                 - Create a clear story arc with setup, conflict, and resolution
-                - Keep it between 150 words
+                - Keep it between 100 words
                 - No introductions or explanations - just the story itself
                 - Make it sound like a real person telling their story
                 - Include 1-2 surprising twists or turns
                 - End with a satisfying conclusion or punchline
                 """
             }],
-            max_tokens=500,
+            max_tokens=300,
             temperature=0.7
         )
         script = response.choices[0].message.content.strip()

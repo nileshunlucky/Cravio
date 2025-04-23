@@ -18,7 +18,7 @@ router = APIRouter()
 class EmailPayload(BaseModel):
     email: str
 
-@router.delete("/delete_old_videos")
+@router.post("/delete_old_videos")
 async def delete_old_videos(payload: EmailPayload):
     email = payload.email
     now = datetime.utcnow()
