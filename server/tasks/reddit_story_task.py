@@ -165,14 +165,19 @@ def convert_to_audio(text, voice):
         )
         return response
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"OpenAI TTS error: {str(e)}")
+        # It's better to raise a standard Exception or a custom one here
+        # as HTTPException is typically for FastAPI request handling.
+        print(f"OpenAI TTS error: {str(e)}")
+        raise Exception(f"OpenAI TTS error: {str(e)}")
 
 
 def save_audio_and_get_duration(audio_response, path: str) -> float:
     """Save audio to file and return its duration"""
     try:
         with open(path, "wb") as f:
-            f.write(audio_response.read())
+            # Use iter_bytes() for potentially large responses
+            for chunk in audio_response.iter_bytes():
+                f.write(chunk)
         probe = ffmpeg.probe(path)
         duration = float(probe['format']['duration'])
         return duration
@@ -209,22 +214,32 @@ def format_time(seconds):
     return f"{hours}:{minutes:02d}:{secs:02d}.{centisecs:02d}"
 
 
-def get_video_dimensions(video_path):
-    """Get video dimensions and return in format suitable for ffmpeg commands"""
+def get_video_dimensions_and_duration(video_path):
+    """Get video dimensions and duration using ffprobe"""
     try:
         probe = ffmpeg.probe(video_path)
         video_info = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
-        if video_info:
-            width = int(video_info['width'])
-            height = int(video_info['height'])
-            return width, height
-        return None, None
+
+        if not video_info:
+             print(f"Could not find video stream in {video_path}")
+             return None, None, 0.0
+
+        width = int(video_info.get('width', 0))
+        height = int(video_info.get('height', 0))
+        # Safely get duration, defaulting to 0 if not present or invalid
+        duration = float(probe['format'].get('duration', 0) or 0) # Use 'or 0' to handle None or empty string
+
+
+        if width == 0 or height == 0:
+             print(f"Warning: Video dimensions are zero for {video_path}.")
+
+        return width, height, duration
     except ffmpeg.Error as e:
-        print(f"FFmpeg probing error for video {video_path}: {e.stderr.decode()}")
-        return None, None
+        print(f"FFprobe error for video {video_path}: {e.stderr.decode()}")
+        return None, None, 0.0
     except Exception as e:
         print(f"Error probing video file {video_path}: {str(e)}")
-        return None, None
+        return None, None, 0.0
 
 
 def upload_to_cloudinary(file_path: str, user_email: str) -> str:
@@ -291,9 +306,6 @@ def save_video_to_mongodb(user_email: str, video_url: str, title: str, script: s
 
         if result.modified_count == 0:
             print("No document was updated or found for update.")
-            # Check if the user exists but the update didn't modify (e.g., due to matching existing entry - though push prevents this)
-            # Or if the user didn't exist initially (handled above)
-            # For this context, if modified_count is 0, the update didn't happen as expected.
             return False
 
         return True
@@ -428,16 +440,24 @@ def create_reddit_post_task(
         # Step 4: Convert title to audio using OpenAI TTS
         title_audio_path = f"{base_output_path}_title.mp3"
         self.update_state(state='PROGRESS', meta={'status': 'Converting title to audio', 'percent_complete': 50})
-        title_audio_response = convert_to_audio(title, voice)
-        title_duration = save_audio_and_get_duration(title_audio_response, title_audio_path)
-        temporary_files.append(title_audio_path)
+        try:
+            title_audio_response = convert_to_audio(title, voice)
+            title_duration = save_audio_and_get_duration(title_audio_response, title_audio_path)
+            temporary_files.append(title_audio_path)
+        except Exception as e:
+             return {"status": "error", "message": f"Failed to convert title to audio: {str(e)}"}
+
 
         # Step 5: Convert script to audio
         script_audio_path = f"{base_output_path}_script.mp3"
         self.update_state(state='PROGRESS', meta={'status': 'Converting script to audio', 'percent_complete': 60})
-        script_audio_response = convert_to_audio(script, voice)
-        script_duration = save_audio_and_get_duration(script_audio_response, script_audio_path)
-        temporary_files.append(script_audio_path)
+        try:
+            script_audio_response = convert_to_audio(script, voice)
+            script_duration = save_audio_and_get_duration(script_audio_response, script_audio_path)
+            temporary_files.append(script_audio_path)
+        except Exception as e:
+             return {"status": "error", "message": f"Failed to convert script to audio: {str(e)}"}
+
 
         # Step 6: Combine both audios with FFmpeg
         self.update_state(state='PROGRESS', meta={'status': 'Combining audio', 'percent_complete': 70})
@@ -456,10 +476,11 @@ def create_reddit_post_task(
             ]
             print(f"Running FFmpeg audio combine command: {' '.join(cmd)}")
             result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+            print(f"FFmpeg audio combine stdout: {result.stdout}") # Print stdout as well
             print(f"FFmpeg audio combine stderr: {result.stderr}")
             print(f"Combined audio saved to: {combined_audio_path}")
         except subprocess.CalledProcessError as e:
-            print(f"FFmpeg error combining audio: {e.stderr}")
+            print(f"FFmpeg error combining audio. Command: {' '.join(e.cmd)}\nStdout: {e.stdout}\nStderr: {e.stderr}")
             raise Exception(f"FFmpeg error combining audio: {e.stderr}")
         except Exception as e:
             print(f"Error during audio combining: {str(e)}")
@@ -493,34 +514,14 @@ def create_reddit_post_task(
 
         # Get video dimensions and duration
         print(f"Probing video dimensions for: {gameplay_video_path}")
-        probe = None
-        try:
-            probe = ffmpeg.probe(gameplay_video_path)
-        except ffmpeg.Error as e:
-            print(f"FFmpeg probe error for {gameplay_video_path}: {e.stderr.decode()}")
-            return {"status": "error", "message": f"FFmpeg probe error for input video: {e.stderr.decode()}"}
-        except Exception as e:
-            print(f"Error probing video {gameplay_video_path}: {str(e)}")
-            return {"status": "error", "message": f"Error probing input video: {str(e)}"}
+        video_width, video_height, video_duration = get_video_dimensions_and_duration(gameplay_video_path)
 
-        if not probe or 'streams' not in probe or 'format' not in probe:
-             return {"status": "error", "message": f"Could not get video information from {gameplay_video_path}"}
-
-        video_info = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
-
-        if not video_info or 'width' not in video_info or 'height' not in video_info:
-             return {"status": "error", "message": f"Could not extract video stream information from {gameplay_video_path}"}
-
-        video_width = int(video_info['width'])
-        video_height = int(video_info['height'])
-        # Use get('duration', 0) for safety if duration is missing in format info
-        video_duration = float(probe['format'].get('duration', 0))
+        if video_width is None or video_height is None:
+             return {"status": "error", "message": f"Could not get valid video dimensions for {gameplay_video_path}"}
 
         if video_duration <= 0:
-             print(f"Warning: Could not get valid duration for video {gameplay_video_path}. Proceeding without trimming assumption.")
-             # If duration is unavailable or zero, we cannot reliably trim or sync.
-             # For now, proceed without trimming, but this might lead to issues later.
-             # A more robust solution might be to fail here or attempt a simple re-encode to get a valid duration.
+             print(f"Warning: Could not get valid duration ({video_duration}s) for video {gameplay_video_path}. Proceeding without trimming assumption.")
+             # Cannot reliably trim or sync without valid duration.
              pass
 
 
@@ -573,7 +574,9 @@ def create_reddit_post_task(
                     filter_complex.append(f"crop={video_width}:{new_height}:0:{crop_y}")
 
             # Scale to target dimensions - ensure output dimensions are even
-            filter_complex.append(f"scale=w='if(gt(a,9/16),{target_width},-2)':h='if(lt(a,9/16),{target_height},-2)'")
+            # Use scale filter with dynamic width/height based on aspect ratio
+            # -2 is ffmpeg-speak for "make height an even number based on width"
+            filter_complex.append(f"scale=w={target_width}:h={target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2")
 
 
             # Add trim if needed (only if video_duration is valid)
@@ -589,8 +592,11 @@ def create_reddit_post_task(
 
 
             # Build and run the command
+            # Add -analyzeduration and -probesize for more robust input analysis
             cmd = [
                 "ffmpeg",
+                "-analyzeduration", "2147483647", # Max value
+                "-probesize", "2147483647",       # Max value
                 "-i", gameplay_video_path
             ]
 
@@ -612,23 +618,27 @@ def create_reddit_post_task(
 
             print(f"Running FFmpeg muted video command: {' '.join(cmd)}")
             result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-            print(f"FFmpeg muted video stderr: {result.stderr}")
+            print(f"FFmpeg muted video stdout: {result.stdout}") # Print stdout
+            print(f"FFmpeg muted video stderr: {result.stderr}") # Print stderr
             print(f"Processed base video saved to: {muted_video_path}")
 
             # **Crucial Check:** Verify the output file exists and is not empty
             if not os.path.exists(muted_video_path) or os.path.getsize(muted_video_path) == 0:
-                 print(f"Error: FFmpeg failed to produce a valid muted video file at {muted_video_path}")
-                 return {"status": "error", "message": f"FFmpeg failed to produce a valid muted video file. Stderr: {result.stderr}"}
+                 error_msg = f"FFmpeg failed to produce a valid muted video file at {muted_video_path}.\nStdout: {result.stdout}\nStderr: {result.stderr}"
+                 print(f"Error: {error_msg}")
+                 return {"status": "error", "message": error_msg}
 
 
         except subprocess.CalledProcessError as e:
-            print(f"FFmpeg error processing video: {e.stderr}")
-            return {"status": "error", "message": f"FFmpeg error processing video: {e.stderr}"}
+            error_msg = f"FFmpeg error processing video. Command: {' '.join(e.cmd)}\nStdout: {e.stdout}\nStderr: {e.stderr}"
+            print(f"Error: {error_msg}")
+            return {"status": "error", "message": error_msg}
         except Exception as e:
-            print(f"Error during video processing: {str(e)}")
+            error_msg = f"Error during video processing: {str(e)}"
+            print(f"Error: {error_msg}")
             import traceback
             traceback.print_exc()
-            return {"status": "error", "message": f"Error processing video: {str(e)}"}
+            return {"status": "error", "message": error_msg}
 
         temporary_files.append(muted_video_path)
 
@@ -702,9 +712,6 @@ Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour,
         self.update_state(state='PROGRESS', meta={'status': 'Creating final video', 'percent_complete': 90})
 
         try:
-            # Now create the complex filter graph for FFmpeg
-            # This will handle overlay timing and subtitle placement in one command
-
             # Need to escape the path for FFmpeg's subtitles filter
             # Using ffmpeg.escape_ffmpeg if available, otherwise manual.
             try:
@@ -712,76 +719,62 @@ Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour,
                  escaped_subtitles_path = ffmpeg.escape_ffmpeg(subtitles_path)
             except AttributeError:
                  # Manual escaping if ffmpeg.escape_ffmpeg is not available (less robust)
-                 escaped_subtitles_path = subtitles_path.replace(':', '\\:').replace(',', '\\,').replace('\\', '\\\\')
-                 print("Warning: Using manual subtitle path escaping, consider installing ffmpeg-python for better escaping.")
+                 # This manual escape is basic; for complex paths, a more robust solution is needed.
+                 escaped_subtitles_path = subtitles_path.replace('\\', '\\\\').replace(':', '\\:')
+                 print("Warning: Using manual subtitle path escaping, consider using a dedicated escaping function.")
 
 
-            # The filter graph is getting complex. Let's define it step-by-step for clarity.
-            # Input 0: muted_video_path (video)
-            # Input 1: resized_overlay_path (image)
-            # Input 2: combined_audio_path (audio)
+            # Using subprocess directly for FFmpeg command construction
+            # This allows easier inclusion of input options like -analyzeduration etc.
 
-            # Base video stream
-            input_video = ffmpeg.input(muted_video_path)
-            input_overlay = ffmpeg.input(resized_overlay_path)
-            input_audio = ffmpeg.input(combined_audio_path)
-
-            # Apply overlay at calculated position for the duration of the title audio
-            # Using ffmpeg-python's overlay for better structure
-            video_with_overlay = input_video.overlay(
-                 input_overlay,
-                 x=x_position,
-                 y=y_position,
-                 enable=f'between(t,0,{title_duration})'
-            )
-
-            # Apply subtitles to the video with overlay
-            # Using ffmpeg-python's filter for subtitles
-            # The path needs to be escaped correctly for the subtitles filter
-            final_video_stream = video_with_overlay.filter(
-                 'subtitles',
-                 filename=escaped_subtitles_path,
-                 force_style='FontSize=40,Alignment=2,PrimaryColour=&H00'+color_code # Apply style from ASS file + override if needed
-                 # Consider removing force_style here and rely solely on the ASS file for style consistency
-                 # force_style='Alignment=2,PrimaryColour=&H00'+color_code # Example overriding just alignment and color
-            )
-
-
-            # Map video and audio streams and set output options
-            output_streams = [
-                 final_video_stream.video(),
-                 input_audio.audio()
+            cmd = [
+                "ffmpeg",
+                "-i", muted_video_path,          # Input 0: background video (already processed)
+                "-i", resized_overlay_path,       # Input 1: overlay image
+                "-i", combined_audio_path,        # Input 2: audio
+                # Define the complex filter graph
+                "-filter_complex",
+                # [0:v] -> video stream from input 0
+                # [1:v] -> video stream from input 1 (overlay image)
+                # overlay filter: put [1:v] on top of [0:v]
+                # x and y positioning, enable based on time (during title duration)
+                # [2:a] -> audio stream from input 2
+                f"[0:v]setpts=PTS-STARTPTS[bg];"  # Reset timestamps for background video
+                f"[1:v]setpts=PTS-STARTPTS[ovr];" # Reset timestamps for overlay image
+                f"[bg][ovr]overlay={x_position}:{y_position}:enable='between(t,0,{title_duration})'[withoverlay];" # Apply overlay
+                # subtitles filter: apply subtitles from the ASS file to the video with overlay
+                f"[withoverlay]subtitles='{escaped_subtitles_path}'[withsubs]", # Apply subtitles
+                "-map", "[withsubs]",             # Map the output video stream from the filter graph
+                "-map", "2:a",                   # Map the audio stream from input 2
+                "-c:v", "libx264",               # Video codec
+                "-preset", "fast",               # Encoding preset
+                "-crf", "23",                    # Constant Rate Factor (quality)
+                "-c:a", "aac",                   # Audio codec
+                "-b:a", "128k",                  # Audio bitrate
+                "-shortest",                     # Finish encoding when the shortest input stream ends
+                "-y",                            # Overwrite output file without asking
+                final_output_path
             ]
-
-            # Build the final FFmpeg command using ffmpeg-python
-            cmd = ffmpeg.output(
-                 *output_streams, # Use the streams defined above
-                 final_output_path,
-                 vcodec='libx264',
-                 preset='fast',
-                 crf=23,
-                 acodec='aac',
-                 audio_bitrate='128k',
-                 shortest=None, # Use shortest stream duration
-                 y=None # Overwrite output file without asking
-            ).compile() # Compile the command into a list of strings
 
             print(f"Running final FFmpeg command: {' '.join(cmd)}")
             # Execute the command
             result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-            print(f"FFmpeg final processing stderr: {result.stderr}")
+            print(f"FFmpeg final processing stdout: {result.stdout}") # Print stdout
+            print(f"FFmpeg final processing stderr: {result.stderr}") # Print stderr
             print(f"Final video saved to: {final_output_path}")
 
             temporary_files.append(final_output_path)
 
         except subprocess.CalledProcessError as e:
-            print(f"FFmpeg error creating final video: {e.stdout}\n{e.stderr}")
-            return {"status": "error", "message": f"FFmpeg error creating final video: {e.stderr}"}
+            error_msg = f"FFmpeg error creating final video. Command: {' '.join(e.cmd)}\nStdout: {e.stdout}\nStderr: {e.stderr}"
+            print(f"Error: {error_msg}")
+            return {"status": "error", "message": error_msg}
         except Exception as e:
-            print(f"Error creating final video: {str(e)}")
+            error_msg = f"Error creating final video: {str(e)}"
+            print(f"Error: {error_msg}")
             import traceback
             traceback.print_exc()
-            return {"status": "error", "message": f"Error creating final video: {str(e)}"}
+            return {"status": "error", "message": error_msg}
 
 
         # Step 11: Upload to Cloudinary
@@ -813,12 +806,14 @@ Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour,
         }
 
     except Exception as e:
-        print(f"General error: {str(e)}")
+        # This catches any exceptions not handled by the specific try...except blocks
+        error_msg = f"An unexpected error occurred during task execution: {str(e)}"
+        print(f"Error: {error_msg}")
         import traceback
         traceback.print_exc()
         return {
             "status": "error",
-            "message": str(e)
+            "message": error_msg
         }
     finally:
         # Clean up temporary files
