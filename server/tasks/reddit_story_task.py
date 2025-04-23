@@ -609,25 +609,30 @@ def create_reddit_post_task(
         subtitles_path = f"{base_output_path}_subtitles.ass"
         final_with_overlay_path = f"{base_output_path}_final_with_overlay.mp4"
         final_with_subs_path = f"{base_output_path}_final_with_subs.mp4"
-        final_output_path = final_with_audio_path  # Initialize
+        final_output_path = final_with_audio_path  # Initialize to fallback
 
         try:
+            # Create subtitles
             color_code = font_name_to_color_code(font)
             ass_subtitles = generate_styled_ass_subtitles(script, title_duration, script_duration, color_code)
             with open(subtitles_path, "w", encoding='utf-8') as subtitle_file:
                 subtitle_file.write(ass_subtitles)
             temporary_files.append(subtitles_path)
-
-            # Add overlay image at the beginning of the video using subprocess
+    
+            # First step: Add overlay image for the title duration
+            final_video_path = final_with_audio_path  # Default if overlay fails
+    
             video_width_final, video_height_final = get_video_dimensions(final_with_audio_path)
             if video_width_final and video_height_final:
+                # Resize the Reddit post image
                 target_image_width = int(video_width_final * 0.9)
                 target_image_height = int(reddit_post_img.height * (target_image_width / reddit_post_img.width))
                 resized_reddit_post_img = reddit_post_img.resize((target_image_width, target_image_height))
                 resized_output_path = f"{base_output_path}_resized_reddit_post.png"
                 resized_reddit_post_img.save(resized_output_path, format="PNG")
                 temporary_files.append(resized_output_path)
-
+        
+                # Overlay command
                 overlay_cmd = [
                     "ffmpeg",
                     "-i", final_with_audio_path,
@@ -636,44 +641,70 @@ def create_reddit_post_task(
                     f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'",
                     "-c:v", "libx264",
                     "-preset", "veryfast",
-                    "-acodec", "copy",
-                    "-y",  # Overwrite output file if it exists
+                    "-c:a", "copy",
+                    "-y",
                     final_with_overlay_path
                 ]
+                
+                print(f"Running overlay command: {' '.join(overlay_cmd)}")
                 try:
-                    subprocess.run(overlay_cmd, check=True, capture_stdout=True, capture_stderr=True)
-                    temporary_files.append(final_with_overlay_path)
-                    final_video_path = final_with_overlay_path
+                    # Fixed: Proper subprocess.run arguments
+                    result = subprocess.run(overlay_cmd, check=True, capture_output=True, text=True)
+                    print(f"Overlay stderr: {result.stderr}")
+            
+                    if os.path.exists(final_with_overlay_path) and os.path.getsize(final_with_overlay_path) > 0:
+                        temporary_files.append(final_with_overlay_path)
+                        final_video_path = final_with_overlay_path
+                        print(f"Successfully created overlay video: {final_with_overlay_path}")
+                    else:
+                        print("Overlay command ran but output file is missing or empty")
+                        # Keep using final_with_audio_path
                 except subprocess.CalledProcessError as e:
-                    print(f"FFmpeg error adding overlay: {e.stderr.decode()}")
-                    # Fallback: Continue with the video that has audio
+                    print(f"FFmpeg error adding overlay: {e.stderr}")
+                    # Keep using final_with_audio_path
             else:
-                # Fallback: Continue with the video that has audio
-                pass
-
-            # Now add subtitles using subprocess
-            subtitles_path_esc = subtitles_path.replace('\\', '\\\\\\\\') if platform.system() == 'Windows' else subtitles_path.replace(':', r'\:')
+                print("Could not determine video dimensions for overlay")
+                # Keep using final_with_audio_path
+    
+            # Second step: Add subtitles
+            # Properly escape the subtitles path for FFmpeg
+            if platform.system() == 'Windows':
+                subtitles_path_esc = subtitles_path.replace('\\', '\\\\')
+            else:
+                subtitles_path_esc = subtitles_path.replace(':', '\\:')
+    
+            # Build subtitle command
             subtitle_cmd = [
                 "ffmpeg",
                 "-i", final_video_path,
-                "-vf", f"subtitles={subtitles_path_esc}:force_style='Alignment=2,MarginV=300'",
+                "-vf", f"ass={subtitles_path_esc}",  # Use ass filter directly
                 "-c:v", "libx264",
                 "-preset", "veryfast",
-                "-c:a", "aac",
-                "-y",  # Overwrite output file if it exists
+                "-c:a", "copy",  # Just copy audio, don't re-encode
+                "-y",
                 final_with_subs_path
             ]
+    
+            print(f"Running subtitles command: {' '.join(subtitle_cmd)}")
             try:
-                subprocess.run(subtitle_cmd, check=True, capture_stdout=True, capture_stderr=True)
-                temporary_files.append(final_with_subs_path)
-                final_output_path = final_with_subs_path
+                # Fixed: Proper subprocess.run arguments
+                result = subprocess.run(subtitle_cmd, check=True, capture_output=True, text=True)
+                print(f"Subtitles stderr: {result.stderr}")
+                
+                if os.path.exists(final_with_subs_path) and os.path.getsize(final_with_subs_path) > 0:
+                    temporary_files.append(final_with_subs_path)
+                    final_output_path = final_with_subs_path
+                    print(f"Successfully created subtitled video: {final_with_subs_path}")
+                else:
+                    print("Subtitle command ran but output file is missing or empty")
+                    final_output_path = final_video_path  # Fall back to previous step
             except subprocess.CalledProcessError as e:
-                print(f"FFmpeg error adding subtitles: {e.stderr.decode()}")
-                final_output_path = final_video_path # Fallback: Use the video without subtitles
+                print(f"FFmpeg error adding subtitles: {e.stderr}")
+                final_output_path = final_video_path  # Fall back to previous step
 
         except Exception as e:
             print(f"Error in overlay/subtitle step: {str(e)}")
-            final_output_path = final_with_audio_path # Fallback to video with audio
+            final_output_path = final_with_audio_path  # Fallback to video with audio
 
         # Step 10: Upload the final video to Cloudinary
         self.update_state(state='PROGRESS', meta={'status': 'Uploading to Cloudinary', 'percent_complete': 95})
