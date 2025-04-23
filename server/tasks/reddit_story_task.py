@@ -560,30 +560,32 @@ def create_reddit_post_task(
 
         try:
             # Construct the ffmpeg command
-           command = [
-               'ffmpeg',
-               '-i', muted_video_path,
-               '-i', combined_audio_path,
-               '-c:v', 'libx264',
-               '-crf', '23',  # Better quality control
-               '-preset', 'medium',  # Better memory usage than ultrafast
-               '-threads', '1',  # Limit CPU threads
-               '-s', '1280x720',
+            command = [
+              'ffmpeg',
+              '-i', muted_video_path,
+              '-i', combined_audio_path,
+              '-c:v', 'libx264',
+              '-preset', 'superfast',  # 40% less memory than medium
+              '-crf', '24',  # Slightly higher CRF for smaller buffers
+              '-x264-params', 'ref=1:vbv-bufsize=1000:vbv-maxrate=2000',  # Memory caps
+              '-threads', '1',  # Strict single-threaded encoding
                '-c:a', 'aac',
+              '-ar', '44100',  # Standard sampling rate
                '-shortest',
-               '-max_muxing_queue_size', '9999',  # Prevent muxer errors
+               '-movflags', '+faststart',  # Better streaming preparation
+               '-max_muxing_queue_size', '9999',
                final_with_audio_path
-           ]
+            ]
     
             # Print the command for debugging
-           print(f"Combining video '{muted_video_path}' and audio '{combined_audio_path}' using subprocess: {command}")
+            print(f"Combining video '{muted_video_path}' and audio '{combined_audio_path}' using subprocess: {command}")
     
            # Run the subprocess command
-           subprocess.run(command, check=True)
+            subprocess.run(command, check=True)
 
            # After successful combination
-           print(f"Combined video with audio saved to: {final_with_audio_path}")
-           temporary_files.append(final_with_audio_path)
+            print(f"Combined video with audio saved to: {final_with_audio_path}")
+            temporary_files.append(final_with_audio_path)
 
         except ffmpeg.Error as e:
             print(f"FFmpeg error (ffmpeg-python) combining video/audio:\nStdout: {e.stdout.decode()}\nStderr: {e.stderr.decode()}")
