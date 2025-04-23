@@ -613,14 +613,12 @@ def create_reddit_post_task(
                 resized_reddit_post_img.save(resized_output_path, format="PNG")
                 temporary_files.append(resized_output_path)
 
-                x_position = (video_width_final - target_image_width) // 2
-                y_position = (video_height_final - target_image_height) // 2
-
                 overlay_cmd = [
                     "ffmpeg",
                     "-i", final_with_audio_path,
                     "-i", resized_output_path,
-                    "-filter_complex", f"[0:v][1:v]overlay={x_position}:{y_position}:enable='between(t,0,{title_duration})'",
+                    "-filter_complex",
+                    f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'",
                     "-c:v", "libx264",
                     "-preset", "veryfast",
                     "-acodec", "copy",
@@ -643,7 +641,7 @@ def create_reddit_post_task(
             subtitle_cmd = [
                 "ffmpeg",
                 "-i", final_video_path,
-                "-vf", f"subtitles={subtitles_path_esc}:force_style='FontSize=150,PrimaryColour=&H00{color_code},Alignment=2'",
+                "-vf", f"subtitles={subtitles_path_esc}",
                 "-c:v", "libx264",
                 "-preset", "veryfast",
                 "-c:a", "aac",
