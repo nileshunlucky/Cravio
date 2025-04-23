@@ -571,16 +571,32 @@ def create_reddit_post_task(
 
         temporary_files.append(muted_video_path)
 
-        # Step 8: Combine muted video and combined audio
+        # Step 8: Combine muted video and combined audio using subprocess
         final_with_audio_path = f"{base_output_path}_final_with_audio.mp4"
+        self.update_state(state='PROGRESS', meta={'status': 'Combining video and audio', 'percent_complete': 85})
+
         try:
-            ffmpeg.input(muted_video_path).input(combined_audio_path).output(
-                final_with_audio_path, vcodec='libx264', acodec='aac', shortest=None, preset='ultrafast'
-            ).run(overwrite_output=True, capture_stdout=True, capture_stderr=True)
+            print(f"Combining video '{muted_video_path}' and audio '{combined_audio_path}' using ffmpeg-python")
+
+            (
+                ffmpeg
+                .input(muted_video_path)
+                .input(combined_audio_path)
+                .output(final_with_audio_path, vcodec='libx264', acodec='aac', shortest=None, preset='ultrafast')
+                .run()
+            )
+
+            print(f"Combined video with audio saved to: {final_with_audio_path}")
+            temporary_files.append(final_with_audio_path)
+
         except ffmpeg.Error as e:
-            print(f"FFmpeg error combining video and audio: {e.stderr.decode('utf8')}")
+            print(f"FFmpeg error (ffmpeg-python) combining video/audio:\nStdout: {e.stdout.decode()}\nStderr: {e.stderr.decode()}")
+            raise Exception("FFmpeg-python failed to combine video and audio.") from e
+
+        except Exception as e:
+            print(f"Unexpected error in Step 8: {str(e)}")
+            traceback.print_exc()
             raise
-        temporary_files.append(final_with_audio_path)
 
         # Step 9: Create colored ASS format subtitles and overlay
         self.update_state(state='PROGRESS', meta={'status': 'Creating subtitles and overlay', 'percent_complete': 90})
