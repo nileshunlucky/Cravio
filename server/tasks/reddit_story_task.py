@@ -93,8 +93,8 @@ def create_reddit_post_layout(title, username, avatar_img):
     Creates the layout for the Reddit post, including title, avatar, and icons.
     """
     # Load fonts
-    font_username = load_font(FONT_PATH, 62)
-    font_title = load_font(FONT_PATH, 74)
+    font_username = load_font(FONT_PATH, 40)
+    font_title = load_font(FONT_PATH, 55)
 
     max_width = 920
     wrapped_title = wrap_text(title, font_title, max_width)
