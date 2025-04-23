@@ -235,7 +235,6 @@ def upload_to_cloudinary(file_path: str, user_email: str, resized_output_path: s
     try:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         public_id = f"reddit_videos/{user_email}/{timestamp}"
-        public_id2 = f"img_video/{user_email}/{timestamp}"
         
         # Upload the file to Cloudinary
         upload_result = cloudinary.uploader.upload(
@@ -245,7 +244,6 @@ def upload_to_cloudinary(file_path: str, user_email: str, resized_output_path: s
             overwrite=True,
             folder="Cravio"
         )
-
         # Upload image
         image_public_id = f"reddit_images/{user_email}/{timestamp}_image"
         cloudinary.uploader.upload(
