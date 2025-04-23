@@ -663,7 +663,7 @@ Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour,
                 f"[bg][ovr]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'[withoverlay];",
                 
                 # Add subtitles
-                f"[withoverlay]subtitles={subtitles_path.replace(':', r'\:')}:force_style='FontSize=40,Alignment=2,PrimaryColour=&H00{color_code}'[withsubs]"
+                f"[withoverlay]subtitles={subtitles_path.replace(':', '\\:')}:force_style='FontSize=40,Alignment=2,PrimaryColour=&H00{color_code}'[withsubs]"
             ]
             
             cmd = [
