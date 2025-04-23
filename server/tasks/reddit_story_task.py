@@ -217,7 +217,8 @@ def format_time(seconds):
 def get_video_dimensions_and_duration(video_path):
     """Get video dimensions and duration using ffprobe"""
     try:
-        probe = ffmpeg.probe(video_path)
+        # Adding -analyzeduration and -probesize to ffprobe call as well
+        probe = ffmpeg.probe(video_path, analyze_duration='2147483647', probesize='2147483647')
         video_info = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
 
         if not video_info:
@@ -235,7 +236,7 @@ def get_video_dimensions_and_duration(video_path):
 
         return width, height, duration
     except ffmpeg.Error as e:
-        print(f"FFprobe error for video {video_path}: {e.stderr.decode()}")
+        print(f"FFprobe error for video {video_path}:\nStdout: {e.stdout.decode()}\nStderr: {e.stderr.decode()}")
         return None, None, 0.0
     except Exception as e:
         print(f"Error probing video file {video_path}: {str(e)}")
@@ -517,7 +518,11 @@ def create_reddit_post_task(
         video_width, video_height, video_duration = get_video_dimensions_and_duration(gameplay_video_path)
 
         if video_width is None or video_height is None:
-             return {"status": "error", "message": f"Could not get valid video dimensions for {gameplay_video_path}"}
+             # Added a more specific error message if probing fails
+             error_msg = f"Failed to probe video dimensions/duration for {gameplay_video_path}. Input file might be corrupt or incompatible."
+             print(f"Error: {error_msg}")
+             return {"status": "error", "message": error_msg}
+
 
         if video_duration <= 0:
              print(f"Warning: Could not get valid duration ({video_duration}s) for video {gameplay_video_path}. Proceeding without trimming assumption.")
@@ -575,7 +580,8 @@ def create_reddit_post_task(
 
             # Scale to target dimensions - ensure output dimensions are even
             # Use scale filter with dynamic width/height based on aspect ratio
-            # -2 is ffmpeg-speak for "make height an even number based on width"
+            # force_original_aspect_ratio=decrease scales down to fit within bounds without stretching
+            # pad adds black bars if needed to reach the target resolution
             filter_complex.append(f"scale=w={target_width}:h={target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2")
 
 
@@ -583,7 +589,8 @@ def create_reddit_post_task(
             if trim_video and video_duration > 0:
                 # We'll take the middle portion of the video
                 start_time = max(0, (video_duration - total_duration) / 2) # Ensure start_time is not negative
-                filter_complex.append(f"trim=start={start_time}:duration={total_duration}")
+                # trim filter now applied BEFORE scaling and padding
+                filter_complex.insert(0, f"trim=start={start_time}:duration={total_duration}")
                 # setpts is crucial after trim to reset timestamps
                 filter_complex.append("setpts=PTS-STARTPTS")
             elif video_duration > 0 and video_duration < total_duration:
@@ -595,24 +602,25 @@ def create_reddit_post_task(
             # Add -analyzeduration and -probesize for more robust input analysis
             cmd = [
                 "ffmpeg",
-                "-analyzeduration", "2147483647", # Max value
-                "-probesize", "2147483647",       # Max value
+                "-analyzeduration", "2147483647", # Max value (approx 35 minutes)
+                "-probesize", "2147483647",       # Max value (approx 2GB)
                 "-i", gameplay_video_path
             ]
 
             # Add filter complex if we have any
             if filter_complex:
+                # Join filters with comma
                 cmd.extend(["-vf", ",".join(filter_complex)])
 
             cmd.extend([
                 "-an",  # Remove audio
-                "-r", "30", # Force frame rate
+                "-r", "30", # Force frame rate to 30 fps
                 "-c:v", "libx264",
                 "-preset", "fast",
                 "-crf", "23",
-                "-pix_fmt", "yuv420p",
+                "-pix_fmt", "yuv420p", # Ensure compatible pixel format
                 "-level", "4.1",
-                "-y",
+                "-y", # Overwrite output file without asking
                 muted_video_path
             ])
 
@@ -632,7 +640,8 @@ def create_reddit_post_task(
         except subprocess.CalledProcessError as e:
             error_msg = f"FFmpeg error processing video. Command: {' '.join(e.cmd)}\nStdout: {e.stdout}\nStderr: {e.stderr}"
             print(f"Error: {error_msg}")
-            return {"status": "error", "message": error_msg}
+            # Return the specific error message from FFmpeg stderr
+            return {"status": "error", "message": f"FFmpeg processing error: {e.stderr.strip()}"}
         except Exception as e:
             error_msg = f"Error during video processing: {str(e)}"
             print(f"Error: {error_msg}")
@@ -743,6 +752,7 @@ Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour,
                 f"[1:v]setpts=PTS-STARTPTS[ovr];" # Reset timestamps for overlay image
                 f"[bg][ovr]overlay={x_position}:{y_position}:enable='between(t,0,{title_duration})'[withoverlay];" # Apply overlay
                 # subtitles filter: apply subtitles from the ASS file to the video with overlay
+                # Use the escaped path and specify style parameters in the filter for reliability
                 f"[withoverlay]subtitles='{escaped_subtitles_path}'[withsubs]", # Apply subtitles
                 "-map", "[withsubs]",             # Map the output video stream from the filter graph
                 "-map", "2:a",                   # Map the audio stream from input 2
@@ -768,7 +778,8 @@ Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour,
         except subprocess.CalledProcessError as e:
             error_msg = f"FFmpeg error creating final video. Command: {' '.join(e.cmd)}\nStdout: {e.stdout}\nStderr: {e.stderr}"
             print(f"Error: {error_msg}")
-            return {"status": "error", "message": error_msg}
+            # Return the specific error message from FFmpeg stderr
+            return {"status": "error", "message": f"FFmpeg final processing error: {e.stderr.strip()}"}
         except Exception as e:
             error_msg = f"Error creating final video: {str(e)}"
             print(f"Error: {error_msg}")
