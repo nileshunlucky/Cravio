@@ -654,16 +654,17 @@ Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour,
             
             # Now create the complex filter graph for FFmpeg
             # This will handle overlay timing and subtitle placement in one command
+            escaped_path = subtitles_path.replace(':', '\\:')
             filter_complex = [
                 # Input declarations
                 "[0:v]setpts=PTS-STARTPTS[bg];", # Background video
                 "[1:v]setpts=PTS-STARTPTS[ovr];", # Overlay image
-                
+    
                 # Overlay positioned center during title duration
                 f"[bg][ovr]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'[withoverlay];",
-                
-                # Add subtitles
-                f"[withoverlay]subtitles={subtitles_path.replace(':', '\\:')}:force_style='FontSize=40,Alignment=2,PrimaryColour=&H00{color_code}'[withsubs]"
+    
+                # Use the pre-escaped variable
+                f"[withoverlay]subtitles={escaped_path}:force_style='FontSize=40,Alignment=2,PrimaryColour=&H00{color_code}'[withsubs]"
             ]
             
             cmd = [
