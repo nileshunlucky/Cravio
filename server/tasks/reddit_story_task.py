@@ -647,9 +647,10 @@ def create_reddit_post_task(
                 # 1. Overlays the image for the title duration
                 # 2. Then applies subtitles (using the ASS file) for the entire video
         
+                subtitles_path_escaped = subtitles_path.replace(':', '\\:')
                 filter_complex = (
                     f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})', "
-                    f"ass='{subtitles_path.replace(':', '\\:')}'"
+                    f"ass='{subtitles_path_escaped}'"
                 )
         
                 combined_cmd = [
