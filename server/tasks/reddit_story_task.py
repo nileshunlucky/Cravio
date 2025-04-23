@@ -17,6 +17,7 @@ import platform
 # tasks/reddit_story_task.py
 from celery import shared_task
 import time
+import traceback
 
 @shared_task(name="create_reddit_post_task")
 def create_reddit_post_task(data=None):
@@ -582,7 +583,7 @@ def create_reddit_post_task(
                 ffmpeg
                 .input(muted_video_path)
                 .input(combined_audio_path)
-                .output(final_with_audio_path, vcodec='libx264', acodec='aac', shortest=None, preset='ultrafast')
+                .output(final_with_audio_path, vcodec='libx264', acodec='aac', shortest=True, preset='ultrafast')
                 .run()
             )
 
