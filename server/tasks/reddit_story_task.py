@@ -571,47 +571,38 @@ def create_reddit_post_task(
 
         temporary_files.append(muted_video_path)
 
-        # Step 8: Combine muted video and combined audio using subprocess
+        # Step 8 (Fixed): Combine muted video and combined audio
         final_with_audio_path = f"{base_output_path}_final_with_audio.mp4"
         self.update_state(state='PROGRESS', meta={'status': 'Combining video and audio', 'percent_complete': 85})
+        
         try:
-            print(f"Combining video '{muted_video_path}' and audio '{combined_audio_path}' using subprocess")
-
+            # Simplified and more reliable FFmpeg command
             cmd = [
                 "ffmpeg",
-                "-i", muted_video_path,
-                "-i", combined_audio_path,
-                "-map", "0:v",
-                "-map", "1:a",
-                "-c:v", "libx264",
-                "-preset", "veryfast",
-                "-pix_fmt", "yuv420p",
-                "-strict", "experimental",
-                "-c:a", "aac",
-                "-b:a", "128k",
-                "-shortest",
-                "-y",
+                "-i", muted_video_path,   # Video input
+                "-i", combined_audio_path, # Audio input
+                "-c:v", "copy",           # Copy video stream (no re-encoding)
+                "-c:a", "aac",            # Convert audio to AAC
+                "-b:a", "128k",           # Audio bitrate
+                "-shortest",              # End when shortest input ends
+                "-y",                     # Overwrite output
                 final_with_audio_path
             ]
-
-            print(f"Running FFmpeg command for Step 8: {' '.join(cmd)}")
-            result = subprocess.run(cmd, check=True, capture_output=True, text=True, encoding='utf-8')
-            # print(f"FFmpeg Step 8 stdout: {result.stdout}") # Optional logging
-            print(f"FFmpeg Step 8 stderr (Info/Progress): {result.stderr}")
+            
+            print(f"Running FFmpeg combine command: {' '.join(cmd)}")
+            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+            print(f"FFmpeg combine stderr (Info/Progress): {result.stderr}")
             print(f"Combined video with audio saved to: {final_with_audio_path}")
-
+            
         except subprocess.CalledProcessError as e:
-            # Specific error handling for subprocess failure
-            print(f"FFmpeg error combining video and audio (Step 8). Command: {' '.join(e.cmd)}")
-            print(f"FFmpeg stderr: {e.stderr}")
-            # Re-raise a more informative exception for the main handler
-            raise Exception(f"FFmpeg error combining video and audio: {e.stderr}") from e
+            print(f"FFmpeg error combining video and audio: {e.stderr}")
+            return {"status": "error", "message": f"FFmpeg error combining video and audio: {e.stderr}"}
         except Exception as e:
-            # Catch any other unexpected errors in this step
-            print(f"Unexpected error combining video and audio (Step 8): {str(e)}")
+            print(f"Unexpected error combining video and audio: {str(e)}")
+            import traceback
             traceback.print_exc()
-            raise # Re-raise
-
+            return {"status": "error", "message": f"Error combining video and audio: {str(e)}"}
+            
         temporary_files.append(final_with_audio_path)
 
         # Step 9: Create colored ASS format subtitles and overlay
