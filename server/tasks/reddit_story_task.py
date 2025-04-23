@@ -570,10 +570,12 @@ def create_reddit_post_task(
             
             cmd.extend([
                 "-an",  # Remove audio
+                "-r", "30",
                 "-c:v", "libx264",
                 "-preset", "fast",
                 "-crf", "23",
                 "-pix_fmt", "yuv420p",
+                "-level", "4.1", 
                 "-y",
                 muted_video_path
             ])
