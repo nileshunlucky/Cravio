@@ -586,6 +586,7 @@ def create_reddit_post_task(
                 "-c:v", "libx264",
                 "-preset", "veryfast",
                 "-pix_fmt", "yuv420p",
+                "-strict", "experimental",
                 "-c:a", "aac",
                 "-b:a", "128k",
                 "-shortest",
