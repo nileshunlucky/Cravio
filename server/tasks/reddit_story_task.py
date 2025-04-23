@@ -91,8 +91,8 @@ def create_reddit_post_layout(title, username, avatar_img):
     Creates the layout for the Reddit post, including title, avatar, and icons.
     """
     # Load fonts
-    font_username = load_font("arialbd.ttf", 32)
-    font_title = load_font("arialbd.ttf", 44)
+    font_username = load_font("arialbd.ttf", 62)
+    font_title = load_font("arialbd.ttf", 74)
 
     max_width = 920
     wrapped_title = wrap_text(title, font_title, max_width)
@@ -230,17 +230,26 @@ def get_video_dimensions(video_path):
         return width, height
     return None, None
 
-def upload_to_cloudinary(file_path: str, user_email: str, resized_output_path: str) -> str:
+def upload_to_cloudinary(file_path: str, user_email: str, resized_output_path: str, final_video_path: str) -> str:
     """Upload a file to Cloudinary and return the URL"""
     try:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         public_id = f"reddit_videos/{user_email}/{timestamp}"
+        public_id2 = f"img_video/{user_email}/{timestamp}"
         
         # Upload the file to Cloudinary
         upload_result = cloudinary.uploader.upload(
             file_path,
             resource_type="video",
             public_id=public_id,
+            overwrite=True,
+            folder="Cravio"
+        )
+        # Upload the file to Cloudinary
+        upload_result = cloudinary.uploader.upload(
+            final_video_path,
+            resource_type="video",
+            public_id=public_id2,
             overwrite=True,
             folder="Cravio"
         )
@@ -677,7 +686,7 @@ def create_reddit_post_task(
 
         # Step 10: Upload the final video to Cloudinary
         self.update_state(state='PROGRESS', meta={'status': 'Uploading to Cloudinary', 'percent_complete': 95})
-        cloudinary_url = upload_to_cloudinary(final_output_path, user_email, resized_output_path)
+        cloudinary_url = upload_to_cloudinary(final_output_path, user_email, resized_output_path, final_video_path)
 
         # Step 11: Save video details to MongoDB
         self.update_state(state='PROGRESS', meta={'status': 'Saving to MongoDB', 'percent_complete': 100})
