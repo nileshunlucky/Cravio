@@ -13,13 +13,15 @@ import requests
 from celery_config import celery_app
 from db import users_collection  # Using your existing MongoDB setup
 import time
-import platform
+import traceback
 import time
 
 
 OUTPUT_FOLDER = "output"
 ASSETS_FOLDER = "assets"
 GAMEPLAY_FOLDER = "gameplays"
+FONT_PATH = os.path.join("assets", "Roboto-Bold.ttf")
+
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 # Configure Cloudinary - these should be set in environment variables in production
@@ -91,8 +93,8 @@ def create_reddit_post_layout(title, username, avatar_img):
     Creates the layout for the Reddit post, including title, avatar, and icons.
     """
     # Load fonts
-    font_username = load_font("arialbd.ttf", 62)
-    font_title = load_font("arialbd.ttf", 74)
+    font_username = load_font(FONT_PATH, 62)
+    font_title = load_font(FONT_PATH, 74)
 
     max_width = 920
     wrapped_title = wrap_text(title, font_title, max_width)
@@ -604,7 +606,7 @@ def create_reddit_post_task(
             print(f"Unexpected error in Step 8: {str(e)}")
             raise
 
-        # Step 9: Create colored ASS format subtitles and overlay
+        # Step 9: Enhanced debugging for image overlay and subtitles
         self.update_state(state='PROGRESS', meta={'status': 'Creating subtitles and overlay', 'percent_complete': 90})
         subtitles_path = f"{base_output_path}_subtitles.ass"
         final_with_overlay_path = f"{base_output_path}_final_with_overlay.mp4"
@@ -619,10 +621,15 @@ def create_reddit_post_task(
                 subtitle_file.write(ass_subtitles)
             temporary_files.append(subtitles_path)
     
-            # First step: Add overlay image for the title duration
-            final_video_path = final_with_audio_path  # Default if overlay fails
+            print(f"Created subtitle file at: {subtitles_path}")
+            print(f"First few lines of subtitle content: {ass_subtitles[:200]}...")
     
+            # IMPORTANT: Let's try a completely different approach using a single ffmpeg command for everything
+            final_combined_path = f"{base_output_path}_final_combined.mp4"
+    
+            # Resize the Reddit post image (do this outside of ffmpeg)
             video_width_final, video_height_final = get_video_dimensions(final_with_audio_path)
+    
             if video_width_final and video_height_final:
                 # Resize the Reddit post image
                 target_image_width = int(video_width_final * 0.9)
@@ -632,78 +639,117 @@ def create_reddit_post_task(
                 resized_reddit_post_img.save(resized_output_path, format="PNG")
                 temporary_files.append(resized_output_path)
         
-                # Overlay command
-                overlay_cmd = [
+                print(f"Resized image saved to: {resized_output_path}")
+                print(f"Image dimensions: {target_image_width}x{target_image_height}")
+        
+                # APPROACH 1: Single command approach - do overlay and subtitles in one go
+                # This complex filter graph:
+                # 1. Overlays the image for the title duration
+                # 2. Then applies subtitles (using the ASS file) for the entire video
+        
+                filter_complex = (
+                    f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})', "
+                    f"ass='{subtitles_path.replace(':', '\\:')}'"
+                )
+        
+                combined_cmd = [
                     "ffmpeg",
-                    "-i", final_with_audio_path,
-                    "-i", resized_output_path,
-                    "-filter_complex",
-                    f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'",
+                    "-i", final_with_audio_path,  # Video with audio
+                    "-i", resized_output_path,    # Overlay image
+                    "-filter_complex", filter_complex,
                     "-c:v", "libx264",
                     "-preset", "veryfast",
                     "-c:a", "copy",
                     "-y",
-                    final_with_overlay_path
+                    final_combined_path
                 ]
-                
-                print(f"Running overlay command: {' '.join(overlay_cmd)}")
+        
+                print(f"Running single-command approach: {' '.join(combined_cmd)}")
                 try:
-                    # Fixed: Proper subprocess.run arguments
-                    result = subprocess.run(overlay_cmd, check=True, capture_output=True, text=True)
-                    print(f"Overlay stderr: {result.stderr}")
+                    result = subprocess.run(combined_cmd, check=True, capture_output=True, text=True)
+                    print(f"Command stdout: {result.stdout}")
+                    print(f"Command stderr: {result.stderr}")
             
-                    if os.path.exists(final_with_overlay_path) and os.path.getsize(final_with_overlay_path) > 0:
-                        temporary_files.append(final_with_overlay_path)
-                        final_video_path = final_with_overlay_path
-                        print(f"Successfully created overlay video: {final_with_overlay_path}")
+                    if os.path.exists(final_combined_path) and os.path.getsize(final_combined_path) > 0:
+                        temporary_files.append(final_combined_path)
+                        final_output_path = final_combined_path
+                        print(f"Successfully created combined video: {final_combined_path}")
                     else:
-                        print("Overlay command ran but output file is missing or empty")
-                        # Keep using final_with_audio_path
+                        print("Single command approach failed - output file missing or empty")
+                        # Try approach 2
                 except subprocess.CalledProcessError as e:
-                    print(f"FFmpeg error adding overlay: {e.stderr}")
-                    # Keep using final_with_audio_path
+                    print(f"FFmpeg error in single command: {e.stderr}")
+                    print("Falling back to separate commands approach")
+                    # Try approach 2
+        
+                # APPROACH 2: If approach 1 fails, try separate temporary files with hardcoded subtitles
+        
+                if final_output_path == final_with_audio_path:  # Means approach 1 failed
+                    print("Trying alternative approach with hardcoded subtitles")
+            
+                    # First just overlay the image
+                    overlay_only_cmd = [
+                        "ffmpeg",
+                        "-i", final_with_audio_path,
+                        "-i", resized_output_path,
+                        "-filter_complex", f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'",
+                        "-c:v", "libx264",
+                        "-preset", "ultrafast",  # Even faster preset for testing
+                        "-c:a", "copy",
+                        "-y",
+                        final_with_overlay_path
+                    ]
+            
+                    print(f"Running overlay-only command: {' '.join(overlay_only_cmd)}")
+                    try:
+                        result = subprocess.run(overlay_only_cmd, check=True, capture_output=True, text=True)
+                        print(f"Overlay-only stderr: {result.stderr}")
+                
+                        if os.path.exists(final_with_overlay_path) and os.path.getsize(final_with_overlay_path) > 0:
+                            temporary_files.append(final_with_overlay_path)
+                            # Now try hardcoded subtitles as a fallback
+                            
+                            # Create a subtitle directly in the filter
+                            # This bypasses the ASS file and just puts text on the video
+                            subtitles_filter = (
+                                f"drawtext=text='{script}':fontcolor={font.lower()}:fontsize=30:"
+                                f"x=(w-text_w)/2:y=h-text_h-20:enable='gt(t,{title_duration})'"
+                            )
+                    
+                            hardcoded_subs_cmd = [
+                                "ffmpeg",
+                                "-i", final_with_overlay_path,
+                                "-vf", subtitles_filter,
+                                "-c:v", "libx264",
+                                "-preset", "ultrafast",
+                                "-c:a", "copy",
+                                "-y",
+                                final_with_subs_path
+                            ]
+                    
+                            print(f"Running hardcoded subtitles command: {' '.join(hardcoded_subs_cmd)}")
+                            try:
+                                result = subprocess.run(hardcoded_subs_cmd, check=True, capture_output=True, text=True)
+                                print(f"Hardcoded subs stderr: {result.stderr}")
+                                
+                                if os.path.exists(final_with_subs_path) and os.path.getsize(final_with_subs_path) > 0:
+                                    temporary_files.append(final_with_subs_path)
+                                    final_output_path = final_with_subs_path
+                                    print(f"Successfully created hardcoded subtitles video: {final_with_subs_path}")
+                                else:
+                                    print("Hardcoded subtitles command failed - output file missing or empty")
+                            except subprocess.CalledProcessError as e:
+                                print(f"FFmpeg error adding hardcoded subtitles: {e.stderr}")
+                        else:
+                            print("Overlay-only command failed - output file missing or empty")
+                    except subprocess.CalledProcessError as e:
+                        print(f"FFmpeg error in overlay-only command: {e.stderr}")
             else:
                 print("Could not determine video dimensions for overlay")
-                # Keep using final_with_audio_path
-    
-            # Second step: Add subtitles
-            # Properly escape the subtitles path for FFmpeg
-            if platform.system() == 'Windows':
-                subtitles_path_esc = subtitles_path.replace('\\', '\\\\')
-            else:
-                subtitles_path_esc = subtitles_path.replace(':', '\\:')
-    
-            # Build subtitle command
-            subtitle_cmd = [
-                "ffmpeg",
-                "-i", final_video_path,
-                "-vf", f"ass={subtitles_path_esc}",  # Use ass filter directly
-                "-c:v", "libx264",
-                "-preset", "veryfast",
-                "-c:a", "copy",  # Just copy audio, don't re-encode
-                "-y",
-                final_with_subs_path
-            ]
-    
-            print(f"Running subtitles command: {' '.join(subtitle_cmd)}")
-            try:
-                # Fixed: Proper subprocess.run arguments
-                result = subprocess.run(subtitle_cmd, check=True, capture_output=True, text=True)
-                print(f"Subtitles stderr: {result.stderr}")
-                
-                if os.path.exists(final_with_subs_path) and os.path.getsize(final_with_subs_path) > 0:
-                    temporary_files.append(final_with_subs_path)
-                    final_output_path = final_with_subs_path
-                    print(f"Successfully created subtitled video: {final_with_subs_path}")
-                else:
-                    print("Subtitle command ran but output file is missing or empty")
-                    final_output_path = final_video_path  # Fall back to previous step
-            except subprocess.CalledProcessError as e:
-                print(f"FFmpeg error adding subtitles: {e.stderr}")
-                final_output_path = final_video_path  # Fall back to previous step
 
         except Exception as e:
             print(f"Error in overlay/subtitle step: {str(e)}")
+            traceback.print_exc()  # Print full traceback for debugging
             final_output_path = final_with_audio_path  # Fallback to video with audio
 
         # Step 10: Upload the final video to Cloudinary
