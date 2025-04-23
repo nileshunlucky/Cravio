@@ -14,23 +14,8 @@ from celery_config import celery_app
 from db import users_collection  # Using your existing MongoDB setup
 import time
 import platform
-# tasks/reddit_story_task.py
-from celery import shared_task
 import time
-import traceback
 
-@shared_task(name="create_reddit_post_task")
-def create_reddit_post_task(data=None):
-    """A simple task that will work regardless of Reddit API access"""
-    print(f"Processing task with data: {data}")
-    time.sleep(5)  # Simulate work
-    return {"status": "success", "processed_data": data}
-
-@shared_task(name="debug_task")
-def debug_task():
-    """Simple debug task to verify Celery worker functionality"""
-    print("Debug task executed successfully!")
-    return "Debug task completed"
 
 OUTPUT_FOLDER = "output"
 ASSETS_FOLDER = "assets"
@@ -313,8 +298,6 @@ def save_video_to_mongodb(user_email: str, video_url: str, title: str, script: s
         
     except HTTPException as e:
         print(f"Error saving to MongoDB: {str(e)}")
-        import traceback
-        traceback.print_exc()
         return False
     
 # Create a function to generate the title from GPT-3.5-turbo
@@ -567,7 +550,6 @@ def create_reddit_post_task(
             raise Exception(f"FFmpeg error during video processing: {e.stderr}") from e
         except Exception as e:
             print(f"Unexpected error during video processing (Step 7): {str(e)}")
-            traceback.print_exc()
             raise
 
         temporary_files.append(muted_video_path)
@@ -596,7 +578,6 @@ def create_reddit_post_task(
 
         except Exception as e:
             print(f"Unexpected error in Step 8: {str(e)}")
-            traceback.print_exc()
             raise
 
         # Step 9: Create colored ASS format subtitles and overlay
@@ -670,8 +651,6 @@ def create_reddit_post_task(
 
         except Exception as e:
             print(f"Error in overlay/subtitle step: {str(e)}")
-            import traceback
-            traceback.print_exc()
             final_output_path = final_with_audio_path # Fallback to video with audio
 
         # Step 10: Upload the final video to Cloudinary
@@ -700,8 +679,6 @@ def create_reddit_post_task(
 
     except Exception as e:
         print(f"General error: {str(e)}")
-        import traceback
-        traceback.print_exc()
         return {
             "status": "error",
             "message": str(e)
