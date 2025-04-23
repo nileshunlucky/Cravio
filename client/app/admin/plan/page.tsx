@@ -148,7 +148,9 @@ const Plans: React.FC = () => {
               user_email: user?.primaryEmailAddress?.emailAddress,
               credits: pricingPlans.find(plan => plan.planId === planId)?.credit,
               subscription_id: data.id,
-              price: Math.round(pricingPlans.find(plan => plan.planId === planId)?.price || 0)
+              price: Math.round(pricingPlans.find(plan => plan.planId === planId)?.price || 0),
+              status: "active",               
+              last_credited: new Date().toISOString() 
             })
           });
   

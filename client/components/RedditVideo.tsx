@@ -6,7 +6,6 @@ import clsx from 'clsx'
 
 const videos = [
   { title: 'Satisfy', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1744903431/Gameplay/satisfy.mp4' },
-  { title: 'GTA', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1744903426/Gameplay/gta.mp4' },
   { title: 'Minecraft', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1744903105/Gameplay/minecraft.mp4' }
 ]
 

@@ -193,7 +193,7 @@ WrapStyle: 0
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,250,&H00{color_code},&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,2,0,5,10,10,10,1
+Style: Default,Arial,250,&H00{color_code},&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,2,0,5,10,10,10,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -221,7 +221,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         )
         
         # Each word gets its own dialogue entry with center alignment
-        event_line = f"Dialogue: 0,{start_str},{end_str},Default,,0,0,0,,{word}"
+        event_line = f"Dialogue: 0,{start_str},{end_str},Default,,0,0,0,,{{\\b1}}{word}"
         events.append(event_line)
     
     return ass_header + "\n".join(events)
@@ -645,7 +645,7 @@ def create_reddit_post_task(
                 subtitles_path_escaped = subtitles_path.replace(':', '\\:').replace('\\', '\\\\')
                 filter_complex = (
                   f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})', "
-                  f"subtitles='{subtitles_path_escaped}':force_style='Alignment=5,FontSize=250'"
+                  f"subtitles='{subtitles_path_escaped}':force_style='Alignment=5,FontSize=250,Bold=1'"
                 )
         
                 combined_cmd = [
@@ -727,7 +727,8 @@ def create_reddit_post_task(
                                 # Create a drawtext filter with larger font size
                                 filter_text = (
                                     f"drawtext=text='{safe_word}':fontcolor={font.lower()}:fontsize=60:"  # Increased font size
-                                    f"x=(w-text_w)/2:y=(h-text_h)/2:"
+                                    f"x=(w-text_w)/2:y=(h-text_h)/2:font='Arial':"
+                                    f"fontfile='{FONT_PATH}':"
                                     f"enable='between(t,{start_time},{end_time})'"
                                 )
                                 drawtext_filters.append(filter_text)

@@ -4,6 +4,7 @@ from pydantic import BaseModel, EmailStr
 from db import users_collection
 from api.reddit_story import router as reddit_router
 from subscription import router as subscription_router
+from delete_videos import router as delete_router
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -26,6 +27,7 @@ app.add_middleware(
 # add routers
 app.include_router(reddit_router)
 app.include_router(subscription_router)
+app.include_router(delete_router)
 
 # Get user by email
 @app.get("/user/{email}")

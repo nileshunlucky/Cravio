@@ -3,11 +3,11 @@ from dotenv import load_dotenv
 import razorpay
 import os
 from pydantic import BaseModel
-from typing import Union
+from typing import Union, Optional
 import traceback
 from bson.objectid import ObjectId
 from db import users_collection 
-from datetime import datetime
+from datetime import datetime, timedelta
 import hmac, hashlib
 
 load_dotenv()
@@ -47,6 +47,8 @@ class UpdateCreditsRequest(BaseModel):
     credits: int
     subscription_id: str
     price: Union[int, float] 
+    status: Optional[str] = "active"
+    last_credited: Optional[str] = None
 
 @router.post("/update-credits")
 async def update_credits(request: UpdateCreditsRequest):
@@ -69,7 +71,10 @@ async def update_credits(request: UpdateCreditsRequest):
 
         update_fields = {
             "credits": new_credits,
-            "purchases": updated_purchases
+            "purchases": updated_purchases,
+            "active_subscription_id": request.subscription_id,
+            "subscription_status": request.status,
+            "last_credited": request.last_credited or datetime.utcnow().isoformat()
         }
 
         # 3. Reward referrer (20% of price)
@@ -115,56 +120,83 @@ def verify_signature(payload_body: bytes, received_signature: str) -> bool:
 @router.post("/razorpay-webhook")
 async def razorpay_webhook(request: Request):
     try:
+        # Get request body and signature from headers
         body = await request.body()
         signature = request.headers.get('x-razorpay-signature')
 
+        # Verify the signature to ensure the request is from Razorpay
         if not signature or not verify_signature(body, signature):
             raise HTTPException(status_code=400, detail="Invalid signature")
 
+        # Parse the JSON payload from Razorpay
         payload = await request.json()
         event = payload.get("event")
         print("Webhook event received:", event)
 
         if event == "subscription.charged":
-            payload_data = payload["payload"]["payment"]["entity"]
-            subscription_id = payload_data["subscription_id"]
-            email = payload_data["email"]
-            amount = payload_data["amount"] / 100  # Razorpay sends in paisa (INR)
+            payment_entity = payload["payload"]["payment"]["entity"]
+            subscription_id = payment_entity["subscription_id"]
+            email = payment_entity["email"]
+            amount = payment_entity["amount"] / 100  # ₹
 
-            # 🎯 Credit logic based on INR amount
-            if amount == 860:
-                credits = 250
-            elif amount == 2150:
-                credits = 700
-            elif amount == 4300:
-                credits = 1500
-            else:
-                credits = 0
+            # Determine plan credits based on the amount charged
+            credit_map = {
+                860: 250,
+                2150: 700,
+                4300: 1500
+            }
+            plan_credits = credit_map.get(amount, 0)
 
             user = users_collection.find_one({"email": email})
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
 
-            # 1. Add credits and purchase
-            users_collection.update_one(
-                {"email": email},
-                {
-                    "$inc": {"credits": credits},
-                    "$push": {
-                        "purchases": {
-                            "subscription_id": subscription_id,
-                            "price": amount,
-                            "date": datetime.utcnow()
+            # Don't credit if the user has canceled the subscription
+            if user.get("subscription_status") == "cancelled":
+                print("⚠️ Subscription was cancelled — skipping crediting.")
+                return {"status": "cancelled_skipped"}
+
+            # Check last credited date to avoid multiple credits in a short period
+            last_credited_str = user.get("last_credited")
+            now = datetime.utcnow()
+
+            give_credits = False
+            if not last_credited_str:
+                give_credits = True
+            else:
+                last_credited = datetime.fromisoformat(last_credited_str)
+                if now - last_credited >= timedelta(days=30):
+                    give_credits = True
+
+            if give_credits:
+                # Update the user's credits and subscription status
+                users_collection.update_one(
+                    {"email": email},
+                    {
+                        "$inc": {"credits": plan_credits},
+                        "$set": {
+                            "last_credited": now.isoformat(),
+                            "active_subscription_id": subscription_id,
+                            "subscription_status": "active"
+                        },
+                        "$push": {
+                            "purchases": {
+                                "subscription_id": subscription_id,
+                                "price": amount,
+                                "date": now
+                            }
                         }
                     }
-                }
-            )
+                )
+                print(f"✅ Credited {plan_credits} credits to {email}")
+            else:
+                print(f"🕒 User {email} already credited in the last 30 days.")
 
-            # 2. Handle referral reward in USD
+            # Handle referral reward if the user was referred by someone
             referred_by_code = user.get("referredBy")
             if referred_by_code:
                 commission_inr = round(0.2 * amount, 2)
-                usd_rate = 85  # 1 USD = ₹85
+                usd_rate = 85
                 commission_usd = round(commission_inr / usd_rate, 2)
 
                 referrer = users_collection.find_one({"ref_code": referred_by_code})
@@ -175,11 +207,31 @@ async def razorpay_webhook(request: Request):
                     )
                     print(f"🎁 Referrer credited ${commission_usd} (₹{commission_inr})")
 
-            print(f"✅ {email} received {credits} credits for ₹{amount}")
+        elif event == "subscription.cancelled":
+            # Subscription was canceled
+            subscription_id = payload["payload"]["subscription"]["entity"]["id"]
+            email = payload["payload"]["subscription"]["entity"]["email"]
+
+            user = users_collection.find_one({"email": email})
+            if user:
+                # Update subscription status to 'cancelled'
+                users_collection.update_one(
+                    {"email": email},
+                    {
+                        "$set": {
+                            "subscription_status": "cancelled",
+                            "active_subscription_id": subscription_id
+                        }
+                    }
+                )
+                print(f"⚠️ Subscription for {email} has been cancelled.")
+            else:
+                print(f"⚠️ User with email {email} not found during cancellation event.")
 
         elif event == "payment.failed":
+            # Handle failed payment event
             print("❌ Payment failed:", payload["payload"]["payment"]["entity"])
-        
+
         return {"status": "ok"}
 
     except Exception as e:
