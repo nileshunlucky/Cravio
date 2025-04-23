@@ -571,27 +571,25 @@ def create_reddit_post_task(
 
         temporary_files.append(muted_video_path)
 
-        # Step 8: Combine muted video and combined audio
         # Step 8: Combine muted video and combined audio using subprocess
         final_with_audio_path = f"{base_output_path}_final_with_audio.mp4"
         self.update_state(state='PROGRESS', meta={'status': 'Combining video and audio', 'percent_complete': 85})
         try:
             print(f"Combining video '{muted_video_path}' and audio '{combined_audio_path}' using subprocess")
 
-            # Build the ffmpeg command for Step 8
             cmd = [
                 "ffmpeg",
-                "-i", muted_video_path,      # Input 0: Video file from Step 7
-                "-i", combined_audio_path,   # Input 1: Combined audio file from Step 6
-                "-map", "0:v",               # Map video stream from Input 0
-                "-map", "1:a",               # Map audio stream from Input 1
-                "-c:v", "libx264",           # Re-encode video (safer after potential copy/edits)
-                "-preset", "veryfast",       # Encoding preset
-                "-pix_fmt", "yuv420p",       # Standard pixel format
-                "-c:a", "aac",               # Encode audio to AAC (standard for MP4)
-                "-b:a", "128k",              # Reasonable audio bitrate
-                "-shortest",                 # Finish when the shortest input ends (common for this use case)
-                "-y",                        # Overwrite output file if it exists
+                "-i", muted_video_path,
+                "-i", combined_audio_path,
+                "-map", "0:v",
+                "-map", "1:a",
+                "-c:v", "libx264",
+                "-preset", "veryfast",
+                "-pix_fmt", "yuv420p",
+                "-c:a", "aac",
+                "-b:a", "128k",
+                "-shortest",
+                "-y",
                 final_with_audio_path
             ]
 
@@ -600,7 +598,7 @@ def create_reddit_post_task(
             # print(f"FFmpeg Step 8 stdout: {result.stdout}") # Optional logging
             print(f"FFmpeg Step 8 stderr (Info/Progress): {result.stderr}")
             print(f"Combined video with audio saved to: {final_with_audio_path}")
-  
+
         except subprocess.CalledProcessError as e:
             # Specific error handling for subprocess failure
             print(f"FFmpeg error combining video and audio (Step 8). Command: {' '.join(e.cmd)}")
@@ -608,11 +606,11 @@ def create_reddit_post_task(
             # Re-raise a more informative exception for the main handler
             raise Exception(f"FFmpeg error combining video and audio: {e.stderr}") from e
         except Exception as e:
-             # Catch any other unexpected errors in this step
-             print(f"Unexpected error combining video and audio (Step 8): {str(e)}")
-             traceback.print_exc()
-             raise # Re-raise
-  
+            # Catch any other unexpected errors in this step
+            print(f"Unexpected error combining video and audio (Step 8): {str(e)}")
+            traceback.print_exc()
+            raise # Re-raise
+
         temporary_files.append(final_with_audio_path)
 
         # Step 9: Create colored ASS format subtitles and overlay
