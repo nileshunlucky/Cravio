@@ -681,6 +681,12 @@ def create_reddit_post_task(
     
             # Resize the Reddit post image (do this outside of ffmpeg)
             video_width_final, video_height_final = get_video_dimensions(final_with_audio_path)
+            
+            if video_width_final is None or video_height_final is None:
+               raise ValueError("get_video_dimensions() returned None values.")
+
+            if video_width_final == 0 or video_height_final == 0:
+               raise ValueError(f"Invalid video dimensions: width={video_width_final}, height={video_height_final}")
     
             if video_width_final and video_height_final:
                 # Resize the Reddit post image
