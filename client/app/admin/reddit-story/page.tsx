@@ -7,6 +7,7 @@ import RedditVideo from '@/components/RedditVideo'
 import RedditVoice from '@/components/RedditVoice'
 import LoadingAndDownload from '@/components/LoadingAndDownload'
 import { useUser } from "@clerk/nextjs"
+import { toast } from "sonner"
 
 type TaskResult = {
     url: string
@@ -42,6 +43,22 @@ const Page = () => {
     const handleBackStep = () => setCurrentStep(prevStep => Math.max(prevStep - 1, 1))
 
     const handleGenerate = async () => {
+        const missingFields = []
+
+        if (!username) missingFields.push('Username')
+        if (!title) missingFields.push('Title')
+        if (!script) missingFields.push('Script')
+        if (!voice) missingFields.push('Voice')
+        if (!video) missingFields.push('Video')
+        if (!font) missingFields.push('Font')
+        if (!userEmail) missingFields.push('Email')
+        if (!avatar) missingFields.push('Avatar')
+      
+        if (missingFields.length > 0) {
+          toast.error(`Missing: ${missingFields.join(', ')}`)
+          return
+        }
+
         setLoading(true);
         try {
             const formData = new FormData();
