@@ -565,44 +565,94 @@ def create_reddit_post_task(
         self.update_state(state='PROGRESS', meta={'status': 'Combining video and audio', 'percent_complete': 85})
 
         try:
-            # Construct the ffmpeg command with lower memory usage settings
+            # SOLUTION: Instead of trying to re-encode the video, just copy the streams
+            # This significantly reduces memory and CPU usage
             command = [
                 'ffmpeg',
                 '-i', muted_video_path,
                 '-i', combined_audio_path,
-                '-c:v', 'libx264',
-                '-preset', 'ultrafast',  # Even faster than superfast, uses less memory
-                '-crf', '28',  # Higher CRF means lower quality but smaller file and less memory usage
-                '-x264-params', 'ref=1:vbv-bufsize=500:vbv-maxrate=1000',  # Reduced buffer size
-                '-threads', '1',  # Keep single-threaded encoding
-                '-c:a', 'aac',
-                '-ar', '44100',
-                '-b:a', '64k',  # Lower audio bitrate
+                '-c:v', 'copy',  # Copy video stream without re-encoding
+                '-c:a', 'aac',   # Convert audio to AAC (much lighter than full video re-encoding)
+                '-b:a', '48k',   # Very low audio bitrate to save resources
+                '-ar', '22050',  # Lower audio sample rate (standard was 44100)
                 '-shortest',
                 '-movflags', '+faststart',
-                '-max_muxing_queue_size', '1024',
                 final_with_audio_path
             ]
 
             # Print the command for debugging
-            print(f"Combining video '{muted_video_path}' and audio '{combined_audio_path}' using subprocess: {command}")
+            print(f"Combining video '{muted_video_path}' and audio '{combined_audio_path}' using streamcopy: {command}")
 
-            # Run the subprocess command with timeout to prevent hanging
-            subprocess.run(command, check=True, timeout=300)  # 5 minute timeout
-
+            # Run the subprocess command
+            result = subprocess.run(command, check=True, timeout=180)  # 3 minute timeout
+    
             # After successful combination
             print(f"Combined video with audio saved to: {final_with_audio_path}")
             temporary_files.append(final_with_audio_path)
 
         except subprocess.TimeoutExpired:
             print("FFmpeg command timed out - process took too long")
-            raise Exception("FFmpeg timed out when combining video and audio")
+            # FALLBACK: If timeout occurs, try an even simpler approach
+            try:
+                fallback_output = f"{base_output_path}_audio_only.mp4"
+                # Just take the audio and create a simple video
+                fallback_cmd = [
+                    'ffmpeg',
+                    '-i', combined_audio_path,
+                    '-f', 'lavfi', 
+                    '-i', 'color=c=black:s=720x1280:r=15',  # Black background video at lower framerate
+                    '-c:v', 'libx264', 
+                    '-preset', 'ultrafast',
+                    '-tune', 'stillimage',
+                    '-crf', '35',  # Very low quality to save resources
+                    '-c:a', 'aac',
+                    '-shortest',
+                    fallback_output
+                ]
+                subprocess.run(fallback_cmd, check=True, timeout=120)
+                final_with_audio_path = fallback_output
+                temporary_files.append(fallback_output)
+                print(f"Created fallback audio-only video: {fallback_output}")
+            except Exception as fallback_error:
+                print(f"Fallback approach also failed: {fallback_error}")
+                raise Exception("All FFmpeg approaches failed") from fallback_error
     
         except subprocess.CalledProcessError as e:
             print(f"FFmpeg error: Return code {e.returncode}")
-            if hasattr(e, 'stderr') and e.stderr:
-                print(f"stderr: {e.stderr}")
-            raise Exception("FFmpeg failed to combine video and audio") from e
+    
+            # ALTERNATIVE FALLBACK: Try splitting the process into smaller steps
+            try:
+                print("Trying alternative approach - splitting the process")
+                temp_audio_path = f"{base_output_path}_temp_audio.aac"
+        
+                # Step 1: Extract and convert audio to AAC separately (lower quality)
+                audio_cmd = [
+                    'ffmpeg',
+                    '-i', combined_audio_path,
+                    '-c:a', 'aac',
+                    '-b:a', '32k',  # Very low bitrate
+                    '-ar', '22050',  # Lower sample rate
+                    temp_audio_path
+                ]
+                subprocess.run(audio_cmd, check=True, timeout=60)
+                temporary_files.append(temp_audio_path)
+        
+                # Step 2: Combine with video using stream copy for both
+                final_cmd = [
+                    'ffmpeg',
+                    '-i', muted_video_path,
+                    '-i', temp_audio_path,
+                    '-c:v', 'copy',  # Copy video
+                    '-c:a', 'copy',  # Copy already-converted audio
+                    '-shortest',
+                    final_with_audio_path
+                ]
+                subprocess.run(final_cmd, check=True, timeout=120)
+                print(f"Successfully created video using split approach: {final_with_audio_path}")
+                temporary_files.append(final_with_audio_path)
+            except Exception as alt_error:
+                print(f"Alternative approach also failed: {alt_error}")
+                raise Exception("All FFmpeg approaches failed") from alt_error
 
         except Exception as e:
             print(f"Unexpected error in Step 8: {str(e)}")
