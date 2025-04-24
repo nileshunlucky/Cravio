@@ -658,20 +658,21 @@ def create_reddit_post_task(
             print(f"Unexpected error in Step 8: {str(e)}")
             raise
 
-        # Replace the problematic part of your code (Step 9) with this simplified approach
-
-        # Step 9: Add overlay image and subtitles
+# Replace the Step 9 in your code with this more robust implementation
+# Step 9: Add overlay image and subtitles with more robust error handling
         self.update_state(state='PROGRESS', meta={'status': 'Creating subtitles and overlay', 'percent_complete': 90})
         final_output_path = f"{base_output_path}_final_complete.mp4"
 
         try:
-            # Get video dimensions for proper overlay positioning
+    # Get video dimensions for proper overlay positioning
             video_width, video_height = get_video_dimensions(final_with_audio_path)
             if not video_width or not video_height:
                 print("Warning: Could not get video dimensions. Using defaults.")
-                video_width, video_height = 1080, 1920  # Default to 9:16 portrait
+                video_width, video_height = 720, 1280  # Common mobile video dimensions
     
-            # Resize Reddit post image for overlay (80% of video width)
+            print(f"Video dimensions: {video_width}x{video_height}")
+    
+    # Resize Reddit post image for overlay (80% of video width)
             target_image_width = int(video_width * 0.8)
             target_image_height = int(reddit_post_img.height * (target_image_width / reddit_post_img.width))
             resized_reddit_post_img = reddit_post_img.resize((target_image_width, target_image_height))
@@ -681,159 +682,149 @@ def create_reddit_post_task(
     
             print(f"Resized image saved to: {resized_output_path} with dimensions {target_image_width}x{target_image_height}")
     
-            # Create a simplified text file with script words and timings
-            # This approach avoids complex ASS formatting
-            words = script.split()
-            word_timings_file = f"{base_output_path}_word_timings.txt"
-            with open(word_timings_file, "w") as f:
-        # Calculate timing for each word to distribute evenly
-                word_count = len(words)
-                duration_per_word = script_duration / word_count if word_count > 0 else 1.0
-        
-                for i, word in enumerate(words):
-                    # Start time is title duration plus word's position * duration per word
-                    start_time = title_duration + (i * duration_per_word)
-                    end_time = title_duration + ((i + 1) * duration_per_word)
-                    f.write(f"{start_time:.2f},{end_time:.2f},{word}\n")
+    # Try the most basic overlay first - JUST the image overlay without text
+    # This has the highest chance of success
+            overlay_only_output = f"{base_output_path}_overlay_only.mp4"
     
-            temporary_files.append(word_timings_file)
-    
-    # Build a simplified filter_complex string
-    # 1. Overlay image during title duration
-    # 2. Add text for each word during its time window
-    
-    # First, create the overlay part
-            overlay_filter = f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'"
-    
-    # For the subtitles, use a series of drawtext filters with explicit timing
-    # Read the word timings file
-            drawtext_filters = []
-            color = font.lower()  # Use the font color
-    
-            with open(word_timings_file, "r") as f:
-                for line in f:
-                    start_time, end_time, word = line.strip().split(",", 2)
-                    # Escape any single quotes in the word
-                    word = word.replace("'", "\\'")
-            
-            # Create drawtext filter with improved visibility
-            # Making text larger and adding a thin black outline for better visibility
-                    drawtext_filter = (
-                        f"drawtext=text='{word}':fontcolor={color}:fontsize=72:"
-                        f"x=(w-text_w)/2:y=(h-text_h)/2+200:" # Positioned lower in frame for better visibility
-                        f"enable='between(t,{start_time},{end_time})':"
-                        f"borderw=2:bordercolor=black"  # Add outline
-                    )
-                    drawtext_filters.append(drawtext_filter)
-    
-    # Combine the overlay with the drawtext filters
-            full_filter = f"{overlay_filter},{','.join(drawtext_filters)}"
-    
-    # Simplified single FFmpeg command
-            ffmpeg_cmd = [
+            overlay_cmd = [
                 "ffmpeg",
-                "-i", final_with_audio_path,  # Video with audio
-                "-i", resized_output_path,    # Overlay image
-                "-filter_complex", full_filter,
+                "-i", final_with_audio_path,
+                "-i", resized_output_path,
+                "-filter_complex", f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'",
                 "-c:v", "libx264",
-                "-preset", "ultrafast",  # Use ultrafast for testing
-                "-c:a", "copy",          # Copy audio stream without re-encoding
-                "-y",                    # Overwrite output
-                final_output_path
+                "-preset", "ultrafast",  # Use ultrafast preset for speed
+                "-crf", "28",           # Lower quality for faster encoding
+                "-c:a", "copy",         # Copy audio without re-encoding
+                "-y",                   # Overwrite output if exists
+                overlay_only_output
             ]
     
-            print(f"Running FFmpeg command: {' '.join(ffmpeg_cmd)}")
-    
-    # Execute the command with extra logging
-            process = subprocess.Popen(
-                ffmpeg_cmd, 
-                stdout=subprocess.PIPE, 
-                stderr=subprocess.PIPE,
-                universal_newlines=True
-            )
-    
-    # Monitor the process output
-            stdout, stderr = process.communicate()
-    
-            if process.returncode != 0:
-                print(f"FFmpeg error: {stderr}")
-        # If the command fails, try with fewer words to reduce complexity
-                print("Attempting simplified version with fewer subtitle words...")
-        
-        # Simplified approach with just a few words
-                simplified_words = words[:min(20, len(words))]  # Take first 20 words max
-                simplified_filter = f"{overlay_filter}"  # Start with just the overlay
-        
-        # Add just a few key words
-                for i, word in enumerate(simplified_words):
-                    if i % 4 == 0:  # Only use every 4th word to simplify
-                        word = word.replace("'", "\\'")
-                        start_time = title_duration + (i/len(simplified_words) * script_duration)
-                        end_time = start_time + (script_duration/len(simplified_words))
-                
-                        text_filter = (
-                            f",drawtext=text='{word}':fontcolor={color}:fontsize=60:"
-                            f"x=(w-text_w)/2:y=(h-text_h)/2:"
-                            f"enable='between(t,{start_time:.2f},{end_time:.2f})'"
-                        )
-                        simplified_filter += text_filter
-        
-        # Try with simplified filter
-                simplified_cmd = [
-                    "ffmpeg",
-                    "-i", final_with_audio_path, 
-                    "-i", resized_output_path,
-                    "-filter_complex", simplified_filter,
-                    "-c:v", "libx264",
-                    "-preset", "ultrafast",
-                    "-c:a", "copy",
-                    "-y",
-                    final_output_path
-                ]
-        
-                print(f"Running simplified FFmpeg command: {' '.join(simplified_cmd)}")
-                simplified_process = subprocess.run(simplified_cmd, capture_output=True, text=True)
-        
-                if simplified_process.returncode != 0:
-                    print(f"Simplified command also failed: {simplified_process.stderr}")
+            print("STEP 1: Adding just the image overlay")
+            print(f"Running overlay-only command: {' '.join(overlay_cmd)}")
             
-            # Last resort: Try just the image overlay without any text
-                    overlay_only_cmd = [
+            try:
+        # Run the overlay-only command with timeout
+                overlay_process = subprocess.run(overlay_cmd, capture_output=True, text=True, timeout=120)
+        
+                if overlay_process.returncode == 0 and os.path.exists(overlay_only_output) and os.path.getsize(overlay_only_output) > 0:
+                    print("Successfully added image overlay")
+                    temporary_files.append(overlay_only_output)
+            
+            # If overlay succeeded, try adding simple subtitles
+            # We'll use a single-word approach that's much simpler
+                    final_with_subtitles = f"{base_output_path}_with_subtitles.mp4"
+            
+            # Extract just a few key words from the script to reduce complexity
+                    words = script.split()
+                    if len(words) > 10:
+                # Use fewer words if the script is long (every 5th word)
+                        subtitle_words = words[::5][:10]  # Take up to 10 words with spacing
+                    else:
+                        subtitle_words = words
+                
+                    print(f"Using {len(subtitle_words)} words for subtitles: {subtitle_words}")
+            
+            # Create filters for each word
+                    subtitle_filters = []
+                    for i, word in enumerate(subtitle_words):
+                # Calculate timing for this word
+                        segment_duration = script_duration / len(subtitle_words)
+                        word_start = title_duration + (i * segment_duration)
+                        word_end = word_start + segment_duration
+                        
+                # Escape any special characters in the word
+                        safe_word = word.replace("'", "\\'").replace('"', '\\"').replace(':', '\\:')
+                
+                # Create a simple drawtext filter - larger, centered text with dark outline
+                        filter_text = (
+                            f"drawtext=text='{safe_word}':"
+                            f"fontsize=60:"
+                            f"fontcolor={font.lower()}:"
+                            f"x=(w-tw)/2:y=(h*0.8):"  # Position text at 80% of height (lower)
+                            f"enable='between(t,{word_start},{word_end})':"
+                            f"shadowcolor=black:shadowx=2:shadowy=2"  # Add shadow for visibility
+                        )
+                        subtitle_filters.append(filter_text)
+            
+            # Join the subtitle filters
+                    subtitle_filter_chain = ",".join(subtitle_filters)
+            
+                    subtitle_cmd = [
+                        "ffmpeg",
+                        "-i", overlay_only_output,
+                        "-vf", subtitle_filter_chain,
+                        "-c:v", "libx264",
+                        "-preset", "ultrafast",
+                        "-crf", "28",
+                        "-c:a", "copy",
+                        "-y",
+                        final_with_subtitles
+                    ]
+            
+                    print("STEP 2: Adding simple subtitles")
+                    print(f"Running subtitle command: {' '.join(subtitle_cmd)}")
+            
+                    try:
+                # Try adding subtitles with a timeout
+                        subtitle_process = subprocess.run(subtitle_cmd, capture_output=True, text=True, timeout=120)
+                
+                        if subtitle_process.returncode == 0 and os.path.exists(final_with_subtitles) and os.path.getsize(final_with_subtitles) >         0:
+                            print("Successfully added subtitles")
+                            temporary_files.append(final_with_subtitles)
+                            final_output_path = final_with_subtitles
+                        else:
+                            print("Failed to add subtitles, using overlay-only version")
+                            final_output_path = overlay_only_output
+                    
+                    except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as e:
+                        print(f"Error adding subtitles: {str(e)}")
+                        final_output_path = overlay_only_output  # Fall back to overlay-only version
+                
+                else:
+                    print(f"Failed to add image overlay: {overlay_process.stderr}")
+            
+            # Try an even simpler approach - direct image overlaying with simpler syntax
+                    simplest_overlay_output = f"{base_output_path}_simplest_overlay.mp4"
+            
+            # Simplest possible overlay command
+                    simple_cmd = [
                         "ffmpeg",
                         "-i", final_with_audio_path,
                         "-i", resized_output_path,
-                        "-filter_complex", f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'",
+                        "-filter_complex", "[0:v][1:v]overlay=0:0:enable='if(lt(t,{0}),1,0)'".format(title_duration),
                         "-c:v", "libx264",
-                        "-preset", "ultrafast",
+                        "-preset", "veryfast",
                         "-c:a", "copy",
                         "-y",
-                        final_output_path
+                        simplest_overlay_output
                     ]
             
-                    print(f"Running overlay-only command: {' '.join(overlay_only_cmd)}")
-                    overlay_process = subprocess.run(overlay_only_cmd, capture_output=True, text=True)
+                    print("ATTEMPTING SIMPLEST OVERLAY AS FALLBACK")
+                    print(f"Running simplest overlay command: {' '.join(simple_cmd)}")
             
-                    if overlay_process.returncode != 0:
-                        print(f"Overlay-only command failed: {overlay_process.stderr}")
-                        print("Falling back to video with just audio")
+                    try:
+                        simple_process = subprocess.run(simple_cmd, capture_output=True, text=True, timeout=90)
+                
+                        if simple_process.returncode == 0 and os.path.exists(simplest_overlay_output) and os.path.getsize        (simplest_overlay_output) > 0:
+                            print("Successfully added simple overlay")
+                            temporary_files.append(simplest_overlay_output)
+                            final_output_path = simplest_overlay_output
+                        else:
+                            print("All overlay attempts failed, falling back to audio-only video")
+                            final_output_path = final_with_audio_path
+                    
+                    except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as e:
+                        print(f"Simplest overlay also failed: {str(e)}")
                         final_output_path = final_with_audio_path
-                    else:
-                        print(f"Successfully created video with just overlay: {final_output_path}")
-                else:
-                    print(f"Successfully created video with simplified text: {final_output_path}")
-            else:
-                print(f"Successfully created complete video: {final_output_path}")
     
-    # Add the final output to temporary files for cleanup
-            if final_output_path != final_with_audio_path:
-                temporary_files.append(final_output_path)
-
+            except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as e:
+                print(f"Initial overlay process failed: {str(e)}")
+                final_output_path = final_with_audio_path
+        
         except Exception as e:
-            print(f"Error adding overlay and subtitles: {str(e)}")
+            print(f"Error in Step 9: {str(e)}")
             traceback.print_exc()
-            # Fallback to the video with just audio
             final_output_path = final_with_audio_path
-
 
         # Step 10: Upload the final video to Cloudinary
         self.update_state(state='PROGRESS', meta={'status': 'Uploading to Cloudinary', 'percent_complete': 95})
