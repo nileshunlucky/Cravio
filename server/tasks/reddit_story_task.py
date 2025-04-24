@@ -458,7 +458,7 @@ def create_reddit_post_task(
 
         # Step 7: Process the video URL (Download/Locate and Mute/Crop)
         self.update_state(state='PROGRESS', meta={'status': 'Processing background video', 'percent_complete': 80})
-        if video.startswith("http"):
+        if video.startswith("https"):
             downloaded_video_path = f"{base_output_path}_downloaded_video.mp4"
             try:
                 print(f"Downloading video from: {video}")
@@ -565,37 +565,44 @@ def create_reddit_post_task(
         self.update_state(state='PROGRESS', meta={'status': 'Combining video and audio', 'percent_complete': 85})
 
         try:
-            # Construct the ffmpeg command
+            # Construct the ffmpeg command with lower memory usage settings
             command = [
-              'ffmpeg',
-              '-i', muted_video_path,
-              '-i', combined_audio_path,
-              '-c:v', 'libx264',
-              '-preset', 'superfast',  # 40% less memory than medium
-              '-crf', '24',  # Slightly higher CRF for smaller buffers
-              '-x264-params', 'ref=1:vbv-bufsize=1000:vbv-maxrate=2000',  # Memory caps
-              '-threads', '1',  # Strict single-threaded encoding
-               '-c:a', 'aac',
-              '-ar', '44100',  # Standard sampling rate
-               '-shortest',
-               '-movflags', '+faststart',  # Better streaming preparation
-               '-max_muxing_queue_size', '9999',
-               final_with_audio_path
+                'ffmpeg',
+                '-i', muted_video_path,
+                '-i', combined_audio_path,
+                '-c:v', 'libx264',
+                '-preset', 'ultrafast',  # Even faster than superfast, uses less memory
+                '-crf', '28',  # Higher CRF means lower quality but smaller file and less memory usage
+                '-x264-params', 'ref=1:vbv-bufsize=500:vbv-maxrate=1000',  # Reduced buffer size
+                '-threads', '1',  # Keep single-threaded encoding
+                '-c:a', 'aac',
+                '-ar', '44100',
+                '-b:a', '64k',  # Lower audio bitrate
+                '-shortest',
+                '-movflags', '+faststart',
+                '-max_muxing_queue_size', '1024',
+                final_with_audio_path
             ]
-    
+
             # Print the command for debugging
             print(f"Combining video '{muted_video_path}' and audio '{combined_audio_path}' using subprocess: {command}")
-    
-           # Run the subprocess command
-            subprocess.run(command, check=True)
 
-           # After successful combination
+            # Run the subprocess command with timeout to prevent hanging
+            subprocess.run(command, check=True, timeout=300)  # 5 minute timeout
+
+            # After successful combination
             print(f"Combined video with audio saved to: {final_with_audio_path}")
             temporary_files.append(final_with_audio_path)
 
-        except ffmpeg.Error as e:
-            print(f"FFmpeg error (ffmpeg-python) combining video/audio:\nStdout: {e.stdout.decode()}\nStderr: {e.stderr.decode()}")
-            raise Exception("FFmpeg-python failed to combine video and audio.") from e
+        except subprocess.TimeoutExpired:
+            print("FFmpeg command timed out - process took too long")
+            raise Exception("FFmpeg timed out when combining video and audio")
+    
+        except subprocess.CalledProcessError as e:
+            print(f"FFmpeg error: Return code {e.returncode}")
+            if hasattr(e, 'stderr') and e.stderr:
+                print(f"stderr: {e.stderr}")
+            raise Exception("FFmpeg failed to combine video and audio") from e
 
         except Exception as e:
             print(f"Unexpected error in Step 8: {str(e)}")
