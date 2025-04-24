@@ -9,7 +9,7 @@ const page = () => {
   // Function to handle back button click
   const handleBack = () => {
     if (typeof window !== 'undefined') {
-      window.history.back() // This uses the browser's history API to go back
+      window.history.back() // This uses the browser history API to go back
     }
   }
 
@@ -35,7 +35,7 @@ const page = () => {
 
             <h2 className="text-xl font-semibold text-black">1. Introduction</h2>
             <p className="text-muted-foreground text-lg">
-              Cravio (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) provides AI-powered tools that help users create faceless content, such as Reddit-style stories, videos, and other digital media. By using our platform, you agree to comply with these Terms and Conditions, which govern your use of the Cravio service.
+              Cravio provides AI-powered tools that help users create faceless content, such as Reddit-style stories, videos, and other digital media. By using our platform, you agree to comply with these Terms and Conditions, which govern your use of the Cravio service.
             </p>
 
             <h2 className="text-xl font-semibold text-black">2. Use of Service</h2>
@@ -48,7 +48,7 @@ const page = () => {
               Cravio offers subscription-based access to its AI tools. All payments are processed securely via Razorpay, a trusted third-party payment gateway. By subscribing, you agree to pay the specified fees for the plan you select. Payment is processed upon confirmation of your subscription.
             </p>
             <p className="text-muted-foreground text-lg">
-              Razorpay ensures that your payment details are processed securely. We do not store any sensitive payment information on our servers. Please refer to Razorpay&apos;s privacy policy for more details.
+              Razorpay ensures that your payment details are processed securely. We do not store any sensitive payment information on our servers. Please refer to Razorpay privacy policy for more details.
             </p>
 
             <h2 className="text-xl font-semibold text-black">4. Refund Policy</h2>
