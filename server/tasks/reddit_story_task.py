@@ -716,31 +716,26 @@ def create_reddit_post_task(
             
             # Extract just a few key words from the script to reduce complexity
                     words = script.split()
-                    if len(words) > 10:
-                # Use fewer words if the script is long (every 5th word)
-                        subtitle_words = words[::5][:10]  # Take up to 10 words with spacing
-                    else:
-                        subtitle_words = words
-                
-                    print(f"Using {len(subtitle_words)} words for subtitles: {subtitle_words}")
-            
-            # Create filters for each word
+                    print(f"Using all {len(words)} words for subtitles")
+
+# Create filters for each word
                     subtitle_filters = []
-                    for i, word in enumerate(subtitle_words):
-                # Calculate timing for this word
-                        segment_duration = script_duration / len(subtitle_words)
+                    for i, word in enumerate(words):
+                        # Calculate timing for this word - evenly distribute across script duration
+                        segment_duration = script_duration / len(words)
                         word_start = title_duration + (i * segment_duration)
                         word_end = word_start + segment_duration
-                        
-                # Escape any special characters in the word
+    
+    # Escape any special characters in the word
                         safe_word = word.replace("'", "\\'").replace('"', '\\"').replace(':', '\\:')
-                
-                # Create a simple drawtext filter - larger, centered text with dark outline
+
+                        # Create a centered drawtext filter with larger font size and better positioning
                         filter_text = (
                             f"drawtext=text='{safe_word}':"
-                            f"fontsize=60:"
+                            f"fontsize=80:"  # Increased font size
                             f"fontcolor={font.lower()}:"
-                            f"x=(w-tw)/2:y=(h*0.8):"  # Position text at 80% of height (lower)
+                            f"x=(w-text_w)/2:" 
+                            f"y=(h-text_h)/2:"
                             f"enable='between(t,{word_start},{word_end})':"
                             f"shadowcolor=black:shadowx=2:shadowy=2"  # Add shadow for visibility
                         )
