@@ -6,13 +6,9 @@ import clsx from 'clsx'
 
 const videos = [
   { title: 'Satisfy', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1744903431/Gameplay/satisfy.mp4' },
-  { title: 'Satisfy 2', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1745431602/Gameplay/satisfy2.mp4' },
   { title: 'Minecraft', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1744903105/Gameplay/minecraft.mp4' },
-  { title: 'Minecraft 2', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1745432325/Gameplay/minecraft2.mp4' },
   { title: 'SubwaySuffer', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1745432126/Gameplay/subwaysuffer.mp4' },
   { title: 'SubwaySuffer 2', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1745432173/Gameplay/subwaysuffer2.mp4' },
-  { title: 'Survival', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1745432279/Gameplay/survival.mp4' },
-  { title: 'Spiderman', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1745432313/Gameplay/spiderman.mp4' },
 ]
 
 type RedditVideoProps = {

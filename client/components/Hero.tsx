@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 
-const Landing = () => {
+const Hero = () => {
   // In useEffect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -45,11 +45,11 @@ const Landing = () => {
         transition={{ duration: 0.6 }}
       >
         <div className="aspect-video flex items-center justify-center text-gray-500 text-xl">
-          <Image src="/faceless.jpg" alt="Faceless Content" className='w-full h-full' width={500} height={500} />
+          <Image src="/reddit-story.png" alt="Reddit style story" className='w-full h-full object-contain' width={500} height={500} />
         </div>
       </motion.div>
     </section>
   );
 };
 
-export default Landing;
+export default Hero;

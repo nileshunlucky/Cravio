@@ -182,7 +182,11 @@ def generate_styled_ass_subtitles(script_text, start_time_sec, total_duration_se
     duration_per_word = total_duration_sec / word_count if word_count > 0 else 1.0
     
     # Ensure color code is in correct format
-    color_code = color_code.lstrip("&H").upper()
+    color_code = color_code.strip("#").upper()
+
+# Convert RGB to BGR for ASS subtitles
+    r, g, b = color_code[0:2], color_code[2:4], color_code[4:6]
+    bgr_code = f"{b}{g}{r}"
     
     # ASS header with centered position and increased font size
     ass_header = f"""[Script Info]
@@ -193,7 +197,7 @@ WrapStyle: 0
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,250,&H00{color_code},&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,2,0,5,10,10,10,1
+Style: Default,Arial,150,&H00{bgr_code},&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,2,0,5,10,10,10,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text

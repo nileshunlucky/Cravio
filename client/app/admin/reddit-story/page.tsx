@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState } from 'react'
+import { useRouter } from 'next/navigation';
+import React, { useState} from 'react'
 import RedditScript from '@/components/RedditScript'
 import RedditFont from '@/components/RedditFont'
 import RedditVideo from '@/components/RedditVideo'
@@ -14,6 +15,8 @@ type TaskResult = {
 }
 
 const Page = () => {
+    const router = useRouter();
+
     const { user } = useUser()
     const userEmail = user?.emailAddresses[0]?.emailAddress || ''
     const [font, setFont] = useState('')
@@ -89,7 +92,16 @@ const Page = () => {
             })
 
             if (!response.ok) {
-                throw new Error(`Server responded with ${response.status}: ${await response.text()}`)
+                // Handle if not enough credits
+                const errorData = await response.json();
+                if (errorData.detail === 'Not enough credits') {
+                  // Redirect to /admin/plan if not enough credits
+                  router.push('/admin/plan');
+                  return;
+                }
+          
+                // Handle other errors
+                throw new Error(`Server responded with ${response.status}: ${await response.text()}`);
             }
 
             const { task_id } = await response.json()
