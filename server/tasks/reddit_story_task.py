@@ -658,177 +658,171 @@ def create_reddit_post_task(
             print(f"Unexpected error in Step 8: {str(e)}")
             raise
 
-        # Step 9: Enhanced debugging for image overlay and subtitles
+        # Step 9: Image overlay and subtitles - FIXED VERSION
         self.update_state(state='PROGRESS', meta={'status': 'Creating subtitles and overlay', 'percent_complete': 90})
         subtitles_path = f"{base_output_path}_subtitles.ass"
-        final_with_overlay_path = f"{base_output_path}_final_with_overlay.mp4"
-        final_with_subs_path = f"{base_output_path}_final_with_subs.mp4"
-        final_output_path = final_with_audio_path  # Initialize to fallback
+        final_output_path = f"{base_output_path}_final_complete.mp4"
+        temporary_files.append(subtitles_path)
+        temporary_files.append(final_output_path)
 
         try:
-            # Create subtitles
+            # First ensure we have a valid video with audio
+            if not os.path.exists(final_with_audio_path) or os.path.getsize(final_with_audio_path) < 1000:
+                raise Exception(f"Invalid input video: {final_with_audio_path}")
+            
+            # Get video dimensions
+            video_width_final, video_height_final = get_video_dimensions(final_with_audio_path)
+            if not video_width_final or not video_height_final:
+                raise Exception("Could not determine video dimensions")
+    
+            print(f"Working with video dimensions: {video_width_final}x{video_height_final}")
+    
+            # 1. Prepare the overlay image - resize to appropriate dimensions
+            target_image_width = int(video_width_final * 0.9)  # 90% of video width
+            target_image_height = int(reddit_post_img.height * (target_image_width / reddit_post_img.width))
+            resized_reddit_post_img = reddit_post_img.resize((target_image_width, target_image_height))
+            resized_output_path = f"{base_output_path}_resized_reddit_post.png"
+            resized_reddit_post_img.save(resized_output_path, format="PNG")
+            temporary_files.append(resized_output_path)
+    
+            print(f"Image prepared successfully: {resized_output_path} ({target_image_width}x{target_image_height})")
+    
+            # 2. Create subtitle file with improved content
             color_code = font_name_to_color_code(font)
             ass_subtitles = generate_styled_ass_subtitles(script, title_duration, script_duration, color_code)
+    
+            # Write to file with explicit encoding
             with open(subtitles_path, "w", encoding='utf-8') as subtitle_file:
                 subtitle_file.write(ass_subtitles)
-            temporary_files.append(subtitles_path)
     
-            print(f"Created subtitle file at: {subtitles_path}")
-            print(f"First few lines of subtitle content: {ass_subtitles[:200]}...")
+            # Verify subtitle file exists and has content
+            if not os.path.exists(subtitles_path) or os.path.getsize(subtitles_path) < 10:
+                raise Exception(f"Failed to create valid subtitle file: {subtitles_path}")
     
-            # IMPORTANT: Let's try a completely different approach using a single ffmpeg command for everything
-            final_combined_path = f"{base_output_path}_final_combined.mp4"
+            print(f"Subtitle file created successfully: {subtitles_path}")
     
-            # Resize the Reddit post image (do this outside of ffmpeg)
-            video_width_final, video_height_final = get_video_dimensions(final_with_audio_path)
+            # 3. IMPROVED APPROACH: Use a two-pass encoding strategy for better reliability
     
-            if video_width_final and video_height_final:
-                # Resize the Reddit post image
-                target_image_width = int(video_width_final * 0.9)
-                target_image_height = int(reddit_post_img.height * (target_image_width / reddit_post_img.width))
-                resized_reddit_post_img = reddit_post_img.resize((target_image_width, target_image_height))
-                resized_output_path = f"{base_output_path}_resized_reddit_post.png"
-                resized_reddit_post_img.save(resized_output_path, format="PNG")
-                temporary_files.append(resized_output_path)
+            # Phase 1: Create an intermediate version with just the overlay
+            overlay_only_path = f"{base_output_path}_overlay_only.mp4"
+            temporary_files.append(overlay_only_path)
+    
+            # Handle path escaping for Windows compatibility
+            escaped_subtitle_path = subtitles_path.replace('\\', '\\\\').replace(':', '\\:')
+    
+            # Create clear, properly formatted filter for overlay
+            overlay_filter = f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'"
+    
+            # Command for reliable image overlay
+            overlay_cmd = [
+                "ffmpeg",
+                "-i", final_with_audio_path,  # Input video with audio
+                "-i", resized_output_path,    # Reddit post image
+                "-filter_complex", overlay_filter,
+                "-c:v", "libx264",            # Video codec
+                "-preset", "fast",            # Balance between speed and quality
+                "-c:a", "copy",               # Copy audio stream unchanged
+                "-y",                          # Overwrite output
+                overlay_only_path
+            ]
+    
+            print(f"Running overlay command: {' '.join(overlay_cmd)}")
+            result = subprocess.run(overlay_cmd, check=True, capture_output=True, text=True)
+    
+            # Verify output exists
+            if not os.path.exists(overlay_only_path) or os.path.getsize(overlay_only_path) < 10000:
+                print(f"Overlay command stderr: {result.stderr}")
+                raise Exception("Overlay command failed to produce valid output")
+    
+            print("Overlay applied successfully")
+    
+            # Phase 2: Add subtitles to the overlay video
+    
+            # Primary approach: Use ASS subtitles
+            subtitles_cmd = [
+                "ffmpeg",
+                "-i", overlay_only_path,
+                "-vf", f"subtitles='{escaped_subtitle_path}':force_style='Alignment=5,FontSize=250,Bold=1'",
+                "-c:v", "libx264",
+                "-preset", "fast",
+                "-c:a", "copy",
+                "-y",
+                final_output_path
+            ]
+    
+            try:
+                print(f"Running subtitles command: {' '.join(subtitles_cmd)}")
+                result = subprocess.run(subtitles_cmd, check=True, capture_output=True, text=True)
         
-                print(f"Resized image saved to: {resized_output_path}")
-                print(f"Image dimensions: {target_image_width}x{target_image_height}")
+                # Verify final output
+                if not os.path.exists(final_output_path) or os.path.getsize(final_output_path) < 10000:
+                    raise Exception("Subtitle command failed to produce valid output")
         
-                # APPROACH 1: Single command approach - do overlay and subtitles in one go
-                # This complex filter graph:
-                # 1. Overlays the image for the title duration
-                # 2. Then applies subtitles (using the ASS file) for the entire video
+                print("Subtitles applied successfully")
         
-                subtitles_path_escaped = subtitles_path.replace(':', '\\:').replace('\\', '\\\\')
-                filter_complex = (
-                  f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})', "
-                  f"subtitles='{subtitles_path_escaped}':force_style='Alignment=5,FontSize=250,Bold=1'"
-                )
+            except subprocess.CalledProcessError as e:
+                print(f"Error applying subtitles with ASS file: {str(e)}")
+                print(f"Command stderr: {e.stderr}")
         
-                combined_cmd = [
+                # Fallback: Use direct drawtext approach for each word
+                print("Falling back to hardcoded subtitles...")
+                
+                # Split script into words for drawtext filters
+                words = script.split()
+                word_count = len(words)
+                duration_per_word = script_duration / word_count if word_count > 0 else 1.0
+        
+                # Create filter for each word
+                drawtext_filters = []
+                for i, word in enumerate(words):
+                    start_time = title_duration + (i * duration_per_word)
+                    end_time = title_duration + ((i + 1) * duration_per_word)
+            
+                    # Escape special characters
+                    safe_word = word.replace("'", "\\'").replace(":", "\\:").replace(",", "\\,")
+            
+                    filter_text = (
+                        f"drawtext=text='{safe_word}':fontcolor={font.lower()}:fontsize=80:"
+                        f"x=(w-text_w)/2:y=(h-text_h)/2:font='Arial':"
+                        f"enable='between(t,{start_time},{end_time})'"
+                    )
+                    drawtext_filters.append(filter_text)
+        
+                # Create single filter string with all drawtext filters
+                subtitle_filter = ",".join(drawtext_filters)
+        
+                # Run fallback command
+                fallback_cmd = [
                     "ffmpeg",
-                    "-i", final_with_audio_path,  # Video with audio
-                    "-i", resized_output_path,    # Overlay image
-                    "-filter_complex", filter_complex,
+                    "-i", overlay_only_path,
+                    "-vf", subtitle_filter,
                     "-c:v", "libx264",
-                    "-preset", "veryfast",
+                    "-preset", "ultrafast",  # Speed over quality for fallback
                     "-c:a", "copy",
                     "-y",
-                    final_combined_path
+                    final_output_path
                 ]
         
-                print(f"Running single-command approach: {' '.join(combined_cmd)}")
-                try:
-                    result = subprocess.run(combined_cmd, check=True, capture_output=True, text=True)
-                    print(f"Command stdout: {result.stdout}")
-                    print(f"Command stderr: {result.stderr}")
-            
-                    if os.path.exists(final_combined_path) and os.path.getsize(final_combined_path) > 0:
-                        temporary_files.append(final_combined_path)
-                        final_output_path = final_combined_path
-                        print(f"Successfully created combined video: {final_combined_path}")
-                    else:
-                        print("Single command approach failed - output file missing or empty")
-                        # Try approach 2
-                except subprocess.CalledProcessError as e:
-                    print(f"FFmpeg error in single command: {e.stderr}")
-                    print("Falling back to separate commands approach")
-                    # Try approach 2
+                print(f"Running fallback subtitle command")
+                # Don't print full command as it may be very long with many words
+                result = subprocess.run(fallback_cmd, check=True, capture_output=True, text=True)
         
-                # APPROACH 2: If approach 1 fails, try separate temporary files with hardcoded subtitles
+                # Final verification
+                if not os.path.exists(final_output_path) or os.path.getsize(final_output_path) < 10000:
+                    raise Exception("All subtitle approaches failed")
         
-                if final_output_path == final_with_audio_path:  # Means approach 1 failed
-                    print("Trying alternative approach with hardcoded subtitles")
-            
-                    # First just overlay the image
-                    overlay_only_cmd = [
-                        "ffmpeg",
-                        "-i", final_with_audio_path,
-                        "-i", resized_output_path,
-                        "-filter_complex", f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'",
-                        "-c:v", "libx264",
-                        "-preset", "ultrafast",  # Even faster preset for testing
-                        "-c:a", "copy",
-                        "-y",
-                        final_with_overlay_path
-                    ]
-            
-                    print(f"Running overlay-only command: {' '.join(overlay_only_cmd)}")
-                    try:
-                        result = subprocess.run(overlay_only_cmd, check=True, capture_output=True, text=True)
-                        print(f"Overlay-only stderr: {result.stderr}")
-                
-                        if os.path.exists(final_with_overlay_path) and os.path.getsize(final_with_overlay_path) > 0:
-                            temporary_files.append(final_with_overlay_path)
-                            # Now try hardcoded subtitles as a fallback
-                            
-                            # Create a subtitle directly in the filter
-                            # This bypasses the ASS file and just puts text on the video
-                            # Also update the hardcoded subtitle fallback in your ffmpeg filter:
-
-                            # And update the hardcoded subtitle approach (fallback):
-                            words = script.split()
-                            word_count = len(words)
-                            # Calculate word duration to fit within script duration
-                            duration_per_word = script_duration / word_count if word_count > 0 else 1.0
-
-                            drawtext_filters = []
-                            for i, word in enumerate(words):
-                                # Distribute words evenly across script duration
-                                start_time = title_duration + (i * duration_per_word)
-                                end_time = title_duration + ((i + 1) * duration_per_word)
-    
-                                # Escape single quotes in the word for the filter
-                                safe_word = word.replace("'", "\\'")
-    
-                                # Create a drawtext filter with larger font size
-                                filter_text = (
-                                    f"drawtext=text='{safe_word}':fontcolor={font.lower()}:fontsize=60:"  # Increased font size
-                                    f"x=(w-text_w)/2:y=(h-text_h)/2:font='Arial':"
-                                    f"fontfile='{FONT_PATH}':"
-                                    f"enable='between(t,{start_time},{end_time})'"
-                                )
-                                drawtext_filters.append(filter_text)
-
-                            # Join all filters with commas
-                            subtitles_filter = ",".join(drawtext_filters)
-
-                            # Use this in the hardcoded_subs_cmd filter
-                            hardcoded_subs_cmd = [
-                                "ffmpeg",
-                                "-i", final_with_overlay_path,
-                                "-vf", subtitles_filter,
-                                "-c:v", "libx264",
-                                "-preset", "ultrafast",
-                                "-c:a", "copy",
-                                "-y",
-                                final_with_subs_path
-                            ]
-                    
-                            print(f"Running hardcoded subtitles command: {' '.join(hardcoded_subs_cmd)}")
-                            try:
-                                result = subprocess.run(hardcoded_subs_cmd, check=True, capture_output=True, text=True)
-                                print(f"Hardcoded subs stderr: {result.stderr}")
-                                
-                                if os.path.exists(final_with_subs_path) and os.path.getsize(final_with_subs_path) > 0:
-                                    temporary_files.append(final_with_subs_path)
-                                    final_output_path = final_with_subs_path
-                                    print(f"Successfully created hardcoded subtitles video: {final_with_subs_path}")
-                                else:
-                                    print("Hardcoded subtitles command failed - output file missing or empty")
-                            except subprocess.CalledProcessError as e:
-                                print(f"FFmpeg error adding hardcoded subtitles: {e.stderr}")
-                        else:
-                            print("Overlay-only command failed - output file missing or empty")
-                    except subprocess.CalledProcessError as e:
-                        print(f"FFmpeg error in overlay-only command: {e.stderr}")
-            else:
-                print("Could not determine video dimensions for overlay")
+                print("Applied fallback subtitles successfully")
 
         except Exception as e:
-            print(f"Error in overlay/subtitle step: {str(e)}")
-            traceback.print_exc()  # Print full traceback for debugging
-            final_output_path = final_with_audio_path  # Fallback to video with audio
+            print(f"Error applying overlay/subtitles: {str(e)}")
+            traceback.print_exc()
+    
+            # Set a clear fallback path if everything fails
+            if os.path.exists(final_with_audio_path) and os.path.getsize(final_with_audio_path) > 10000:
+                final_output_path = final_with_audio_path
+                print(f"Using base video as fallback: {final_output_path}")
+            else:
+                raise Exception("No valid output video available")        
 
         # Step 10: Upload the final video to Cloudinary
         self.update_state(state='PROGRESS', meta={'status': 'Uploading to Cloudinary', 'percent_complete': 95})
