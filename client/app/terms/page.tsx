@@ -48,7 +48,7 @@ const page = () => {
               Cravio offers subscription-based access to its AI tools. All payments are processed securely via Razorpay, a trusted third-party payment gateway. By subscribing, you agree to pay the specified fees for the plan you select. Payment is processed upon confirmation of your subscription.
             </p>
             <p className="text-muted-foreground text-lg">
-              Razorpay ensures that your payment details are processed securely. We do not store any sensitive payment information on our servers. Please refer to Razorpay’s privacy policy for more details.
+              Razorpay ensures that your payment details are processed securely. We do not store any sensitive payment information on our servers. Please refer to Razorpay&apos;s privacy policy for more details.
             </p>
 
             <h2 className="text-xl font-semibold text-black">4. Refund Policy</h2>
