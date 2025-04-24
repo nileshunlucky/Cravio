@@ -28,7 +28,7 @@ const PrivacyPage = () => {
 
             <h2 className="text-xl font-semibold text-black">1. Information We Collect</h2>
             <p className="text-muted-foreground text-lg">
-              We collect personal data when you use Cravio's services. This may include your name, email address, payment information, and usage data. We only collect information that is necessary for providing our services.
+              We collect personal data when you use Cravio services. This may include your name, email address, payment information, and usage data. We only collect information that is necessary for providing our services.
             </p>
 
             <h2 className="text-xl font-semibold text-black">2. How We Use Your Information</h2>

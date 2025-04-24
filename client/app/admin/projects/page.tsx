@@ -28,29 +28,6 @@ export default function ProjectPage() {
   const [copied, setCopied] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-  const deleteOldVideos = async () => {
-    try {
-      const res = await fetch('https://cravio-ai.onrender.com/delete_old_videos', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: user?.primaryEmailAddress?.emailAddress
-        }),
-      })
-      const data = await res.json()
-  
-      if (res.ok) {
-        console.log('[Auto Delete] Success:', data.detail)
-      } else {
-        console.warn('[Auto Delete] Warning:', data.detail)
-      }
-    } catch (err) {
-      console.error('[Auto Delete] Error:', err)
-    }
-  }  
-
   useEffect(() => {
     const fetchVideos = async () => {
       if (!user?.primaryEmailAddress?.emailAddress) return
@@ -73,6 +50,29 @@ export default function ProjectPage() {
         setLoading(false)
       }
     }
+
+    const deleteOldVideos = async () => {
+      try {
+        const res = await fetch('https://cravio-ai.onrender.com/delete_old_videos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: user?.primaryEmailAddress?.emailAddress
+          }),
+        })
+        const data = await res.json()
+    
+        if (res.ok) {
+          console.log('[Auto Delete] Success:', data.detail)
+        } else {
+          console.warn('[Auto Delete] Warning:', data.detail)
+        }
+      } catch (err) {
+        console.error('[Auto Delete] Error:', err)
+      }
+    }  
     
     if (user) {
       fetchVideos()
