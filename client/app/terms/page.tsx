@@ -35,7 +35,7 @@ const page = () => {
 
             <h2 className="text-xl font-semibold text-black">1. Introduction</h2>
             <p className="text-muted-foreground text-lg">
-              Cravio ("we," "our," or "us") provides AI-powered tools that help users create faceless content, such as Reddit-style stories, videos, and other digital media. By using our platform, you agree to comply with these Terms and Conditions, which govern your use of the Cravio service.
+              Cravio (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) provides AI-powered tools that help users create faceless content, such as Reddit-style stories, videos, and other digital media. By using our platform, you agree to comply with these Terms and Conditions, which govern your use of the Cravio service.
             </p>
 
             <h2 className="text-xl font-semibold text-black">2. Use of Service</h2>
