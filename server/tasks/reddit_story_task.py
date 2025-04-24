@@ -658,183 +658,181 @@ def create_reddit_post_task(
             print(f"Unexpected error in Step 8: {str(e)}")
             raise
 
-                # Step 9: Enhanced debugging for image overlay and subtitles
+        # Replace the problematic part of your code (Step 9) with this simplified approach
+
+        # Step 9: Add overlay image and subtitles
         self.update_state(state='PROGRESS', meta={'status': 'Creating subtitles and overlay', 'percent_complete': 90})
-        subtitles_path = f"{base_output_path}_subtitles.ass"
-        final_with_overlay_path = f"{base_output_path}_final_with_overlay.mp4"
-        final_with_subs_path = f"{base_output_path}_final_with_subs.mp4"
-        final_output_path = final_with_audio_path  # Initialize to fallback
+        final_output_path = f"{base_output_path}_final_complete.mp4"
 
         try:
-            # Create subtitles
-            color_code = font_name_to_color_code(font)
-            ass_subtitles = generate_styled_ass_subtitles(script, title_duration, script_duration, color_code)
-            with open(subtitles_path, "w", encoding='utf-8') as subtitle_file:
-                subtitle_file.write(ass_subtitles)
-            temporary_files.append(subtitles_path)
+            # Get video dimensions for proper overlay positioning
+            video_width, video_height = get_video_dimensions(final_with_audio_path)
+            if not video_width or not video_height:
+                print("Warning: Could not get video dimensions. Using defaults.")
+                video_width, video_height = 1080, 1920  # Default to 9:16 portrait
     
-            print(f"Created subtitle file at: {subtitles_path}")
-            print(f"First few lines of subtitle content: {ass_subtitles[:200]}...")
+            # Resize Reddit post image for overlay (80% of video width)
+            target_image_width = int(video_width * 0.8)
+            target_image_height = int(reddit_post_img.height * (target_image_width / reddit_post_img.width))
+            resized_reddit_post_img = reddit_post_img.resize((target_image_width, target_image_height))
+            resized_output_path = f"{base_output_path}_resized_reddit_post.png"
+            resized_reddit_post_img.save(resized_output_path, format="PNG")
+            temporary_files.append(resized_output_path)
     
-            # IMPORTANT: Let's try a completely different approach using a single ffmpeg command for everything
-            final_combined_path = f"{base_output_path}_final_combined.mp4"
+            print(f"Resized image saved to: {resized_output_path} with dimensions {target_image_width}x{target_image_height}")
     
-            # Resize the Reddit post image (do this outside of ffmpeg)
-            video_width_final, video_height_final = get_video_dimensions(final_with_audio_path)
+            # Create a simplified text file with script words and timings
+            # This approach avoids complex ASS formatting
+            words = script.split()
+            word_timings_file = f"{base_output_path}_word_timings.txt"
+            with open(word_timings_file, "w") as f:
+        # Calculate timing for each word to distribute evenly
+                word_count = len(words)
+                duration_per_word = script_duration / word_count if word_count > 0 else 1.0
+        
+                for i, word in enumerate(words):
+                    # Start time is title duration plus word's position * duration per word
+                    start_time = title_duration + (i * duration_per_word)
+                    end_time = title_duration + ((i + 1) * duration_per_word)
+                    f.write(f"{start_time:.2f},{end_time:.2f},{word}\n")
+    
+            temporary_files.append(word_timings_file)
+    
+    # Build a simplified filter_complex string
+    # 1. Overlay image during title duration
+    # 2. Add text for each word during its time window
+    
+    # First, create the overlay part
+            overlay_filter = f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'"
+    
+    # For the subtitles, use a series of drawtext filters with explicit timing
+    # Read the word timings file
+            drawtext_filters = []
+            color = font.lower()  # Use the font color
+    
+            with open(word_timings_file, "r") as f:
+                for line in f:
+                    start_time, end_time, word = line.strip().split(",", 2)
+                    # Escape any single quotes in the word
+                    word = word.replace("'", "\\'")
             
-            if video_width_final is None or video_height_final is None:
-               raise ValueError("get_video_dimensions() returned None values.")
-
-            if video_width_final == 0 or video_height_final == 0:
-               raise ValueError(f"Invalid video dimensions: width={video_width_final}, height={video_height_final}")
+            # Create drawtext filter with improved visibility
+            # Making text larger and adding a thin black outline for better visibility
+                    drawtext_filter = (
+                        f"drawtext=text='{word}':fontcolor={color}:fontsize=72:"
+                        f"x=(w-text_w)/2:y=(h-text_h)/2+200:" # Positioned lower in frame for better visibility
+                        f"enable='between(t,{start_time},{end_time})':"
+                        f"borderw=2:bordercolor=black"  # Add outline
+                    )
+                    drawtext_filters.append(drawtext_filter)
     
-            if video_width_final and video_height_final:
-                # Resize the Reddit post image
-                target_image_width = int(video_width_final * 0.9)
-                target_image_height = int(reddit_post_img.height * (target_image_width / reddit_post_img.width))
-                resized_reddit_post_img = reddit_post_img.resize((target_image_width, target_image_height))
-                resized_output_path = f"{base_output_path}_resized_reddit_post.png"
-                resized_reddit_post_img.save(resized_output_path, format="PNG")
-                temporary_files.append(resized_output_path)
+    # Combine the overlay with the drawtext filters
+            full_filter = f"{overlay_filter},{','.join(drawtext_filters)}"
+    
+    # Simplified single FFmpeg command
+            ffmpeg_cmd = [
+                "ffmpeg",
+                "-i", final_with_audio_path,  # Video with audio
+                "-i", resized_output_path,    # Overlay image
+                "-filter_complex", full_filter,
+                "-c:v", "libx264",
+                "-preset", "ultrafast",  # Use ultrafast for testing
+                "-c:a", "copy",          # Copy audio stream without re-encoding
+                "-y",                    # Overwrite output
+                final_output_path
+            ]
+    
+            print(f"Running FFmpeg command: {' '.join(ffmpeg_cmd)}")
+    
+    # Execute the command with extra logging
+            process = subprocess.Popen(
+                ffmpeg_cmd, 
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE,
+                universal_newlines=True
+            )
+    
+    # Monitor the process output
+            stdout, stderr = process.communicate()
+    
+            if process.returncode != 0:
+                print(f"FFmpeg error: {stderr}")
+        # If the command fails, try with fewer words to reduce complexity
+                print("Attempting simplified version with fewer subtitle words...")
         
-                print(f"Resized image saved to: {resized_output_path}")
-                print(f"Image dimensions: {target_image_width}x{target_image_height}")
+        # Simplified approach with just a few words
+                simplified_words = words[:min(20, len(words))]  # Take first 20 words max
+                simplified_filter = f"{overlay_filter}"  # Start with just the overlay
         
-                # APPROACH 1: Single command approach - do overlay and subtitles in one go
-                # This complex filter graph:
-                # 1. Overlays the image for the title duration
-                # 2. Then applies subtitles (using the ASS file) for the entire video
+        # Add just a few key words
+                for i, word in enumerate(simplified_words):
+                    if i % 4 == 0:  # Only use every 4th word to simplify
+                        word = word.replace("'", "\\'")
+                        start_time = title_duration + (i/len(simplified_words) * script_duration)
+                        end_time = start_time + (script_duration/len(simplified_words))
+                
+                        text_filter = (
+                            f",drawtext=text='{word}':fontcolor={color}:fontsize=60:"
+                            f"x=(w-text_w)/2:y=(h-text_h)/2:"
+                            f"enable='between(t,{start_time:.2f},{end_time:.2f})'"
+                        )
+                        simplified_filter += text_filter
         
-                subtitles_path_escaped = subtitles_path.replace(':', '\\:').replace('\\', '\\\\')
-                filter_complex = (
-                  f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})', "
-                  f"subtitles='{subtitles_path_escaped}':force_style='Alignment=5,FontSize=250,Bold=1'"
-                )
-        
-                combined_cmd = [
+        # Try with simplified filter
+                simplified_cmd = [
                     "ffmpeg",
-                    "-i", final_with_audio_path,  # Video with audio
-                    "-i", resized_output_path,    # Overlay image
-                    "-filter_complex", filter_complex,
+                    "-i", final_with_audio_path, 
+                    "-i", resized_output_path,
+                    "-filter_complex", simplified_filter,
                     "-c:v", "libx264",
-                    "-preset", "veryfast",
+                    "-preset", "ultrafast",
                     "-c:a", "copy",
                     "-y",
-                    final_combined_path
+                    final_output_path
                 ]
         
-                print(f"Running single-command approach: {' '.join(combined_cmd)}")
-                try:
-                    result = subprocess.run(combined_cmd, check=True, capture_output=True, text=True)
-                    print(f"Command stdout: {result.stdout}")
-                    print(f"Command stderr: {result.stderr}")
-            
-                    if os.path.exists(final_combined_path) and os.path.getsize(final_combined_path) > 0:
-                        temporary_files.append(final_combined_path)
-                        final_output_path = final_combined_path
-                        print(f"Successfully created combined video: {final_combined_path}")
-                    else:
-                        print("Single command approach failed - output file missing or empty")
-                        # Try approach 2
-                except subprocess.CalledProcessError as e:
-                    print(f"FFmpeg error in single command: {e.stderr}")
-                    print("Falling back to separate commands approach")
-                    # Try approach 2
+                print(f"Running simplified FFmpeg command: {' '.join(simplified_cmd)}")
+                simplified_process = subprocess.run(simplified_cmd, capture_output=True, text=True)
         
-                # APPROACH 2: If approach 1 fails, try separate temporary files with hardcoded subtitles
-        
-                if final_output_path == final_with_audio_path:  # Means approach 1 failed
-                    print("Trying alternative approach with hardcoded subtitles")
+                if simplified_process.returncode != 0:
+                    print(f"Simplified command also failed: {simplified_process.stderr}")
             
-                    # First just overlay the image
+            # Last resort: Try just the image overlay without any text
                     overlay_only_cmd = [
                         "ffmpeg",
                         "-i", final_with_audio_path,
                         "-i", resized_output_path,
                         "-filter_complex", f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'",
                         "-c:v", "libx264",
-                        "-preset", "ultrafast",  # Even faster preset for testing
+                        "-preset", "ultrafast",
                         "-c:a", "copy",
                         "-y",
-                        final_with_overlay_path
+                        final_output_path
                     ]
             
                     print(f"Running overlay-only command: {' '.join(overlay_only_cmd)}")
-                    try:
-                        result = subprocess.run(overlay_only_cmd, check=True, capture_output=True, text=True)
-                        print(f"Overlay-only stderr: {result.stderr}")
-                
-                        if os.path.exists(final_with_overlay_path) and os.path.getsize(final_with_overlay_path) > 0:
-                            temporary_files.append(final_with_overlay_path)
-                            # Now try hardcoded subtitles as a fallback
-                            
-                            # Create a subtitle directly in the filter
-                            # This bypasses the ASS file and just puts text on the video
-                            # Also update the hardcoded subtitle fallback in your ffmpeg filter:
-
-                            # And update the hardcoded subtitle approach (fallback):
-                            words = script.split()
-                            word_count = len(words)
-                            # Calculate word duration to fit within script duration
-                            duration_per_word = script_duration / word_count if word_count > 0 else 1.0
-
-                            drawtext_filters = []
-                            for i, word in enumerate(words):
-                                # Distribute words evenly across script duration
-                                start_time = title_duration + (i * duration_per_word)
-                                end_time = title_duration + ((i + 1) * duration_per_word)
-    
-                                # Escape single quotes in the word for the filter
-                                safe_word = word.replace("'", "\\'")
-    
-                                # Create a drawtext filter with larger font size
-                                filter_text = (
-                                    f"drawtext=text='{safe_word}':fontcolor={font.lower()}:fontsize=60:"  # Increased font size
-                                    f"x=(w-text_w)/2:y=(h-text_h)/2:font='Arial':"
-                                    f"fontfile='{FONT_PATH}':"
-                                    f"enable='between(t,{start_time},{end_time})'"
-                                )
-                                drawtext_filters.append(filter_text)
-
-                            # Join all filters with commas
-                            subtitles_filter = ",".join(drawtext_filters)
-
-                            # Use this in the hardcoded_subs_cmd filter
-                            hardcoded_subs_cmd = [
-                                "ffmpeg",
-                                "-i", final_with_overlay_path,
-                                "-vf", subtitles_filter,
-                                "-c:v", "libx264",
-                                "-preset", "ultrafast",
-                                "-c:a", "copy",
-                                "-y",
-                                final_with_subs_path
-                            ]
-                    
-                            print(f"Running hardcoded subtitles command: {' '.join(hardcoded_subs_cmd)}")
-                            try:
-                                result = subprocess.run(hardcoded_subs_cmd, check=True, capture_output=True, text=True)
-                                print(f"Hardcoded subs stderr: {result.stderr}")
-                                
-                                if os.path.exists(final_with_subs_path) and os.path.getsize(final_with_subs_path) > 0:
-                                    temporary_files.append(final_with_subs_path)
-                                    final_output_path = final_with_subs_path
-                                    print(f"Successfully created hardcoded subtitles video: {final_with_subs_path}")
-                                else:
-                                    print("Hardcoded subtitles command failed - output file missing or empty")
-                            except subprocess.CalledProcessError as e:
-                                print(f"FFmpeg error adding hardcoded subtitles: {e.stderr}")
-                        else:
-                            print("Overlay-only command failed - output file missing or empty")
-                    except subprocess.CalledProcessError as e:
-                        print(f"FFmpeg error in overlay-only command: {e.stderr}")
+                    overlay_process = subprocess.run(overlay_only_cmd, capture_output=True, text=True)
+            
+                    if overlay_process.returncode != 0:
+                        print(f"Overlay-only command failed: {overlay_process.stderr}")
+                        print("Falling back to video with just audio")
+                        final_output_path = final_with_audio_path
+                    else:
+                        print(f"Successfully created video with just overlay: {final_output_path}")
+                else:
+                    print(f"Successfully created video with simplified text: {final_output_path}")
             else:
-                print("Could not determine video dimensions for overlay")
+                print(f"Successfully created complete video: {final_output_path}")
+    
+    # Add the final output to temporary files for cleanup
+            if final_output_path != final_with_audio_path:
+                temporary_files.append(final_output_path)
 
         except Exception as e:
-            print(f"Error in overlay/subtitle step: {str(e)}")
-            traceback.print_exc()  # Print full traceback for debugging
-            final_output_path = final_with_audio_path  # Fallback to video with audio
+            print(f"Error adding overlay and subtitles: {str(e)}")
+            traceback.print_exc()
+            # Fallback to the video with just audio
+            final_output_path = final_with_audio_path
 
 
         # Step 10: Upload the final video to Cloudinary

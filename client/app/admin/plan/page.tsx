@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, HelpCircle, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useUser } from '@clerk/clerk-react';
-import { useRouter} from 'next/navigation';
-import toast,  { Toaster } from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
+import toast, { Toaster } from 'react-hot-toast';
 
 // Define types for Razorpay
 interface RazorpayOptions {
@@ -54,6 +54,7 @@ interface PricingPlan {
 const Plans: React.FC = () => {
   const { user } = useUser();
   const router = useRouter();
+  const [loading, setLoading] = useState(false)
   const pricingPlans: PricingPlan[] = [
     {
       name: 'BASIC',
@@ -118,6 +119,7 @@ const Plans: React.FC = () => {
   };
 
   const handleSubscribe = async (planId: string) => {
+    setLoading(true)
     const res = await fetch('https://cravio-ai.onrender.com/create-subscription', {
       method: "POST",
       headers: {
@@ -128,7 +130,7 @@ const Plans: React.FC = () => {
 
     const data = await res.json();
 
-    const options : RazorpayOptions = {
+    const options: RazorpayOptions = {
       key: "rzp_live_UEdAvXjUa5ylU2",
       subscription_id: data.id,
       name: "Cravio AI",
@@ -149,21 +151,23 @@ const Plans: React.FC = () => {
               credits: pricingPlans.find(plan => plan.planId === planId)?.credit,
               subscription_id: data.id,
               price: Math.round(pricingPlans.find(plan => plan.planId === planId)?.price || 0),
-              status: "active",               
-              last_credited: new Date().toISOString() 
+              status: "active",
+              last_credited: new Date().toISOString()
             })
           });
-  
+
           const userData = await userRes.json();
           console.log("success", userData)
           console.log("response", response)
           toast.success("Thanks for Subscribing us")
+          setLoading(false)
           // deplay 3 sec then router.push("/admin/dashboard")
           setTimeout(() => {
             router.push("/admin/dashboard")
           }, 3000);
         } catch (error) {
           console.error(error)
+          setLoading(false)
         }
       },
       prefill: {
@@ -174,11 +178,12 @@ const Plans: React.FC = () => {
 
     const razor = new ((window as unknown) as RazorpayWindow).Razorpay(options);
     razor.open();
+    setLoading(false)
   };
 
   return (
     <div className="container mx-auto py-16 px-4 md:px-6">
-      <Toaster/>
+      <Toaster />
       <motion.div
         className="text-center mb-16"
         initial="hidden"
@@ -253,14 +258,44 @@ const Plans: React.FC = () => {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button onClick={() => handleSubscribe(plan.planId)} className={cn(
-                  "w-full",
-                  plan.highlight
-                    ? "bg-blue-500 hover:bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/20 text-lg py-6"
-                    : ""
-                )}>
-                  {plan.highlight ? "SUBSCRIBE NOW" : "SUBSCRIBE"}
+                <Button
+                  onClick={() => handleSubscribe(plan.planId)}
+                  disabled={loading}
+                  className={cn(
+                    "w-full flex items-center justify-center gap-2",
+                    plan.highlight
+                      ? "bg-blue-500 hover:bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/20 text-lg py-6"
+                      : ""
+                  )}
+                >
+                  {loading ? (
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                        ></path>
+                      </svg>
+                    </>
+                  ) : (
+                    plan.highlight ? "SUBSCRIBE NOW" : "SUBSCRIBE"
+                  )}
                 </Button>
+
               </CardFooter>
             </Card>
           </motion.div>
