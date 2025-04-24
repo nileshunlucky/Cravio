@@ -25,18 +25,20 @@ FONT_PATH = os.path.join("assets", "Roboto-Bold.ttf")
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 # Configure Cloudinary - these should be set in environment variables in production
-cloudinary.config( 
-  cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"), 
-  api_key = os.getenv("CLOUDINARY_API_KEY"), 
-  api_secret = os.getenv("CLOUDINARY_API_SECRET") 
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
 )
 
 DEFAULT_AVATAR_PATH = os.path.join(ASSETS_FOLDER, "reddit.png")
+
 
 # Function to safely handle file paths, replacing slashes with an underscore
 def safe_filename(username: str) -> str:
     # Replace slashes (/) and other potentially problematic characters with an underscore
     return username.replace("/", "_").replace("\\", "_")
+
 
 def add_rounded_corners(im, radius):
     """
@@ -48,6 +50,7 @@ def add_rounded_corners(im, radius):
     draw.rounded_rectangle([(0, 0), im.size], radius=radius, fill=255)
     rounded.paste(im, (0, 0), mask)
     return rounded
+
 
 def wrap_text(text, font, max_width):
     """
@@ -66,6 +69,7 @@ def wrap_text(text, font, max_width):
     lines.append(line.rstrip())
     return lines
 
+
 def load_font(font_path, size):
     """
     Loads a font with the given path and size, falling back to default if not available.
@@ -74,6 +78,7 @@ def load_font(font_path, size):
         return ImageFont.truetype(font_path, size)
     except:
         return ImageFont.load_default()
+
 
 def create_avatar_image(avatar_path=None):
     """
@@ -85,8 +90,9 @@ def create_avatar_image(avatar_path=None):
         avatar_img = Image.open(BytesIO(avatar_bytes)).convert("RGBA").resize((80, 80))
     else:
         avatar_img = Image.open(DEFAULT_AVATAR_PATH).convert("RGBA").resize((80, 80))
-    
+
     return add_rounded_corners(avatar_img, 20)
+
 
 def create_reddit_post_layout(title, username, avatar_img):
     """
@@ -118,20 +124,40 @@ def create_reddit_post_layout(title, username, avatar_img):
     # Username and Verify
     username_x, username_y = 140, 50
     draw.text((username_x, username_y), username, fill="black", font=font_username)
-    verify_img = Image.open(os.path.join(ASSETS_FOLDER, "verify.png")).convert("RGBA").resize((28, 28))
-    username_bbox = draw.textbbox((username_x, username_y), username, font=font_username)
+    verify_img = (
+        Image.open(os.path.join(ASSETS_FOLDER, "verify.png"))
+        .convert("RGBA")
+        .resize((28, 28))
+    )
+    username_bbox = draw.textbbox(
+        (username_x, username_y), username, font=font_username
+    )
     username_width = username_bbox[2] - username_bbox[0]
     verify_x = username_x + username_width + 10
     rounded_bg.paste(verify_img, (verify_x, username_y), verify_img)
 
     # Title lines
     for i, line in enumerate(wrapped_title):
-        draw.text((40, content_y_start + i * line_height), line, fill="black", font=font_title)
+        draw.text(
+            (40, content_y_start + i * line_height), line, fill="black", font=font_title
+        )
 
     # Load and paste icons
-    like_img = Image.open(os.path.join(ASSETS_FOLDER, "like.png")).convert("RGBA").resize((100, 70))
-    comment_img = Image.open(os.path.join(ASSETS_FOLDER, "comment.png")).convert("RGBA").resize((100, 70))
-    share_img = Image.open(os.path.join(ASSETS_FOLDER, "share.png")).convert("RGBA").resize((100, 70))
+    like_img = (
+        Image.open(os.path.join(ASSETS_FOLDER, "like.png"))
+        .convert("RGBA")
+        .resize((100, 70))
+    )
+    comment_img = (
+        Image.open(os.path.join(ASSETS_FOLDER, "comment.png"))
+        .convert("RGBA")
+        .resize((100, 70))
+    )
+    share_img = (
+        Image.open(os.path.join(ASSETS_FOLDER, "share.png"))
+        .convert("RGBA")
+        .resize((100, 70))
+    )
 
     rounded_bg.paste(like_img, (40, reactions_y), like_img)
     rounded_bg.paste(comment_img, (150, reactions_y), comment_img)
@@ -140,22 +166,21 @@ def create_reddit_post_layout(title, username, avatar_img):
 
     return rounded_bg
 
+
 def convert_to_audio(text, voice):
     """Convert text to speech using OpenAI's TTS API"""
-    response = openai.audio.speech.create(
-        model="tts-1",
-        voice=voice,
-        input=text
-    )
+    response = openai.audio.speech.create(model="tts-1", voice=voice, input=text)
     return response
+
 
 def save_audio_and_get_duration(audio_response, path: str) -> float:
     """Save audio to file and return its duration"""
     with open(path, "wb") as f:
         f.write(audio_response.read())
     probe = ffmpeg.probe(path)
-    duration = float(probe['format']['duration'])
+    duration = float(probe["format"]["duration"])
     return duration
+
 
 def font_name_to_color_code(font_name):
     color_map = {
@@ -172,18 +197,21 @@ def font_name_to_color_code(font_name):
     }
     return color_map.get(font_name.lower(), "FFFFFF")
 
-def generate_styled_ass_subtitles(script_text, start_time_sec, total_duration_sec, color_code):
+
+def generate_styled_ass_subtitles(
+    script_text, start_time_sec, total_duration_sec, color_code
+):
     """Generate ASS format subtitles with styling - centered with one word at a time and proper timing"""
     words = script_text.strip().split()
-    
+
     # Calculate appropriate word duration to fit within script duration
     # This ensures all words will be shown during the script audio
     word_count = len(words)
     duration_per_word = total_duration_sec / word_count if word_count > 0 else 1.0
-    
+
     # Ensure color code is in correct format
     color_code = color_code.lstrip("&H").upper()
-    
+
     # ASS header with centered position and increased font size
     ass_header = f"""[Script Info]
 ScriptType: v4.00+
@@ -198,64 +226,69 @@ Style: Default,Arial,250,&H00{color_code},&H000000FF,&H00000000,&H80000000,-1,0,
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
-    
+
     # Generate events - one word at a time distributed over script duration
     events = []
     for i, word in enumerate(words):
         start = start_time_sec + i * duration_per_word
         end = start + duration_per_word
-        
+
         # Format times as h:mm:ss.cc
         start_str = "{:d}:{:02d}:{:02d}.{:02d}".format(
             int(start // 3600),
             int((start % 3600) // 60),
             int(start % 60),
-            int((start % 1) * 100)
+            int((start % 1) * 100),
         )
-        
+
         end_str = "{:d}:{:02d}:{:02d}.{:02d}".format(
             int(end // 3600),
             int((end % 3600) // 60),
             int(end % 60),
-            int((end % 1) * 100)
+            int((end % 1) * 100),
         )
-        
+
         # Each word gets its own dialogue entry with center alignment
         event_line = f"Dialogue: 0,{start_str},{end_str},Default,,0,0,0,,{{\\b1}}{word}"
         events.append(event_line)
-    
+
     return ass_header + "\n".join(events)
+
 
 def get_video_dimensions(video_path):
     """Get video dimensions and return in format suitable for ffmpeg commands"""
     probe = ffmpeg.probe(video_path)
-    video_info = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
+    video_info = next(
+        (stream for stream in probe["streams"] if stream["codec_type"] == "video"), None
+    )
     if video_info:
-        width = int(video_info['width'])
-        height = int(video_info['height'])
+        width = int(video_info["width"])
+        height = int(video_info["height"])
         return width, height
     return None, None
+
 
 def upload_to_cloudinary(file_path: str, user_email: str) -> str:
     """Upload a file to Cloudinary and return the URL"""
     try:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         public_id = f"reddit_videos/{user_email}/{timestamp}"
-        
+
         # Upload the file to Cloudinary
         upload_result = cloudinary.uploader.upload(
             file_path,
             resource_type="video",
             public_id=public_id,
             overwrite=True,
-            folder="Cravio"
+            folder="Cravio",
         )
-        
+
         # Return the secure URL
-        return upload_result['secure_url']
+        return upload_result["secure_url"]
     except HTTPException as e:
         print(f"Error uploading to Cloudinary: {str(e)}")
         raise
+
 
 def cleanup_output_files(file_paths: list):
     """Remove temporary files after processing"""
@@ -267,53 +300,57 @@ def cleanup_output_files(file_paths: list):
         except HTTPException as e:
             print(f"Error removing file {file_path}: {str(e)}")
 
-def save_video_to_mongodb(user_email: str, video_url: str, title: str, script: str = None, caption: str = None):
+
+def save_video_to_mongodb(
+    user_email: str, video_url: str, title: str, script: str = None, caption: str = None
+):
     """Save video details to MongoDB user collection"""
     try:
         # Get the current date
         created_at = datetime.datetime.now()
-        
+
         # Find the user by email
         user = users_collection.find_one({"email": user_email})
-        
+
         if not user:
             print(f"User {user_email} not found in database")
             return False
-            
+
         # Create the video entry
         video_entry = {
             "url": video_url,
             "title": title,
             "script": script,
             "caption": caption,
-            "created_at": created_at
+            "created_at": created_at,
         }
-        
+
         # Update the user document to add the video
         # If the 'videos' array doesn't exist, it will be created
         result = users_collection.update_one(
-            {"email": user_email},
-            {"$push": {"videos": video_entry}}
+            {"email": user_email}, {"$push": {"videos": video_entry}}
         )
-        
+
         if result.modified_count == 0:
             print("No document was updated")
             return False
-            
+
         return True
-        
+
     except HTTPException as e:
         print(f"Error saving to MongoDB: {str(e)}")
         return False
-    
+
+
 # Create a function to generate the title from GPT-3.5-turbo
 def generate_title(prompt: str) -> str:
     try:
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[{
-                "role": "user", 
-                "content": f"""Create a short, attention-grabbing title for a viral Reddit story video based on this prompt: {prompt}
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"""Create a short, attention-grabbing title for a viral Reddit story video based on this prompt: {prompt}
                 
                 Requirements:
                 - Keep it under 15 words
@@ -323,24 +360,27 @@ def generate_title(prompt: str) -> str:
                 - Format like popular TikTok/YouTube Reddit story titles
                 - Should create curiosity and make viewers want to hear the full story
                 - Must be a complete sentence
-                """
-            }],
+                """,
+                }
+            ],
             max_tokens=100,
-            temperature=0.7
+            temperature=0.7,
         )
         title = response.choices[0].message.content.strip()
         return title
     except HTTPException as e:
         raise HTTPException(f"Error generating title: {str(e)}")
 
+
 # Create a function to generate the script based on the title
 def generate_script(title: str) -> str:
     try:
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[{
-                "role": "user", 
-                "content": f"""Create an engaging Reddit story script for a Instagram/TikTok/YouTube short based on this title: "{title}"
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"""Create an engaging Reddit story script for a Instagram/TikTok/YouTube short based on this title: "{title}"
                 
                 Requirements:
                 - First-person narrative style like genuine Reddit posts
@@ -352,24 +392,27 @@ def generate_script(title: str) -> str:
                 - Make it sound like a real person telling their story
                 - Include 1-2 surprising twists or turns
                 - End with a satisfying conclusion or punchline
-                """
-            }],
+                """,
+                }
+            ],
             max_tokens=300,
-            temperature=0.7
+            temperature=0.7,
         )
         script = response.choices[0].message.content.strip()
         return script
     except HTTPException as e:
         raise HTTPException(f"Error generating script: {str(e)}")
 
+
 # Create a function to generate captions based on the title
 def generate_caption(title: str) -> str:
     try:
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[{
-                "role": "user", 
-                "content": f"""Create an engaging, viral-worthy caption for a Instagram/TikTok/YouTube short based on this title: "{title}"
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"""Create an engaging, viral-worthy caption for a Instagram/TikTok/YouTube short based on this title: "{title}"
                 
                 Requirements:
                 - Keep it under 100 characters
@@ -378,15 +421,17 @@ def generate_caption(title: str) -> str:
                 - Use casual, conversational language
                 - Should complement the title without repeating it exactly
                 - End with a question or hook that drives engagement
-                """
-            }],
+                """,
+                }
+            ],
             max_tokens=150,
-            temperature=0.7
+            temperature=0.7,
         )
         caption = response.choices[0].message.content.strip()
         return caption
     except HTTPException as e:
         raise HTTPException(f"Error generating caption: {str(e)}")
+
 
 @celery_app.task(name="create_reddit_post_task", bind=True)
 def create_reddit_post_task(
@@ -399,10 +444,12 @@ def create_reddit_post_task(
     voice=None,
     video=None,
     font=None,
-    user_email=None
+    user_email=None,
 ):
     print(f"Task started with avatar_path={avatar_path} and username={username}")
-    self.update_state(state='PROGRESS', meta={'status': 'Creating Reddit post', 'percent_complete': 0})
+    self.update_state(
+        state="PROGRESS", meta={"status": "Creating Reddit post", "percent_complete": 0}
+    )
 
     temporary_files = []  # List to track files for cleanup
     sanitized_username = safe_filename(username)
@@ -410,44 +457,68 @@ def create_reddit_post_task(
 
     try:
         # Step 1: Sanitize the username for file path safety (already done)
-        self.update_state(state='PROGRESS', meta={'status': 'Sanitizing username', 'percent_complete': 10})
+        self.update_state(
+            state="PROGRESS",
+            meta={"status": "Sanitizing username", "percent_complete": 10},
+        )
 
         # Step 2: Create the avatar image
-        self.update_state(state='PROGRESS', meta={'status': 'Creating avatar image', 'percent_complete': 20})
+        self.update_state(
+            state="PROGRESS",
+            meta={"status": "Creating avatar image", "percent_complete": 20},
+        )
         avatar_img = create_avatar_image(avatar_path)
 
         # Step 3: Create the Reddit post layout
-        self.update_state(state='PROGRESS', meta={'status': 'Creating Reddit post layout', 'percent_complete': 30})
+        self.update_state(
+            state="PROGRESS",
+            meta={"status": "Creating Reddit post layout", "percent_complete": 30},
+        )
         reddit_post_img = create_reddit_post_layout(title, username, avatar_img)
 
         # Save the post image
         reddit_post_image_path = f"{base_output_path}_reddit_post.png"
-        self.update_state(state='PROGRESS', meta={'status': 'Saving Reddit post image', 'percent_complete': 40})
+        self.update_state(
+            state="PROGRESS",
+            meta={"status": "Saving Reddit post image", "percent_complete": 40},
+        )
         reddit_post_img.save(reddit_post_image_path, format="PNG")
         temporary_files.append(reddit_post_image_path)
 
         # Step 4: Convert title to audio using OpenAI TTS
         title_audio_path = f"{base_output_path}_title.mp3"
-        self.update_state(state='PROGRESS', meta={'status': 'Converting title to audio', 'percent_complete': 50})
+        self.update_state(
+            state="PROGRESS",
+            meta={"status": "Converting title to audio", "percent_complete": 50},
+        )
         title_audio_response = convert_to_audio(title, voice)
-        title_duration = save_audio_and_get_duration(title_audio_response, title_audio_path)
+        title_duration = save_audio_and_get_duration(
+            title_audio_response, title_audio_path
+        )
         temporary_files.append(title_audio_path)
 
         # Step 5: Convert script to audio
         script_audio_path = f"{base_output_path}_script.mp3"
-        self.update_state(state='PROGRESS', meta={'status': 'Converting script to audio', 'percent_complete': 60})
+        self.update_state(
+            state="PROGRESS",
+            meta={"status": "Converting script to audio", "percent_complete": 60},
+        )
         script_audio_response = convert_to_audio(script, voice)
-        script_duration = save_audio_and_get_duration(script_audio_response, script_audio_path)
+        script_duration = save_audio_and_get_duration(
+            script_audio_response, script_audio_path
+        )
         temporary_files.append(script_audio_path)
 
         # Step 6: Combine both audios using direct file copy
-        self.update_state(state='PROGRESS', meta={'status': 'Combining audio', 'percent_complete': 70})
+        self.update_state(
+            state="PROGRESS", meta={"status": "Combining audio", "percent_complete": 70}
+        )
         combined_audio_path = f"{base_output_path}_combined.mp3"
         try:
-            with open(combined_audio_path, 'wb') as outfile:
-                with open(title_audio_path, 'rb') as infile:
+            with open(combined_audio_path, "wb") as outfile:
+                with open(title_audio_path, "rb") as infile:
                     shutil.copyfileobj(infile, outfile)
-                with open(script_audio_path, 'rb') as infile:
+                with open(script_audio_path, "rb") as infile:
                     shutil.copyfileobj(infile, outfile)
         except Exception as e:
             print(f"Error combining audio using copy protocol: {e}")
@@ -457,14 +528,17 @@ def create_reddit_post_task(
         total_duration = title_duration + script_duration
 
         # Step 7: Process the video URL (Download/Locate and Mute/Crop)
-        self.update_state(state='PROGRESS', meta={'status': 'Processing background video', 'percent_complete': 80})
+        self.update_state(
+            state="PROGRESS",
+            meta={"status": "Processing background video", "percent_complete": 80},
+        )
         if video.startswith("https"):
             downloaded_video_path = f"{base_output_path}_downloaded_video.mp4"
             try:
                 print(f"Downloading video from: {video}")
-                response = requests.get(video, stream=True, timeout=60) # Added timeout
+                response = requests.get(video, stream=True, timeout=60)  # Added timeout
                 response.raise_for_status()  # Raise an exception for bad status codes
-                with open(downloaded_video_path, 'wb') as f:
+                with open(downloaded_video_path, "wb") as f:
                     for chunk in response.iter_content(chunk_size=8192):
                         f.write(chunk)
                 print(f"Video downloaded successfully to: {downloaded_video_path}")
@@ -472,78 +546,102 @@ def create_reddit_post_task(
                 temporary_files.append(downloaded_video_path)
             except requests.exceptions.RequestException as e:
                 print(f"Could not download video from URL: {video} - {e}")
-                return {"status": "error", "message": f"Could not download video from URL: {video} - {e}"}
+                return {
+                    "status": "error",
+                    "message": f"Could not download video from URL: {video} - {e}",
+                }
         else:
             gameplay_video_path = os.path.join(GAMEPLAY_FOLDER, video)
             if not os.path.exists(gameplay_video_path):
                 print(f"Video file not found: {gameplay_video_path}")
-                return {"status": "error", "message": f"Video file not found: {gameplay_video_path}"}
+                return {
+                    "status": "error",
+                    "message": f"Video file not found: {gameplay_video_path}",
+                }
 
         # Get video dimensions using ffmpeg.probe
         print(f"Probing video dimensions for: {gameplay_video_path}")
         video_width, video_height = get_video_dimensions(gameplay_video_path)
         if not video_width or not video_height:
             # Handle error or proceed without cropping if dimensions are unknown
-            print(f"Warning: Could not get video dimensions for {gameplay_video_path}. Proceeding without crop.")
+            print(
+                f"Warning: Could not get video dimensions for {gameplay_video_path}. Proceeding without crop."
+            )
             # Optionally raise an error here if dimensions are critical
 
         muted_video_path = f"{base_output_path}_muted.mp4"
         # --- START: Revised Step 7 using subprocess with conditional copy ---
         try:
             cmd = ["ffmpeg", "-i", gameplay_video_path]
-            vf_filters = [] # List for video filters (-vf)
+            vf_filters = []  # List for video filters (-vf)
 
             # --- Cropping logic (remains the same) ---
             if video_width and video_height:
                 target_aspect_ratio = 9 / 16
                 current_aspect_ratio = video_width / video_height
                 if abs(current_aspect_ratio - target_aspect_ratio) > 0.01:
-                    print(f"Cropping video. Current AR: {current_aspect_ratio}, Target AR: {target_aspect_ratio}")
+                    print(
+                        f"Cropping video. Current AR: {current_aspect_ratio}, Target AR: {target_aspect_ratio}"
+                    )
                     crop_filter_str = ""
                     # ... (cropping calculation logic remains the same) ...
                     if crop_filter_str:
-                         vf_filters.append(crop_filter_str)
+                        vf_filters.append(crop_filter_str)
                 else:
-                     print("Video aspect ratio matches target. No crop needed.")
+                    print("Video aspect ratio matches target. No crop needed.")
             else:
-                 print("Skipping crop due to unknown video dimensions.")
+                print("Skipping crop due to unknown video dimensions.")
             # --- End Cropping logic ---
-
 
             # --- Select codec based on whether filters are applied ---
             output_options = []
             if vf_filters:
                 # Filters require re-encoding
                 print("Applying video filters, using libx264 encoding.")
-                output_options.extend([
-                    "-vf", ",".join(vf_filters),
-                    "-c:v", "libx264",
-                    "-preset", "veryfast", # Keep preset for now, might need tuning if error persists
-                ])
+                output_options.extend(
+                    [
+                        "-vf",
+                        ",".join(vf_filters),
+                        "-c:v",
+                        "libx264",
+                        "-preset",
+                        "veryfast",  # Keep preset for now, might need tuning if error persists
+                    ]
+                )
             else:
                 # No filters applied, safe to copy the video stream
                 print("No video filters applied, attempting video stream copy.")
-                output_options.extend([
-                    "-c:v", "copy",
-                ])
+                output_options.extend(
+                    [
+                        "-c:v",
+                        "copy",
+                    ]
+                )
             # --- End codec selection ---
 
-
             # Common options for both encoding and copying
-            cmd.extend([
-                "-map", "0:v",      # Select video stream
-                "-an",             # Disable audio (mute)
-            ])
-            cmd.extend(output_options) # Add the codec/filter options decided above
-            cmd.extend([
-                "-pix_fmt", "yuv420p", # Good practice, though ignored by -c:v copy
-                "-y",              # Overwrite output
-                # "-loglevel", "debug", # Uncomment for VERY verbose FFmpeg logs if needed
-                muted_video_path
-            ])
+            cmd.extend(
+                [
+                    "-map",
+                    "0:v",  # Select video stream
+                    "-an",  # Disable audio (mute)
+                ]
+            )
+            cmd.extend(output_options)  # Add the codec/filter options decided above
+            cmd.extend(
+                [
+                    "-pix_fmt",
+                    "yuv420p",  # Good practice, though ignored by -c:v copy
+                    "-y",  # Overwrite output
+                    # "-loglevel", "debug", # Uncomment for VERY verbose FFmpeg logs if needed
+                    muted_video_path,
+                ]
+            )
 
             print(f"Running FFmpeg command for Step 7: {' '.join(cmd)}")
-            result = subprocess.run(cmd, check=True, capture_output=True, text=True, encoding='utf-8')
+            result = subprocess.run(
+                cmd, check=True, capture_output=True, text=True, encoding="utf-8"
+            )
             # print(f"FFmpeg Step 7 stdout: {result.stdout}")
             print(f"FFmpeg Step 7 stderr (Info/Progress): {result.stderr}")
             print(f"Muted/Cropped video saved to: {muted_video_path}")
@@ -562,30 +660,44 @@ def create_reddit_post_task(
 
         # Step 8: Combine muted video and combined audio using subprocess
         final_with_audio_path = f"{base_output_path}_final_with_audio.mp4"
-        self.update_state(state='PROGRESS', meta={'status': 'Combining video and audio', 'percent_complete': 85})
+        self.update_state(
+            state="PROGRESS",
+            meta={"status": "Combining video and audio", "percent_complete": 85},
+        )
 
         try:
             # SOLUTION: Instead of trying to re-encode the video, just copy the streams
             # This significantly reduces memory and CPU usage
             command = [
-                'ffmpeg',
-                '-i', muted_video_path,
-                '-i', combined_audio_path,
-                '-c:v', 'copy',  # Copy video stream without re-encoding
-                '-c:a', 'aac',   # Convert audio to AAC (much lighter than full video re-encoding)
-                '-b:a', '48k',   # Very low audio bitrate to save resources
-                '-ar', '22050',  # Lower audio sample rate (standard was 44100)
-                '-shortest',
-                '-movflags', '+faststart',
-                final_with_audio_path
+                "ffmpeg",
+                "-i",
+                muted_video_path,
+                "-i",
+                combined_audio_path,
+                "-c:v",
+                "copy",  # Copy video stream without re-encoding
+                "-c:a",
+                "aac",  # Convert audio to AAC (much lighter than full video re-encoding)
+                "-b:a",
+                "48k",  # Very low audio bitrate to save resources
+                "-ar",
+                "22050",  # Lower audio sample rate (standard was 44100)
+                "-shortest",
+                "-movflags",
+                "+faststart",
+                final_with_audio_path,
             ]
 
             # Print the command for debugging
-            print(f"Combining video '{muted_video_path}' and audio '{combined_audio_path}' using streamcopy: {command}")
+            print(
+                f"Combining video '{muted_video_path}' and audio '{combined_audio_path}' using streamcopy: {command}"
+            )
 
             # Run the subprocess command
-            result = subprocess.run(command, check=True, timeout=180)  # 3 minute timeout
-    
+            result = subprocess.run(
+                command, check=True, timeout=180
+            )  # 3 minute timeout
+
             # After successful combination
             print(f"Combined video with audio saved to: {final_with_audio_path}")
             temporary_files.append(final_with_audio_path)
@@ -597,17 +709,25 @@ def create_reddit_post_task(
                 fallback_output = f"{base_output_path}_audio_only.mp4"
                 # Just take the audio and create a simple video
                 fallback_cmd = [
-                    'ffmpeg',
-                    '-i', combined_audio_path,
-                    '-f', 'lavfi', 
-                    '-i', 'color=c=black:s=720x1280:r=15',  # Black background video at lower framerate
-                    '-c:v', 'libx264', 
-                    '-preset', 'ultrafast',
-                    '-tune', 'stillimage',
-                    '-crf', '35',  # Very low quality to save resources
-                    '-c:a', 'aac',
-                    '-shortest',
-                    fallback_output
+                    "ffmpeg",
+                    "-i",
+                    combined_audio_path,
+                    "-f",
+                    "lavfi",
+                    "-i",
+                    "color=c=black:s=720x1280:r=15",  # Black background video at lower framerate
+                    "-c:v",
+                    "libx264",
+                    "-preset",
+                    "ultrafast",
+                    "-tune",
+                    "stillimage",
+                    "-crf",
+                    "35",  # Very low quality to save resources
+                    "-c:a",
+                    "aac",
+                    "-shortest",
+                    fallback_output,
                 ]
                 subprocess.run(fallback_cmd, check=True, timeout=120)
                 final_with_audio_path = fallback_output
@@ -616,39 +736,49 @@ def create_reddit_post_task(
             except Exception as fallback_error:
                 print(f"Fallback approach also failed: {fallback_error}")
                 raise Exception("All FFmpeg approaches failed") from fallback_error
-    
+
         except subprocess.CalledProcessError as e:
             print(f"FFmpeg error: Return code {e.returncode}")
-    
+
             # ALTERNATIVE FALLBACK: Try splitting the process into smaller steps
             try:
                 print("Trying alternative approach - splitting the process")
                 temp_audio_path = f"{base_output_path}_temp_audio.aac"
-        
+
                 # Step 1: Extract and convert audio to AAC separately (lower quality)
                 audio_cmd = [
-                    'ffmpeg',
-                    '-i', combined_audio_path,
-                    '-c:a', 'aac',
-                    '-b:a', '32k',  # Very low bitrate
-                    '-ar', '22050',  # Lower sample rate
-                    temp_audio_path
+                    "ffmpeg",
+                    "-i",
+                    combined_audio_path,
+                    "-c:a",
+                    "aac",
+                    "-b:a",
+                    "32k",  # Very low bitrate
+                    "-ar",
+                    "22050",  # Lower sample rate
+                    temp_audio_path,
                 ]
                 subprocess.run(audio_cmd, check=True, timeout=60)
                 temporary_files.append(temp_audio_path)
-        
+
                 # Step 2: Combine with video using stream copy for both
                 final_cmd = [
-                    'ffmpeg',
-                    '-i', muted_video_path,
-                    '-i', temp_audio_path,
-                    '-c:v', 'copy',  # Copy video
-                    '-c:a', 'copy',  # Copy already-converted audio
-                    '-shortest',
-                    final_with_audio_path
+                    "ffmpeg",
+                    "-i",
+                    muted_video_path,
+                    "-i",
+                    temp_audio_path,
+                    "-c:v",
+                    "copy",  # Copy video
+                    "-c:a",
+                    "copy",  # Copy already-converted audio
+                    "-shortest",
+                    final_with_audio_path,
                 ]
                 subprocess.run(final_cmd, check=True, timeout=120)
-                print(f"Successfully created video using split approach: {final_with_audio_path}")
+                print(
+                    f"Successfully created video using split approach: {final_with_audio_path}"
+                )
                 temporary_files.append(final_with_audio_path)
             except Exception as alt_error:
                 print(f"Alternative approach also failed: {alt_error}")
@@ -666,180 +796,164 @@ def create_reddit_post_task(
         temporary_files.append(final_output_path)
 
         try:
-            # First ensure we have a valid video with audio
-            if not os.path.exists(final_with_audio_path) or os.path.getsize(final_with_audio_path) < 1000:
-                raise Exception(f"Invalid input video: {final_with_audio_path}")
-            
-            # Get video dimensions
-            video_width_final, video_height_final = get_video_dimensions(final_with_audio_path)
-            if not video_width_final or not video_height_final:
-                raise Exception("Could not determine video dimensions")
-    
-            print(f"Working with video dimensions: {video_width_final}x{video_height_final}")
-    
-            # 1. Prepare the overlay image - resize to appropriate dimensions
-            target_image_width = int(video_width_final * 0.9)  # 90% of video width
-            target_image_height = int(reddit_post_img.height * (target_image_width / reddit_post_img.width))
-            resized_reddit_post_img = reddit_post_img.resize((target_image_width, target_image_height))
-            resized_output_path = f"{base_output_path}_resized_reddit_post.png"
-            resized_reddit_post_img.save(resized_output_path, format="PNG")
-            temporary_files.append(resized_output_path)
-    
-            print(f"Image prepared successfully: {resized_output_path} ({target_image_width}x{target_image_height})")
-    
-            # 2. Create subtitle file with improved content
-            color_code = font_name_to_color_code(font)
-            ass_subtitles = generate_styled_ass_subtitles(script, title_duration, script_duration, color_code)
-    
-            # Write to file with explicit encoding
-            with open(subtitles_path, "w", encoding='utf-8') as subtitle_file:
-                subtitle_file.write(ass_subtitles)
-    
-            # Verify subtitle file exists and has content
-            if not os.path.exists(subtitles_path) or os.path.getsize(subtitles_path) < 10:
-                raise Exception(f"Failed to create valid subtitle file: {subtitles_path}")
-    
-            print(f"Subtitle file created successfully: {subtitles_path}")
-    
-            # 3. IMPROVED APPROACH: Use a two-pass encoding strategy for better reliability
-    
-            # Phase 1: Create an intermediate version with just the overlay
-            overlay_only_path = f"{base_output_path}_overlay_only.mp4"
-            temporary_files.append(overlay_only_path)
-    
-            # Handle path escaping for Windows compatibility
-            escaped_subtitle_path = subtitles_path.replace('\\', '\\\\').replace(':', '\\:')
-    
-            # Create clear, properly formatted filter for overlay
-            overlay_filter = f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'"
-    
-            # Command for reliable image overlay
-            overlay_cmd = [
-                "ffmpeg",
-                "-i", final_with_audio_path,  # Input video with audio
-                "-i", resized_output_path,    # Reddit post image
-                "-filter_complex", overlay_filter,
-                "-c:v", "libx264",            # Video codec
-                "-preset", "fast",            # Balance between speed and quality
-                "-c:a", "copy",               # Copy audio stream unchanged
-                "-y",                          # Overwrite output
-                overlay_only_path
-            ]
-    
-            print(f"Running overlay command: {' '.join(overlay_cmd)}")
-            result = subprocess.run(overlay_cmd, check=True, capture_output=True, text=True)
-    
-            # Verify output exists
-            if not os.path.exists(overlay_only_path) or os.path.getsize(overlay_only_path) < 10000:
-                print(f"Overlay command stderr: {result.stderr}")
-                raise Exception("Overlay command failed to produce valid output")
-    
-            print("Overlay applied successfully")
-    
-            # Phase 2: Add subtitles to the overlay video
-    
-            # Primary approach: Use ASS subtitles
-            subtitles_cmd = [
-                "ffmpeg",
-                "-i", overlay_only_path,
-                "-vf", f"subtitles='{escaped_subtitle_path}':force_style='Alignment=5,FontSize=250,Bold=1'",
-                "-c:v", "libx264",
-                "-preset", "fast",
-                "-c:a", "copy",
-                "-y",
-                final_output_path
-            ]
-    
-            try:
-                print(f"Running subtitles command: {' '.join(subtitles_cmd)}")
-                result = subprocess.run(subtitles_cmd, check=True, capture_output=True, text=True)
-        
-                # Verify final output
-                if not os.path.exists(final_output_path) or os.path.getsize(final_output_path) < 10000:
-                    raise Exception("Subtitle command failed to produce valid output")
-        
-                print("Subtitles applied successfully")
-        
-            except subprocess.CalledProcessError as e:
-                print(f"Error applying subtitles with ASS file: {str(e)}")
-                print(f"Command stderr: {e.stderr}")
-        
-                # Fallback: Use direct drawtext approach for each word
-                print("Falling back to hardcoded subtitles...")
-                
-                # Split script into words for drawtext filters
-                words = script.split()
-                word_count = len(words)
-                duration_per_word = script_duration / word_count if word_count > 0 else 1.0
-        
-                # Create filter for each word
-                drawtext_filters = []
-                for i, word in enumerate(words):
-                    start_time = title_duration + (i * duration_per_word)
-                    end_time = title_duration + ((i + 1) * duration_per_word)
-            
-                    # Escape special characters
-                    safe_word = word.replace("'", "\\'").replace(":", "\\:").replace(",", "\\,")
-            
-                    filter_text = (
-                        f"drawtext=text='{safe_word}':fontcolor={font.lower()}:fontsize=80:"
-                        f"x=(w-text_w)/2:y=(h-text_h)/2:font='Arial':"
-                        f"enable='between(t,{start_time},{end_time})'"
-                    )
-                    drawtext_filters.append(filter_text)
-        
-                # Create single filter string with all drawtext filters
-                subtitle_filter = ",".join(drawtext_filters)
-        
-                # Run fallback command
-                fallback_cmd = [
-                    "ffmpeg",
-                    "-i", overlay_only_path,
-                    "-vf", subtitle_filter,
-                    "-c:v", "libx264",
-                    "-preset", "ultrafast",  # Speed over quality for fallback
-                    "-c:a", "copy",
-                    "-y",
-                    final_output_path
+                if not os.path.exists(final_with_audio_path) or os.path.getsize(final_with_audio_path) < 1000:
+                        raise Exception(f"Invalid input video: {final_with_audio_path}")
+
+                video_width_final, video_height_final = get_video_dimensions(final_with_audio_path)
+                if not video_width_final or not video_height_final:
+                        raise Exception("Could not determine video dimensions")
+
+                print(f"Working with video dimensions: {video_width_final}x{video_height_final}")
+
+                target_image_width = int(video_width_final * 0.9)
+                target_image_height = int(reddit_post_img.height * (target_image_width / reddit_post_img.width))
+                resized_reddit_post_img = reddit_post_img.resize((target_image_width, target_image_height))
+                resized_output_path = f"{base_output_path}_resized_reddit_post.png"
+                resized_reddit_post_img.save(resized_output_path, format="PNG")
+                temporary_files.append(resized_output_path)
+
+                print(f"Image prepared successfully: {resized_output_path} ({target_image_width}x{target_image_height})")
+
+                color_code = font_name_to_color_code(font)
+                ass_subtitles = generate_styled_ass_subtitles(script, title_duration, script_duration, color_code)
+
+                with open(subtitles_path, "w", encoding='utf-8') as subtitle_file:
+                        subtitle_file.write(ass_subtitles)
+
+                if not os.path.exists(subtitles_path) or os.path.getsize(subtitles_path) < 10:
+                        raise Exception(f"Failed to create valid subtitle file: {subtitles_path}")
+
+                print(f"Subtitle file created successfully: {subtitles_path}")
+
+                overlay_filter = f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'"
+                if os.name == 'nt':
+                        subtitle_filter = f"subtitles='{subtitles_path.replace(':', '\\:')}':force_style='Alignment=5,FontSize=250,Bold=1'"
+                else:
+                        subtitle_filter = f"subtitles='{subtitles_path}':force_style='Alignment=5,FontSize=250,Bold=1'"
+
+                combined_filter = f"{overlay_filter},{subtitle_filter}"
+
+                combined_cmd = [
+                        "ffmpeg",
+                        "-i", final_with_audio_path,
+                        "-i", resized_output_path,
+                        "-filter_complex", combined_filter,
+                        "-c:v", "libx264",
+                        "-preset", "ultrafast",
+                        "-c:a", "copy",
+                        "-y",
+                        final_output_path
                 ]
-        
-                print(f"Running fallback subtitle command")
-                # Don't print full command as it may be very long with many words
-                result = subprocess.run(fallback_cmd, check=True, capture_output=True, text=True)
-        
-                # Final verification
-                if not os.path.exists(final_output_path) or os.path.getsize(final_output_path) < 10000:
-                    raise Exception("All subtitle approaches failed")
-        
-                print("Applied fallback subtitles successfully")
+
+                print(f"Running combined command: {' '.join(combined_cmd)}")
+
+                try:
+                        result = subprocess.run(combined_cmd, check=False, capture_output=True, text=True)
+                        print(f"FFmpeg return code: {result.returncode}")
+                        if result.stdout:
+                                print(f"FFmpeg stdout: {result.stdout[:500]}...")
+                        if result.stderr:
+                                print(f"FFmpeg stderr: {result.stderr[:500]}...")
+                        if result.returncode != 0:
+                                raise Exception(f"FFmpeg command failed with code {result.returncode}")
+                        if not os.path.exists(final_output_path) or os.path.getsize(final_output_path) < 10000:
+                                raise Exception("Combined command failed to produce valid output")
+
+                        print("Successfully created final video with overlay and subtitles")
+
+                except Exception as e:
+                        print(f"Combined command failed: {str(e)}")
+                        print("Falling back to overlay-only approach...")
+
+                        overlay_only_path = f"{base_output_path}_overlay_only.mp4"
+                        temporary_files.append(overlay_only_path)
+
+                        overlay_cmd = [
+                                "ffmpeg",
+                                "-i", final_with_audio_path,
+                                "-i", resized_output_path,
+                                "-filter_complex", f"overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'",
+                                "-c:v", "libx264",
+                                "-preset", "ultrafast",
+                                "-c:a", "copy",
+                                "-y",
+                                overlay_only_path
+                        ]
+
+                        try:
+                                print(f"Running simple overlay command")
+                                result = subprocess.run(overlay_cmd, check=True, capture_output=True, text=True)
+                                print(f"FFmpeg overlay return code: {result.returncode}")
+
+                                print("Successfully created video with overlay")
+
+                                text_output_path = f"{base_output_path}_with_text.mp4"
+                                temporary_files.append(text_output_path)
+
+                                safe_script = script.replace("'", "\\'").replace(":", "\\:").replace(",", "\\,")
+                                text_filter = (
+                                        f"drawtext=text='{safe_script}'"
+                                        f":fontcolor={font.lower()}:fontsize=40:x=(w-text_w)/2:y=(h*0.7)"
+                                        f":enable='between(t,{title_duration},{title_duration + script_duration})'"
+                                )
+
+                                text_cmd = [
+                                        "ffmpeg",
+                                        "-i", overlay_only_path,
+                                        "-vf", text_filter,
+                                        "-c:v", "libx264",
+                                        "-preset", "ultrafast",
+                                        "-c:a", "copy",
+                                        "-y",
+                                        text_output_path
+                                ]
+
+                                print("Running simple text subtitle command")
+                                result = subprocess.run(text_cmd, check=False, capture_output=True, text=True)
+                                print(f"FFmpeg text subtitle return code: {result.returncode}")
+
+                                if result.returncode == 0 and os.path.exists(text_output_path) and os.path.getsize(text_output_path) > 10000:
+                                        print("Successfully created final video with overlay and text subtitles")
+                                        final_output_path = text_output_path
+                                else:
+                                        print("Text subtitle command failed, using overlay-only video")
+                                        final_output_path = overlay_only_path
+
+                        except Exception as e2:
+                                print(f"All overlay approaches failed: {str(e2)}")
+                                print("Using original video as fallback")
+                                final_output_path = final_with_audio_path
 
         except Exception as e:
-            print(f"Error applying overlay/subtitles: {str(e)}")
-            traceback.print_exc()
-    
-            # Set a clear fallback path if everything fails
-            if os.path.exists(final_with_audio_path) and os.path.getsize(final_with_audio_path) > 10000:
+                print(f"Error in overlay/subtitle step: {str(e)}")
+                traceback.print_exc()
                 final_output_path = final_with_audio_path
                 print(f"Using base video as fallback: {final_output_path}")
-            else:
-                raise Exception("No valid output video available")        
 
         # Step 10: Upload the final video to Cloudinary
-        self.update_state(state='PROGRESS', meta={'status': 'Uploading to Cloudinary', 'percent_complete': 95})
+        self.update_state(
+            state="PROGRESS",
+            meta={"status": "Uploading to Cloudinary", "percent_complete": 95},
+        )
         cloudinary_url = upload_to_cloudinary(final_output_path, user_email)
 
         # Step 11: Save video details to MongoDB
-        self.update_state(state='PROGRESS', meta={'status': 'Saving to MongoDB', 'percent_complete': 100})
+        self.update_state(
+            state="PROGRESS",
+            meta={"status": "Saving to MongoDB", "percent_complete": 100},
+        )
         save_success = save_video_to_mongodb(
             user_email=user_email,
             video_url=cloudinary_url,
             title=title,
             script=script,
-            caption=caption
+            caption=caption,
         )
 
         if not save_success:
-            print(f"Warning: Could not save video data for user {user_email} to MongoDB")
+            print(
+                f"Warning: Could not save video data for user {user_email} to MongoDB"
+            )
 
         # Return only the cloudinary URL and caption
         return {
@@ -850,11 +964,11 @@ def create_reddit_post_task(
 
     except Exception as e:
         print(f"General error: {str(e)}")
-        return {
-            "status": "error",
-            "message": str(e)
-        }
+        return {"status": "error", "message": str(e)}
     finally:
         # Step 12: Clean up temporary files
-        self.update_state(state='PROGRESS', meta={'status': 'Cleaning up temporary files', 'percent_complete': 100})
+        self.update_state(
+            state="PROGRESS",
+            meta={"status": "Cleaning up temporary files", "percent_complete": 100},
+        )
         cleanup_output_files(temporary_files)
