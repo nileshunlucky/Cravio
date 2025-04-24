@@ -827,7 +827,8 @@ def create_reddit_post_task(
 
                 overlay_filter = f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'"
                 if os.name == 'nt':
-                        subtitle_filter = f"subtitles='{subtitles_path.replace(':', '\\:')}':force_style='Alignment=5,FontSize=250,Bold=1'"
+                        escaped_subtitles_path = subtitles_path.replace(':', '\\:')
+                        subtitle_filter = f"subtitles='{escaped_subtitles_path}':force_style='Alignment=5,FontSize=250,Bold=1'"
                 else:
                         subtitle_filter = f"subtitles='{subtitles_path}':force_style='Alignment=5,FontSize=250,Bold=1'"
 
