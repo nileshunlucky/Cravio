@@ -4,6 +4,12 @@ import React, { useState, useRef } from 'react'
 import { Button } from './ui/button'
 import { Loader2, Play, Tally2 } from 'lucide-react'
 
+declare global {
+  interface Window {
+    gtag: (...args: any[]) => void;
+  }
+}
+
 const voices = [
   { id: 'nova', name: 'Nova', gender: 'Female', lang: 'English', preview: '/voice/nova.mpeg' },
   { id: 'shimmer', name: 'Shimmer', gender: 'Female', lang: 'English', preview: '/voice/shimmer.mpeg' },
@@ -64,10 +70,20 @@ const RedditVoice = ({ value, onChange, onSubmit, onBack, loading }: RedditVoice
 
   const handleSubmit = () => {
     if (selected) {
+      // ✅ GA Event Tracking
+      if (typeof window !== "undefined" && window.gtag) {
+        window.gtag('event', 'generate_video', {
+          event_category: 'engagement',
+          event_label: selected,
+          value: 1,
+        });
+      }
+  
       onChange(selected)
       onSubmit()
     }
   }
+  
 
   return (
     <div className="space-y-6">
