@@ -31,6 +31,24 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Script
+            src="https://www.googletagmanager.com/gtag/js?id=G-T0Z9E284TH"
+            strategy="afterInteractive"
+          />
+          <Script
+            id="google-analytics"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-T0Z9E284TH', {
+                  page_path: window.location.pathname,
+                });
+              `,
+            }}
+          />
           {children}
           <Script
             src="https://checkout.razorpay.com/v1/checkout.js"
