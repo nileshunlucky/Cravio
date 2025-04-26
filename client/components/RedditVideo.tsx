@@ -6,10 +6,8 @@ import clsx from 'clsx'
 
 const videos = [
   { title: 'Satisfy', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1744903431/Gameplay/satisfy.mp4' },
-  { title: 'Satisfy 2', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1745648793/Gameplay/satisy2.mp4' },
+  { title: 'Satisfy 2', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1745655668/Gameplay/xkf8hozjsju8ubsvoluq.mp4' },
   { title: 'Minecraft', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1744903105/Gameplay/minecraft.mp4' },
-  { title: 'Minecraft 2', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1745648933/Gameplay/r4uoogrn07w3ujbtm5zt.mp4' },
-  { title: 'Minecraft 3', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1745648935/Gameplay/t0w6tvf7hjag2xwfvic3.mp4' },
   { title: 'SubwaySuffer ', video: 'https://res.cloudinary.com/db17zxsjc/video/upload/v1745432173/Gameplay/subwaysuffer2.mp4' },
 ]
 
