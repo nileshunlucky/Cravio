@@ -8,7 +8,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
-import { Copy, Check, TrendingUp, DollarSign, Clock, Calendar } from "lucide-react";
+import { Copy, Check, TrendingUp, 
+    // DollarSign,
+     Clock, Calendar } from "lucide-react";
 import {
     XAxis,
     YAxis,
