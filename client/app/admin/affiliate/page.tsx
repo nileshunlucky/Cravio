@@ -8,12 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
-import { Copy, Check, TrendingUp, CreditCard, DollarSign, Clock, Calendar } from "lucide-react";
+import { Copy, Check, TrendingUp, DollarSign, Clock, Calendar } from "lucide-react";
 import {
-    LineChart,
-    Line,
-    BarChart,
-    Bar,
     XAxis,
     YAxis,
     CartesianGrid,
@@ -55,7 +51,6 @@ const AffiliateDashboard = () => {
     const [paypalMessage, setPaypalMessage] = useState("");
     const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
     const [chartData, setChartData] = useState<Array<{ date: string; revenue: number }>>([]);
-    const [selectedTab, setSelectedTab] = useState("revenue");
 
     // Format daily revenue data for chart
     const formatChartData = (dailyRevData: { [key: string]: string }[]) => {
