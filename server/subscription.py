@@ -84,11 +84,17 @@ async def update_credits(request: UpdateCreditsRequest):
 
             referrer = users_collection.find_one({"ref_code": referred_by_code})
             if referrer:
-                ref_balance = referrer.get("balance", 0) + commission
+                today = datetime.now().strftime("%Y-%m-%d")  # '2025-04-26'
                 users_collection.update_one(
-                    {"ref_code": referred_by_code},
-                    {"$set": {"balance": ref_balance}}
-                )
+                {"ref_code": referred_by_code},
+                {
+                    "$inc": {
+                        "balance": commission,
+                        f"dailyRevenue.{today}": commission
+                    }
+                }
+            )
+
 
         # 4. Final user update
         users_collection.update_one(
