@@ -665,6 +665,7 @@ def create_reddit_post_task(
 # Replace your entire subtitle creation section with this more robust approach
 
 # Step 9: Add overlay image and subtitles - modified for robustness
+        # Step 9: Add overlay image and subtitles - modified for robustness
         self.update_state(state='PROGRESS', meta={'status': 'Creating subtitles and overlay', 'percent_complete': 90})
         final_output_path = f"{base_output_path}_final_complete.mp4"
 
@@ -708,35 +709,33 @@ def create_reddit_post_task(
                 temporary_files.append(subtitle_file_path)
                 print(f"Created ASS subtitle file: {subtitle_file_path}")
                 
-                # IMPORTANT CHANGE: Apply both overlay and subtitles in a single FFmpeg command
-                # This is more efficient and less error-prone than separating them
+                # IMPORTANT FIX: Properly center the overlay image both horizontally AND vertically
+                # This new expression ensures true center positioning
                 overlay_cmd = [
                         "ffmpeg",
                         "-i", final_with_audio_path,
                         "-i", resized_output_path,
                         "-filter_complex",
-                        # This complex filter does two things:
-                        # 1. Overlays the image for the title duration
-                        # 2. Applies the subtitles from the ASS file throughout the video
-                        f"[0:v][1:v]overlay=(W-w)/2:150:enable='between(t,0,{title_duration})'[v]; [v]ass={subtitle_file_path}[outv]",
-                        "-map", "[outv]",  # Use the output from the filter chain
-                        "-map", "0:a",     # Keep the original audio
+                        # Center horizontally: (W-w)/2, Center vertically: (H-h)/2
+                        f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'[v]; [v]ass={subtitle_file_path}[outv]",
+                        "-map", "[outv]",
+                        "-map", "0:a",
                         "-c:v", "libx264",
-                        "-preset", "veryfast",  # Balance between speed and quality
-                        "-crf", "26",           # Better quality for visibility
-                        "-c:a", "copy",         # Copy audio stream
+                        "-preset", "veryfast",
+                        "-crf", "26",
+                        "-c:a", "copy",
                         "-y",
                         final_output_path
                 ]
                 
-                print("Running combined overlay and subtitles command:")
+                print("Running combined overlay and subtitles command with centered overlay:")
                 print(" ".join(overlay_cmd))
                 
                 # Increase timeout to allow for processing
                 overlay_process = subprocess.run(overlay_cmd, capture_output=True, text=True, timeout=300)
                 
                 if overlay_process.returncode == 0 and os.path.exists(final_output_path) and os.path.getsize(final_output_path) > 0:
-                        print("Successfully added overlay and subtitles in one pass")
+                        print("Successfully added centered overlay and subtitles in one pass")
                 else:
                         print(f"Combined overlay and subtitle command failed: {overlay_process.stderr}")
                         print("Attempting two-step approach as fallback...")
@@ -744,12 +743,13 @@ def create_reddit_post_task(
                         # Fallback: Try two-step approach if combined approach fails
                         overlay_only_output = f"{base_output_path}_overlay_only.mp4"
                         
-                        # Step 1: Only add overlay first
+                        # Step 1: Only add overlay first - with proper centering
                         simple_overlay_cmd = [
                                 "ffmpeg",
                                 "-i", final_with_audio_path,
                                 "-i", resized_output_path,
-                                "-filter_complex", f"overlay=(W-w)/2:150:enable='between(t,0,{title_duration})'",
+                                # Center both horizontally and vertically
+                                "-filter_complex", f"overlay=(W-w)/2:(H-h)/2:enable='between(t,0,{title_duration})'",
                                 "-c:v", "libx264",
                                 "-preset", "ultrafast",
                                 "-c:a", "copy",
@@ -757,14 +757,14 @@ def create_reddit_post_task(
                                 overlay_only_output
                         ]
                         
-                        print("Trying simple overlay first:")
+                        print("Trying simple centered overlay first:")
                         print(" ".join(simple_overlay_cmd))
                         
                         overlay_result = subprocess.run(simple_overlay_cmd, capture_output=True, text=True, timeout=180)
                         
                         if overlay_result.returncode == 0 and os.path.exists(overlay_only_output) and os.path.getsize(overlay_only_output) > 0:
                                 temporary_files.append(overlay_only_output)
-                                print("Simple overlay succeeded, now adding subtitles")
+                                print("Simple centered overlay succeeded, now adding subtitles")
                                 
                                 # Step 2: Add subtitles to overlayed video
                                 subtitle_cmd = [
@@ -791,15 +791,16 @@ def create_reddit_post_task(
                                         print("Using overlay-only video as final result")
                         else:
                                 print(f"Simple overlay failed: {overlay_result.stderr}")
-                                print("Trying hardcoded overlay position as last resort...")
+                                print("Trying hardcoded absolute center position as last resort...")
                                 
-                                # Last resort: Try with hardcoded position
+                                # Last resort: Try with explicit center calculation
                                 last_resort_output = f"{base_output_path}_last_resort.mp4"
                                 last_resort_cmd = [
                                         "ffmpeg",
                                         "-i", final_with_audio_path,
                                         "-i", resized_output_path,
-                                        "-filter_complex", f"overlay=10:10:enable='if(lt(t,{title_duration}),1,0)'",
+                                        # Use expression with variables for center positioning
+                                        "-filter_complex", f"overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2:enable='if(lt(t,{title_duration}),1,0)'",
                                         "-c:v", "libx264",
                                         "-preset", "ultrafast",
                                         "-c:a", "copy",
@@ -811,7 +812,7 @@ def create_reddit_post_task(
                                 
                                 if last_resort_result.returncode == 0 and os.path.exists(last_resort_output) and os.path.getsize(last_resort_output) > 0:
                                         temporary_files.append(last_resort_output)
-                                        print("Last resort overlay succeeded")
+                                        print("Last resort centered overlay succeeded")
                                         final_output_path = last_resort_output
                                 else:
                                         print("All overlay attempts failed, using original audio-video")
