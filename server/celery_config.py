@@ -11,7 +11,7 @@ celery_app = Celery(
     "reddit_story_app",
     broker="rediss://default:AV_tAAIjcDFkYzYyMDY1ZmE1MTI0OTE4ODY3ZmIwZjNkMDY0MjJjMnAxMA@present-wren-24557.upstash.io:6379",
     backend="rediss://default:AV_tAAIjcDFkYzYyMDY1ZmE1MTI0OTE4ODY3ZmIwZjNkMDY0MjJjMnAxMA@present-wren-24557.upstash.io:6379",
-    include=["tasks.reddit_story_task"]
+    include=["tasks.reddit_story_task", "tasks.split_screen_task"]
 )
 
 celery_app.conf.update(

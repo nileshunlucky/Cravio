@@ -1,61 +1,44 @@
 "use client"
 
 import { useRouter } from 'next/navigation';
-import React, { useState} from 'react'
-import RedditScript from '@/components/RedditScript'
+import React, { useState } from 'react'
 import RedditFont from '@/components/RedditFont'
 import RedditVideo from '@/components/RedditVideo'
-import RedditVoice from '@/components/RedditVoice'
-import LoadingAndDownload from '@/components/LoadingAndDownload'
+import UserVideo from '@/components/UserVideo'
 import { useUser } from "@clerk/nextjs"
 import { toast } from "sonner"
-
-type TaskResult = {
-    url: string
-}
+import { Button } from '@/components/ui/button'
+import LoadingAndDownload from '@/components/LoadingAndDownload'
 
 const Page = () => {
     const router = useRouter();
-
     const { user } = useUser()
     const userEmail = user?.emailAddresses[0]?.emailAddress || ''
+    
     const [font, setFont] = useState('')
-    const [script, setScript] = useState('')
-    const [avatar, setAvatar] = useState<string | File>('')
-    const [title, setTitle] = useState('')
-    const [username, setUsername] = useState('')
     const [video, setVideo] = useState('')
-    const [voice, setVoice] = useState('')
+    const [userVideo, setUserVideo] = useState<string | File>('')
     const [loading, setLoading] = useState(false)
     const [fileUrl, setFileUrl] = useState<string | null>(null)
     const [progress, setProgress] = useState('')
-
+    
+    // For steps
     const [currentStep, setCurrentStep] = useState(1)
-
-    const handleScriptChange = (script: string) => setScript(script)
-    const handleSetFields = (fields: { title: string; username: string; avatar: string }) => {
-        setTitle(fields.title)
-        setUsername(fields.username)
-        setAvatar(fields.avatar)
-    }
+    
     const handleFontChange = (font: string) => setFont(font)
     const handleVideoChange = (video: string) => setVideo(video)
-    const handleVoiceChange = (voice: string) => setVoice(voice)
-
-    const handleNextStep = () => setCurrentStep(prevStep => Math.min(prevStep + 1, 4))
+    const handleUserVideoChange = (video: string | File) => setUserVideo(video)
+    
+    const handleNextStep = () => setCurrentStep(prevStep => Math.min(prevStep + 1, 3))
     const handleBackStep = () => setCurrentStep(prevStep => Math.max(prevStep - 1, 1))
-
+    
     const handleGenerate = async () => {
         const missingFields = []
 
-        if (!username) missingFields.push('Username')
-        if (!title) missingFields.push('Title')
-        if (!script) missingFields.push('Script')
-        if (!voice) missingFields.push('Voice')
-        if (!video) missingFields.push('Video')
+        if (!userVideo) missingFields.push('User Video')
+        if (!video) missingFields.push('Gameplay Video')
         if (!font) missingFields.push('Font')
         if (!userEmail) missingFields.push('Email')
-        if (!avatar) missingFields.push('Avatar')
       
         if (missingFields.length > 0) {
           toast.error(`Missing: ${missingFields.join(', ')}`)
@@ -65,49 +48,43 @@ const Page = () => {
         setLoading(true);
         try {
             const formData = new FormData();
-            formData.append('username', username)
-            formData.append('title', title)
-            formData.append('script', script)
-            formData.append('voice', voice)
             formData.append('video', video)
             formData.append('font', font)
             formData.append('user_email', userEmail)
 
-            if (avatar instanceof File) {
-                formData.append('avatar', avatar)
-            } else if (typeof avatar === 'string' && avatar) {
+            if (userVideo instanceof File) {
+                formData.append('user_video', userVideo)
+            } else if (typeof userVideo === 'string' && userVideo) {
                 try {
-                    const response = await fetch(avatar)
+                    const response = await fetch(userVideo)
                     const blob = await response.blob()
-                    const file = new File([blob], 'avatar.jpg', { type: blob.type })
-                    formData.append('avatar', file)
+                    const file = new File([blob], 'user_video.mp4', { type: blob.type })
+                    formData.append('user_video', file)
                 } catch {
-                    formData.append('avatar', avatar)
+                    formData.append('user_video', userVideo)
                 }
             }
 
-            const response = await fetch('https://cravio-ai.onrender.com/create-reddit-post', {
+            const response = await fetch('https://cravio-ai.onrender.com/create-split-screen', {
                 method: 'POST',
                 body: formData,
             })
 
-            const responseData = await response.json();
-
             if (!response.ok) {
-                if (responseData.detail === 'Not enough credits') {
-                  // Redirect to /admin/plan if not enough credits
+                // Handle if not enough credits
+                const errorData = await response.json();
+                if (errorData.detail === 'Not enough credits') {
                   router.push('/admin/plan');
                   return;
                 }
           
-                // Handle other errors
-                throw new Error(`Server responded with ${response.status}: ${JSON.stringify(responseData)}`);
+                throw new Error(`Server responded with ${response.status}: ${await response.text()}`);
             }
 
-            const { task_id } = responseData
+            const { task_id } = await response.json()
             console.log('Task ID:', task_id)
 
-            const pollTaskStatus = async (taskId: string): Promise<TaskResult> => {
+            const pollTaskStatus = async (taskId: string): Promise<{ url: string }> => {
                 return new Promise((resolve, reject) => {
                     const interval = setInterval(async () => {
                         try {
@@ -141,7 +118,7 @@ const Page = () => {
                 })
             }
 
-            const result = await pollTaskStatus(task_id)
+            const result = await pollTaskStatus(task_id) as { url: string }
             console.log('Task result:', result)
             setFileUrl(result?.url)
             setLoading(false)
@@ -153,12 +130,10 @@ const Page = () => {
     }
 
     const showLoadingAndDownload = loading || fileUrl !== null
-    const showVoiceForm = currentStep === 4 && !showLoadingAndDownload
 
-    // Conditionally include 'use client' directive
     if (showLoadingAndDownload) {
         return (
-            <div className="container mx-auto py-8 md:w-[70%] w-full">
+            <div className="container mx-auto py-8 max-w-3xl">
                 <div className="relative p-5">
                     <LoadingAndDownload fileUrl={fileUrl} isLoading={loading} progress={progress} />
                 </div>
@@ -167,11 +142,13 @@ const Page = () => {
     }
 
     return (
-        <div className="container mx-auto py-8 md:w-[70%] w-full">
+        <div className="container mx-auto py-8 max-w-4xl flex flex-col items-center">
+            <h1 className="text-2xl font-bold text-center mb-8">Split Screen Creator</h1>
+            
             {/* Step indicator */}
-            <div className="md:mb-8">
-                <div className="flex items-center w-full max-w-md mx-auto px-4 md:px-0 mb-6">
-                    {[1, 2, 3, 4].map((step, index) => (
+            <div className="w-full mb-10">
+                <div className="flex items-center max-w-md mx-auto px-4 md:px-0">
+                    {[1, 2, 3].map((step, index) => (
                         <React.Fragment key={step}>
                             {/* Step circle */}
                             <div
@@ -183,7 +160,7 @@ const Page = () => {
                             </div>
 
                             {/* Connector line */}
-                            {index < 3 && (
+                            {index < 2 && (
                                 <div className="flex-1 h-1 mx-1 sm:mx-2">
                                     <div className={`h-full ${currentStep > step ? 'bg-black' : 'bg-gray-200'}`}></div>
                                 </div>
@@ -191,23 +168,61 @@ const Page = () => {
                         </React.Fragment>
                     ))}
                 </div>
+                
+                {/* Step labels */}
+                <div className="flex justify-between max-w-md mx-auto px-2 mt-2 text-xs">
+                    <span className="text-center w-16">User Video</span>
+                    <span className="text-center w-16">Font</span>
+                    <span className="text-center w-16">Video Style</span>
+                </div>
             </div>
-
-            {/* Content area */}
-            <div className="relative p-5">
-                {currentStep === 1 && (
-                    <RedditScript value={script} onChange={handleScriptChange} onNext={handleNextStep} onSetFields={handleSetFields} />
-                )}
-                {currentStep === 2 && (
-                    <RedditFont value={font} onChange={handleFontChange} onNext={handleNextStep} onBack={handleBackStep} />
-                )}
-                {currentStep === 3 && (
-                    <RedditVideo value={video} onChange={handleVideoChange} onNext={handleNextStep} onBack={handleBackStep} />
-                )}
-                {showVoiceForm && (
-                    <RedditVoice value={voice} onChange={handleVoiceChange} onSubmit={handleGenerate} onBack={handleBackStep} loading={loading} />
-                )}
+            
+            {/* Component Container - Centered */}
+            <div className="w-full max-w-3xl mx-auto">
+                <div className="bg-white rounded-lg shadow-sm p-3">
+                    {currentStep === 1 && (
+                        <div className="space-y-6">
+                            <h2 className="text-xl font-semibold text-center">Upload Your Video</h2>
+                            <UserVideo value={userVideo} onChange={handleUserVideoChange} />
+                            <div className="flex justify-center mt-8">
+                                <Button 
+                                    onClick={handleNextStep}
+                                    className="px-8 py-2"
+                                    disabled={!userVideo}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {currentStep === 2 && (
+                        <div className="space-y-6">
+                            <h2 className="text-xl font-semibold text-center">Select Font Color</h2>
+                            <RedditFont 
+                                value={font} 
+                                onChange={handleFontChange} 
+                                onNext={handleNextStep} 
+                                onBack={handleBackStep} 
+                            />
+                        </div>
+                    )}
+                    
+                    {currentStep === 3 && (
+                        <div className="space-y-6">
+                            <h2 className="text-xl font-semibold text-center">Choose Video Style</h2>
+                            <RedditVideo 
+                                value={video} 
+                                onChange={handleVideoChange} 
+                                onNext={handleGenerate} 
+                                onBack={handleBackStep} 
+                            />
+                        </div>
+                    )}
+                </div>
             </div>
+            
+            
         </div>
     )
 }

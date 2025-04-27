@@ -11,7 +11,6 @@ const fontStyles = [
   { label: 'purple', className: 'text-[32px] font-bold text-purple-600' },
   { label: 'orange', className: 'text-[32px] font-bold text-orange-500' },
   { label: 'black', className: 'text-[32px] font-bold text-black' },
-  { label: 'gray', className: 'text-[32px] font-bold text-gray-600' },
   { label: 'pink', className: 'text-[32px] font-bold text-pink-500' },
   { label: 'yellow', className: 'text-[32px] font-bold text-yellow-500' },
 ]

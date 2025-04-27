@@ -1,6 +1,4 @@
-'use client'
-
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from './ui/button'
 import clsx from 'clsx'
 
@@ -19,8 +17,18 @@ type RedditVideoProps = {
   onNext: () => void
   onBack: () => void
 }
+
 const RedditVideo = ({ value, onChange, onNext, onBack }: RedditVideoProps) => {
-  const [selected, setSelected] = useState<number>(value ? parseInt(value, 10) : 0)
+  // Set default video to "Satisfy" or from value if passed
+  const defaultVideoIndex = videos.findIndex((video) => video.video === value) !== -1 ? 
+    videos.findIndex((video) => video.video === value) : 0;
+  const [selected, setSelected] = useState<number>(defaultVideoIndex)
+
+  useEffect(() => {
+    // Whenever the selected video changes, update parent component
+    onChange(videos[selected]?.video)
+  }, [selected, onChange]);
+
   const handleNext = () => {
     onChange(videos[selected]?.video)
     onNext()
