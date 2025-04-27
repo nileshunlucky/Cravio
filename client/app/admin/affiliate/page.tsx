@@ -8,9 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
-import { Copy, Check, TrendingUp, 
-    // DollarSign,
-     Clock, Calendar } from "lucide-react";
+import { Copy, Check, TrendingUp, DollarSign, Clock, Calendar } from "lucide-react";
 import {
     XAxis,
     YAxis,
@@ -206,7 +204,7 @@ const AffiliateDashboard = () => {
             {/* Quick Stats Cards */}
             {!loading && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    {/* <Card className="shadow-md rounded-xl border border-gray-100 overflow-hidden bg-white hover:shadow-lg transition-shadow">
+                    <Card className="hidden md:block shadow-md rounded-xl border border-gray-100 overflow-hidden bg-white hover:shadow-lg transition-shadow">
                         <CardContent className="p-6 flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-gray-500 mb-1">Available Balance</p>
@@ -217,7 +215,7 @@ const AffiliateDashboard = () => {
                                 <DollarSign className="w-6 h-6 text-white" />
                             </div>
                         </CardContent>
-                    </Card> */}
+                    </Card>
 
                     <Card className="shadow-md rounded-xl border border-gray-100 overflow-hidden bg-white hover:shadow-lg transition-shadow">
                         <CardContent className="p-6 flex items-center justify-between">
