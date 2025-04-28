@@ -92,8 +92,11 @@ def process_split_screen_task(self,
             }
 
     except Exception as e:
-        self.update_state(state='FAILURE', meta={'status': 'Error', 'error': str(e)})
-        return {"status": "error", "message": str(e)}
+        print(f"General error: {str(e)}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 
 def save_video_to_mongodb(user_email: str, video_url: str, script: str = None, caption: str = None) -> bool:
