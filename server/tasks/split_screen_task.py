@@ -85,7 +85,7 @@ def process_split_screen_task(self,
 
             return {
                 "status": "success",
-                "video_url": final_video_url,
+                "url": final_video_url,
                 "caption": caption
             }
 
@@ -195,38 +195,132 @@ def generate_transcript(audio_path):
         return {"segments": []}
 
 
-def create_split_screen(user_video, template_video, output_path):
-    """Create split-screen video with 9:16 ratio with lower resource usage"""
-    # Use lower resolution for less memory usage
-    width = 360
-    height = 640
+# def create_split_screen(user_video, template_video, output_path):
+#     """Create split-screen video with 9:16 ratio with lower resource usage"""
+#     # Use lower resolution for less memory usage
+#     width = 360
+#     height = 640
     
+#     try:
+#         subprocess.run([
+#             'ffmpeg', '-i', user_video, '-i', template_video,
+#             '-filter_complex',
+#             f'[0:v]scale={width}:{height//2}[top];[1:v]scale={width}:{height//2}[bottom];[top][bottom]vstack[outv]',
+#             '-map', '[outv]', '-map', '0:a',
+#             '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '30',  # Faster encoding
+#             '-c:a', 'aac', '-b:a', '64k',  # Lower audio bitrate
+#             '-threads', '2',  # Limit CPU threads
+#             '-shortest',
+#             output_path, '-y'
+#         ], check=True)
+#     except subprocess.CalledProcessError as e:
+#         if "SIGKILL" in str(e):
+#             print("Process killed due to memory constraints. Try with smaller videos.")
+#         raise
+
+def create_split_screen(user_video, template_video, output_path):
+    """
+    Creates a 9:16 split-screen video.
+    Each input video is scaled and cropped to cover its half (top/bottom)
+    while maintaining aspect ratio. Simplified without logging.
+    """
+
+    # --- TARGET OUTPUT & QUALITY SETTINGS ---
+    # Target 9:16 resolution (e.g., 720x1280 for HD Reels/Shorts)
+    target_w = 720
+    target_h = 1280
+
+    # Calculate dimensions for each half
+    half_h = target_h // 2 # Integer division
+
+    # Quality Settings (Adjust as needed)
+    crf_value = '24'       # Lower = Better Quality (23-26 good range)
+    preset_value = 'ultrafast'  # Slower = Better Quality/Compression (fast/medium good balance)
+    audio_bitrate = '128k' # Audio quality
+    # --- END SETTINGS ---
+
+    # Construct the complex filter graph (Scale to cover and crop)
+    filter_complex = (
+        f"[0:v]scale=w='max({target_w},iw*{half_h}/ih)':h='max({half_h},ih*{target_w}/iw)',"
+        f"crop={target_w}:{half_h}:(iw-{target_w})/2:(ih-{half_h})/2,setsar=1[top];"
+        f"[1:v]scale=w='max({target_w},iw*{half_h}/ih)':h='max({half_h},ih*{target_w}/iw)',"
+        f"crop={target_w}:{half_h}:(iw-{target_w})/2:(ih-{half_h})/2,setsar=1[bottom];"
+        f"[top][bottom]vstack=inputs=2[outv]" # Stack the processed halves
+    )
+
     try:
-        subprocess.run([
-            'ffmpeg', '-i', user_video, '-i', template_video,
-            '-filter_complex',
-            f'[0:v]scale={width}:{height//2}[top];[1:v]scale={width}:{height//2}[bottom];[top][bottom]vstack[outv]',
-            '-map', '[outv]', '-map', '0:a',
-            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '30',  # Faster encoding
-            '-c:a', 'aac', '-b:a', '64k',  # Lower audio bitrate
-            '-threads', '2',  # Limit CPU threads
-            '-shortest',
-            output_path, '-y'
-        ], check=True)
+        ffmpeg_command = [
+            'ffmpeg',
+            '-i', user_video,                 # Input 0 (User Video)
+            '-i', template_video,             # Input 1 (Template Video)
+
+            '-filter_complex', filter_complex, # Apply the scaling, cropping, stacking filter
+
+            '-map', '[outv]',                 # Map the filtered video output
+            '-map', '0:a?',                   # Map audio from the FIRST input (user video), '?' makes it optional
+
+            # Video Encoding Settings
+            '-c:v', 'libx264',                # Video codec H.264
+            '-preset', preset_value,          # Encoding speed/efficiency preset
+            '-crf', crf_value,                # Constant Rate Factor (Quality)
+            '-pix_fmt', 'yuv420p',            # Ensure common pixel format for compatibility
+
+            # Audio Encoding Settings
+            '-c:a', 'aac',                    # Audio codec AAC
+            '-b:a', audio_bitrate,            # Audio bitrate
+            '-ac', '2',                       # Force stereo audio (optional, adjust if needed)
+
+            # Other options
+            '-r', '30',                       # Set frame rate (optional, e.g., 30 fps)
+            '-shortest',                      # Finish encoding when the shortest input ends
+            output_path,
+            '-y'                              # Overwrite output if exists
+        ]
+
+        print(f"Executing ffmpeg for split screen...") # Simplified info message
+        # Keep capture_output=True to access stderr/stdout in case of errors
+        subprocess.run(ffmpeg_command, check=True, capture_output=True, text=True, encoding='utf-8')
+        print("FFmpeg split screen process completed successfully.")
+        # Removed debug logging of stdout/stderr
+
+
     except subprocess.CalledProcessError as e:
-        if "SIGKILL" in str(e):
-            print("Process killed due to memory constraints. Try with smaller videos.")
+        # Print detailed error information from ffmpeg using print
+        print(f"Error creating split screen video: {str(e)}")
+        print(f"FFmpeg command: {' '.join(e.cmd)}") # Print the exact command run
+        print(f"FFmpeg stdout:\n{e.stdout}")
+        print(f"FFmpeg stderr:\n{e.stderr}")
+        if "SIGKILL" in str(e.stderr) or "Cannot allocate memory" in str(e.stderr):
+             print("Warning: Process likely killed due to memory constraints. Consider using lower resolution (e.g., 540x960) or less demanding preset/crf if this persists.")
+        raise
+    except Exception as e:
+        print(f"An unexpected error occurred in create_split_screen: {e}")
         raise
 
 
 def add_subtitles(video_path, transcript, output_path, font_color):
     """Add subtitles to video"""
     srt_path = f"{video_path}.srt"
-    color_hex = {
+
+    # Define the RGB color mapping
+    rgb_color_map = {
         "white": "FFFFFF", "black": "000000", "red": "FF0000",
         "green": "00FF00", "blue": "0000FF", "yellow": "FFFF00",
         "purple": "800080", "orange": "FFA500", "gray": "808080", "pink": "FFC0CB"
-    }.get(font_color.lower() if font_color else "", "FFFFFF")
+    }
+
+    # Get the RGB hex code, default to white if None or not found
+    rgb_hex = rgb_color_map.get(font_color.lower() if font_color else "white", "FFFFFF")
+
+    # Convert RRGGBB to BBGGRR for ffmpeg/ASS styling
+    if len(rgb_hex) == 6:
+        rr = rgb_hex[0:2]
+        gg = rgb_hex[2:4]
+        bb = rgb_hex[4:6]
+        ffmpeg_color_hex = f"{bb}{gg}{rr}"
+    else:
+        # Fallback to white in BBGGRR format if the hex code is invalid
+        ffmpeg_color_hex = "FFFFFF" # White is the same in RGB and BGR hex
     
     try:
         with open(srt_path, 'w') as srt_file:
@@ -240,7 +334,7 @@ def add_subtitles(video_path, transcript, output_path, font_color):
         
         subprocess.run([
             'ffmpeg', '-i', video_path,
-            '-vf', f"subtitles={srt_path}:force_style='FontName=Arial,FontSize=24,PrimaryColour=&H{color_hex},Alignment=10'",
+            '-vf', f"subtitles={srt_path}:force_style='FontName=Arial,FontSize=24,PrimaryColour=&H{ffmpeg_color_hex},Alignment=10'",
             '-c:a', 'copy', output_path, '-y'
         ], check=True)
         
