@@ -1,9 +1,10 @@
-from fastapi import FastAPI, File, Form, UploadFile
+from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 import cloudinary
 import cloudinary.uploader
 import os
-from tasks.reddit_story_task import process_split_screen_task
+from tasks.split_screen_task import process_split_screen_task
+from db import users_collection
 
 # Initialize FastAPI
 app = FastAPI()
@@ -22,6 +23,15 @@ async def create_split_screen(
     user_email: str = Form(...),
     user_video: UploadFile = File(...)
 ):
+    # check user have 10 credits or not
+    user = users_collection.find_one({"email": user_email}) 
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.get("credits", 0) < 10:
+        raise HTTPException(status_code=400, detail="Not enough credits")
+    # deduct 10 credits
+    users_collection.update_one({"email": user_email}, {"$inc": {"credits": -10}})
+
     try:
         # Upload the user video to Cloudinary
         upload_result = cloudinary.uploader.upload(

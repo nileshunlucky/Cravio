@@ -18,38 +18,48 @@ cloudinary.config(
 )
 
 @celery_app.task(name="process_split_screen_task", bind=True)
-def process_split_screen_task(self, video_url, user_video_url, font_color, user_email):
+def process_split_screen_task(self,
+                            video_url=None, 
+                            user_video_url=None,
+                            font_color=None, 
+                            user_email=None):
     """Process videos to create a split-screen effect with subtitles"""
     try:
-        job_id = self.request.id
         
         with tempfile.TemporaryDirectory() as temp_dir:
+            self.update_state(state='PROGRESS', meta={'status': 'Downloading videos', 'percent_complete': 5})
             # Download videos
             user_video_path = os.path.join(temp_dir, "user_video.mp4")
             template_video_path = os.path.join(temp_dir, "template_video.mp4")
             
             download_video(user_video_url, user_video_path)
             download_video(video_url, template_video_path)
-            
+
+            self.update_state(state='PROGRESS', meta={'status': 'Extracting audio', 'percent_complete': 20})
             # Extract audio for transcription
             audio_path = os.path.join(temp_dir, "audio.wav")
             extract_audio(user_video_path, audio_path)
-            
+
+            self.update_state(state='PROGRESS', meta={'status': 'Generating transcript', 'percent_complete': 35})
             # Generate transcript
             transcript = generate_transcript(audio_path)
-            
+
+            self.update_state(state='PROGRESS', meta={'status': 'Creating split-screen video', 'percent_complete': 50})
             # Create split-screen video
             combined_video_path = os.path.join(temp_dir, "combined.mp4")
             create_split_screen(user_video_path, template_video_path, combined_video_path)
-            
+
+            self.update_state(state='PROGRESS', meta={'status': 'Adding subtitles', 'percent_complete': 65})
             # Add subtitles
             final_video_path = os.path.join(temp_dir, "final_video.mp4")
             add_subtitles(combined_video_path, transcript, final_video_path, font_color)
-            
+
+            self.update_state(state='PROGRESS', meta={'status': 'Generating script and caption', 'percent_complete': 75})
             # Extract script and generate caption
             script = " ".join([segment['text'] for segment in transcript['segments']])
             caption = generate_caption(script)
-            
+
+            self.update_state(state='PROGRESS', meta={'status': 'Uploading video', 'percent_complete': 85})
             # Upload to Cloudinary
             upload_result = cloudinary.uploader.upload(
                 final_video_path,
@@ -57,30 +67,34 @@ def process_split_screen_task(self, video_url, user_video_url, font_color, user_
                 folder="Cravio"
             )
             final_video_url = upload_result['secure_url']
-            
+
+            self.update_state(state='PROGRESS', meta={'status': 'Saving to database', 'percent_complete': 90})
             # Save to MongoDB
             save_success = save_video_to_mongodb(
-                user_email= user_email,
-                video_url= final_video_url,
-                script= script,
-                caption= caption,
+                user_email=user_email,
+                video_url=final_video_url,
+                script=script,
+                caption=caption,
             )
 
             if not save_success:
                 raise Exception("Failed to save video to MongoDB")
-            
+
+            self.update_state(state='PROGRESS', meta={'status': 'Cleaning up', 'percent_complete': 95})
             # Clean up user video
             delete_cloudinary_video(user_video_url)
-            
-        return {
-            "status": "success",
-            "video_url": final_video_url,
-            "caption": caption
-        }
+
+            self.update_state(state='SUCCESS', meta={'status': 'Completed', 'percent_complete': 100})
+            return {
+                "status": "success",
+                "video_url": final_video_url,
+                "caption": caption
+            }
 
     except Exception as e:
         self.update_state(state='FAILURE', meta={'status': 'Error', 'error': str(e)})
         return {"status": "error", "message": str(e)}
+
 
 def save_video_to_mongodb(user_email: str, video_url: str, script: str = None, caption: str = None) -> bool:
     """Save video details to MongoDB under user's 'videos' array."""
@@ -167,7 +181,8 @@ def add_subtitles(video_path, transcript, output_path, font_color):
     srt_path = f"{video_path}.srt"
     color_hex = {
         "white": "FFFFFF", "black": "000000", "red": "FF0000",
-        "green": "00FF00", "blue": "0000FF", "yellow": "FFFF00"
+"green": "00FF00", "blue": "0000FF", "yellow": "FFFF00",
+"purple": "800080", "orange": "FFA500", "gray": "808080", "pink": "FFC0CB"
     }.get(font_color.lower(), "FFFFFF")
     
     with open(srt_path, 'w') as srt_file:
