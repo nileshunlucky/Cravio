@@ -195,77 +195,36 @@ def generate_transcript(audio_path):
         return {"segments": []}
 
 
-# def create_split_screen(user_video, template_video, output_path):
-#     """Create split-screen video with 9:16 ratio with lower resource usage"""
-#     # Use lower resolution for less memory usage
-#     width = 360
-#     height = 640
-    
-#     try:
-#         subprocess.run([
-#             'ffmpeg', '-i', user_video, '-i', template_video,
-#             '-filter_complex',
-#             f'[0:v]scale={width}:{height//2}[top];[1:v]scale={width}:{height//2}[bottom];[top][bottom]vstack[outv]',
-#             '-map', '[outv]', '-map', '0:a',
-#             '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '30',  # Faster encoding
-#             '-c:a', 'aac', '-b:a', '64k',  # Lower audio bitrate
-#             '-threads', '2',  # Limit CPU threads
-#             '-shortest',
-#             output_path, '-y'
-#         ], check=True)
-#     except subprocess.CalledProcessError as e:
-#         if "SIGKILL" in str(e):
-#             print("Process killed due to memory constraints. Try with smaller videos.")
-#         raise
-
-
-def create_split_screen(user_video_path, template_video_path, output_path,
-                        width=720, height=1280, crf=25, preset="ultrafast"):
-    """
-    Create a vertical (9:16) split-screen video (user on top, template on bottom).
-    The final video has the specified width x height (e.g. 720x1280).
-    Each input is scaled+cropped to width x (height/2) to fill its half of the frame.
-    Uses FFmpeg with high-quality x264 encoding (CRF and preset configurable).
-    """
-    # Compute half-height for each video (must be integer)
-    half_height = height // 2
-    if height % 2 != 0 or width % 2 != 0:
-        raise ValueError("Width and height must be even numbers for FFmpeg.")
-    
-    # Construct the FFmpeg filter graph:
-    # [0:v] refers to the first input (user video), [1:v] to the second (template).
-    # Scale each to cover (width x half_height) and then crop to that exact size.
-    # Finally, vstack stacks [top] above [bottom] (requires same width).
-    filter_complex = (
-        f"[0:v]scale={width}:{half_height}:force_original_aspect_ratio=increase,"
-        f"crop={width}:{half_height},setsar=1[top];"
-        f"[1:v]scale={width}:{half_height}:force_original_aspect_ratio=increase,"
-        f"crop={width}:{half_height},setsar=1[bottom];"
-        "[top][bottom]vstack=inputs=2:shortest=1[outv]"
-    )
-    
-    # Build FFmpeg command
-    cmd = [
-        "ffmpeg",
-        "-y",                              # overwrite output if exists
-        "-i", user_video_path,            # first input (user video)
-        "-i", template_video_path,        # second input (template video)
-        "-filter_complex", filter_complex,
-        "-map", "[outv]",                 # map the stacked video to output
-        "-map", "0:a?",                   # (optional) map audio from first input if present
-        "-c:v", "libx264",
-        "-preset", preset,
-        "-crf", str(crf),                 # quality (lower = higher quality)
-        "-c:a", "copy",                   # copy audio from first input
-        output_path
-    ]
+def create_split_screen(user_video, template_video, output_path):
+    """Create split-screen video with 9:16 ratio with proper centering and scaling"""
+    # Target dimensions (9:16 aspect ratio)
+    width = 360
+    height = 640
+    segment_height = height // 2  # Each video gets half the height
     
     try:
-        # Run FFmpeg command
-        completed = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, check=True)
+        subprocess.run([
+            'ffmpeg', '-i', user_video, '-i', template_video,
+            '-filter_complex',
+            f'''
+            [0:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,
+                crop={width}:{segment_height},setsar=1[top];
+            [1:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,
+                crop={width}:{segment_height},setsar=1[bottom];
+            [top][bottom]vstack=inputs=2[outv]
+            ''',
+            '-map', '[outv]', '-map', '0:a',
+            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '30',
+            '-c:a', 'aac', '-b:a', '64k',
+            '-threads', '2',
+            '-shortest',
+            output_path, '-y'
+        ], check=True)
     except subprocess.CalledProcessError as e:
-        # If FFmpeg fails, raise an error with stderr output for debugging
-        raise RuntimeError(f"FFmpeg failed: {e.stderr.decode()}") from e
+        if "SIGKILL" in str(e):
+            print("Process killed due to memory constraints. Try with smaller videos.")
+        raise
+
 
 
 def add_subtitles(video_path, transcript, output_path, font_color):

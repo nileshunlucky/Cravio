@@ -163,7 +163,7 @@ const AffiliateDashboard = () => {
         setUpdatingCode(false);
     };
 
-    const referralLink = `https://cravioai.vercel.app/?ref=${userData?.ref_code || "cravio"}`;
+    const referralLink = `https://cravioai.vercel.app/?ref=${userData?.ref_code || ""}`;
 
     const handleCopy = () => {
         navigator.clipboard.writeText(referralLink);
