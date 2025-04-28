@@ -196,24 +196,26 @@ def generate_transcript(audio_path):
 
 
 def create_split_screen(user_video, template_video, output_path):
-    """Create split-screen video with 9:16 ratio with optimized processing speed"""
-    # Target dimensions (9:16 aspect ratio) - 1080p quality
-    width = 1080
-    height = 1920
+    """Create split-screen video with 9:16 ratio with improved memory management"""
+    # Target dimensions (9:16 aspect ratio) - slightly reduced quality for memory efficiency
+    width = 720  # Reduced from 1080p to 720p
+    height = 1280  # Maintaining 9:16 ratio
     segment_height = height // 2  # Each video gets half the height
     
     try:
         subprocess.run([
             'ffmpeg', 
-            # Use faster input reading
+            # Hardware acceleration
             '-hwaccel', 'auto',
-            # Skip some frames for faster processing
-            '-vsync', '1',
-            # Set thread count for faster processing
-            '-threads', '0',
+            # Add memory optimizations
+            '-max_muxing_queue_size', '9999',
+            # Limit memory buffer size
+            '-bufsize', '5M',
+            # Set lower memory usage - critical for avoiding SIGKILL
+            '-threads', '2',  # Reduced thread count to limit memory usage
             # Input files
             '-i', user_video, '-i', template_video,
-            # Complex filter for split screen
+            # Complex filter for split screen with memory optimizations
             '-filter_complex',
             f'''
             [0:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,
@@ -224,20 +226,23 @@ def create_split_screen(user_video, template_video, output_path):
             ''',
             # Map streams
             '-map', '[outv]', '-map', '0:a',
-            # Video codec settings - balance speed and quality
-            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23',
-            # Audio settings - good quality but efficient
-            '-c:a', 'aac', '-b:a', '128k',
-            # Limit GOP size for faster processing
-            '-g', '60',
+            # Video codec settings - optimize for memory over quality
+            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28',
+            # Lower bitrate to reduce memory usage
+            '-maxrate', '1M', '-bufsize', '2M',
+            # Audio settings - lower quality for memory efficiency
+            '-c:a', 'aac', '-b:a', '96k',
             # Use shortest input to determine output length
             '-shortest',
             # Output file
             output_path, '-y'
-        ], check=True)
+        ], check=True, timeout=300)  # Add timeout to prevent hanging
+    except subprocess.TimeoutExpired:
+        raise Exception("FFmpeg process timed out - video may be too large to process")
     except subprocess.CalledProcessError as e:
         if "SIGKILL" in str(e):
-            print("Process killed due to memory constraints. Try with smaller videos.")
+            # If still getting memory issues, provide more helpful error
+            raise Exception("Video processing failed due to memory constraints. Please use shorter or lower-resolution videos.")
         raise
 
 

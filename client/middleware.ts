@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
 
   const PUBLIC_ROUTES = ['/'];
 
-  const isPublic = PUBLIC_ROUTES.some((path) => pathname.startsWith(path));
+  const isPublic = PUBLIC_ROUTES.includes(pathname);
 
   if (isPublic) {
     return NextResponse.next();
