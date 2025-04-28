@@ -196,15 +196,24 @@ def generate_transcript(audio_path):
 
 
 def create_split_screen(user_video, template_video, output_path):
-    """Create split-screen video with 9:16 ratio with proper centering and scaling"""
-    # Target dimensions (9:16 aspect ratio)
-    width = 360
-    height = 640
+    """Create split-screen video with 9:16 ratio with optimized processing speed"""
+    # Target dimensions (9:16 aspect ratio) - 1080p quality
+    width = 1080
+    height = 1920
     segment_height = height // 2  # Each video gets half the height
     
     try:
         subprocess.run([
-            'ffmpeg', '-i', user_video, '-i', template_video,
+            'ffmpeg', 
+            # Use faster input reading
+            '-hwaccel', 'auto',
+            # Skip some frames for faster processing
+            '-vsync', '1',
+            # Set thread count for faster processing
+            '-threads', '0',
+            # Input files
+            '-i', user_video, '-i', template_video,
+            # Complex filter for split screen
             '-filter_complex',
             f'''
             [0:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,
@@ -213,18 +222,23 @@ def create_split_screen(user_video, template_video, output_path):
                 crop={width}:{segment_height},setsar=1[bottom];
             [top][bottom]vstack=inputs=2[outv]
             ''',
+            # Map streams
             '-map', '[outv]', '-map', '0:a',
-            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '30',
-            '-c:a', 'aac', '-b:a', '64k',
-            '-threads', '2',
+            # Video codec settings - balance speed and quality
+            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23',
+            # Audio settings - good quality but efficient
+            '-c:a', 'aac', '-b:a', '128k',
+            # Limit GOP size for faster processing
+            '-g', '60',
+            # Use shortest input to determine output length
             '-shortest',
+            # Output file
             output_path, '-y'
         ], check=True)
     except subprocess.CalledProcessError as e:
         if "SIGKILL" in str(e):
             print("Process killed due to memory constraints. Try with smaller videos.")
         raise
-
 
 
 def add_subtitles(video_path, transcript, output_path, font_color):
@@ -280,7 +294,7 @@ def add_subtitles(video_path, transcript, output_path, font_color):
         # Apply subtitles with increased size, no border or outline, and center positioning
         subprocess.run([
             'ffmpeg', '-i', video_path,
-            '-vf', f"subtitles={srt_path}:force_style='FontName=Arial,FontSize=32,PrimaryColour=&H{ffmpeg_color_hex},Alignment=10,BorderStyle=0,Outline=0,Shadow=0'",
+            '-vf', f"subtitles={srt_path}:force_style='FontName=Arial,FontSize=32,PrimaryColour=&H{ffmpeg_color_hex},Alignment=10,BorderStyle=0,Outline=0,Shadow=0,Bold=1'",
             '-c:a', 'copy', output_path, '-y'
         ], check=True)
         

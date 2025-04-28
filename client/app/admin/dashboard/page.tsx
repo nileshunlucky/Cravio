@@ -46,10 +46,10 @@ const Page = () => {
         className="w-full max-w-md"
       >
         <Link href="/admin/split-screen">
-        <Card className="cursor-pointer rounded-2xl bg-gradient-to-br from-red-600 via-red-500 to-red-900 shadow-[0_0_20px_#11111180] hover:shadow-[0_0_30px_#1a1a1a90] transition-all duration-300 relative">
+        <Card className="cursor-pointer rounded-2xl bg-gradient-to-br from-violet-600 via-violet-500 to-violet-900 shadow-[0_0_20px_#11111180] hover:shadow-[0_0_30px_#1a1a1a90] transition-all duration-300 relative">
           <div className="p-6 space-y-2">
             <div className="flex items-center space-x-2">
-              <Image src="/youtube.png" width={44} height={44} alt="YouTube" />
+              <Image src="/twitch.png" width={44} height={44} alt="YouTube" />
               <h1 className="text-2xl font-semibold text-white">
                 Split Screen
               </h1>
