@@ -154,14 +154,13 @@ def extract_audio(video_path, audio_path):
 
 
 def generate_transcript(audio_path):
-    """Generate transcript using OpenAI's Whisper via the latest SDK"""
+    client = openai.OpenAI()
     with open(audio_path, "rb") as audio_file:
-        response = openai.transcriptions.create(
+        response = client.audio.transcriptions.create(
             model="whisper-1",
             file=audio_file,
             response_format="verbose_json"
         )
-    
     return response
 
 def create_split_screen(user_video, template_video, output_path):
