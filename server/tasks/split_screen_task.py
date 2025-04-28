@@ -196,7 +196,7 @@ def generate_transcript(audio_path):
 
 
 def create_split_screen(user_video, template_video, output_path):
-    """Create split-screen video with 9:16 ratio with proper centering and scaling"""
+    """Create split-screen video with 9:16 ratio where both videos are centered"""
     # Target dimensions (9:16 aspect ratio)
     width = 360
     height = 640
@@ -207,10 +207,10 @@ def create_split_screen(user_video, template_video, output_path):
             'ffmpeg', '-i', user_video, '-i', template_video,
             '-filter_complex',
             f'''
-            [0:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,
-                crop={width}:{segment_height},setsar=1[top];
-            [1:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,
-                crop={width}:{segment_height},setsar=1[bottom];
+            [0:v]scale={width}:{segment_height}:force_original_aspect_ratio=decrease,
+                pad={width}:{segment_height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[top];
+            [1:v]scale={width}:{segment_height}:force_original_aspect_ratio=decrease,
+                pad={width}:{segment_height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[bottom];
             [top][bottom]vstack=inputs=2[outv]
             ''',
             '-map', '[outv]', '-map', '0:a',
@@ -228,7 +228,7 @@ def create_split_screen(user_video, template_video, output_path):
 
 
 def add_subtitles(video_path, transcript, output_path, font_color):
-    """Add subtitles to video"""
+    """Add subtitles to video with only 1-2 words per line"""
     srt_path = f"{video_path}.srt"
 
     # Define the RGB color mapping
@@ -248,22 +248,48 @@ def add_subtitles(video_path, transcript, output_path, font_color):
         bb = rgb_hex[4:6]
         ffmpeg_color_hex = f"{bb}{gg}{rr}"
     else:
-        # Fallback to white in BBGGRR format if the hex code is invalid
-        ffmpeg_color_hex = "FFFFFF" # White is the same in RGB and BGR hex
+        ffmpeg_color_hex = "FFFFFF"  # White is the same in RGB and BGR hex
     
     try:
         with open(srt_path, 'w') as srt_file:
             segments = transcript.get('segments', [])
-            for i, segment in enumerate(segments, 1):
+            counter = 1
+            
+            for segment in segments:
                 start = format_time(segment.get('start', 0))
                 end = format_time(segment.get('end', 0))
                 text = segment.get('text', '')
                 
-                srt_file.write(f"{i}\n{start} --> {end}\n{text}\n\n")
+                # Split the text into words
+                words = text.split()
+                
+                # Group into chunks of 1-2 words
+                i = 0
+                while i < len(words):
+                    if i + 1 < len(words):
+                        # Take 1-2 words based on length
+                        if len(words[i]) + len(words[i+1]) < 12:
+                            chunk = f"{words[i]} {words[i+1]}"
+                            i += 2
+                        else:
+                            chunk = words[i]
+                            i += 1
+                    else:
+                        chunk = words[i]
+                        i += 1
+                    
+                    # Calculate time for this chunk (proportional to original segment)
+                    word_duration = (segment.get('end', 0) - segment.get('start', 0)) / len(words)
+                    chunk_start = segment.get('start', 0) + (i - len(chunk.split())) * word_duration
+                    chunk_end = chunk_start + (len(chunk.split()) * word_duration)
+                    
+                    # Write to SRT
+                    srt_file.write(f"{counter}\n{format_time(chunk_start)} --> {format_time(chunk_end)}\n{chunk.upper()}\n\n")
+                    counter += 1
         
         subprocess.run([
             'ffmpeg', '-i', video_path,
-            '-vf', f"subtitles={srt_path}:force_style='FontName=Arial,FontSize=24,PrimaryColour=&H{ffmpeg_color_hex},Alignment=10'",
+            '-vf', f"subtitles={srt_path}:force_style='FontName=Impact,FontSize=36,PrimaryColour=&H{ffmpeg_color_hex},Alignment=10,BorderStyle=3,Outline=2,Shadow=1'",
             '-c:a', 'copy', output_path, '-y'
         ], check=True)
         
