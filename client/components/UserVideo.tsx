@@ -147,11 +147,10 @@ const UserVideo: React.FC<UserVideoProps> = ({ value, onChange }) => {
                 muted
                 loop
                 playsInline
-                className="w-full min-h-screen object-cover"
+                className="w-full min-h-screen object-contain"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.7 }}
-                controls
               />
             </>
           )}

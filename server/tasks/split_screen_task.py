@@ -54,26 +54,26 @@ def process_split_screen_task(self, video_url, user_video_url, font_color, user_
             upload_result = cloudinary.uploader.upload(
                 final_video_path,
                 resource_type="video",
-                folder="split_screen_finals"
+                folder="Cravio"
             )
             final_video_url = upload_result['secure_url']
             
             # Save to MongoDB
-            video_data = {
-                "user_email": user_email,
-                "final_video_url": final_video_url,
-                "script": script,
-                "caption": caption,
-                "created_at": datetime.utcnow()
-            }
-            
-            # video_id = videos_collection.insert_one(video_data).inserted_id
+            save_success = save_video_to_mongodb(
+                user_email= user_email,
+                video_url= final_video_url,
+                script= script,
+                caption= caption,
+            )
+
+            if not save_success:
+                raise Exception("Failed to save video to MongoDB")
             
             # Clean up user video
             delete_cloudinary_video(user_video_url)
             
         return {
-            "status": "completed",
+            "status": "success",
             "video_url": final_video_url,
             "caption": caption
         }
@@ -81,6 +81,43 @@ def process_split_screen_task(self, video_url, user_video_url, font_color, user_
     except Exception as e:
         self.update_state(state='FAILURE', meta={'status': 'Error', 'error': str(e)})
         return {"status": "error", "message": str(e)}
+
+def save_video_to_mongodb(user_email: str, video_url: str, script: str = None, caption: str = None) -> bool:
+    """Save video details to MongoDB under user's 'videos' array."""
+    try:
+        # Current timestamp
+        created_at = datetime.datetime.utcnow()
+        
+        # Find the user by email
+        user = users_collection.find_one({"email": user_email})
+        
+        if not user:
+            print(f"User with email {user_email} not found in database.")
+            return False
+
+        # Build video entry
+        video_entry = {
+            "url": video_url,
+            "script": script,
+            "caption": caption,
+            "created_at": created_at
+        }
+        
+        # Push into user's videos array
+        result = users_collection.update_one(
+            {"email": user_email},
+            {"$push": {"videos": video_entry}}
+        )
+
+        if result.modified_count == 0:
+            print(f"No document was updated for user {user_email}.")
+            return False
+        
+        return True
+
+    except Exception as e:
+        print(f"Error saving to MongoDB: {str(e)}")
+        return False
 
 
 def download_video(url, output_path):
@@ -100,19 +137,14 @@ def extract_audio(video_path, audio_path):
 
 
 def generate_transcript(audio_path):
-    """Generate transcript with Whisper API"""
-    with open(audio_path, 'rb') as audio_file:
-        response = requests.post(
-            'https://api.openai.com/v1/audio/transcriptions',
-            headers={'Authorization': f'Bearer {os.environ.get("OPENAI_API_KEY")}'},
-            files={'file': audio_file},
-            data={'model': 'whisper-1', 'response_format': 'verbose_json'}
+    """Generate transcript using OpenAI's Whisper via official SDK"""
+    with open(audio_path, "rb") as audio_file:
+        transcript = openai.Audio.transcribe(
+            model="whisper-1",
+            file=audio_file,
+            response_format="verbose_json"
         )
-    
-    if response.status_code == 200:
-        return response.json()
-    else:
-        raise Exception(f"Whisper API error: {response.text}")
+    return transcript
 
 
 def create_split_screen(user_video, template_video, output_path):
