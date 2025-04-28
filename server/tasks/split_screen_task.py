@@ -164,18 +164,26 @@ def generate_transcript(audio_path):
     return response
 
 def create_split_screen(user_video, template_video, output_path):
-    """Create split-screen video with 9:16 ratio"""
-    width = 720
-    height = 1280
+    """Create split-screen video with 9:16 ratio with limited resources"""
+    width = 360  # Reduced from 720 for lower memory usage
+    height = 640  # Reduced from 1280
     
-    subprocess.run([
-        'ffmpeg', '-i', user_video, '-i', template_video,
-        '-filter_complex',
-        f'[0:v]scale={width}:{height//2}[top];[1:v]scale={width}:{height//2}[bottom];[top][bottom]vstack[outv]',
-        '-map', '[outv]', '-map', '0:a',
-        '-c:v', 'libx264', '-c:a', 'aac', '-shortest',
-        output_path, '-y'
-    ], check=True)
+    try:
+        subprocess.run([
+            'ffmpeg', '-i', user_video, '-i', template_video,
+            '-filter_complex',
+            f'[0:v]scale={width}:{height//2}[top];[1:v]scale={width}:{height//2}[bottom];[top][bottom]vstack[outv]',
+            '-map', '[outv]', '-map', '0:a',
+            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '30',  # Even faster, lower quality
+            '-c:a', 'aac', '-b:a', '64k',  # Lower audio bitrate
+            '-threads', '2',  # Limit CPU threads
+            '-shortest',
+            output_path, '-y'
+        ], check=True)
+    except subprocess.CalledProcessError as e:
+        if "SIGKILL" in str(e):
+            print("Process killed due to memory constraints. Try with smaller videos.")
+        raise
 
 
 def add_subtitles(video_path, transcript, output_path, font_color):
