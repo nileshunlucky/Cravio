@@ -196,10 +196,10 @@ def generate_transcript(audio_path):
 
 
 def create_split_screen(user_video, template_video, output_path):
-    """Create split-screen video with 9:16 ratio where both videos are centered"""
-    # Target dimensions (9:16 aspect ratio)
-    width = 360
-    height = 640
+    """Create split-screen video with exact 9:16 ratio for Instagram"""
+    # Instagram-friendly dimensions (9:16 aspect ratio)
+    width = 1080  # Standard width for Instagram vertical video
+    height = 1920  # 9:16 ratio (1080 × 1.778)
     segment_height = height // 2  # Each video gets half the height
     
     try:
@@ -207,16 +207,13 @@ def create_split_screen(user_video, template_video, output_path):
             'ffmpeg', '-i', user_video, '-i', template_video,
             '-filter_complex',
             f'''
-            [0:v]scale={width}:{segment_height}:force_original_aspect_ratio=decrease,
-                pad={width}:{segment_height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[top];
-            [1:v]scale={width}:{segment_height}:force_original_aspect_ratio=decrease,
-                pad={width}:{segment_height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[bottom];
+            [0:v]scale={width}:-1,crop={width}:{segment_height}:(iw-{width})/2:(ih-{segment_height})/2[top];
+            [1:v]scale={width}:-1,crop={width}:{segment_height}:(iw-{width})/2:(ih-{segment_height})/2[bottom];
             [top][bottom]vstack=inputs=2[outv]
             ''',
             '-map', '[outv]', '-map', '0:a',
-            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '30',
-            '-c:a', 'aac', '-b:a', '64k',
-            '-threads', '2',
+            '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
+            '-c:a', 'aac', '-b:a', '128k',
             '-shortest',
             output_path, '-y'
         ], check=True)
@@ -228,19 +225,16 @@ def create_split_screen(user_video, template_video, output_path):
 
 
 def add_subtitles(video_path, transcript, output_path, font_color):
-    """Add subtitles to video with only 1-2 words per line"""
+    """Add subtitles to video with appropriate styling for Instagram"""
     srt_path = f"{video_path}.srt"
-
     # Define the RGB color mapping
     rgb_color_map = {
         "white": "FFFFFF", "black": "000000", "red": "FF0000",
         "green": "00FF00", "blue": "0000FF", "yellow": "FFFF00",
         "purple": "800080", "orange": "FFA500", "gray": "808080", "pink": "FFC0CB"
     }
-
     # Get the RGB hex code, default to white if None or not found
     rgb_hex = rgb_color_map.get(font_color.lower() if font_color else "white", "FFFFFF")
-
     # Convert RRGGBB to BBGGRR for ffmpeg/ASS styling
     if len(rgb_hex) == 6:
         rr = rgb_hex[0:2]
@@ -253,43 +247,24 @@ def add_subtitles(video_path, transcript, output_path, font_color):
     try:
         with open(srt_path, 'w') as srt_file:
             segments = transcript.get('segments', [])
-            counter = 1
-            
-            for segment in segments:
+            for i, segment in enumerate(segments, 1):
                 start = format_time(segment.get('start', 0))
                 end = format_time(segment.get('end', 0))
                 text = segment.get('text', '')
                 
-                # Split the text into words
-                words = text.split()
+                # Clean and format the text
+                text = text.strip()
+                if len(text) > 40:  # Break long lines
+                    words = text.split()
+                    mid = len(words) // 2
+                    text = ' '.join(words[:mid]) + '\n' + ' '.join(words[mid:])
                 
-                # Group into chunks of 1-2 words
-                i = 0
-                while i < len(words):
-                    if i + 1 < len(words):
-                        # Take 1-2 words based on length
-                        if len(words[i]) + len(words[i+1]) < 12:
-                            chunk = f"{words[i]} {words[i+1]}"
-                            i += 2
-                        else:
-                            chunk = words[i]
-                            i += 1
-                    else:
-                        chunk = words[i]
-                        i += 1
-                    
-                    # Calculate time for this chunk (proportional to original segment)
-                    word_duration = (segment.get('end', 0) - segment.get('start', 0)) / len(words)
-                    chunk_start = segment.get('start', 0) + (i - len(chunk.split())) * word_duration
-                    chunk_end = chunk_start + (len(chunk.split()) * word_duration)
-                    
-                    # Write to SRT
-                    srt_file.write(f"{counter}\n{format_time(chunk_start)} --> {format_time(chunk_end)}\n{chunk.upper()}\n\n")
-                    counter += 1
+                srt_file.write(f"{i}\n{start} --> {end}\n{text}\n\n")
         
+        # Apply subtitles with smaller size, no shadow, and center positioning
         subprocess.run([
             'ffmpeg', '-i', video_path,
-            '-vf', f"subtitles={srt_path}:force_style='FontName=Impact,FontSize=36,PrimaryColour=&H{ffmpeg_color_hex},Alignment=10,BorderStyle=3,Outline=2,Shadow=1'",
+            '-vf', f"subtitles={srt_path}:force_style='FontName=Arial,FontSize=18,PrimaryColour=&H{ffmpeg_color_hex},Alignment=10,BorderStyle=1,Outline=1,Shadow=0'",
             '-c:a', 'copy', output_path, '-y'
         ], check=True)
         
