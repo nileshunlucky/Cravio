@@ -45,7 +45,7 @@ const Page = () => {
         whileTap={{ scale: 0.985 }}
         className="w-full max-w-md"
       >
-        {/* <Link href="/admin/split-screen"> */}
+        <Link href="/admin/split-screen">
         <Card className="cursor-pointer rounded-2xl bg-gradient-to-br from-red-600 via-red-500 to-red-900 shadow-[0_0_20px_#11111180] hover:shadow-[0_0_30px_#1a1a1a90] transition-all duration-300 relative">
           <div className="p-6 space-y-2">
             <div className="flex items-center space-x-2">
@@ -61,15 +61,12 @@ const Page = () => {
               variant="secondary"
               className="mt-4 bg-white text-black hover:bg-neutral-200"
             >
-              Comming Soon
+              Split Now
             </Button>
           </div>
-
-          {/* Overlay with dark linear gradient and lower opacity */}
-          <div className="absolute inset-0 bg-black opacity-40 flex items-center justify-center rounded-2xl"/>
         </Card>
 
-        {/* </Link> */}
+        </Link>
       </motion.div>
     </div>
   )

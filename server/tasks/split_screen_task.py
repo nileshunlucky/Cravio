@@ -280,7 +280,7 @@ def add_subtitles(video_path, transcript, output_path, font_color):
         # Apply subtitles with increased size, no border or outline, and center positioning
         subprocess.run([
             'ffmpeg', '-i', video_path,
-            '-vf', f"subtitles={srt_path}:force_style='FontName=Arial,FontSize=22,PrimaryColour=&H{ffmpeg_color_hex},Alignment=10,BorderStyle=0,Outline=0,Shadow=0'",
+            '-vf', f"subtitles={srt_path}:force_style='FontName=Arial,FontSize=32,PrimaryColour=&H{ffmpeg_color_hex},Alignment=10,BorderStyle=0,Outline=0,Shadow=0'",
             '-c:a', 'copy', output_path, '-y'
         ], check=True)
         
