@@ -196,26 +196,15 @@ def generate_transcript(audio_path):
 
 
 def create_split_screen(user_video, template_video, output_path):
-    """Create split-screen video with 9:16 ratio with improved memory management"""
-    # Target dimensions (9:16 aspect ratio) - slightly reduced quality for memory efficiency
-    width = 720  # Reduced from 1080p to 720p
-    height = 1280  # Maintaining 9:16 ratio
+    """Create split-screen video with 9:16 ratio with proper centering and scaling"""
+    # Target dimensions (9:16 aspect ratio)
+    width = 360
+    height = 640
     segment_height = height // 2  # Each video gets half the height
     
     try:
         subprocess.run([
-            'ffmpeg', 
-            # Hardware acceleration
-            '-hwaccel', 'auto',
-            # Add memory optimizations
-            '-max_muxing_queue_size', '9999',
-            # Limit memory buffer size
-            '-bufsize', '5M',
-            # Set lower memory usage - critical for avoiding SIGKILL
-            '-threads', '2',  # Reduced thread count to limit memory usage
-            # Input files
-            '-i', user_video, '-i', template_video,
-            # Complex filter for split screen with memory optimizations
+            'ffmpeg', '-i', user_video, '-i', template_video,
             '-filter_complex',
             f'''
             [0:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,
@@ -224,26 +213,18 @@ def create_split_screen(user_video, template_video, output_path):
                 crop={width}:{segment_height},setsar=1[bottom];
             [top][bottom]vstack=inputs=2[outv]
             ''',
-            # Map streams
             '-map', '[outv]', '-map', '0:a',
-            # Video codec settings - optimize for memory over quality
-            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28',
-            # Lower bitrate to reduce memory usage
-            '-maxrate', '1M', '-bufsize', '2M',
-            # Audio settings - lower quality for memory efficiency
-            '-c:a', 'aac', '-b:a', '96k',
-            # Use shortest input to determine output length
+            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '30',
+            '-c:a', 'aac', '-b:a', '64k',
+            '-threads', '2',
             '-shortest',
-            # Output file
             output_path, '-y'
-        ], check=True, timeout=300)  # Add timeout to prevent hanging
-    except subprocess.TimeoutExpired:
-        raise Exception("FFmpeg process timed out - video may be too large to process")
+        ], check=True)
     except subprocess.CalledProcessError as e:
         if "SIGKILL" in str(e):
-            # If still getting memory issues, provide more helpful error
-            raise Exception("Video processing failed due to memory constraints. Please use shorter or lower-resolution videos.")
+            print("Process killed due to memory constraints. Try with smaller videos.")
         raise
+
 
 
 def add_subtitles(video_path, transcript, output_path, font_color):
