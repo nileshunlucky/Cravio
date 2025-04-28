@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, Form, UploadFile, HTTPException
+from fastapi import File, Form, UploadFile, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
 import cloudinary
 import cloudinary.uploader
@@ -7,7 +7,7 @@ from tasks.split_screen_task import process_split_screen_task
 from db import users_collection
 
 # Initialize FastAPI
-app = FastAPI()
+router = APIRouter()
 
 # Configure Cloudinary
 cloudinary.config(
@@ -16,7 +16,7 @@ cloudinary.config(
     api_secret=os.environ.get("CLOUDINARY_API_SECRET")
 )
 
-@app.post("/create-split-screen")
+@router.post("/create-split-screen")
 async def create_split_screen(
     video: str = Form(...),
     font: str = Form(...),
