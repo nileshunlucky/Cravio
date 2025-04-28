@@ -228,7 +228,7 @@ def create_split_screen(user_video, template_video, output_path):
 
 
 def add_subtitles(video_path, transcript, output_path, font_color):
-    """Add subtitles to video with appropriate styling for Instagram"""
+    """Add subtitles to video with one word per line for Instagram"""
     srt_path = f"{video_path}.srt"
     # Define the RGB color mapping
     rgb_color_map = {
@@ -250,24 +250,37 @@ def add_subtitles(video_path, transcript, output_path, font_color):
     try:
         with open(srt_path, 'w') as srt_file:
             segments = transcript.get('segments', [])
-            for i, segment in enumerate(segments, 1):
-                start = format_time(segment.get('start', 0))
-                end = format_time(segment.get('end', 0))
-                text = segment.get('text', '')
+            counter = 1
+            
+            for segment in segments:
+                start_time = segment.get('start', 0)
+                end_time = segment.get('end', 0)
+                text = segment.get('text', '').strip()
                 
-                # Clean and format the text
-                text = text.strip()
-                if len(text) > 40:  # Break long lines
-                    words = text.split()
-                    mid = len(words) // 2
-                    text = ' '.join(words[:mid]) + '\n' + ' '.join(words[mid:])
+                # Split text into individual words
+                words = text.split()
+                total_words = len(words)
                 
-                srt_file.write(f"{i}\n{start} --> {end}\n{text}\n\n")
+                if total_words > 0:
+                    # Calculate time per word
+                    duration = end_time - start_time
+                    time_per_word = duration / total_words
+                    
+                    # Create subtitle entry for each word
+                    for i, word in enumerate(words):
+                        word_start = start_time + (i * time_per_word)
+                        word_end = word_start + time_per_word
+                        
+                        # Write the word as its own subtitle
+                        srt_file.write(f"{counter}\n")
+                        srt_file.write(f"{format_time(word_start)} --> {format_time(word_end)}\n")
+                        srt_file.write(f"{word}\n\n")
+                        counter += 1
         
-        # Apply subtitles with smaller size, no shadow, and center positioning
+        # Apply subtitles with increased size, no border or outline, and center positioning
         subprocess.run([
             'ffmpeg', '-i', video_path,
-            '-vf', f"subtitles={srt_path}:force_style='FontName=Arial,FontSize=18,PrimaryColour=&H{ffmpeg_color_hex},Alignment=10,BorderStyle=1,Outline=1,Shadow=0'",
+            '-vf', f"subtitles={srt_path}:force_style='FontName=Arial,FontSize=22,PrimaryColour=&H{ffmpeg_color_hex},Alignment=10,BorderStyle=0,Outline=0,Shadow=0'",
             '-c:a', 'copy', output_path, '-y'
         ], check=True)
         
