@@ -218,84 +218,54 @@ def generate_transcript(audio_path):
 #             print("Process killed due to memory constraints. Try with smaller videos.")
 #         raise
 
-def create_split_screen(user_video, template_video, output_path):
+
+def create_split_screen(user_video_path, template_video_path, output_path,
+                        width=720, height=1280, crf=25, preset="ultrafast"):
     """
-    Creates a 9:16 split-screen video.
-    Each input video is scaled and cropped to cover its half (top/bottom)
-    while maintaining aspect ratio. Simplified without logging.
+    Create a vertical (9:16) split-screen video (user on top, template on bottom).
+    The final video has the specified width x height (e.g. 720x1280).
+    Each input is scaled+cropped to width x (height/2) to fill its half of the frame.
+    Uses FFmpeg with high-quality x264 encoding (CRF and preset configurable).
     """
-
-    # --- TARGET OUTPUT & QUALITY SETTINGS ---
-    # Target 9:16 resolution (e.g., 720x1280 for HD Reels/Shorts)
-    target_w = 720
-    target_h = 1280
-
-    # Calculate dimensions for each half
-    half_h = target_h // 2 # Integer division
-
-    # Quality Settings (Adjust as needed)
-    crf_value = '24'       # Lower = Better Quality (23-26 good range)
-    preset_value = 'ultrafast'  # Slower = Better Quality/Compression (fast/medium good balance)
-    audio_bitrate = '128k' # Audio quality
-    # --- END SETTINGS ---
-
-    # Construct the complex filter graph (Scale to cover and crop)
+    # Compute half-height for each video (must be integer)
+    half_height = height // 2
+    if height % 2 != 0 or width % 2 != 0:
+        raise ValueError("Width and height must be even numbers for FFmpeg.")
+    
+    # Construct the FFmpeg filter graph:
+    # [0:v] refers to the first input (user video), [1:v] to the second (template).
+    # Scale each to cover (width x half_height) and then crop to that exact size.
+    # Finally, vstack stacks [top] above [bottom] (requires same width).
     filter_complex = (
-        f"[0:v]scale=w='max({target_w},iw*{half_h}/ih)':h='max({half_h},ih*{target_w}/iw)',"
-        f"crop={target_w}:{half_h}:(iw-{target_w})/2:(ih-{half_h})/2,setsar=1[top];"
-        f"[1:v]scale=w='max({target_w},iw*{half_h}/ih)':h='max({half_h},ih*{target_w}/iw)',"
-        f"crop={target_w}:{half_h}:(iw-{target_w})/2:(ih-{half_h})/2,setsar=1[bottom];"
-        f"[top][bottom]vstack=inputs=2[outv]" # Stack the processed halves
+        f"[0:v]scale={width}:{half_height}:force_original_aspect_ratio=increase,"
+        f"crop={width}:{half_height},setsar=1[top];"
+        f"[1:v]scale={width}:{half_height}:force_original_aspect_ratio=increase,"
+        f"crop={width}:{half_height},setsar=1[bottom];"
+        "[top][bottom]vstack=inputs=2:shortest=1[outv]"
     )
-
+    
+    # Build FFmpeg command
+    cmd = [
+        "ffmpeg",
+        "-y",                              # overwrite output if exists
+        "-i", user_video_path,            # first input (user video)
+        "-i", template_video_path,        # second input (template video)
+        "-filter_complex", filter_complex,
+        "-map", "[outv]",                 # map the stacked video to output
+        "-map", "0:a?",                   # (optional) map audio from first input if present
+        "-c:v", "libx264",
+        "-preset", preset,
+        "-crf", str(crf),                 # quality (lower = higher quality)
+        "-c:a", "copy",                   # copy audio from first input
+        output_path
+    ]
+    
     try:
-        ffmpeg_command = [
-            'ffmpeg',
-            '-i', user_video,                 # Input 0 (User Video)
-            '-i', template_video,             # Input 1 (Template Video)
-
-            '-filter_complex', filter_complex, # Apply the scaling, cropping, stacking filter
-
-            '-map', '[outv]',                 # Map the filtered video output
-            '-map', '0:a?',                   # Map audio from the FIRST input (user video), '?' makes it optional
-
-            # Video Encoding Settings
-            '-c:v', 'libx264',                # Video codec H.264
-            '-preset', preset_value,          # Encoding speed/efficiency preset
-            '-crf', crf_value,                # Constant Rate Factor (Quality)
-            '-pix_fmt', 'yuv420p',            # Ensure common pixel format for compatibility
-
-            # Audio Encoding Settings
-            '-c:a', 'aac',                    # Audio codec AAC
-            '-b:a', audio_bitrate,            # Audio bitrate
-            '-ac', '2',                       # Force stereo audio (optional, adjust if needed)
-
-            # Other options
-            '-r', '30',                       # Set frame rate (optional, e.g., 30 fps)
-            '-shortest',                      # Finish encoding when the shortest input ends
-            output_path,
-            '-y'                              # Overwrite output if exists
-        ]
-
-        print(f"Executing ffmpeg for split screen...") # Simplified info message
-        # Keep capture_output=True to access stderr/stdout in case of errors
-        subprocess.run(ffmpeg_command, check=True, capture_output=True, text=True, encoding='utf-8')
-        print("FFmpeg split screen process completed successfully.")
-        # Removed debug logging of stdout/stderr
-
-
+        # Run FFmpeg command
+        completed = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, check=True)
     except subprocess.CalledProcessError as e:
-        # Print detailed error information from ffmpeg using print
-        print(f"Error creating split screen video: {str(e)}")
-        print(f"FFmpeg command: {' '.join(e.cmd)}") # Print the exact command run
-        print(f"FFmpeg stdout:\n{e.stdout}")
-        print(f"FFmpeg stderr:\n{e.stderr}")
-        if "SIGKILL" in str(e.stderr) or "Cannot allocate memory" in str(e.stderr):
-             print("Warning: Process likely killed due to memory constraints. Consider using lower resolution (e.g., 540x960) or less demanding preset/crf if this persists.")
-        raise
-    except Exception as e:
-        print(f"An unexpected error occurred in create_split_screen: {e}")
-        raise
+        # If FFmpeg fails, raise an error with stderr output for debugging
+        raise RuntimeError(f"FFmpeg failed: {e.stderr.decode()}") from e
 
 
 def add_subtitles(video_path, transcript, output_path, font_color):
