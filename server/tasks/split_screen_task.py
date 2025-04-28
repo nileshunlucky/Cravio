@@ -196,10 +196,10 @@ def generate_transcript(audio_path):
 
 
 def create_split_screen(user_video, template_video, output_path):
-    """Create split-screen video with exact 9:16 ratio for Instagram"""
-    # Instagram-friendly dimensions (9:16 aspect ratio)
-    width = 1080  # Standard width for Instagram vertical video
-    height = 1920  # 9:16 ratio (1080 × 1.778)
+    """Create split-screen video with 9:16 ratio with proper centering and scaling"""
+    # Target dimensions (9:16 aspect ratio)
+    width = 360
+    height = 640
     segment_height = height // 2  # Each video gets half the height
     
     try:
@@ -207,13 +207,16 @@ def create_split_screen(user_video, template_video, output_path):
             'ffmpeg', '-i', user_video, '-i', template_video,
             '-filter_complex',
             f'''
-            [0:v]scale={width}:-1,crop={width}:{segment_height}:(iw-{width})/2:(ih-{segment_height})/2[top];
-            [1:v]scale={width}:-1,crop={width}:{segment_height}:(iw-{width})/2:(ih-{segment_height})/2[bottom];
+            [0:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,
+                crop={width}:{segment_height},setsar=1[top];
+            [1:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,
+                crop={width}:{segment_height},setsar=1[bottom];
             [top][bottom]vstack=inputs=2[outv]
             ''',
             '-map', '[outv]', '-map', '0:a',
-            '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
-            '-c:a', 'aac', '-b:a', '128k',
+            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '30',
+            '-c:a', 'aac', '-b:a', '64k',
+            '-threads', '2',
             '-shortest',
             output_path, '-y'
         ], check=True)
