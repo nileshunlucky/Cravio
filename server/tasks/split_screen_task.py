@@ -196,65 +196,6 @@ def generate_transcript(audio_path):
 
 
 def create_split_screen(user_video, template_video, output_path):
-    """Create split-screen video with 9:16 ratio with proper centering and scaling.
-    Optimized for faster processing and lower memory usage."""
-    # Target dimensions (9:16 aspect ratio)
-    width = 360
-    height = 640
-    segment_height = height // 2  # Each video gets half the height
-    
-    try:
-        # Use more efficient ffmpeg settings
-        subprocess.run([
-            'ffmpeg', 
-            '-i', user_video, 
-            '-i', template_video,
-            # Skip unnecessary decoding
-            '-vsync', '0',
-            # More efficient filter chain
-            '-filter_complex',
-            f'[0:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,crop={width}:{segment_height},setsar=1[top];'
-            f'[1:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,crop={width}:{segment_height},setsar=1[bottom];'
-            f'[top][bottom]vstack=inputs=2[outv]',
-            # Map only needed streams
-            '-map', '[outv]', 
-            '-map', '0:a',
-            # Hardware acceleration if available (uncomment the appropriate one for your system)
-            # '-hwaccel', 'auto',  # For automatic hardware selection
-            # '-c:v', 'h264_nvenc',  # For NVIDIA GPU
-            # '-c:v', 'h264_amf',   # For AMD GPU
-            # '-c:v', 'h264_qsv',   # For Intel Quick Sync
-            # More efficient encoding settings
-            '-c:v', 'libx264', 
-            '-preset', 'veryfast',  # Faster than ultrafast with minimal quality loss
-            '-tune', 'fastdecode',  # Optimize for decoding speed
-            '-crf', '30',
-            # Improve threading
-            '-threads', '0',        # Auto-detect optimal thread count
-            # Reduced audio bitrate
-            '-c:a', 'aac', 
-            '-b:a', '48k',          # Lower than original but still acceptable
-            '-ac', '1',             # Mono audio to save bandwidth
-            # Limit input processing
-            '-max_muxing_queue_size', '1024',
-            '-shortest',
-            # Avoid unnecessary metadata
-            '-metadata', 'title=', 
-            '-fflags', '+bitexact',
-            output_path, 
-            '-y'
-        ], check=True)
-        
-    except subprocess.CalledProcessError as e:
-        if "SIGKILL" in str(e):
-            print("Process killed due to memory constraints. Try with smaller videos.")
-        else:
-            print(f"Error during processing: {e}")
-        raise
-
-
-
-def create_split_screen(user_video, template_video, output_path):
     """Create split-screen video with 9:16 ratio with proper balance of quality and memory usage."""
     # Target dimensions (9:16 aspect ratio)
     width = 360
@@ -360,6 +301,73 @@ def create_split_screen(user_video, template_video, output_path):
             except subprocess.CalledProcessError as emergency_error:
                 print(f"All processing attempts failed: {emergency_error}")
                 raise
+
+
+
+def add_subtitles(video_path, transcript, output_path, font_color):
+    """Add subtitles to video with one word per line for Instagram"""
+    srt_path = f"{video_path}.srt"
+    # Define the RGB color mapping
+    rgb_color_map = {
+        "white": "FFFFFF", "black": "000000", "red": "FF0000",
+        "green": "00FF00", "blue": "0000FF", "yellow": "FFFF00",
+        "purple": "800080", "orange": "FFA500", "gray": "808080", "pink": "FFC0CB"
+    }
+    # Get the RGB hex code, default to white if None or not found
+    rgb_hex = rgb_color_map.get(font_color.lower() if font_color else "white", "FFFFFF")
+    # Convert RRGGBB to BBGGRR for ffmpeg/ASS styling
+    if len(rgb_hex) == 6:
+        rr = rgb_hex[0:2]
+        gg = rgb_hex[2:4]
+        bb = rgb_hex[4:6]
+        ffmpeg_color_hex = f"{bb}{gg}{rr}"
+    else:
+        ffmpeg_color_hex = "FFFFFF"  # White is the same in RGB and BGR hex
+    
+    try:
+        with open(srt_path, 'w') as srt_file:
+            segments = transcript.get('segments', [])
+            counter = 1
+            
+            for segment in segments:
+                start_time = segment.get('start', 0)
+                end_time = segment.get('end', 0)
+                text = segment.get('text', '').strip()
+                
+                # Split text into individual words
+                words = text.split()
+                total_words = len(words)
+                
+                if total_words > 0:
+                    # Calculate time per word
+                    duration = end_time - start_time
+                    time_per_word = duration / total_words
+                    
+                    # Create subtitle entry for each word
+                    for i, word in enumerate(words):
+                        word_start = start_time + (i * time_per_word)
+                        word_end = word_start + time_per_word
+                        
+                        # Write the word as its own subtitle
+                        srt_file.write(f"{counter}\n")
+                        srt_file.write(f"{format_time(word_start)} --> {format_time(word_end)}\n")
+                        srt_file.write(f"{word}\n\n")
+                        counter += 1
+        
+        # Apply subtitles with increased size, no border or outline, and center positioning
+        subprocess.run([
+            'ffmpeg', '-i', video_path,
+            '-vf', f"subtitles={srt_path}:force_style='FontName=Arial,FontSize=32,PrimaryColour=&H{ffmpeg_color_hex},Alignment=10,BorderStyle=0,Outline=0,Shadow=0,Bold=1'",
+            '-c:a', 'copy', output_path, '-y'
+        ], check=True)
+        
+        # Clean up the temporary SRT file
+        if os.path.exists(srt_path):
+            os.remove(srt_path)
+    except Exception as e:
+        print(f"Error adding subtitles: {str(e)}")
+        # If subtitles fail, just copy the video
+        subprocess.run(['cp', video_path, output_path], check=True)
 
 
 def format_time(seconds):
