@@ -255,104 +255,111 @@ def create_split_screen(user_video, template_video, output_path):
 
 
 def create_split_screen(user_video, template_video, output_path):
-    """Create split-screen video with 9:16 ratio with proper centering and scaling.
-    Extremely optimized for low memory environments like Railway."""
+    """Create split-screen video with 9:16 ratio with proper balance of quality and memory usage."""
     # Target dimensions (9:16 aspect ratio)
     width = 360
     height = 640
     segment_height = height // 2  # Each video gets half the height
     
     try:
-        # Use memory-optimized ffmpeg settings
+        # First attempt - balanced approach
         subprocess.run([
-            'ffmpeg', 
-            # Limit memory usage
-            '-memory_size', '64M',
-            # Set buffer sizes very small
-            '-bufsize', '2M',
-            # Reduce input buffer size
-            '-probesize', '1M',
-            '-analyzeduration', '1M',
-            # Limit frame thread usage
-            '-thread_queue_size', '8',
-            # Process minimal amount of the input initially
-            '-fflags', 'nobuffer',
-            # Skip ahead decoding to reduce memory
-            '-skip_frame', 'nokey',
-            # Lower frame rate to reduce processing load
-            '-r', '15',
+            'ffmpeg',
             # Input files
-            '-i', user_video, 
+            '-i', user_video,
             '-i', template_video,
-            # Efficient filter chain with less memory usage
+            # Balanced filter chain with moderate settings
             '-filter_complex',
-            f'[0:v]fps=15,scale={width}:{segment_height}:force_original_aspect_ratio=increase:sws_flags=fast_bilinear,crop={width}:{segment_height},setsar=1[top];'
-            f'[1:v]fps=15,scale={width}:{segment_height}:force_original_aspect_ratio=increase:sws_flags=fast_bilinear,crop={width}:{segment_height},setsar=1[bottom];'
+            f'[0:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,crop={width}:{segment_height},setsar=1[top];'
+            f'[1:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,crop={width}:{segment_height},setsar=1[bottom];'
             f'[top][bottom]vstack=inputs=2[outv]',
-            # Map only needed streams
-            '-map', '[outv]', 
-            # Only include audio if needed, comment this out to save more memory
+            # Map streams
+            '-map', '[outv]',
             '-map', '0:a',
-            # Extreme memory-saving encoding settings
-            '-c:v', 'libx264', 
-            '-preset', 'ultrafast',  # Lowest memory usage
-            '-crf', '35',           # Higher compression (lower quality but less memory)
-            # Explicitly limit threads
-            '-threads', '2',        # Force lower thread count to reduce memory
-            # Very low audio settings
-            '-c:a', 'aac', 
-            '-b:a', '32k',          # Very low bitrate
-            '-ac', '1',             # Mono audio
-            '-ar', '22050',         # Lower sample rate
-            # Process less data in memory at once
-            '-max_muxing_queue_size', '128',
+            # Balanced encoding settings
+            '-c:v', 'libx264',
+            '-preset', 'superfast',  # Good balance between speed and quality
+            '-crf', '28',            # Better quality than previous but still efficient
+            '-threads', '2',         # Explicit thread control
+            # Moderate audio settings
+            '-c:a', 'aac',
+            '-b:a', '64k',
+            '-ac', '1',              # Mono audio
+            # Memory management
+            '-max_muxing_queue_size', '512',
             '-shortest',
-            output_path, 
+            output_path,
             '-y'
         ], check=True)
         
     except subprocess.CalledProcessError as e:
-        if "SIGKILL" in str(e):
-            print("Process killed due to memory constraints. Try with smaller videos.")
-            # Create fallback version with even more aggressive memory settings
+        print(f"First attempt failed: {e}")
+        
+        try:
+            print("Trying fallback with reduced settings...")
+            # Fallback with more memory-efficient settings
+            subprocess.run([
+                'ffmpeg',
+                # Input files with minimal processing
+                '-i', user_video,
+                '-i', template_video,
+                # Simpler filter chain that still maintains decent quality
+                '-filter_complex',
+                f'[0:v]fps=24,scale={width}:{segment_height}:force_original_aspect_ratio=increase,crop={width}:{segment_height},setsar=1[top];'
+                f'[1:v]fps=24,scale={width}:{segment_height}:force_original_aspect_ratio=increase,crop={width}:{segment_height},setsar=1[bottom];'
+                f'[top][bottom]vstack=inputs=2[outv]',
+                '-map', '[outv]',
+                '-map', '0:a',
+                # More aggressive encoding
+                '-c:v', 'libx264',
+                '-preset', 'ultrafast',
+                '-crf', '30',        # Compromise quality
+                '-threads', '1',     # Single thread to minimize resource usage
+                # Lower audio quality
+                '-c:a', 'aac',
+                '-b:a', '48k',
+                '-ac', '1',
+                # Process less data at once
+                '-max_muxing_queue_size', '256',
+                '-shortest',
+                output_path,
+                '-y'
+            ], check=True)
+            print("Fallback processing completed successfully.")
+            
+        except subprocess.CalledProcessError as fallback_error:
+            print(f"Fallback processing failed: {fallback_error}")
+            
             try:
-                print("Attempting emergency fallback processing with minimal settings...")
+                print("Attempting emergency processing with minimal settings...")
+                # Last resort with minimal settings but still acceptable quality
                 subprocess.run([
                     'ffmpeg',
-                    # Extreme memory limitations
-                    '-memory_size', '32M',
-                    '-bufsize', '1M',
-                    '-probesize', '512K',
-                    '-thread_queue_size', '4',
-                    # Drop frames aggressively
-                    '-r', '10',
-                    # Input files with minimal processing
+                    # Input files with absolute minimal settings
                     '-i', user_video,
                     '-i', template_video,
-                    # Simplest possible filter with tiny output
+                    # Very simple filter chain
                     '-filter_complex',
-                    f'[0:v]fps=10,scale=180:160:sws_flags=fast_bilinear[top];'
-                    f'[1:v]fps=10,scale=180:160:sws_flags=fast_bilinear[bottom];'
+                    f'[0:v]fps=20,scale=320:280:force_original_aspect_ratio=increase,crop=320:280,setsar=1[top];'
+                    f'[1:v]fps=20,scale=320:280:force_original_aspect_ratio=increase,crop=320:280,setsar=1[bottom];'
                     f'[top][bottom]vstack=inputs=2[outv]',
                     '-map', '[outv]',
-                    # Skip audio to save memory
-                    # Lowest possible quality settings
+                    # No audio to save memory
+                    '-an',
+                    # Minimal encoding settings
                     '-c:v', 'libx264',
                     '-preset', 'ultrafast',
-                    '-crf', '40',
+                    '-crf', '33',
                     '-threads', '1',
-                    '-g', '250',           # Keyframe every 25 seconds
-                    '-sc_threshold', '0',  # Disable scene detection
+                    '-g', '50',    # Keyframe every 50 frames
                     output_path,
                     '-y'
                 ], check=True)
-                print("Emergency fallback processing completed successfully.")
-            except subprocess.CalledProcessError as fallback_error:
-                print(f"Emergency fallback processing also failed: {fallback_error}")
+                print("Emergency processing completed successfully.")
+                
+            except subprocess.CalledProcessError as emergency_error:
+                print(f"All processing attempts failed: {emergency_error}")
                 raise
-        else:
-            print(f"Error during processing: {e}")
-            raise
 
 
 def format_time(seconds):
