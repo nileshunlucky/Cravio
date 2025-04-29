@@ -141,9 +141,9 @@ async def add_paypal(request: Request, body: PayPalEmailRequest):
     return {"success": True, "message": "PayPal email added successfully."}
 
 # Function to send an email
-def send_email(subject, body, receiver_email="cravio.ai@gmail.com"):
+def send_email(subject, body, receiver_email):
     try:
-        sender_email = "nileshinde001@gmail.com"  # Use your email here
+        sender_email = "cravio.ai@gmail.com"  # Use your email here
         password = os.getenv("GMAIL_PASSWORD")  # Use App Password if 2FA is enabled on your Gmail
 
         # Prepare the email content
@@ -151,7 +151,7 @@ def send_email(subject, body, receiver_email="cravio.ai@gmail.com"):
         msg["From"] = sender_email
         msg["To"] = receiver_email
         msg["Subject"] = subject
-        msg.attach(MIMEText(body, "plain"))
+        msg.attach(MIMEText(body, "html"))
 
         # Send the email using SMTP
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
@@ -162,6 +162,53 @@ def send_email(subject, body, receiver_email="cravio.ai@gmail.com"):
 
     except Exception as e:
         print("Error sending email:", e)
+
+@app.get("/send-email")
+async def send_offer_email_to_all_users():
+    """Send a limited time offer email to all users"""
+    subject = "🔥 LIMITED TIME OFFER – Add 100 Credits for Just $1!"
+    body = """
+<html>
+  <body>
+    <p>Hello!</p>
+    <p>
+      We're excited to offer you <strong>100 credits for just $1</strong>!<br>
+      This is a limited-time offer only available for the next <strong>7 days</strong>.
+    </p>
+    <p>
+      <a href="https://cravioai.vercel.app" 
+         style="
+           background-color: #3B82F6;
+           color: white;
+           padding: 10px 20px;
+           text-decoration: none;
+           border-radius: 6px;
+           display: inline-block;
+           font-weight: bold;"
+         target="_blank">
+        Claim Your Credits Now
+      </a>
+    </p>
+    <p>Best regards,<br>Cravio Team</p>
+  </body>
+</html>
+"""
+
+
+    try:
+        users = users_collection.find({}, {"email": 1})
+        sent_count = 0
+        for user in users:
+            email = user.get("email")
+            if email:
+                send_email(subject, body, email)
+                sent_count += 1
+                print(f"Email sent successfull to {sent_count} users")
+        return {"message": f"Emails sent to {sent_count} users."}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send emails: {str(e)}")
+
 
 # Endpoint for withdrawal
 @app.post("/affiliate/withdraw")
@@ -193,17 +240,36 @@ async def withdraw_balance(request: Request):
     withdrawal_time = datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')
 
     body = f"""
-    A withdrawal has been made from your app:
+<html>
+  <body style="font-family: Arial, sans-serif; color: #333;">
+    <h2 style="color: #DC2626;">Withdrawal Notification</h2>
+    <p>A withdrawal has been made from your app with the following details:</p>
+    <table style="border-collapse: collapse;">
+      <tr>
+        <td style="padding: 8px;"><strong>User Email:</strong></td>
+        <td style="padding: 8px;">{email}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px;"><strong>PayPal Email:</strong></td>
+        <td style="padding: 8px;">{paypal_email}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px;"><strong>Amount:</strong></td>
+        <td style="padding: 8px;">${balance}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px;"><strong>Date & Time (IST):</strong></td>
+        <td style="padding: 8px;">{withdrawal_time}</td>
+      </tr>
+    </table>
+    <p style="margin-top: 20px;">Please process this withdrawal accordingly.</p>
+  </body>
+</html>
+"""
 
-    User Email: {email}
-    PayPal Email: {paypal_email}
-    Amount: ${balance}
-    
-    Date & Time (IST): {withdrawal_time}
-    """
-
+    receiver_email="cravio.ai@gmail.com"
     # Send email to notify about the withdrawal
-    send_email(subject, body)
+    send_email(subject, body, receiver_email)
 
      # Add the withdrawal to the database (assuming the "withdrawals" collection exists)
     withdrawal_data = {
