@@ -6,6 +6,7 @@ from api.reddit_story import router as reddit_router
 from api.split_screen import router as sp_router
 from subscription import router as subscription_router
 from delete_videos import router as delete_router
+from offer import router as offer_router
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -30,6 +31,7 @@ app.include_router(reddit_router)
 app.include_router(sp_router)
 app.include_router(subscription_router)
 app.include_router(delete_router)
+app.include_router(offer_router)
 
 # Get user by email
 @app.get("/user/{email}")

@@ -46,9 +46,9 @@ const UserVideo: React.FC<UserVideoProps> = ({ value, onChange }) => {
       video.onloadedmetadata = () => {
         URL.revokeObjectURL(objectUrl);
         
-        // Check video duration (30 seconds)
-        if (video.duration > 30) {
-          toast.error("Video length must be less than 30 seconds");
+        // Check video duration (60 seconds)
+        if (video.duration > 60) {
+          toast.error("Video length must be less than 60 seconds");
           e.target.value = '';
           setIsLoading(false);
           return;
