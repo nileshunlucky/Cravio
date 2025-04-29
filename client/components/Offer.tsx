@@ -79,7 +79,7 @@ const Offer = () => {
             setLoading(true)
 
             // Step 1: Create order
-            const createOrderResponse = await fetch("/api/create-order", {
+            const createOrderResponse = await fetch("http://127.0.0.1:8000/create-order", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -105,7 +105,7 @@ const Offer = () => {
                 handler: async function (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
                     try {
                         // Step 3: Verify payment
-                        const verifyResponse = await fetch("/api/verify-payment", {
+                        const verifyResponse = await fetch("http://127.0.0.1:8000/verify-payment", {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",
@@ -247,7 +247,7 @@ const Offer = () => {
                                     stroke="currentColor"
                                 />
                             </svg>
-                            100 Credits for ₹86 Only
+                            100 Credits for $1 Only
                         </h2>
 
                         {/* Description Text */}
