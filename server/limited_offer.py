@@ -39,7 +39,7 @@ except Exception as e:
     logger.error(traceback.format_exc())
 
 # Price settings
-OFFER_PRICE = 860  # INR
+OFFER_PRICE = 86 # INR
 CREDIT_AMOUNT = 100  # 100 credits
 logger.info(f"Offer price set to {OFFER_PRICE} INR for {CREDIT_AMOUNT} credits")
 
