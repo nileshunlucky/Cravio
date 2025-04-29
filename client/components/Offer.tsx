@@ -12,8 +12,39 @@ import { useUser } from '@clerk/nextjs'
 // Extend the Window interface to include Razorpay
 declare global {
     interface Window {
-        Razorpay?: any;
+        Razorpay?: RazorpayConstructor;
     }
+}
+
+// Define Razorpay types
+interface RazorpayConstructor {
+    new(options: RazorpayOptions): RazorpayInstance;
+}
+
+interface RazorpayInstance {
+    open(): void;
+}
+
+interface RazorpayOptions {
+    key: string;
+    amount: number;
+    currency: string;
+    name: string;
+    description: string;
+    order_id: string;
+    handler: (response: RazorpayResponse) => void;
+    prefill: {
+        email?: string;
+    };
+    theme: {
+        color: string;
+    };
+}
+
+interface RazorpayResponse {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
 }
 
 const Offer = () => {
@@ -102,7 +133,7 @@ const Offer = () => {
                 name: "LIMITED TIME OFFER",
                 description: "100 Credits for $1",
                 order_id: orderData.order_id,
-                handler: async function (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
+                handler: async function (response: RazorpayResponse) {
                     try {
                         // Step 3: Verify payment
                         const verifyResponse = await fetch("https://cravio-ai.onrender.com/verify-payment", {
@@ -133,7 +164,7 @@ const Offer = () => {
                         // Hide the offer after successful purchase
                         setShow(false)
                         localStorage.setItem('offerClaimed', 'true')
-                    } catch (error) {
+                    } catch (err) {
                         toast.error("Something went wrong during payment verification")
                     }
                 },
@@ -150,11 +181,12 @@ const Offer = () => {
                 await loadRazorpay()
             }
 
-            // Open Razorpay checkout
-            const razorpayInstance = new window.Razorpay(options)
-            razorpayInstance.open()
+            if (window.Razorpay) {
+                const razorpayInstance = new window.Razorpay(options)
+                razorpayInstance.open()
+            }
 
-        } catch (error) {
+        } catch (err) {
             toast("Something went wrong")
         } finally {
             setLoading(false)
@@ -163,11 +195,11 @@ const Offer = () => {
 
     // Helper to load Razorpay script
     const loadRazorpay = () => {
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             const script = document.createElement('script')
             script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-            script.onload = resolve
-            script.onerror = reject
+            script.onload = () => resolve()
+            script.onerror = () => reject()
             document.body.appendChild(script)
         })
     }
