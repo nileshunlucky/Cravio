@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, Body
+from fastapi import FastAPI, HTTPException, Request, Body, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from db import users_collection
@@ -163,51 +163,32 @@ def send_email(subject, body, receiver_email):
     except Exception as e:
         print("Error sending email:", e)
 
-@app.get("/send-email")
-async def send_offer_email_to_all_users():
-    """Send a limited time offer email to all users"""
-    subject = "🔥 LIMITED TIME OFFER – Add 100 Credits for Just $1!"
+def send_offer_emails():
+    subject = "🚀 LIMITED TIME OFFER: 100 Credits for just ₹86!"
     body = """
-<html>
-  <body>
-    <p>Hello!</p>
-    <p>
-      We're excited to offer you <strong>100 credits for just $1</strong>!<br>
-      This is a limited-time offer only available for the next <strong>7 days</strong>.
-    </p>
-    <p>
-      <a href="https://cravioai.vercel.app" 
-         style="
-           background-color: #3B82F6;
-           color: white;
-           padding: 10px 20px;
-           text-decoration: none;
-           border-radius: 6px;
-           display: inline-block;
-           font-weight: bold;"
-         target="_blank">
-        Claim Your Credits Now
-      </a>
-    </p>
-    <p>Best regards,<br>Cravio Team</p>
-  </body>
-</html>
-"""
+    <html>
+    <body>
+        <p>Hello!</p>
+        <p>We're excited to offer you <b>100 credits for just ₹86</b>! This is a <b>limited-time offer only available for the next 7 days</b>.</p>
+        <p>
+            <a href="https://cravioai.vercel.app" style="padding:10px 15px;background-color:#3B82F6;color:white;text-decoration:none;border-radius:6px;">
+                Claim Now
+            </a>
+        </p>
+        <p>Best regards,<br>Cravio Team</p>
+    </body>
+    </html>
+    """
 
+    users = users_collection.find({}, {"email": 1})
+    for user in users:
+        if "email" in user:
+            send_email(subject, body, user["email"])
 
-    try:
-        users = users_collection.find({}, {"email": 1})
-        sent_count = 0
-        for user in users:
-            email = user.get("email")
-            if email:
-                send_email(subject, body, email)
-                sent_count += 1
-                print(f"Email sent successfull to {sent_count} users")
-        return {"message": f"Emails sent to {sent_count} users."}
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to send emails: {str(e)}")
+@app.post("/send-email")
+async def trigger_bulk_offer_email(background_tasks: BackgroundTasks):
+    background_tasks.add_task(send_offer_emails)
+    return {"message": "Emails are being sent in the background to all users."}
 
 
 # Endpoint for withdrawal
