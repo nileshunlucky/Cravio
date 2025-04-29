@@ -6,11 +6,13 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import Link from 'next/link'
+import Offer from '@/components/Offer'
 
 const Page = () => {
   return (
     <div className="min-h-screen flex flex-col md:flex-row gap-6 items-center justify-center px-4 w-full">
       {/* Reddit Story Card */}
+      {/* <Offer/> */}
       <motion.div
         whileHover={{ scale: 1.015 }}
         whileTap={{ scale: 0.985 }}
