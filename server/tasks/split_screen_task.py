@@ -254,70 +254,105 @@ def create_split_screen(user_video, template_video, output_path):
 
 
 
-def add_subtitles(video_path, transcript, output_path, font_color):
-    """Add subtitles to video with one word per line for Instagram"""
-    srt_path = f"{video_path}.srt"
-    # Define the RGB color mapping
-    rgb_color_map = {
-        "white": "FFFFFF", "black": "000000", "red": "FF0000",
-        "green": "00FF00", "blue": "0000FF", "yellow": "FFFF00",
-        "purple": "800080", "orange": "FFA500", "gray": "808080", "pink": "FFC0CB"
-    }
-    # Get the RGB hex code, default to white if None or not found
-    rgb_hex = rgb_color_map.get(font_color.lower() if font_color else "white", "FFFFFF")
-    # Convert RRGGBB to BBGGRR for ffmpeg/ASS styling
-    if len(rgb_hex) == 6:
-        rr = rgb_hex[0:2]
-        gg = rgb_hex[2:4]
-        bb = rgb_hex[4:6]
-        ffmpeg_color_hex = f"{bb}{gg}{rr}"
-    else:
-        ffmpeg_color_hex = "FFFFFF"  # White is the same in RGB and BGR hex
+def create_split_screen(user_video, template_video, output_path):
+    """Create split-screen video with 9:16 ratio with proper centering and scaling.
+    Extremely optimized for low memory environments like Railway."""
+    # Target dimensions (9:16 aspect ratio)
+    width = 360
+    height = 640
+    segment_height = height // 2  # Each video gets half the height
     
     try:
-        with open(srt_path, 'w') as srt_file:
-            segments = transcript.get('segments', [])
-            counter = 1
-            
-            for segment in segments:
-                start_time = segment.get('start', 0)
-                end_time = segment.get('end', 0)
-                text = segment.get('text', '').strip()
-                
-                # Split text into individual words
-                words = text.split()
-                total_words = len(words)
-                
-                if total_words > 0:
-                    # Calculate time per word
-                    duration = end_time - start_time
-                    time_per_word = duration / total_words
-                    
-                    # Create subtitle entry for each word
-                    for i, word in enumerate(words):
-                        word_start = start_time + (i * time_per_word)
-                        word_end = word_start + time_per_word
-                        
-                        # Write the word as its own subtitle
-                        srt_file.write(f"{counter}\n")
-                        srt_file.write(f"{format_time(word_start)} --> {format_time(word_end)}\n")
-                        srt_file.write(f"{word}\n\n")
-                        counter += 1
-        
-        # Apply subtitles with increased size, no border or outline, and center positioning
+        # Use memory-optimized ffmpeg settings
         subprocess.run([
-            'ffmpeg', '-i', video_path,
-            '-vf', f"subtitles={srt_path}:force_style='FontName=Arial,FontSize=32,PrimaryColour=&H{ffmpeg_color_hex},Alignment=10,BorderStyle=0,Outline=0,Shadow=0,Bold=1'",
-            '-c:a', 'copy', output_path, '-y'
+            'ffmpeg', 
+            # Limit memory usage
+            '-memory_size', '64M',
+            # Set buffer sizes very small
+            '-bufsize', '2M',
+            # Reduce input buffer size
+            '-probesize', '1M',
+            '-analyzeduration', '1M',
+            # Limit frame thread usage
+            '-thread_queue_size', '8',
+            # Process minimal amount of the input initially
+            '-fflags', 'nobuffer',
+            # Skip ahead decoding to reduce memory
+            '-skip_frame', 'nokey',
+            # Lower frame rate to reduce processing load
+            '-r', '15',
+            # Input files
+            '-i', user_video, 
+            '-i', template_video,
+            # Efficient filter chain with less memory usage
+            '-filter_complex',
+            f'[0:v]fps=15,scale={width}:{segment_height}:force_original_aspect_ratio=increase:sws_flags=fast_bilinear,crop={width}:{segment_height},setsar=1[top];'
+            f'[1:v]fps=15,scale={width}:{segment_height}:force_original_aspect_ratio=increase:sws_flags=fast_bilinear,crop={width}:{segment_height},setsar=1[bottom];'
+            f'[top][bottom]vstack=inputs=2[outv]',
+            # Map only needed streams
+            '-map', '[outv]', 
+            # Only include audio if needed, comment this out to save more memory
+            '-map', '0:a',
+            # Extreme memory-saving encoding settings
+            '-c:v', 'libx264', 
+            '-preset', 'ultrafast',  # Lowest memory usage
+            '-crf', '35',           # Higher compression (lower quality but less memory)
+            # Explicitly limit threads
+            '-threads', '2',        # Force lower thread count to reduce memory
+            # Very low audio settings
+            '-c:a', 'aac', 
+            '-b:a', '32k',          # Very low bitrate
+            '-ac', '1',             # Mono audio
+            '-ar', '22050',         # Lower sample rate
+            # Process less data in memory at once
+            '-max_muxing_queue_size', '128',
+            '-shortest',
+            output_path, 
+            '-y'
         ], check=True)
         
-        # Clean up the temporary SRT file
-        if os.path.exists(srt_path):
-            os.remove(srt_path)
-    except Exception as e:
-        print(f"Error adding subtitles: {str(e)}")
-        # If subtitles fail, just copy the video
-        subprocess.run(['cp', video_path, output_path], check=True)
+    except subprocess.CalledProcessError as e:
+        if "SIGKILL" in str(e):
+            print("Process killed due to memory constraints. Try with smaller videos.")
+            # Create fallback version with even more aggressive memory settings
+            try:
+                print("Attempting emergency fallback processing with minimal settings...")
+                subprocess.run([
+                    'ffmpeg',
+                    # Extreme memory limitations
+                    '-memory_size', '32M',
+                    '-bufsize', '1M',
+                    '-probesize', '512K',
+                    '-thread_queue_size', '4',
+                    # Drop frames aggressively
+                    '-r', '10',
+                    # Input files with minimal processing
+                    '-i', user_video,
+                    '-i', template_video,
+                    # Simplest possible filter with tiny output
+                    '-filter_complex',
+                    f'[0:v]fps=10,scale=180:160:sws_flags=fast_bilinear[top];'
+                    f'[1:v]fps=10,scale=180:160:sws_flags=fast_bilinear[bottom];'
+                    f'[top][bottom]vstack=inputs=2[outv]',
+                    '-map', '[outv]',
+                    # Skip audio to save memory
+                    # Lowest possible quality settings
+                    '-c:v', 'libx264',
+                    '-preset', 'ultrafast',
+                    '-crf', '40',
+                    '-threads', '1',
+                    '-g', '250',           # Keyframe every 25 seconds
+                    '-sc_threshold', '0',  # Disable scene detection
+                    output_path,
+                    '-y'
+                ], check=True)
+                print("Emergency fallback processing completed successfully.")
+            except subprocess.CalledProcessError as fallback_error:
+                print(f"Emergency fallback processing also failed: {fallback_error}")
+                raise
+        else:
+            print(f"Error during processing: {e}")
+            raise
 
 
 def format_time(seconds):
