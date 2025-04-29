@@ -196,33 +196,60 @@ def generate_transcript(audio_path):
 
 
 def create_split_screen(user_video, template_video, output_path):
-    """Create split-screen video with 9:16 ratio with proper centering and scaling"""
+    """Create split-screen video with 9:16 ratio with proper centering and scaling.
+    Optimized for faster processing and lower memory usage."""
     # Target dimensions (9:16 aspect ratio)
     width = 360
     height = 640
     segment_height = height // 2  # Each video gets half the height
     
     try:
+        # Use more efficient ffmpeg settings
         subprocess.run([
-            'ffmpeg', '-i', user_video, '-i', template_video,
+            'ffmpeg', 
+            '-i', user_video, 
+            '-i', template_video,
+            # Skip unnecessary decoding
+            '-vsync', '0',
+            # More efficient filter chain
             '-filter_complex',
-            f'''
-            [0:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,
-                crop={width}:{segment_height},setsar=1[top];
-            [1:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,
-                crop={width}:{segment_height},setsar=1[bottom];
-            [top][bottom]vstack=inputs=2[outv]
-            ''',
-            '-map', '[outv]', '-map', '0:a',
-            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '30',
-            '-c:a', 'aac', '-b:a', '64k',
-            '-threads', '2',
+            f'[0:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,crop={width}:{segment_height},setsar=1[top];'
+            f'[1:v]scale={width}:{segment_height}:force_original_aspect_ratio=increase,crop={width}:{segment_height},setsar=1[bottom];'
+            f'[top][bottom]vstack=inputs=2[outv]',
+            # Map only needed streams
+            '-map', '[outv]', 
+            '-map', '0:a',
+            # Hardware acceleration if available (uncomment the appropriate one for your system)
+            # '-hwaccel', 'auto',  # For automatic hardware selection
+            # '-c:v', 'h264_nvenc',  # For NVIDIA GPU
+            # '-c:v', 'h264_amf',   # For AMD GPU
+            # '-c:v', 'h264_qsv',   # For Intel Quick Sync
+            # More efficient encoding settings
+            '-c:v', 'libx264', 
+            '-preset', 'veryfast',  # Faster than ultrafast with minimal quality loss
+            '-tune', 'fastdecode',  # Optimize for decoding speed
+            '-crf', '30',
+            # Improve threading
+            '-threads', '0',        # Auto-detect optimal thread count
+            # Reduced audio bitrate
+            '-c:a', 'aac', 
+            '-b:a', '48k',          # Lower than original but still acceptable
+            '-ac', '1',             # Mono audio to save bandwidth
+            # Limit input processing
+            '-max_muxing_queue_size', '1024',
             '-shortest',
-            output_path, '-y'
+            # Avoid unnecessary metadata
+            '-metadata', 'title=', 
+            '-fflags', '+bitexact',
+            output_path, 
+            '-y'
         ], check=True)
+        
     except subprocess.CalledProcessError as e:
         if "SIGKILL" in str(e):
             print("Process killed due to memory constraints. Try with smaller videos.")
+        else:
+            print(f"Error during processing: {e}")
         raise
 
 

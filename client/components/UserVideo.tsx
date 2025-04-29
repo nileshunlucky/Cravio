@@ -27,10 +27,10 @@ const UserVideo: React.FC<UserVideoProps> = ({ value, onChange }) => {
       const file = e.target.files[0];
       setIsLoading(true);
       
-      // Check file size (30MB = 30 * 1024 * 1024 bytes)
-      const maxSize = 30 * 1024 * 1024;
+      // Check file size (10MB = 10 * 1024 * 1024 bytes)
+      const maxSize = 10 * 1024 * 1024;
       if (file.size > maxSize) {
-        toast.error("Video size must be less than 30MB");
+        toast.error("Video size must be less than 10MB");
         e.target.value = '';
         setIsLoading(false);
         return;
@@ -46,9 +46,9 @@ const UserVideo: React.FC<UserVideoProps> = ({ value, onChange }) => {
       video.onloadedmetadata = () => {
         URL.revokeObjectURL(objectUrl);
         
-        // Check video duration (60 seconds = 1 minute)
-        if (video.duration > 60) {
-          toast.error("Video length must be less than 1 minute");
+        // Check video duration (30 seconds)
+        if (video.duration > 30) {
+          toast.error("Video length must be less than 30 seconds");
           e.target.value = '';
           setIsLoading(false);
           return;
