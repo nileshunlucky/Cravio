@@ -9,13 +9,6 @@ import { X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner' // Assuming you have a toast component
 import { useUser } from '@clerk/nextjs'
 
-// Extend the Window interface to include Razorpay
-declare global {
-    interface Window {
-        Razorpay?: RazorpayConstructor;
-    }
-}
-
 // Define Razorpay types
 interface RazorpayConstructor {
     new(options: RazorpayOptions): RazorpayInstance;
@@ -47,15 +40,19 @@ interface RazorpayResponse {
     razorpay_signature: string;
 }
 
+
+interface WindowWithRazorpay extends Window {
+    Razorpay?: RazorpayConstructor;
+}
+
 const Offer = () => {
-    const {user} = useUser()
+    const { user } = useUser()
     const [timeLeft, setTimeLeft] = useState('')
     const [show, setShow] = useState(true)
     const [loading, setLoading] = useState(false)
     const email = user?.primaryEmailAddress?.emailAddress
 
     useEffect(() => {
-
         let offerEnds: Date
 
         // Try to get the deadline from localStorage
@@ -155,7 +152,7 @@ const Offer = () => {
                         }
 
                         const result = await verifyResponse.json()
-                        
+
                         // Success message
                         toast.success("Payment Successful!", {
                             description: `You have been credited with ${result.credits} credits`
@@ -177,12 +174,15 @@ const Offer = () => {
             }
 
             // Load Razorpay script if not already loaded
-            if (!window.Razorpay) {
+            // Use type assertion here
+            const customWindow = window as WindowWithRazorpay;
+
+            if (!customWindow.Razorpay) {
                 await loadRazorpay()
             }
 
-            if (window.Razorpay) {
-                const razorpayInstance = new window.Razorpay(options)
+            if (customWindow.Razorpay) {
+                const razorpayInstance = new customWindow.Razorpay(options)
                 razorpayInstance.open()
             }
 
@@ -198,11 +198,16 @@ const Offer = () => {
         return new Promise<void>((resolve, reject) => {
             const script = document.createElement('script')
             script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-            script.onload = () => resolve()
+            script.onload = () => {
+                 // After the script loads, the Razorpay object should be on window.
+                 // We resolve the promise.
+                 resolve();
+            }
             script.onerror = () => reject()
             document.body.appendChild(script)
         })
     }
+
 
     // Check if offer already claimed
     useEffect(() => {
@@ -211,6 +216,7 @@ const Offer = () => {
             setShow(false)
         }
     }, [])
+
 
     if (!show || timeLeft === 'Expired') return null
 
@@ -225,7 +231,7 @@ const Offer = () => {
             style={{ backdropFilter: 'blur(4px)', backgroundColor: 'rgba(0, 0, 0, 0.1)' }}
             onClick={(e) => {
                 if (e.target === e.currentTarget) {
-                    // setShow(false);
+                    // setShow(false); // Decide if clicking outside closes it
                 }
             }}
         >
@@ -302,7 +308,7 @@ const Offer = () => {
                             }}
                             className="w-full"
                         >
-                            <Button 
+                            <Button
                                 className="w-full bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white px-8 py-3 text-lg font-semibold rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
                                 onClick={handleSubmit}
                                 disabled={loading}
