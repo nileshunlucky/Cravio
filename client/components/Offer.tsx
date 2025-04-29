@@ -165,7 +165,7 @@ const Offer = () => {
                         setShow(false)
                         localStorage.setItem('offerClaimed', 'true')
                     } catch (err) {
-                        toast.error("Something went wrong during payment verification")
+                        toast.error(`Something went wrong during payment verification ${err instanceof Error ? err.message : String(err)}`)
                     }
                 },
                 prefill: {
@@ -187,7 +187,7 @@ const Offer = () => {
             }
 
         } catch (err) {
-            toast("Something went wrong")
+            toast.error(`Something went wrong during payment: ${err instanceof Error ? err.message : String(err)}`)
         } finally {
             setLoading(false)
         }
