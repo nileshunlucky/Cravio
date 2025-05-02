@@ -33,6 +33,19 @@ cloudinary.config(
 class YouTubeRequest(BaseModel):
     youtube_url: str
 
+COOKIES_FILE_PATH = (os.getenv("YT_COOKIES_PATH") )
+def get_ydl_options(base_options: dict) -> dict:
+    """Add common options including cookies if available"""
+    if os.path.exists(COOKIES_FILE_PATH):
+        base_options.update({
+            'cookiefile': COOKIES_FILE_PATH,
+            'merge_output_format': 'mp4'
+        })
+        logger.info("Using YouTube cookies for authentication")
+    else:
+        logger.warning("No YouTube cookies found. Some downloads might be restricted.")
+    return base_options
+
 def sanitize_filename(filename):
     """Removes or replaces characters unsuitable for filenames."""
     # Remove invalid characters
@@ -66,10 +79,11 @@ async def process_youtube(request: YouTubeRequest):
     try:
         # 1. Extract video info using yt-dlp without downloading yet
         logger.info("Extracting video information...")
-        ydl_opts_info = {
-             'quiet': True,
-             'noplaylist': True,
-        }
+        ydl_opts_info = get_ydl_options({
+            'quiet': True,
+            'noplaylist': True,
+            'skip_download': True
+        })
         with yt_dlp.YoutubeDL(ydl_opts_info) as ydl:
              info_dict = ydl.extract_info(youtube_url, download=False)
         
@@ -94,13 +108,13 @@ async def process_youtube(request: YouTubeRequest):
 
         # 3. Download the video using yt-dlp
         logger.info(f"Attempting to download video to template: {download_template}")
-        ydl_opts_download = {
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best', # Prefer mp4
+        ydl_opts_download = get_ydl_options({
+            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
             'outtmpl': download_template,
             'quiet': True,
             'noplaylist': True,
-            # 'progress_hooks': [lambda d: logger.info(f"Download status: {d['status']}")], # Optional: for progress logging
-        }
+            'writethumbnail': True
+        })
 
         with yt_dlp.YoutubeDL(ydl_opts_download) as ydl:
             ydl.download([youtube_url])
