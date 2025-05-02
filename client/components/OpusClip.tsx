@@ -21,7 +21,7 @@ export default function OpusClipSimplePage() {
     const processingRef = useRef(false);
     const initialRenderRef = useRef(true);
 
-    // Validate YouTube URL function
+    // Improved YouTube URL validation function
     const validateYoutubeUrl = (url: string) => {
         if (!url) return false;
 
@@ -38,14 +38,39 @@ export default function OpusClipSimplePage() {
         return regexps.some(regex => regex.test(cleanUrl));
     };
 
-    // Helper function to sanitize YouTube URL
+    // Improved sanitization function
     const sanitizeYoutubeUrl = (url: string) => {
         try {
+            // First handle the case where the URL might not be valid
+            if (!url.startsWith('http')) {
+                url = 'https://' + url;
+            }
+            
             const parsed = new URL(url);
-
-            // Remove any unnecessary query parameters (like `si`)
+    
+            // Remove tracking parameters
             parsed.searchParams.delete('si');
-
+            
+            // Other parameters that might cause issues
+            parsed.searchParams.delete('list');
+            parsed.searchParams.delete('index');
+            parsed.searchParams.delete('t'); // Timestamp parameter
+            
+            // Keep only the v parameter for youtube.com
+            if (parsed.hostname.includes('youtube.com')) {
+                const videoId = parsed.searchParams.get('v');
+                if (videoId) {
+                    // Create a clean URL with just the video ID
+                    parsed.search = '?v=' + videoId;
+                }
+            } else if (parsed.hostname.includes('youtu.be')) {
+                // For youtu.be links, keep only the path which contains the ID
+                const videoId = parsed.pathname.split('/')[1];
+                if (videoId) {
+                    // No need to modify, the path is already clean
+                }
+            }
+    
             // Return the sanitized URL
             return parsed.toString();
         } catch (error) {
@@ -123,6 +148,7 @@ export default function OpusClipSimplePage() {
         }
     };
 
+    // Improved error handling in the process function
     const handleProcess = async (ytLink: string | null = null, uploadedFile: File | null = null) => {
         const linkToProcess = ytLink || youtubeLink;
         const fileToProcess = uploadedFile || file;
@@ -151,13 +177,17 @@ export default function OpusClipSimplePage() {
             if (linkValid) {
                 // Process YouTube link
                 console.log('Processing YouTube link:', linkToProcess);
+                
+                // Sanitize YouTube URL first
+                const sanitizedLink = sanitizeYoutubeUrl(linkToProcess);
+                console.log('Sanitized link:', sanitizedLink);
 
                 response = await fetch(`https://cravio-ai.onrender.com/process-youtube`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ youtube_url: linkToProcess, use_invidious: true}),
+                    body: JSON.stringify({ youtube_url: sanitizedLink}),
                 });
             } else if (fileToProcess) {
                 // Process file upload
@@ -173,11 +203,34 @@ export default function OpusClipSimplePage() {
             }
 
             if (!response?.ok) {
+                // Properly handle the error response
                 const errorData = await response?.json();
-                throw new Error(errorData?.detail || 'Failed to process request');
+                console.error('API Error:', errorData);
+                
+                // Extract meaningful error message
+                let errorMessage = 'Failed to process request';
+                if (errorData?.detail) {
+                    // Handle case where detail is an object with message
+                    if (typeof errorData.detail === 'object' && errorData.detail.message) {
+                        errorMessage = errorData.detail.message;
+                        
+                        // Also log possible solutions if available
+                        if (errorData.detail.possible_solutions) {
+                            console.info('Possible solutions:', errorData.detail.possible_solutions);
+                            
+                            // Show solutions in toast
+                            const solutions = errorData.detail.possible_solutions.join(', ');
+                            errorMessage += `. Possible solutions: ${solutions}`;
+                        }
+                    } else {
+                        errorMessage = errorData.detail;
+                    }
+                }
+                
+                throw new Error(errorMessage);
             }
 
-            const result = await response?.json()
+            const result = await response?.json();
             console.log('Processing result:', result);
             setThumbnail(result?.thumbnail_url);
 
@@ -318,15 +371,6 @@ export default function OpusClipSimplePage() {
                         </Button>
                     </motion.div>
                 </div>
-            </motion.div>
-            <motion.div className="aspect-video w-full">
-                {thumbnail && (
-                    <img
-                        src={thumbnail || ""}
-                        alt="Thumbnail"
-                        className="object-cover"
-                    />
-                )}
             </motion.div>
 
         </div>
