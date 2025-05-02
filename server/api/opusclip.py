@@ -45,13 +45,13 @@ def get_ydl_options() -> dict:
     # Try to use cookies file if it exists
     if os.path.exists(YOUTUBE_COOKIES_PATH) and os.path.getsize(YOUTUBE_COOKIES_PATH) > 0:
         logger.info(f"Using cookies file at: {YOUTUBE_COOKIES_PATH}")
-        options['cookies'] = YOUTUBE_COOKIES_PATH
+        options['cookiefile'] = YOUTUBE_COOKIES_PATH    
     else:
         # Fallback to cookiesfrombrowser if available (works better on some systems)
         browser_name, browser_path = _detect_browser()
         if browser_name and browser_path:
             logger.info(f"Using cookies from browser: {browser_name} at {browser_path}")
-            options['cookiesfrombrowser'] = (browser_name, browser_path, None, None)
+            options['cookiesfrombrowser'] = browser_name      # ← only the browser key
         else:
             logger.warning("No cookies file or browser profile found. YouTube authentication may fail.")
     
