@@ -26,6 +26,9 @@ cloudinary.config(
     secure=True
 )
 
+# Define the path for the YouTube cookies file
+# Using an absolute path might be safer in deployment if the working directory varies
+# For Render, you need to ensure this file is included in your build/deployment
 YOUTUBE_COOKIES_PATH = "youtube_cookies.txt"
 
 class YouTubeRequest(BaseModel):
@@ -37,6 +40,7 @@ def get_ydl_options() -> dict:
         'noplaylist': True,
         'quiet': True,
         'no_warnings': True,
+        # Use the cookies file defined globally
         'cookies': YOUTUBE_COOKIES_PATH,
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
     }
@@ -45,6 +49,16 @@ def get_ydl_options() -> dict:
 async def process_youtube(request: YouTubeRequest):
     youtube_url = request.youtube_url
 
+    # --- ADDED CHECK FOR COOKIE FILE EXISTENCE ---
+    if not os.path.exists(YOUTUBE_COOKIES_PATH):
+        logger.error(f"YouTube cookies file not found at: {YOUTUBE_COOKIES_PATH}")
+        # Raise a specific HTTP exception
+        raise HTTPException(
+            status_code=500, # Using 500 as this is an internal configuration issue
+            detail=f"Server configuration error: Required YouTube cookies file not found at {YOUTUBE_COOKIES_PATH}. Please ensure it's deployed correctly."
+        )
+    # --- END OF ADDED CHECK ---
+
     try:
         with tempfile.TemporaryDirectory() as tmp_dir:
             # Configure download options
@@ -52,6 +66,7 @@ async def process_youtube(request: YouTubeRequest):
             ydl_opts['outtmpl'] = os.path.join(tmp_dir, '%(title)s.%(ext)s')
 
             # Download video
+            # The yt-dlp call is now inside the try block *after* the file check
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info_dict = ydl.extract_info(youtube_url, download=True)
                 video_path = ydl.prepare_filename(info_dict)
@@ -86,10 +101,11 @@ async def process_youtube(request: YouTubeRequest):
 
     except yt_dlp.utils.DownloadError as e:
         logger.error(f"YouTube download failed: {str(e)}")
-        raise HTTPException(400, detail="Failed to download YouTube video")
+        # Keep the existing error handler for yt-dlp specific failures
+        raise HTTPException(400, detail=f"Failed to download YouTube video: {e}") # Include error detail from yt-dlp for more info
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        raise HTTPException(500, detail="Internal server error")
+        logger.error(f"Unexpected error during YouTube processing: {str(e)}") # More specific log message
+        raise HTTPException(500, detail="Internal server error during video processing") # More specific HTTP exception detail
 
 @router.post("/upload-file")
 async def upload_file(file: UploadFile = File(...)):
@@ -108,9 +124,18 @@ async def upload_file(file: UploadFile = File(...)):
         return {
             "status": "success",
             "file_url": upload_result['secure_url'],
+            # Note: Generating a thumbnail URL this way is speculative
+            # Cloudinary generates thumbnails automatically for video resources.
+            # This URL construction assumes a default transformation, which might not always work.
+            # Relying on Cloudinary's derived resources or explicit thumbnail generation
+            # is generally more robust.
             "thumbnail_url": upload_result.get('secure_url', '').rsplit('.', 1)[0] + '.jpg',
             "resource_id": upload_result['public_id']
         }
+    except Exception as e:
+         logger.error(f"Unexpected error during file upload: {str(e)}") # Specific log
+         raise HTTPException(500, detail="Internal server error during file upload") # Specific HTTP exception
     finally:
-        if os.path.exists(tmp_path):
+        # Ensure the temporary file is cleaned up
+        if 'tmp_path' in locals() and os.path.exists(tmp_path):
             os.remove(tmp_path)
