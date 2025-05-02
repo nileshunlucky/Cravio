@@ -157,7 +157,7 @@ export default function OpusClipSimplePage() {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ youtube_url: linkToProcess }),
+                    body: JSON.stringify({ youtube_url: linkToProcess, use_invidious: true}),
                 });
             } else if (fileToProcess) {
                 // Process file upload
