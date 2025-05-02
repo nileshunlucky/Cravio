@@ -8,6 +8,9 @@ import tempfile
 import shutil
 from pydantic import BaseModel
 import logging
+from dotenv import load_dotenv
+load_dotenv()
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -23,6 +26,8 @@ cloudinary.config(
     secure=True
 )
 
+YOUTUBE_COOKIES_PATH = os.getenv("YOUTUBE_COOKIES_PATH")
+
 class YouTubeRequest(BaseModel):
     youtube_url: str
 
@@ -32,6 +37,7 @@ def get_ydl_options() -> dict:
         'noplaylist': True,
         'quiet': True,
         'no_warnings': True,
+        'cookies': YOUTUBE_COOKIES_PATH,
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
     }
 
