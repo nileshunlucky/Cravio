@@ -24,15 +24,34 @@ export default function OpusClipSimplePage() {
     const validateYoutubeUrl = (url: string) => {
         if (!url) return false;
         
+        // Sanitize URL: Remove unnecessary query params (like `si`)
+        const cleanUrl = sanitizeYoutubeUrl(url);
+        
         // Regular expressions for different YouTube URL formats
         const regexps = [
             /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/,
             /^(https?:\/\/)?(www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11}).*$/,
-            /^(https?:\/\/)?(www\.)?youtu\.be\/([a-zA-Z0-9_-]{11}).*$/
+            /^(https?:\/\/)?(www\.)?youtu\.be\/([a-zA-Z0-9_-]{11}).*$/,
         ];
         
-        return regexps.some(regex => regex.test(url));
+        return regexps.some(regex => regex.test(cleanUrl));
     };
+    
+    // Helper function to sanitize YouTube URL
+    const sanitizeYoutubeUrl = (url: string) => {
+        try {
+            const parsed = new URL(url);
+            
+            // Remove any unnecessary query parameters (like `si`)
+            parsed.searchParams.delete('si');
+            
+            // Return the sanitized URL
+            return parsed.toString();
+        } catch (error) {
+            console.error("Invalid URL", error);
+            return url; // Return the original URL if it fails to parse
+        }
+    };    
 
     // Handle paste event directly
     useEffect(() => {

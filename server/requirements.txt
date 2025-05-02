@@ -17,4 +17,4 @@ email-validator
 celery
 redis
 pytz
-pytube
+yt-dlp
