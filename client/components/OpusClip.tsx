@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Link, CloudUpload, Loader2 } from 'lucide-react';
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import Image from 'next/image';
 
 // Define a utility function to conditionally join classNames
 const cn = (...classes: (string | undefined | null | false)[]) => {
@@ -322,10 +321,9 @@ export default function OpusClipSimplePage() {
             </motion.div>
             <motion.div className="aspect-video w-full">
                 {thumbnail && (
-                    <Image
-                        src={thumbnail}
+                    <img
+                        src={thumbnail || ""}
                         alt="Thumbnail"
-                        fill
                         className="object-cover"
                     />
                 )}
