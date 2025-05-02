@@ -26,7 +26,7 @@ cloudinary.config(
     secure=True
 )
 
-YOUTUBE_COOKIES_PATH = os.getenv("YOUTUBE_COOKIES_PATH")
+YOUTUBE_COOKIES_PATH = "youtube_cookies.txt"
 
 class YouTubeRequest(BaseModel):
     youtube_url: str
