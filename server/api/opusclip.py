@@ -218,147 +218,53 @@ async def process_youtube(request: YouTubeRequest, background_tasks: BackgroundT
     youtube_url = request.youtube_url
     logger.info(f"Processing YouTube URL: {youtube_url}")
     
-    # Handle YouTube Shorts URLs
+    # Convert YouTube Shorts URL to normal
     if "/shorts/" in youtube_url:
-        # Convert shorts URL to standard watch URL
         video_id = youtube_url.split("/shorts/")[1].split("?")[0]
         youtube_url = f"https://www.youtube.com/watch?v={video_id}"
-        logger.info(f"Converted YouTube Shorts URL to: {youtube_url}")
+        logger.info(f"Converted Shorts URL to: {youtube_url}")
 
-    # First check if we need to refresh cookies
     refresh_cookies_if_needed(background_tasks)
 
     try:
         with tempfile.TemporaryDirectory() as tmp_dir:
-            # Configure download options
             ydl_opts = get_ydl_options()
             ydl_opts['outtmpl'] = os.path.join(tmp_dir, '%(title)s.%(ext)s')
             
-            # First try to extract info without downloading to check authentication
-            try:
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    logger.info("Extracting video info...")
-                    info_dict = ydl.extract_info(youtube_url, download=False)
-                    
-                    # If info extraction successful, proceed with download
-                    logger.info(f"Successfully authenticated. Downloading video: {info_dict.get('title', youtube_url)}")
-                    info_dict = ydl.extract_info(youtube_url, download=True)
-                    video_path = ydl.prepare_filename(info_dict)
-                    
-                    if not os.path.exists(video_path):
-                        # Try alternate filename pattern if the expected file doesn't exist
-                        possible_files = [f for f in os.listdir(tmp_dir) if os.path.isfile(os.path.join(tmp_dir, f))]
-                        if possible_files:
-                            video_path = os.path.join(tmp_dir, possible_files[0])
-                            logger.info(f"Using alternate video path: {video_path}")
-                        else:
-                            raise FileNotFoundError("Download completed but video file not found")
-                    
-            except yt_dlp.utils.DownloadError as e:
-                error_msg = str(e)
-                logger.error(f"YouTube download failed: {error_msg}")
-                
-                # Try to refresh cookies and retry if it's an authentication error
-                if "Sign in to confirm you're not a bot" in error_msg:
-                    logger.info("Attempting to refresh cookies and retry...")
-                    refresh_cookies()
-                    
-                    # Try again with fresh options
-                    try:
-                        ydl_opts = get_ydl_options()  # Get fresh options
-                        ydl_opts['outtmpl'] = os.path.join(tmp_dir, '%(title)s.%(ext)s')
-                        
-                        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                            info_dict = ydl.extract_info(youtube_url, download=True)
-                            video_path = ydl.prepare_filename(info_dict)
-                            logger.info(f"Retry successful for: {info_dict.get('title', youtube_url)}")
-                    except Exception as retry_e:
-                        retry_error = str(retry_e).lower()
-                        # Return appropriate HTTP status codes rather than wrapping in 500
-                        if "sign in to confirm" in retry_error:
-                            raise HTTPException(
-                                status_code=401,
-                                detail="YouTube authentication required. The server needs valid authentication to access this video."
-                            )
-                        elif "private video" in retry_error:
-                            raise HTTPException(
-                                status_code=403,
-                                detail="This YouTube video is private and cannot be accessed."
-                            )
-                        elif any(phrase in retry_error for phrase in [
-                            "video is unavailable", "video unavailable", "does not exist", "not found"
-                        ]):
-                            raise HTTPException(
-                                status_code=404,
-                                detail="The requested YouTube video is unavailable or does not exist."
-                            )
-                        else:
-                            raise HTTPException(
-                                status_code=400,
-                                detail=f"Failed to download YouTube video: {str(retry_e)}"
-                            )
-                else:
-                    error_msg_lower = error_msg.lower()
-                    # Return appropriate HTTP status codes rather than wrapping in 500
-                    if "private video" in error_msg_lower:
-                        raise HTTPException(
-                            status_code=403,
-                            detail="This YouTube video is private and cannot be accessed."
-                        )
-                    elif any(phrase in error_msg_lower for phrase in [
-                        "video is unavailable", "video unavailable", "does not exist", "not found"
-                    ]):
-                        raise HTTPException(
-                            status_code=404,
-                            detail="The requested YouTube video is unavailable or does not exist."
-                        )
-                    else:
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Failed to download YouTube video: {error_msg}"
-                        )
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                logger.info("Extracting and downloading video...")
+                info_dict = ydl.extract_info(youtube_url, download=True)
+                video_path = ydl.prepare_filename(info_dict)
 
-            # Upload video to Cloudinary
-            logger.info(f"Uploading video to Cloudinary: {video_path}")
-            video_upload = cloudinary.uploader.upload(
+            # Ensure the downloaded video exists
+            if not os.path.exists(video_path):
+                raise FileNotFoundError("Downloaded video not found")
+
+            # Upload to Cloudinary
+            logger.info(f"Uploading {video_path} to Cloudinary...")
+            upload_result = cloudinary.uploader.upload(
                 video_path,
                 resource_type="video",
-                folder="opusclip",
-                public_id=f"video_{uuid.uuid4().hex}"
+                folder="opusclip_youtube",
+                public_id=f"yt_{uuid.uuid4().hex}"
             )
 
-            # Handle thumbnail
-            thumbnail_url = None
-            if info_dict.get('thumbnail'):
-                try:
-                    logger.info(f"Uploading thumbnail from: {info_dict.get('thumbnail')}")
-                    thumbnail_upload = cloudinary.uploader.upload(
-                        info_dict['thumbnail'],
-                        resource_type="image",
-                        folder="opusclip/thumbnails",
-                        public_id=f"thumb_{uuid.uuid4().hex}"
-                    )
-                    thumbnail_url = thumbnail_upload['secure_url']
-                except Exception as e:
-                    logger.error(f"Thumbnail upload failed: {str(e)}")
+            # Clean up temp file
+            os.remove(video_path)
 
             return {
                 "status": "success",
-                "video_url": video_upload['secure_url'],
-                "thumbnail_url": thumbnail_url,
-                "title": info_dict.get('title', ''),
-                "duration": info_dict.get('duration', 0)
+                "title": info_dict.get('title'),
+                "video_url": upload_result['secure_url'],
+                "duration": info_dict.get('duration'),
+                "thumbnail": info_dict.get('thumbnail'),
+                "cloudinary_public_id": upload_result.get('public_id'),
             }
 
-    except HTTPException as he:
-        # Re-raise HTTP exceptions directly without wrapping
-        raise he
     except Exception as e:
-        logger.error(f"Unexpected error during YouTube processing: {str(e)}")
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Internal server error during video processing: {str(e)}"
-        )
+        logger.error(f"Error processing YouTube video: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to process and upload YouTube video")
+
 
 @router.get("/check-youtube-auth")
 async def check_youtube_auth():
