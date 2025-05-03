@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { Link, CloudUpload, Loader2, AlertCircle, CreditCard, X } from 'lucide-react';
+import { Link, CloudUpload, Loader2, AlertCircle} from 'lucide-react';
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
@@ -479,7 +479,6 @@ export default function OpusClip() {
     };
 
     const isSubmitEnabled = (isValidYoutubeLink || file) && !videoProcessed;
-    const canShowReprocessButton = videoProcessed && !isLoading;
 
     return (
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-1 sm:p-6 gap-7">
