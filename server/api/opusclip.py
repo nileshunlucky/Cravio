@@ -289,22 +289,34 @@ async def process_youtube(request: YouTubeRequest, background_tasks: BackgroundT
                                 detail=f"Failed to download YouTube video: {str(retry_e)}"
                             )
                 else:
-                    if "Private video" in error_msg:
+                    error_msg_lower = error_msg.lower()
+
+                    if "private video" in error_msg_lower:
                         raise HTTPException(
                             status_code=403,
                             detail="This YouTube video is private and cannot be accessed."
                         )
-                    elif "This video is unavailable" in error_msg or "Video unavailable" in error_msg:
+                    elif any(msg in error_msg_lower for msg in [
+                        "this video is unavailable", 
+                        "video unavailable", 
+                        "video does not exist", 
+                        "404 not found"
+                    ]):
                         raise HTTPException(
                             status_code=404,
                             detail="The requested YouTube video is unavailable or does not exist."
                         )
+                    elif "copyright" in error_msg_lower or "dmca" in error_msg_lower:
+                        raise HTTPException(
+                            status_code=451,  # Unavailable For Legal Reasons
+                            detail="This video has been removed or blocked due to copyright claims."
+                        )
                     else:
-                        # Generic download error
                         raise HTTPException(
                             status_code=400,
                             detail=f"Failed to download YouTube video: {error_msg}"
                         )
+
 
             # Upload video to Cloudinary
             logger.info(f"Uploading video to Cloudinary: {video_path}")

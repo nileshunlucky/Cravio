@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { Link, CloudUpload, Loader2 } from 'lucide-react';
+import { Link, CloudUpload, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
@@ -17,6 +17,7 @@ export default function OpusClipSimplePage() {
     const [isLoading, setIsLoading] = useState(false);
     const [thumbnail, setThumbnail] = useState<string | null>(null);
     const [isValidYoutubeLink, setIsValidYoutubeLink] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const processingRef = useRef(false);
     const initialRenderRef = useRef(true);
@@ -85,6 +86,9 @@ export default function OpusClipSimplePage() {
             const pasteText = e.clipboardData?.getData('text');
             if (pasteText && validateYoutubeUrl(pasteText)) {
                 setYoutubeLink(pasteText);
+                // Clear any previous errors
+                setErrorMessage(null);
+                
                 // Use setTimeout to allow state to update before validation
                 setTimeout(() => {
                     setIsValidYoutubeLink(true);
@@ -119,6 +123,7 @@ export default function OpusClipSimplePage() {
 
         if (!youtubeLink) {
             setIsValidYoutubeLink(false);
+            setErrorMessage(null);
             return;
         }
 
@@ -127,10 +132,13 @@ export default function OpusClipSimplePage() {
 
         // Only show error for invalid links when user has typed something
         if (!isValid && youtubeLink.length > 5) {
+            setErrorMessage("Please enter a valid YouTube link.");
             toast.error("Please enter a valid YouTube link.", {
                 position: "top-right",
                 duration: 2000,
             });
+        } else {
+            setErrorMessage(null);
         }
     }, [youtubeLink]);
 
@@ -138,6 +146,9 @@ export default function OpusClipSimplePage() {
         if (e.target.files?.[0]) {
             const newFile = e.target.files[0];
             setFile(newFile);
+            
+            // Clear any previous errors
+            setErrorMessage(null);
 
             // Process the file upload immediately
             setTimeout(() => {
@@ -148,10 +159,54 @@ export default function OpusClipSimplePage() {
         }
     };
 
+    // Clear inputs and errors
+    const resetForm = () => {
+        setYoutubeLink('');
+        setIsValidYoutubeLink(false);
+        setFile(null);
+        setErrorMessage(null);
+        
+        // Reset file input if it exists
+        const fileInput = document.getElementById('upload') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+    };
+
+    // Extracts video ID from YouTube URL
+    const getYoutubeVideoId = (url: string): string => {
+        try {
+            const parsed = new URL(url);
+            if (parsed.hostname.includes('youtube.com')) {
+                return parsed.searchParams.get('v') || '';
+            } else if (parsed.hostname.includes('youtu.be')) {
+                return parsed.pathname.split('/')[1] || '';
+            }
+            return '';
+        } catch {
+            return '';
+        }
+    };
+
+    // Function to pre-check if a YouTube video exists
+    const checkYoutubeVideoExists = async (videoId: string): Promise<boolean> => {
+        try {
+            // Use YouTube oEmbed API to check if video exists
+            const response = await fetch(
+                `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
+            );
+            return response.status === 200;
+        } catch (error) {
+            console.error("Error checking YouTube video:", error);
+            return false;
+        }
+    };
+
     // Improved error handling in the process function
     const handleProcess = async (ytLink: string | null = null, uploadedFile: File | null = null) => {
         const linkToProcess = ytLink || youtubeLink;
         const fileToProcess = uploadedFile || file;
+
+        // Clear previous errors
+        setErrorMessage(null);
 
         // Prevent multiple simultaneous processing
         if (processingRef.current || isLoading) return;
@@ -160,7 +215,9 @@ export default function OpusClipSimplePage() {
         const linkValid = linkToProcess ? validateYoutubeUrl(linkToProcess) : false;
 
         if (!linkValid && !fileToProcess) {
-            toast.error("Please provide a valid YouTube link or upload a file", {
+            const error = "Please provide a valid YouTube link or upload a file";
+            setErrorMessage(error);
+            toast.error(error, {
                 position: "top-center",
                 duration: 3000,
             });
@@ -181,6 +238,15 @@ export default function OpusClipSimplePage() {
                 // Sanitize YouTube URL first
                 const sanitizedLink = sanitizeYoutubeUrl(linkToProcess);
                 console.log('Sanitized link:', sanitizedLink);
+
+                // Pre-check if video exists (optional, can help prevent server error)
+                const videoId = getYoutubeVideoId(sanitizedLink);
+                if (videoId) {
+                    const videoExists = await checkYoutubeVideoExists(videoId);
+                    if (!videoExists) {
+                        throw new Error("This YouTube video is unavailable or doesn't exist. Please check the link and try again.");
+                    }
+                }
 
                 response = await fetch(`https://cravio-ai.onrender.com/process-youtube`, {
                     method: 'POST',
@@ -204,27 +270,44 @@ export default function OpusClipSimplePage() {
 
             if (!response?.ok) {
                 // Properly handle the error response
-                const errorData = await response?.json();
-                console.error('API Error:', errorData);
-                
-                // Extract meaningful error message
                 let errorMessage = 'Failed to process request';
-                if (errorData?.detail) {
-                    // Handle case where detail is an object with message
-                    if (typeof errorData.detail === 'object' && errorData.detail.message) {
-                        errorMessage = errorData.detail.message;
-                        
-                        // Also log possible solutions if available
-                        if (errorData.detail.possible_solutions) {
-                            console.info('Possible solutions:', errorData.detail.possible_solutions);
+                
+                try {
+                    const errorData = await response?.json();
+                    console.error('API Error:', errorData);
+                    
+                    // Extract meaningful error message
+                    if (errorData?.detail) {
+                        // Handle case where detail is an object with message
+                        if (typeof errorData.detail === 'object' && errorData.detail.message) {
+                            errorMessage = errorData.detail.message;
                             
-                            // Show solutions in toast
-                            const solutions = errorData.detail.possible_solutions.join(', ');
-                            errorMessage += `. Possible solutions: ${solutions}`;
+                            // Also log possible solutions if available
+                            if (errorData.detail.possible_solutions) {
+                                console.info('Possible solutions:', errorData.detail.possible_solutions);
+                                
+                                // Show solutions in toast
+                                const solutions = errorData.detail.possible_solutions.join(', ');
+                                errorMessage += `. Possible solutions: ${solutions}`;
+                            }
+                        } else {
+                            // Handle special cases in error messages for better UX
+                            if (typeof errorData.detail === 'string') {
+                                if (errorData.detail.includes("404") && errorData.detail.includes("unavailable")) {
+                                    errorMessage = "This YouTube video is unavailable or doesn't exist. Please check the link and try again.";
+                                } else if (errorData.detail.includes("private") || errorData.detail.includes("restricted")) {
+                                    errorMessage = "This video is private or has age restrictions. Please try another video.";
+                                } else {
+                                    errorMessage = errorData.detail;
+                                }
+                            } else {
+                                errorMessage = String(errorData.detail);
+                            }
                         }
-                    } else {
-                        errorMessage = errorData.detail;
                     }
+                } catch (parseError) {
+                    console.error("Error parsing response:", parseError);
+                    errorMessage = `Server error (${response?.status}): Please try again later`;
                 }
                 
                 throw new Error(errorMessage);
@@ -241,19 +324,14 @@ export default function OpusClipSimplePage() {
             });
 
             // Reset form after successful processing
-            if (linkValid) {
-                setYoutubeLink('');
-                setIsValidYoutubeLink(false);
-            } else if (fileToProcess) {
-                setFile(null);
-                // Reset file input
-                const fileInput = document.getElementById('upload') as HTMLInputElement;
-                if (fileInput) fileInput.value = '';
-            }
+            resetForm();
 
         } catch (error) {
             console.error('Processing error:', error);
-            toast.error(`Error: ${error instanceof Error ? error.message : 'Failed to process request'}`, {
+            const errorMsg = error instanceof Error ? error.message : 'Failed to process request';
+            setErrorMessage(errorMsg);
+            
+            toast.error(errorMsg, {
                 position: "top-center",
                 duration: 4000,
             });
@@ -318,6 +396,7 @@ export default function OpusClipSimplePage() {
                                 onClick={() => {
                                     setYoutubeLink('');
                                     setIsValidYoutubeLink(false);
+                                    setErrorMessage(null);
                                 }}
                                 className="text-zinc-400 text-sm md:text-base hover:text-white px-2 py-1 focus:outline-none underline flex-shrink-0 cursor-pointer"
                             >
@@ -325,6 +404,18 @@ export default function OpusClipSimplePage() {
                             </motion.p>
                         )}
                     </div>
+
+                    {/* Error message display */}
+                    {errorMessage && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-red-900/50 border border-red-700 rounded-lg text-red-200 text-sm"
+                        >
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            <p>{errorMessage}</p>
+                        </motion.div>
+                    )}
 
                     <div className="inline-block rounded-xl hover:bg-zinc-800 hover:text-white text-zinc-400 transition-colors duration-200">
                         <input
