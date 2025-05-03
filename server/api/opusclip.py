@@ -13,6 +13,7 @@ import aiofiles
 import shutil
 import logging
 from urllib.parse import urlparse, parse_qs
+from tasks.opusclip_task import process_video_file
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -355,3 +356,40 @@ async def delete_video(request: DeleteVideoRequest):
     except Exception as e:
         logger.error(f"Error deleting video from Cloudinary: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to delete video: {str(e)}")
+    
+# New endpoints that use Celery for processing
+@router.post("/opusclip/upload-file", response_model=ProcessingResponse)
+async def process_file_with_celery(
+    file: UploadFile = File(...),
+):
+    """Process an uploaded video file using Celery for background processing"""
+    if not file.content_type or "video" not in file.content_type:
+        raise HTTPException(status_code=400, detail="File must be a video")
+    
+    unique_id = uuid.uuid4().hex
+    video_path = os.path.join(TEMP_DIR, f"{unique_id}_{file.filename}")
+    
+    try:
+        # Save uploaded file
+        async with aiofiles.open(video_path, 'wb') as out_file:
+            content = await file.read()
+            await out_file.write(content)
+        
+        # Submit task to Celery
+        task = process_video_file.delay(video_path, file.filename)
+        
+        return ProcessingResponse(
+            video_url="pending",  # Will be updated when task completes
+            thumbnail_url="pending",  # Will be updated when task completes
+            message=f"Processing started for video: {file.filename}",
+            video_duration=0.0,  # Will be updated when task completes
+            credit_usage=0,      # Will be updated when task completes
+            task_id=task.id      # Include task ID for status checking
+        )
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        logger.error(f"Error processing uploaded file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to process uploaded file: {str(e)}")
