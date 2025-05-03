@@ -387,8 +387,8 @@ export default function OpusClip() {
                             placeholder="COMMING SOON"
                             value={youtubeLink}
                             onChange={(e) => setYoutubeLink(e.target.value)}
-                            className="flex-1 bg-transparent text-white border-none focus:outline-none focus:ring-0 placeholder:text-zinc-400 placeholder:font-medium placeholder:text-base md:placeholder:text-lg "
-                            
+                            className="flex-1 bg-transparent text-white border-none focus:outline-none focus:ring-0 placeholder:text-zinc-400 placeholder:font-medium placeholder:text-base md:placeholder:text-lg cursor-not-allowed"
+                            disabled
                         />
                         {youtubeLink && (
                             <motion.p

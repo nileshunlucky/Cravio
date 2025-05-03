@@ -8,7 +8,9 @@ import uuid
 import asyncio
 import cloudinary
 import cloudinary.uploader
+import cloudinary.api
 import aiofiles
+import shutil
 import logging
 from urllib.parse import urlparse, parse_qs
 
@@ -59,6 +61,8 @@ class ProcessingResponse(BaseModel):
     video_url: str
     thumbnail_url: str
     message: str
+    video_duration: Optional[float] = None
+    credit_usage: Optional[int] = None
 
 # Helper functions
 def get_video_id(youtube_url: str) -> str:
@@ -172,19 +176,57 @@ async def process_youtube(request: YouTubeRequest, background_tasks: BackgroundT
         thumbnail_path = download_results["thumbnail_path"]
         video_title = download_results["title"]
         
+        # Get video duration using ffprobe
+        duration_cmd = f"ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {video_path}"
+        duration_process = await asyncio.create_subprocess_shell(
+            duration_cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await duration_process.communicate()
+        
+        # Calculate video duration in minutes and credit usage
+        video_duration = 0.0
+        credit_usage = 0
+        
+        if duration_process.returncode == 0:
+            try:
+                # Get duration in seconds from ffprobe output
+                video_duration = float(stdout.decode().strip())
+                
+                # Convert to minutes
+                duration_minutes = video_duration / 60
+                
+                # Calculate credit usage: 1 minute = 5 credits
+                # Round up to ensure partial minutes count as full credits
+                credit_usage = int(max(1, 5 * round(duration_minutes + 0.5)))
+                
+                logger.info(f"Video duration: {video_duration} seconds ({duration_minutes:.2f} minutes)")
+                logger.info(f"Credit usage: {credit_usage} credits")
+            except ValueError as e:
+                logger.error(f"Error parsing video duration: {str(e)}")
+                # Default to minimum credit usage if parsing fails
+                credit_usage = 5
+        else:
+            logger.error(f"FFprobe error: {stderr.decode()}")
+            # Default to minimum credit usage if ffprobe fails
+            credit_usage = 5
+        
         # Upload video to Cloudinary
         video_upload = await upload_to_cloudinary(video_path, resource_type="video")
         
-        # Upload thumbnail to Cloudinary
-        thumbnail_upload = await upload_to_cloudinary(thumbnail_path, resource_type="image")
+        # Use video URL with .mp4 replaced by .png as thumbnail URL
+        thumbnail_url = video_upload.get("secure_url", "").replace('.mp4', '.png')
         
         # Schedule cleanup of temporary files
         background_tasks.add_task(cleanup_temp_files, [video_path, thumbnail_path])
         
         return ProcessingResponse(
             video_url=video_upload.get("secure_url"),
-            thumbnail_url=thumbnail_upload.get("secure_url"),
-            message=f"Successfully processed video: {video_title}"
+            thumbnail_url=thumbnail_url,
+            message=f"Successfully processed video: {video_title}",
+            video_duration=video_duration,
+            credit_usage=credit_usage
         )
     except HTTPException:
         # Re-raise HTTP exceptions
@@ -212,6 +254,42 @@ async def upload_file(
             content = await file.read()
             await out_file.write(content)
         
+        # Get video duration using ffprobe
+        duration_cmd = f"ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {video_path}"
+        duration_process = await asyncio.create_subprocess_shell(
+            duration_cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await duration_process.communicate()
+        
+        # Calculate video duration in minutes and credit usage
+        video_duration = 0.0
+        credit_usage = 0
+        
+        if duration_process.returncode == 0:
+            try:
+                # Get duration in seconds from ffprobe output
+                video_duration = float(stdout.decode().strip())
+                
+                # Convert to minutes
+                duration_minutes = video_duration / 60
+                
+                # Calculate credit usage: 1 minute = 5 credits
+                # Round up to ensure partial minutes count as full credits
+                credit_usage = int(max(1, 5 * round(duration_minutes + 0.5)))
+                
+                logger.info(f"Video duration: {video_duration} seconds ({duration_minutes:.2f} minutes)")
+                logger.info(f"Credit usage: {credit_usage} credits")
+            except ValueError as e:
+                logger.error(f"Error parsing video duration: {str(e)}")
+                # Default to minimum credit usage if parsing fails
+                credit_usage = 5
+        else:
+            logger.error(f"FFprobe error: {stderr.decode()}")
+            # Default to minimum credit usage if ffprobe fails
+            credit_usage = 5
+        
         # Generate thumbnail using ffmpeg (requires ffmpeg installation)
         ffmpeg_cmd = f"ffmpeg -i {video_path} -ss 00:00:01.000 -vframes 1 {thumbnail_path}"
         process = await asyncio.create_subprocess_shell(
@@ -228,16 +306,18 @@ async def upload_file(
         # Upload video to Cloudinary
         video_upload = await upload_to_cloudinary(video_path, resource_type="video")
         
-        # make thumbnail by video replace .mp4 to .png
+        # Use video URL with .mp4 replaced by .png as thumbnail URL
         thumbnail_url = video_upload.get("secure_url", "").replace('.mp4', '.png')
         
         # Schedule cleanup of temporary files
-        background_tasks.add_task(cleanup_temp_files, [video_path])
+        background_tasks.add_task(cleanup_temp_files, [video_path, thumbnail_path])
         
         return ProcessingResponse(
             video_url=video_upload.get("secure_url"),
             thumbnail_url=thumbnail_url,
-            message=f"Successfully processed uploaded video: {file.filename}"
+            message=f"Successfully processed uploaded video: {file.filename}",
+            video_duration=video_duration,
+            credit_usage=credit_usage
         )
     except HTTPException:
         # Re-raise HTTP exceptions
