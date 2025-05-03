@@ -229,7 +229,7 @@ async def upload_file(
         video_upload = await upload_to_cloudinary(video_path, resource_type="video")
         
         # make thumbnail by video replace .mp4 to .png
-        thumbnail_url = video_upload.replace('.mp4', '.png')
+        thumbnail_url = video_upload.get("secure_url", "").replace('.mp4', '.png')
         
         # Schedule cleanup of temporary files
         background_tasks.add_task(cleanup_temp_files, [video_path])
