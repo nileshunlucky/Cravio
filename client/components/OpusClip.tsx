@@ -11,7 +11,7 @@ const cn = (...classes: (string | undefined | null | false)[]) => {
     return classes.filter(Boolean).join(' ');
 };
 
-export default function OpusClipSimplePage() {
+export default function OpusClip() {
     const [youtubeLink, setYoutubeLink] = useState('');
     const [file, setFile] = useState<File | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -384,10 +384,11 @@ export default function OpusClipSimplePage() {
                             ref={inputRef}
                             id="youtube"
                             type="url"
-                            placeholder="Drop a YouTube link"
+                            placeholder="COMMING SOON"
                             value={youtubeLink}
                             onChange={(e) => setYoutubeLink(e.target.value)}
-                            className="flex-1 bg-transparent text-white border-none focus:outline-none focus:ring-0 placeholder:text-zinc-400 placeholder:font-medium placeholder:text-base md:placeholder:text-lg"
+                            className="flex-1 bg-transparent text-white border-none focus:outline-none focus:ring-0 placeholder:text-zinc-400 placeholder:font-medium placeholder:text-base md:placeholder:text-lg cursor-not-allowed"
+                            disabled
                         />
                         {youtubeLink && (
                             <motion.p

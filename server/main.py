@@ -171,7 +171,7 @@ def send_offer_emails():
     <html>
     <body>
         <p>Hello!</p>
-        <p>We're excited to offer you <b>100 credits for just ₹86</b>! This is a <b>limited-time offer only available for the next 7 days</b>.</p>
+        <p>We're excited to offer you <b>100 credits for just ₹86</b>! This is a <b>limited-time offer only available for the next 3 days</b>.</p>
         <p>
             <a href="https://cravioai.vercel.app" style="padding:10px 15px;background-color:#3B82F6;color:white;text-decoration:none;border-radius:6px;">
                 Claim Now
