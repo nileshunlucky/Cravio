@@ -290,19 +290,6 @@ async def upload_file(
             # Default to minimum credit usage if ffprobe fails
             credit_usage = 5
         
-        # Generate thumbnail using ffmpeg (requires ffmpeg installation)
-        ffmpeg_cmd = f"ffmpeg -i {video_path} -ss 00:00:01.000 -vframes 1 {thumbnail_path}"
-        process = await asyncio.create_subprocess_shell(
-            ffmpeg_cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await process.communicate()
-        
-        if process.returncode != 0:
-            logger.error(f"FFmpeg error: {stderr.decode()}")
-            raise HTTPException(status_code=500, detail="Failed to generate thumbnail from uploaded video")
-        
         # Upload video to Cloudinary
         video_upload = await upload_to_cloudinary(video_path, resource_type="video")
         

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { Link, CloudUpload, Loader2, AlertCircle } from 'lucide-react';
+import { Link, CloudUpload, Loader2, AlertCircle, CreditCard } from 'lucide-react';
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
@@ -16,6 +16,7 @@ export default function OpusClip() {
     const [file, setFile] = useState<File | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [thumbnail, setThumbnail] = useState<string | null>(null);
+    const [creditsUsed, setCreditsUsed] = useState<number | null>(null);
     const [isValidYoutubeLink, setIsValidYoutubeLink] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -169,6 +170,9 @@ export default function OpusClip() {
         // Reset file input if it exists
         const fileInput = document.getElementById('upload') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
+        
+        // Don't clear the thumbnail and credits after successful processing
+        // We specifically want to keep showing those
     };
 
     // Extracts video ID from YouTube URL
@@ -315,7 +319,13 @@ export default function OpusClip() {
 
             const result = await response?.json();
             console.log('Processing result:', result);
+            
+            // Set the thumbnail URL from the response
             setThumbnail(result?.thumbnail_url);
+            
+            // Set the credits used (assuming the API returns this)
+            // Use a default value if not provided
+            setCreditsUsed(result?.credits_used || 1);
 
             // Display success message with video URL
             toast.success("Processing successful!", {
@@ -323,7 +333,8 @@ export default function OpusClip() {
                 duration: 4000,
             });
 
-            // Reset form after successful processing
+            // Reset form inputs after successful processing
+            // but keep thumbnail and credits display
             resetForm();
 
         } catch (error) {
@@ -384,7 +395,7 @@ export default function OpusClip() {
                             ref={inputRef}
                             id="youtube"
                             type="url"
-                            placeholder="COMMING SOON"
+                            placeholder="COMING SOON"
                             value={youtubeLink}
                             onChange={(e) => setYoutubeLink(e.target.value)}
                             className="flex-1 bg-transparent text-white border-none focus:outline-none focus:ring-0 placeholder:text-zinc-400 placeholder:font-medium placeholder:text-base md:placeholder:text-lg cursor-not-allowed"
@@ -464,6 +475,46 @@ export default function OpusClip() {
                     </motion.div>
                 </div>
             </motion.div>
+
+            {/* Thumbnail and Credit Usage Display - Only shown after successful processing */}
+            {thumbnail && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                    className="w-full max-w-2xl"
+                >
+                    <div className="rounded-xl overflow-hidden border border-zinc-700 bg-zinc-900 shadow-xl">
+                        {/* Thumbnail with 16:9 aspect ratio */}
+                        <div className="relative w-full pb-[56.25%]">
+                            <img 
+                                src={thumbnail} 
+                                alt="Video thumbnail" 
+                                className="absolute inset-0 w-full h-full object-cover"
+                            />
+                            
+                            {/* Premium gradient overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-40" />
+                        </div>
+                        
+                        {/* Credit usage indicator */}
+                        <div className="p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <CreditCard className="w-5 h-5 text-yellow-500" />
+                                <div className="text-sm">
+                                    <span className="text-zinc-400">Credits used: </span>
+                                    <span className="font-medium text-white">{creditsUsed}</span>
+                                </div>
+                            </div>
+                            
+                            {/* Premium badge */}
+                            <div className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full text-xs font-bold text-black">
+                                PREMIUM
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
         </div>
     );
 }
