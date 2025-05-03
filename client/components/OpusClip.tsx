@@ -330,7 +330,7 @@ export default function OpusClipSimplePage() {
                         <input
                             id="upload"
                             type="file"
-                            accept="video/*,audio/*"
+                            accept="video/*"
                             onChange={handleFileChange}
                             className="hidden"
                         />
@@ -372,7 +372,6 @@ export default function OpusClipSimplePage() {
                     </motion.div>
                 </div>
             </motion.div>
-
         </div>
     );
 }

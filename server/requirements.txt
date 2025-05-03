@@ -18,3 +18,4 @@ celery
 redis
 pytz
 yt-dlp
+browser-cookie3
