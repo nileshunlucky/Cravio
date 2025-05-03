@@ -312,3 +312,46 @@ async def upload_file(
     except Exception as e:
         logger.error(f"Error processing uploaded file: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to process uploaded file: {str(e)}")
+    
+# Models
+class DeleteVideoRequest(BaseModel):
+    video_url: HttpUrl
+
+@router.post("/delete-video")
+async def delete_video(request: DeleteVideoRequest):
+    """Delete a video from Cloudinary storage"""
+    try:
+        # Extract public_id from the Cloudinary URL
+        parsed_url = urlparse(str(request.video_url))
+        path_parts = parsed_url.path.split('/')
+        
+        # Find the folder and filename
+        folder_index = -1
+        for i, part in enumerate(path_parts):
+            if part == "opusclip":  # The folder name from your upload function
+                folder_index = i
+                break
+        
+        if folder_index == -1 or folder_index + 1 >= len(path_parts):
+            raise HTTPException(status_code=400, detail="Invalid Cloudinary URL format")
+        
+        # Extract filename without extension
+        filename = os.path.splitext(path_parts[-1])[0]
+        
+        # Construct the public_id including the folder
+        public_id = "opusclip/" + filename
+        
+        logger.info(f"Attempting to delete video with public_id: {public_id}")
+        
+        # Delete the resource from Cloudinary
+        result = cloudinary.uploader.destroy(public_id, resource_type="video")
+        
+        if result.get("result") == "ok":
+            return {"message": "Video successfully deleted", "resource_id": public_id}
+        else:
+            logger.warning(f"Cloudinary deletion returned: {result}")
+            return {"message": "Video may not have been deleted", "result": result}
+            
+    except Exception as e:
+        logger.error(f"Error deleting video from Cloudinary: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete video: {str(e)}")
