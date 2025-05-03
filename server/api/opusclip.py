@@ -217,6 +217,13 @@ async def check_youtube_health(youtube_url: str):
 async def process_youtube(request: YouTubeRequest, background_tasks: BackgroundTasks):
     youtube_url = request.youtube_url
     logger.info(f"Processing YouTube URL: {youtube_url}")
+    
+    # Handle YouTube Shorts URLs
+    if "/shorts/" in youtube_url:
+        # Convert shorts URL to standard watch URL
+        video_id = youtube_url.split("/shorts/")[1].split("?")[0]
+        youtube_url = f"https://www.youtube.com/watch?v={video_id}"
+        logger.info(f"Converted YouTube Shorts URL to: {youtube_url}")
 
     # First check if we need to refresh cookies
     refresh_cookies_if_needed(background_tasks)
@@ -266,57 +273,50 @@ async def process_youtube(request: YouTubeRequest, background_tasks: BackgroundT
                             video_path = ydl.prepare_filename(info_dict)
                             logger.info(f"Retry successful for: {info_dict.get('title', youtube_url)}")
                     except Exception as retry_e:
-                        # If retry also fails, provide specific error messages
-                        if "Sign in to confirm you're not a bot" in str(retry_e):
+                        retry_error = str(retry_e).lower()
+                        # Return appropriate HTTP status codes rather than wrapping in 500
+                        if "sign in to confirm" in retry_error:
                             raise HTTPException(
                                 status_code=401,
                                 detail="YouTube authentication required. The server needs valid authentication to access this video."
                             )
-                        elif "Private video" in str(retry_e):
+                        elif "private video" in retry_error:
                             raise HTTPException(
                                 status_code=403,
                                 detail="This YouTube video is private and cannot be accessed."
                             )
-                        elif "This video is unavailable" in str(retry_e) or "Video unavailable" in str(retry_e):
+                        elif any(phrase in retry_error for phrase in [
+                            "video is unavailable", "video unavailable", "does not exist", "not found"
+                        ]):
                             raise HTTPException(
                                 status_code=404,
                                 detail="The requested YouTube video is unavailable or does not exist."
                             )
                         else:
-                            # Generic download error
                             raise HTTPException(
                                 status_code=400,
                                 detail=f"Failed to download YouTube video: {str(retry_e)}"
                             )
                 else:
                     error_msg_lower = error_msg.lower()
-
+                    # Return appropriate HTTP status codes rather than wrapping in 500
                     if "private video" in error_msg_lower:
                         raise HTTPException(
                             status_code=403,
                             detail="This YouTube video is private and cannot be accessed."
                         )
-                    elif any(msg in error_msg_lower for msg in [
-                        "this video is unavailable", 
-                        "video unavailable", 
-                        "video does not exist", 
-                        "404 not found"
+                    elif any(phrase in error_msg_lower for phrase in [
+                        "video is unavailable", "video unavailable", "does not exist", "not found"
                     ]):
                         raise HTTPException(
                             status_code=404,
                             detail="The requested YouTube video is unavailable or does not exist."
-                        )
-                    elif "copyright" in error_msg_lower or "dmca" in error_msg_lower:
-                        raise HTTPException(
-                            status_code=451,  # Unavailable For Legal Reasons
-                            detail="This video has been removed or blocked due to copyright claims."
                         )
                     else:
                         raise HTTPException(
                             status_code=400,
                             detail=f"Failed to download YouTube video: {error_msg}"
                         )
-
 
             # Upload video to Cloudinary
             logger.info(f"Uploading video to Cloudinary: {video_path}")
@@ -350,9 +350,15 @@ async def process_youtube(request: YouTubeRequest, background_tasks: BackgroundT
                 "duration": info_dict.get('duration', 0)
             }
 
+    except HTTPException as he:
+        # Re-raise HTTP exceptions directly without wrapping
+        raise he
     except Exception as e:
         logger.error(f"Unexpected error during YouTube processing: {str(e)}")
-        raise HTTPException(500, detail=f"Internal server error during video processing: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Internal server error during video processing: {str(e)}"
+        )
 
 @router.get("/check-youtube-auth")
 async def check_youtube_auth():
