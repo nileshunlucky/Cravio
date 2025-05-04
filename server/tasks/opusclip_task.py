@@ -214,7 +214,7 @@ def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
                 logger.warning(f"Failed to clean up original S3 object: {str(e)}")
         
         # Update task state to complete
-        self.update_state(state='SUCCESS', meta={
+        self.update_state(state='PROGRESS', meta={
             'status': 'Video processing complete', 
             'percent_complete': 100
         })
