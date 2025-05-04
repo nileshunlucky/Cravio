@@ -9,6 +9,7 @@ import boto3
 from botocore.exceptions import ClientError
 import re
 import aiofiles
+import urllib.parse
 from tasks.opusclip_task import process_video
 
 # Configure logging
@@ -117,3 +118,115 @@ async def process_youtube_video(request: YouTubeRequest):
     except Exception as e:
         logger.error(f"Error processing YouTube URL: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+    
+class DeleteVideoRequest(BaseModel):
+    video_url: str
+
+@router.post("/delete-video")
+async def delete_video(request: DeleteVideoRequest):
+    """
+    Delete a video and its corresponding thumbnail from S3, as well as any original uploaded files
+    """
+    try:
+        # Extract the S3 key from the video URL
+        # Example URL: https://my-video-bucket.s3.us-east-1.amazonaws.com/videos/abc123/video.mp4
+        video_url = request.video_url
+        
+        # Parse the URL to extract the bucket and key
+        parsed_url = urllib.parse.urlparse(video_url)
+        
+        # Extract the path without leading slash
+        path = parsed_url.path.lstrip('/')
+        
+        # Check if this is an S3 URL
+        if 's3.' not in parsed_url.netloc:
+            raise HTTPException(status_code=400, detail="Invalid S3 video URL")
+        
+        # Extract the bucket name from the URL if different from configured bucket
+        bucket_name = S3_BUCKET
+        if parsed_url.netloc.startswith(bucket_name):
+            logger.info(f"Using bucket from URL: {bucket_name}")
+        
+        # Extract the video key from the path
+        video_key = path
+        
+        # Extract the directory containing the video
+        # Example: if key is 'videos/abc123/video.mp4', directory is 'videos/abc123'
+        key_parts = video_key.split('/')
+        if len(key_parts) < 2:
+            raise HTTPException(status_code=400, detail="Invalid video path format")
+        
+        # Get the unique ID from the path
+        # Assuming path pattern is 'videos/unique_id/video.mp4'
+        if len(key_parts) >= 3:
+            unique_id = key_parts[1]  # Extract the unique ID from the path
+            logger.info(f"Extracted unique ID: {unique_id}")
+        else:
+            unique_id = None
+            logger.warning("Could not extract unique ID from path")
+        
+        # Objects to delete
+        objects_to_delete = []
+        
+        # 1. First, delete the processed video directory
+        directory = '/'.join(key_parts[:-1])
+        logger.info(f"Video directory to delete: {directory}")
+        
+        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=directory)
+        if 'Contents' in response:
+            for obj in response['Contents']:
+                objects_to_delete.append({'Key': obj['Key']})
+                logger.info(f"Adding processed file to delete: {obj['Key']}")
+        
+        # 2. If we have a unique ID, also check for any original uploaded files
+        if unique_id:
+            upload_directory = f"uploads/{unique_id}"
+            logger.info(f"Checking for original uploads in: {upload_directory}")
+            
+            upload_response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=upload_directory)
+            if 'Contents' in upload_response:
+                for obj in upload_response['Contents']:
+                    objects_to_delete.append({'Key': obj['Key']})
+                    logger.info(f"Adding original upload to delete: {obj['Key']}")
+        
+        if not objects_to_delete:
+            logger.warning(f"No objects found to delete for video: {video_key}")
+            raise HTTPException(status_code=404, detail="Video files not found")
+        
+        # Delete all identified objects
+        response = s3_client.delete_objects(
+            Bucket=bucket_name,
+            Delete={
+                'Objects': objects_to_delete,
+                'Quiet': False
+            }
+        )
+        
+        deleted_count = len(response.get('Deleted', []))
+        errors = response.get('Errors', [])
+        
+        if errors:
+            error_details = [f"{e.get('Key')}: {e.get('Message')}" for e in errors]
+            logger.error(f"Errors deleting objects: {error_details}")
+            return JSONResponse(
+                status_code=207,  # Partial success
+                content={
+                    "message": f"Deleted {deleted_count} files, but encountered {len(errors)} errors",
+                    "errors": error_details,
+                    "deleted_count": deleted_count
+                }
+            )
+        
+        return JSONResponse(
+            content={
+                "message": f"Successfully deleted video and associated files",
+                "deleted_count": deleted_count
+            }
+        )
+        
+    except ClientError as e:
+        logger.error(f"S3 client error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"S3 operation failed: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error deleting video: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete video: {str(e)}")

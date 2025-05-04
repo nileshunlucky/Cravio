@@ -734,28 +734,6 @@ const pollTaskStatus = async (taskId: string): Promise<TaskResult> => {
                 </svg>
                 <span className="font-medium text-white">{creditUsage}</span>
               </div>
-
-              {/* Task status card - Only show when there is a task ID */}
-              {taskId && (
-                <div className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm",
-                  isLoading 
-                    ? "bg-yellow-900/30 border border-yellow-700/50 text-yellow-300"
-                    : "bg-green-900/30 border border-green-700/50 text-green-300"
-                )}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Task in progress: {taskProgress}%</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-4 h-4" />
-                      <span>Task completed: #{taskId}</span>
-                    </>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </motion.div>
