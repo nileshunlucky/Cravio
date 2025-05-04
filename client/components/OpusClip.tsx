@@ -565,6 +565,23 @@ const pollTaskStatus = async (taskId: string): Promise<TaskResult> => {
   });
 };
 
+const handleSubmit = async () => {
+
+  try {
+    if (!videoUrl) {
+      await handleProcess()
+    } else {
+      await handleOpusClip()
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const handleOpusClip = async () => {
+  console.log("main api fetched")
+}
+
   const isSubmitEnabled = (isValidYoutubeLink || file) && !videoProcessed;
 
   return (
@@ -672,7 +689,7 @@ const pollTaskStatus = async (taskId: string): Promise<TaskResult> => {
             whileTap={isSubmitEnabled && !isLoading ? { scale: 0.98 } : {}}
           >
             <Button
-              onClick={() => handleProcess()}
+              onClick={() => handleSubmit()}
               disabled={((!isSubmitEnabled && !videoProcessed) || isLoading)}
               className={cn(
                 "w-full font-medium transition",
