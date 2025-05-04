@@ -23,7 +23,7 @@ class ProcessVideoTask(Task):
 
 # Celery tasks
 @celery_app.task(bind=True, base=ProcessVideoTask)
-def process_video_file(self, video_path, file_name, user_id=None):
+def process_video_file(self, video_path, file_name):
     """Process a video file asynchronously"""
     try:
         # Validate file path - ensure absolute path is used

@@ -13,6 +13,7 @@ import aiofiles
 import shutil
 import logging
 from urllib.parse import urlparse, parse_qs
+import re
 from tasks.opusclip_task import process_video_file
 
 # Configure logging
@@ -238,8 +239,7 @@ async def process_youtube(request: YouTubeRequest, background_tasks: BackgroundT
 
 @router.post("/opusclip/upload-file")
 async def upload_file(
-    file: UploadFile = File(...), 
-    user_id: str = Depends(get_current_user_id)
+    file: UploadFile = File(...)
 ):
     """Process an uploaded video file and create a background task for processing"""
     if not file.content_type or "video" not in file.content_type:
@@ -317,7 +317,6 @@ async def upload_file(
         task = process_video_file.delay(
             video_path=abs_video_path,
             file_name=filename,
-            user_id=user_id
         )
         
         return {
