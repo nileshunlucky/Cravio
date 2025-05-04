@@ -44,10 +44,9 @@ def get_user(email: str):
         return user
     raise HTTPException(status_code=404, detail="User not found")
 
-@app.get("/health")
-def health_check():
-    return {"health": "OK"}
-
+@app.api_route("/health", methods=["GET", "HEAD"])
+async def health_check():
+    return {"status": "OK"}
 
 class UserReferral(BaseModel):
     email: EmailStr
