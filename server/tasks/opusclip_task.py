@@ -177,7 +177,7 @@ def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
                 temp_video_path, 
                 S3_BUCKET, 
                 final_video_key,
-                ExtraArgs={'ContentType': 'video/mp4', 'ACL': 'public-read'}
+                ExtraArgs={'ContentType': 'video/mp4'}
             )
             logger.info(f"Uploaded video to S3: {final_video_key}")
             
@@ -186,7 +186,7 @@ def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
                 temp_thumbnail_path,
                 S3_BUCKET,
                 final_thumbnail_key,
-                ExtraArgs={'ContentType': 'image/jpeg', 'ACL': 'public-read'}
+                ExtraArgs={'ContentType': 'image/jpeg'}
             )
             logger.info(f"Uploaded thumbnail to S3: {final_thumbnail_key}")
         except Exception as e:
