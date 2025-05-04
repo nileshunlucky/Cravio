@@ -237,63 +237,124 @@ async def process_youtube(request: YouTubeRequest, background_tasks: BackgroundT
         raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
 
 @router.post("/opusclip/upload-file")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(
+    file: UploadFile = File(...), 
+    user_id: str = Depends(get_current_user_id)
+):
     """Process an uploaded video file and create a background task for processing"""
     if not file.content_type or "video" not in file.content_type:
         raise HTTPException(status_code=400, detail="File must be a video")
     
+    # Generate a unique ID for the file
     unique_id = uuid.uuid4().hex
-    video_path = os.path.join(TEMP_DIR, f"{unique_id}_{file.filename}")
+    filename = secure_filename(file.filename)  # Sanitize filename
+    video_path = os.path.join(TEMP_DIR, f"{unique_id}_{filename}")
+    
+    # Ensure TEMP_DIR exists
+    os.makedirs(TEMP_DIR, exist_ok=True)
+    
+    # Log the file path for debugging
+    logger.info(f"Saving uploaded file to: {video_path}")
     
     try:
-        # Save uploaded file
-        async with aiofiles.open(video_path, 'wb') as out_file:
-            content = await file.read()
-            await out_file.write(content)
+        # Save uploaded file with proper error handling
+        try:
+            async with aiofiles.open(video_path, 'wb') as out_file:
+                content = await file.read()
+                await out_file.write(content)
+                
+            # Verify file was saved correctly
+            if not os.path.exists(video_path) or os.path.getsize(video_path) == 0:
+                raise HTTPException(status_code=500, detail="Failed to save uploaded file")
+                
+            logger.info(f"Successfully saved file: {video_path} ({os.path.getsize(video_path)} bytes)")
+        except Exception as e:
+            logger.error(f"Error saving uploaded file: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to save uploaded file: {str(e)}")
         
-        # Get video duration using ffprobe
-        duration_cmd = f"ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {video_path}"
-        duration_process = await asyncio.create_subprocess_shell(
-            duration_cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+        # Get video duration using ffprobe with better error handling
+        try:
+            # Use quotes around the path to handle spaces or special characters
+            duration_cmd = f"ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"{video_path}\""
+            logger.info(f"Running duration command: {duration_cmd}")
+            
+            duration_process = await asyncio.create_subprocess_shell(
+                duration_cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, stderr = await duration_process.communicate()
+            
+            # Check video duration
+            if duration_process.returncode == 0:
+                try:
+                    video_duration = float(stdout.decode().strip())
+                    
+                    # Check if video is too long (2 hours = 7200 seconds)
+                    if video_duration > 7200:
+                        raise HTTPException(
+                            status_code=400, 
+                            detail={
+                                "message": "Video is too long (maximum 2 hours)",
+                                "possible_solutions": ["Upload a shorter video", "Trim your video before uploading"]
+                            }
+                        )
+                    
+                    logger.info(f"Video duration: {video_duration} seconds")
+                except ValueError as e:
+                    logger.warning(f"Error parsing video duration: {str(e)}")
+            else:
+                logger.warning(f"FFprobe error: {stderr.decode()}")
+        except Exception as e:
+            logger.warning(f"Error checking video duration: {str(e)}")
+            # Continue anyway - we'll let the Celery task handle this
+            
+        # Important: Get absolute path before passing to Celery
+        abs_video_path = os.path.abspath(video_path)
+        logger.info(f"Starting Celery task with file path: {abs_video_path}")
+        
+        # Start the Celery task with more information
+        task = process_video_file.delay(
+            video_path=abs_video_path,
+            file_name=filename,
+            user_id=user_id
         )
-        stdout, stderr = await duration_process.communicate()
         
-        # Check video duration
-        if duration_process.returncode == 0:
-            try:
-                video_duration = float(stdout.decode().strip())
-                
-                # Check if video is too long (2 hours = 7200 seconds)
-                if video_duration > 7200:
-                    raise HTTPException(
-                        status_code=400, 
-                        detail={
-                            "message": "Video is too long (maximum 2 hours)",
-                            "possible_solutions": ["Upload a shorter video", "Trim your video before uploading"]
-                        }
-                    )
-                
-                logger.info(f"Video duration: {video_duration} seconds")
-            except ValueError as e:
-                logger.error(f"Error parsing video duration: {str(e)}")
-        else:
-            logger.error(f"FFprobe error: {stderr.decode()}")
-        
-        # Start the Celery task
-        task = process_video_file.delay(video_path, file.filename)
-        
-        return {"task_id": task.id, "message": "Video processing started"}
+        return {
+            "task_id": task.id, 
+            "message": "Video processing started",
+            "file_path": abs_video_path
+        }
     
-    except HTTPException:
+    except HTTPException as http_ex:
         # Clean up the file if we have an HTTP exception
         if os.path.exists(video_path):
-            os.remove(video_path)
-        raise
+            try:
+                os.remove(video_path)
+                logger.info(f"Removed file due to HTTP exception: {video_path}")
+            except Exception as e:
+                logger.error(f"Failed to remove file {video_path}: {str(e)}")
+        raise http_ex
     except Exception as e:
         # Clean up the file if we have any other exception
         if os.path.exists(video_path):
-            os.remove(video_path)
+            try:
+                os.remove(video_path)
+                logger.info(f"Removed file due to exception: {video_path}")
+            except Exception as cleanup_e:
+                logger.error(f"Failed to remove file {video_path}: {str(cleanup_e)}")
         logger.error(f"Error processing uploaded file: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to process uploaded file: {str(e)}")
+
+# Helper function to sanitize filenames
+def secure_filename(filename):
+    """
+    Sanitize filename to prevent directory traversal and other security issues
+    """
+    # Get only the filename without any path information
+    filename = os.path.basename(filename)
+    
+    # Replace potentially problematic characters
+    filename = re.sub(r'[^\w\.\-]', '_', filename)
+    
+    return filename
