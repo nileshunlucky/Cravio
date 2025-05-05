@@ -11,6 +11,7 @@ import re
 import aiofiles
 import urllib.parse
 from tasks.opusclip_task import process_video
+from db import users_collection
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -230,3 +231,59 @@ async def delete_video(request: DeleteVideoRequest):
     except Exception as e:
         logger.error(f"Error deleting video: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to delete video: {str(e)}")
+
+class OpusClipRequest(BaseModel):
+    videoUrl: str
+    thumbnail: str  
+    creditUsage: int
+    email: str 
+
+@router.post("/opusclip")
+async def process_opusclip(request: OpusClipRequest):
+    """
+    Process a video with OpusClip after checking and deducting user credits
+    """
+    try:
+        # Check if user exists
+        user = users_collection.find_one({"email": request.email})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Check if user has enough credits
+        user_credits = user.get("credits", 0)
+        if user_credits < request.creditUsage:
+            return JSONResponse(
+                status_code=402,  # Payment Required
+                content={
+                    "message": "Not enough credits",
+                    "available_credits": user_credits,
+                    "required_credits": request.creditUsage
+                }
+            )
+        
+        # Deduct the credits
+        users_collection.update_one(
+            {"email": request.email},
+            {"$inc": {"credits": -request.creditUsage}}
+        )
+        
+        logger.info(f"Deducted {request.creditUsage} credits from user {request.email}")
+        
+        # Start Celery task to process the video
+        task = process_video.delay(
+            s3_video_url=request.videoUrl,
+            s3_thumbnail_url=request.thumbnail,
+            user_email=request.email
+        )
+        
+        return JSONResponse(
+            status_code=202,
+            content={
+                "task_id": task.id,
+                "message": "Video processing started"
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error processing OpusClip request: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")

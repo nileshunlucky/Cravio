@@ -9,6 +9,9 @@ import uuid
 import shutil
 import yt_dlp
 from celery_config import celery_app
+from db import users_collection
+import openai
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -229,3 +232,345 @@ def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
     except Exception as e:
         logger.error(f"Error in video processing task: {str(e)}")
         raise Exception(f"Video processing failed: {str(e)}")
+    
+
+# opusclip task
+
+# Configure OpenAI client
+client = openai.OpenAI()
+
+class OpusClipProcessTask(Task):
+    """Custom Celery Task for OpusClip processing with progress reporting"""
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        logger.error(f"Task {task_id} failed: {exc}")
+        super().on_failure(exc, task_id, args, kwargs, einfo)
+
+@celery_app.task(bind=True, base=OpusClipProcessTask)
+def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
+    """
+    Process a video to create short viral clips
+    
+    Args:
+        s3_video_url (str): S3 URL of the uploaded video
+        s3_thumbnail_url (str): S3 URL of the video thumbnail
+        user_email (str, optional): Email of the user
+    
+    Returns:
+        dict: Contains original video details and generated clips
+    """
+    try:
+        # Generate a unique ID for this process
+        unique_id = uuid.uuid4().hex
+        
+        # Update task state
+        self.update_state(state='PROGRESS', meta={
+            'status': 'Starting viral clip processing', 
+            'percent_complete': 5
+        })
+        
+        # Extract S3 bucket and key from URLs
+        video_parsed_url = s3_video_url.replace('https://', '').split('/')
+        bucket_name = video_parsed_url[0].split('.')[0]
+        video_key = '/'.join(video_parsed_url[1:])
+        
+        # Create temporary file paths
+        temp_video_path = os.path.join(TEMP_DIR, f"{unique_id}_source.mp4")
+        temp_audio_path = os.path.join(TEMP_DIR, f"{unique_id}_audio.wav")
+        temp_transcript_path = os.path.join(TEMP_DIR, f"{unique_id}_transcript.txt")
+        
+        # Download the video from S3
+        self.update_state(state='PROGRESS', meta={
+            'status': 'Downloading video from S3', 
+            'percent_complete': 10
+        })
+        
+        try:
+            s3_client.download_file(bucket_name, video_key, temp_video_path)
+            logger.info(f"Downloaded video from S3 to {temp_video_path}")
+        except ClientError as e:
+            logger.error(f"S3 download error: {str(e)}")
+            raise Exception(f"Failed to download video from S3: {str(e)}")
+        
+        # Extract audio from video
+        self.update_state(state='PROGRESS', meta={
+            'status': 'Extracting audio from video', 
+            'percent_complete': 15
+        })
+        
+        try:
+            ffmpeg_cmd = [
+                'ffmpeg',
+                '-i', temp_video_path,
+                '-q:a', '0',
+                '-map', 'a',
+                '-y',  # Overwrite output file if it exists
+                temp_audio_path
+            ]
+            subprocess.run(ffmpeg_cmd, check=True)
+            logger.info(f"Extracted audio to {temp_audio_path}")
+        except Exception as e:
+            logger.error(f"Error extracting audio: {str(e)}")
+            raise Exception(f"Failed to extract audio: {str(e)}")
+        
+        # Get video dimensions
+        try:
+            ffprobe_cmd = [
+                'ffprobe',
+                '-v', 'error',
+                '-select_streams', 'v:0',
+                '-show_entries', 'stream=width,height,duration',
+                '-of', 'json',
+                temp_video_path
+            ]
+            result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
+            video_info = json.loads(result.stdout)
+            width = int(video_info['streams'][0]['width'])
+            height = int(video_info['streams'][0]['height'])
+            duration = float(video_info['streams'][0]['duration'])
+            logger.info(f"Video dimensions: {width}x{height}, duration: {duration} seconds")
+        except Exception as e:
+            logger.error(f"Error getting video info: {str(e)}")
+            width, height = 1920, 1080  # Default dimensions
+            duration = 0
+        
+        # Transcribe audio using OpenAI Whisper API
+        self.update_state(state='PROGRESS', meta={
+            'status': 'Transcribing audio using Whisper API', 
+            'percent_complete': 25
+        })
+        
+        try:
+            with open(temp_audio_path, 'rb') as audio_file:
+                transcription = client.audio.transcriptions.create(
+                    file=audio_file,
+                    model="whisper-1",
+                    response_format="verbose_json",
+                    timestamp_granularities=["segment"]
+                )
+                
+            # Save transcript to file
+            with open(temp_transcript_path, 'w') as f:
+                json.dump(transcription, f)
+                
+            logger.info(f"Transcription completed and saved to {temp_transcript_path}")
+            
+            # Extract text for GPT
+            full_transcript = ""
+            segments = transcription.segments
+            for segment in segments:
+                full_transcript += f"{segment.start} - {segment.end}: {segment.text}\n"
+                
+        except Exception as e:
+            logger.error(f"Error transcribing audio: {str(e)}")
+            raise Exception(f"Failed to transcribe audio: {str(e)}")
+        
+        # Use GPT 3.5 to identify viral clips
+        self.update_state(state='PROGRESS', meta={
+            'status': 'Identifying viral clips with GPT-3.5', 
+            'percent_complete': 40
+        })
+        
+        try:
+            # Prompt for GPT
+            prompt = f"""
+            You are an expert at finding viral moments in videos. Given the following transcript with timestamps, 
+            identify up to 10 potential viral clips that are approximately 30 seconds each.
+            
+            Find moments that are engaging, surprising, emotional, or contain valuable information. Look for:
+            - Memorable quotes or statements
+            - Surprising revelations
+            - Emotional moments
+            - Valuable advice or insights
+            - Controversial or thought-provoking statements
+            
+            Respond in JSON format with an array of clips. Each clip should include:
+            - start: the start time in seconds (float)
+            - end: the end time in seconds (float, approximately 30 seconds after start)
+            - subtitle: the transcript text for this clip
+            - caption: a catchy, attention-grabbing caption for social media
+            
+            Transcript:
+            {full_transcript}
+            
+            Respond ONLY with valid JSON like this: 
+            {{
+                "clips": [
+                    {{
+                        "start": 120.5,
+                        "end": 150.2,
+                        "subtitle": "This is the transcript text for this clip",
+                        "caption": "You won't believe what happens next! #viral"
+                    }}
+                ]
+            }}
+            """
+            
+            # Get completion from GPT-3.5
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant that identifies viral clips from video transcripts."},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_object"}
+            )
+            
+            # Parse the response
+            clips_data = json.loads(response.choices[0].message.content)
+            clips = clips_data.get("clips", [])
+            
+            if not clips:
+                logger.warning("No viral clips identified by GPT")
+                # Create at least one clip if none identified
+                clips = [{
+                    "start": 0,
+                    "end": min(30, duration),
+                    "subtitle": "Highlight clip",
+                    "caption": "Check out this highlight! #viral"
+                }]
+            
+            logger.info(f"Identified {len(clips)} potential viral clips")
+            
+        except Exception as e:
+            logger.error(f"Error identifying viral clips: {str(e)}")
+            # Create a default clip
+            clips = [{
+                "start": 0,
+                "end": min(30, duration),
+                "subtitle": "Highlight clip",
+                "caption": "Check out this highlight! #viral"
+            }]
+        
+        # Process and create each clip
+        processed_clips = []
+        clip_count = len(clips)
+        
+        for i, clip in enumerate(clips):
+            try:
+                clip_start = clip["start"]
+                clip_end = clip["end"]
+                subtitle = clip["subtitle"]
+                caption = clip["caption"]
+                
+                # Ensure clip is not longer than 60 seconds
+                if clip_end - clip_start > 60:
+                    clip_end = clip_start + 30
+                
+                # Ensure clip doesn't exceed video duration
+                if clip_end > duration:
+                    clip_end = duration
+                    if clip_end - clip_start < 5:  # If resulting clip is too short
+                        continue
+                
+                # Update task state
+                progress = 40 + (50 * (i / clip_count))
+                self.update_state(state='PROGRESS', meta={
+                    'status': f'Processing clip {i+1}/{clip_count}', 
+                    'percent_complete': progress
+                })
+                
+                # Create clip output path
+                clip_filename = f"{unique_id}_clip_{i+1}.mp4"
+                temp_clip_path = os.path.join(TEMP_DIR, clip_filename)
+                
+                # Create clip with subtitle
+                # Calculate output dimensions for 9:16 aspect ratio
+                target_height = 1920
+                target_width = 1080
+                
+                # Define filter for adding subtitles
+                subtitle_escaped = subtitle.replace("'", "\\'").replace('"', '\\"')
+                
+                # Create the clip using FFmpeg
+                ffmpeg_cmd = [
+                    'ffmpeg',
+                    '-ss', str(clip_start),
+                    '-i', temp_video_path,
+                    '-t', str(clip_end - clip_start),
+                    '-vf', f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2,drawtext=text='{subtitle_escaped}':fontcolor=yellow:fontsize=30:box=1:boxcolor=black@0.5:boxborderw=5:x=(w-text_w)/2:y=(h-text_h)/2",
+                    '-c:v', 'libx264',
+                    '-c:a', 'aac',
+                    '-y',  # Overwrite output file if it exists
+                    temp_clip_path
+                ]
+                
+                subprocess.run(ffmpeg_cmd, check=True)
+                logger.info(f"Created clip {i+1}: {temp_clip_path}")
+                
+                # Upload clip to S3
+                clip_s3_key = f"videos/{unique_id}/clips/{clip_filename}"
+                s3_client.upload_file(
+                    temp_clip_path, 
+                    S3_BUCKET, 
+                    clip_s3_key,
+                    ExtraArgs={'ContentType': 'video/mp4'}
+                )
+                
+                # Generate public URL for clip
+                region = os.getenv("AWS_REGION", "us-east-1")
+                clip_url = f"https://{S3_BUCKET}.s3.{region}.amazonaws.com/{clip_s3_key}"
+                
+                # Add clip to processed clips
+                processed_clips.append({
+                    "clipUrl": clip_url,
+                    "subtitle": subtitle,
+                    "caption": caption,
+                })
+                
+                # Clean up temporary clip file
+                os.remove(temp_clip_path)
+                
+            except Exception as e:
+                logger.error(f"Error processing clip {i+1}: {str(e)}")
+                continue
+        
+        # Save to database
+        self.update_state(state='PROGRESS', meta={
+            'status': 'Saving results to database', 
+            'percent_complete': 95
+        })
+        
+        try:
+            # Create OpusClip document
+            opusclip_doc = {
+                "uniqueId": unique_id,
+                "thumbnail": s3_thumbnail_url,
+                "clips": processed_clips,
+                "createdAt": datetime.now()
+            }
+            # find user by email
+            user = users_collection.find_one({"email": user_email})
+            if not user:
+                print(f"User with email {user_email} not found in database.")
+                return False
+            # Insert into database
+            result = users_collection.update_one(
+            {"email": user_email},
+            {"$push": {"opusclips": opusclip_doc}}
+            )
+            logger.info(f"Saved OpusClip to database with ID: {unique_id}")
+            
+        except Exception as e:
+            logger.error(f"Error saving to database: {str(e)}")
+            # Continue anyway to return the data
+        
+        # Clean up other temporary files
+        for file_path in [temp_video_path, temp_audio_path, temp_transcript_path]:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        
+        # Update task state to complete
+        self.update_state(state='PROGRESS', meta={
+            'status': 'Viral clip processing complete', 
+            'percent_complete': 100
+        })
+        
+        # Return the results
+        return {
+            "message": "Viral clip processing complete",
+            "clips": processed_clips,
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in OpusClip processing task: {str(e)}")
+        raise Exception(f"OpusClip processing failed: {str(e)}")

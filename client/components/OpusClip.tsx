@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Link, CloudUpload, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { useUser } from '@clerk/nextjs';
 
 // Define TypeScript interfaces
 interface TaskResult {
@@ -26,6 +27,8 @@ const cn = (...classes: (string | undefined | null | false)[]) => {
 };
 
 export default function OpusClip() {
+  const { user } = useUser();
+  const email = user?.primaryEmailAddress?.emailAddress
   const [youtubeLink, setYoutubeLink] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -579,7 +582,41 @@ const handleSubmit = async () => {
 };
 
 const handleOpusClip = async () => {
-  console.log("main api fetched")
+  // check videoUrl , thumbnail and creditUsage is avalable or not
+  if(!videoUrl || !thumbnail || !creditUsage) {
+    return toast.error(`Missing ${!videoUrl ? 'videoUrl' : !thumbnail ? 'thumbnail' : 'creditUsage'}`, {
+      position: "top-center",
+      duration: 4000,
+    })}
+
+    // fetch opusclip api
+    try {
+      const res = await fetch('https://cravio-ai.onrender.com/opusclip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          videoUrl,
+          thumbnail,
+          creditUsage,
+          email
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error(`Failed to process request: ${res.status}`)
+      }
+
+      const data = await res.json()
+      console.log(data)
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to process request", {
+        position: "top-center",
+        duration: 4000,
+      })
+    }
 }
 
   const isSubmitEnabled = (isValidYoutubeLink || file) && !videoProcessed;
