@@ -302,7 +302,6 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 'ffmpeg',
                 '-i', temp_video_path,
                 '-vn',
-                '-acodec', 'aac',
                 '-ac', '1',
                 '-ar', '16000',
                 '-b:a', '32k',
