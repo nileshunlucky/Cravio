@@ -611,6 +611,33 @@ const handleOpusClip = async () => {
 
       const data = await res.json()
       console.log(data)
+      // Check if this is a task-based response
+    if (data.task_id) {
+      
+      // Set state to indicate processing has started
+      setVideoProcessed(true);
+      
+      // Keep the loading state active
+      setIsLoading(true);
+      
+      // Initial toast notification
+      toast.info("Video processing started. This may take a few minutes...", {
+        position: "top-right",
+        duration: 5000,
+      });
+
+      // Start polling for task status
+      const taskResult = await pollTaskStatus(data.task_id);
+      
+      // Show task completion toast
+      toast.success("Processing completed successfully!", {
+        position: "top-right",
+        duration: 4000,
+      });
+      
+      // Set loading to false now that processing is complete
+      setIsLoading(false);
+    } 
     } catch (error) {
       console.error(error)
       toast.error("Failed to process request", {
