@@ -301,16 +301,20 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
             ffmpeg_cmd = [
                 'ffmpeg',
                 '-i', temp_video_path,
-                '-q:a', '0',
-                '-map', 'a',
-                '-y',  # Overwrite output file if it exists
+                '-vn',
+                '-acodec', 'aac',
+                '-ac', '1',
+                '-ar', '16000',
+                '-b:a', '32k',
+                '-y',
                 temp_audio_path
             ]
             subprocess.run(ffmpeg_cmd, check=True)
-            logger.info(f"Extracted audio to {temp_audio_path}")
+            logger.info(f"Extracted and compressed audio to {temp_audio_path}")
         except Exception as e:
             logger.error(f"Error extracting audio: {str(e)}")
             raise Exception(f"Failed to extract audio: {str(e)}")
+
         
         # Get video dimensions
         try:

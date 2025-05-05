@@ -627,7 +627,7 @@ const handleOpusClip = async () => {
       });
 
       // Start polling for task status
-      const taskResult = await pollTaskStatus(data.task_id);
+      await pollTaskStatus(data.task_id);
       
       // Show task completion toast
       toast.success("Processing completed successfully!", {
@@ -706,6 +706,7 @@ const handleOpusClip = async () => {
               <motion.p
                 onClick={handleRemoveVideo}
                 className="text-zinc-400 text-sm md:text-base hover:text-white px-2 py-1 focus:outline-none underline flex-shrink-0 cursor-pointer"
+                hidden={isLoading}
               >
                 Remove
               </motion.p>
