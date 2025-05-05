@@ -12,6 +12,7 @@ from celery_config import celery_app
 from db import users_collection
 import openai
 from datetime import datetime
+import time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -131,6 +132,9 @@ def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
             
             # Calculate credit usage: 1 minute = 5 credits, minimum 5 credits
             duration_minutes = video_duration / 60
+            # check if videoduration is greater than 2hrs return error less than 2hrs
+            if duration_minutes > 120:
+                raise Exception("Video duration is greater than 2 hours")
             credit_usage = max(5, int(5 * round(duration_minutes + 0.5)))
             
             logger.info(f"Video duration: {video_duration} seconds ({duration_minutes:.2f} minutes)")
@@ -441,7 +445,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 "start": 0,
                 "end": min(30, duration),
                 "subtitle": "Highlight clip",
-                "caption": "Check out this highlight! #viral"
+                "caption": "Check out this highlight!"
             }]
         
         # Process and create each clip
@@ -464,78 +468,113 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                     if clip_end - clip_start < 5:  # If resulting clip is too short
                         continue
                 
-                # Update task state
+                # Update task state for each clip
                 self.update_state(state='PROGRESS', meta={
-                    'status': 'Processing clip ', 
-                    'percent_complete': 50
+                    'status': f'Processing clip {i+1}/{len(clips)}', 
+                    'percent_complete': 50 + (i * 30 // len(clips))
                 })
                 
                 # Create clip output path
                 clip_filename = f"{unique_id}_clip_{i+1}.mp4"
                 temp_clip_path = os.path.join(TEMP_DIR, clip_filename)
                 
-                # Calculate output dimensions for 9:16 aspect ratio
+                # For 9:16 aspect ratio
                 target_height = 1920
                 target_width = 1080
                 
-                # Create a subtitle file instead of embedding directly in command
-                subtitle_file = os.path.join(TEMP_DIR, f"{unique_id}_subtitle_{i+1}.txt")
-                with open(subtitle_file, 'w') as f:
-                    f.write(subtitle)
+                # Create subtitle file for FFmpeg subtitle filter
+                subtitle_file = os.path.join(TEMP_DIR, f"{unique_id}_subtitle_{i+1}.srt")
                 
-                # Create the clip using FFmpeg with a safer approach
-                self.update_state(state='PROGRESS', meta={
-                'status': 'Saving results to database', 
-                'percent_complete': 70
-                })
-                # First create the clip without subtitles
-                ffmpeg_cmd = [
+                # Format subtitle as SRT file with one word per line for better readability
+                words = subtitle.split()
+                srt_content = ""
+                words_per_line = 3  # Adjust for better visibility
+                for j in range(0, len(words), words_per_line):
+                    line_words = words[j:j+words_per_line]
+                    line_num = j // words_per_line + 1
+                    # Calculate timing for each line (distribute evenly across clip duration)
+                    line_duration = (clip_end - clip_start) / ((len(words) // words_per_line) + 1)
+                    line_start = clip_start + (line_num - 1) * line_duration
+                    line_end = line_start + line_duration
+                    
+                    # Format times as HH:MM:SS,mmm
+                    start_time = time.strftime('%H:%M:%S', time.gmtime(line_start)) + f",{int((line_start % 1) * 1000):03d}"
+                    end_time = time.strftime('%H:%M:%S', time.gmtime(line_end)) + f",{int((line_end % 1) * 1000):03d}"
+                    
+                    srt_content += f"{line_num}\n{start_time} --> {end_time}\n{' '.join(line_words)}\n\n"
+                
+                with open(subtitle_file, 'w') as f:
+                    f.write(srt_content)
+                logger.info(f"Created SRT subtitle file: {subtitle_file}")
+                
+                # First extract the clip segment
+                temp_raw_clip = os.path.join(TEMP_DIR, f"{unique_id}_raw_clip_{i+1}.mp4")
+                ffmpeg_extract_cmd = [
                     'ffmpeg',
                     '-ss', str(clip_start),
                     '-i', temp_video_path,
                     '-t', str(clip_end - clip_start),
-                    '-vf', f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2",
                     '-c:v', 'libx264',
                     '-c:a', 'aac',
-                    '-y',  # Overwrite output file if it exists
+                    '-y',
+                    temp_raw_clip
+                ]
+                subprocess.run(ffmpeg_extract_cmd, check=True)
+                logger.info(f"Extracted raw clip: {temp_raw_clip}")
+                
+                # Now create the final clip with proper aspect ratio and subtitles
+                ffmpeg_process_cmd = [
+                    'ffmpeg',
+                    '-i', temp_raw_clip,
+                    '-i', subtitle_file,
+                    '-filter_complex',
+                    f"[0:v]scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2[v];[v]subtitles='{subtitle_file.replace('\\', '/')}':force_style='FontName=Arial,FontSize=24,PrimaryColour=&Hffffff,OutlineColour=&H000000,Bold=1,Alignment=2'[outv]",
+                    '-map', '[outv]',
+                    '-map', '0:a',
+                    '-c:v', 'libx264',
+                    '-c:a', 'aac',
+                    '-y',
                     temp_clip_path
                 ]
                 
-                subprocess.run(ffmpeg_cmd, check=True)
-                
-                # Now add subtitles as a separate overlay text (if subtitle is not empty)
-                if subtitle.strip():
-                    temp_with_subtitle_path = os.path.join(TEMP_DIR, f"{unique_id}_clip_sub_{i+1}.mp4")
+                try:
+                    subprocess.run(ffmpeg_process_cmd, check=True)
+                    logger.info(f"Created final clip with subtitles: {temp_clip_path}")
+                except Exception as e:
+                    logger.error(f"Error creating clip with subtitles: {str(e)}")
                     
-                    # Read subtitle from file to avoid command line issues
-                    with open(subtitle_file, 'r') as f:
-                        subtitle_text = f.read().strip().replace('\n', ' ')
-                    
-                    # Truncate subtitle if too long (prevent command line issues)
-                    if len(subtitle_text) > 100:
-                        subtitle_text = subtitle_text[:97] + "..."
-                    
-                    # Escape special characters for drawtext filter
-                    subtitle_text = subtitle_text.replace("'", "'\\\\''").replace(':', '\\:').replace(',', '\\,')
-                    
-                    ffmpeg_subtitle_cmd = [
+                    # Fallback: Try a simpler approach with drawtext if subtitles filter fails
+                    fallback_cmd = [
                         'ffmpeg',
-                        '-i', temp_clip_path,
-                        '-vf', f"drawtext=text='{subtitle_text}':fontcolor=yellow:fontsize=30:box=1:boxcolor=black@0.5:boxborderw=5:x=(w-tw)/2:y=h-th-50",
+                        '-i', temp_raw_clip,
+                        '-vf', f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2,drawtext=text='{subtitle[:100]}':fontcolor=yellow:fontsize=30:box=1:boxcolor=black@0.5:boxborderw=5:x=(w-tw)/2:y=h-(2*lh)",
                         '-c:a', 'copy',
                         '-y',
-                        temp_with_subtitle_path
+                        temp_clip_path
                     ]
                     
                     try:
-                        subprocess.run(ffmpeg_subtitle_cmd, check=True)
-                        # If successful, replace original clip with subtitled version
-                        shutil.move(temp_with_subtitle_path, temp_clip_path)
-                    except Exception as subtitle_error:
-                        logger.error(f"Error adding subtitles: {str(subtitle_error)}")
-                        # Continue with the clip without subtitles
+                        subprocess.run(fallback_cmd, check=True)
+                        logger.info(f"Created clip with fallback subtitle method: {temp_clip_path}")
+                    except Exception as fallback_error:
+                        logger.error(f"Fallback subtitling also failed: {str(fallback_error)}")
+                        
+                        # Last resort: Just use the raw clip with proper aspect ratio
+                        last_resort_cmd = [
+                            'ffmpeg',
+                            '-i', temp_raw_clip,
+                            '-vf', f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2",
+                            '-c:a', 'copy',
+                            '-y',
+                            temp_clip_path
+                        ]
+                        subprocess.run(last_resort_cmd, check=True)
+                        logger.info(f"Created clip without subtitles: {temp_clip_path}")
                 
-                logger.info(f"Created clip {i+1}: {temp_clip_path}")
+                # Verify clip was created
+                if not os.path.exists(temp_clip_path) or os.path.getsize(temp_clip_path) < 1000:
+                    logger.error(f"Clip creation failed or produced invalid file: {temp_clip_path}")
+                    continue
                 
                 # Upload clip to S3
                 clip_s3_key = f"videos/{unique_id}/clips/{clip_filename}"
@@ -558,9 +597,9 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 })
                 
                 # Clean up temporary clip files
-                os.remove(temp_clip_path)
-                if os.path.exists(subtitle_file):
-                    os.remove(subtitle_file)
+                for file_path in [temp_raw_clip, temp_clip_path, subtitle_file]:
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
                 
             except Exception as e:
                 logger.error(f"Error processing clip {i+1}: {str(e)}")
@@ -615,7 +654,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
             "message": "Viral clip processing complete",
             "clips": processed_clips,
             "transcript": full_transcript,
-            "gpt-clips_data": clips_data
+            "gpt_clips_data": clips_data
         }
         
     except Exception as e:
