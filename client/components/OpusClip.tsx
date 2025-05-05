@@ -6,6 +6,7 @@ import { Link, CloudUpload, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
 // Define TypeScript interfaces
 interface TaskResult {
@@ -28,6 +29,7 @@ const cn = (...classes: (string | undefined | null | false)[]) => {
 
 export default function OpusClip() {
   const { user } = useUser();
+  const router = useRouter()
   const email = user?.primaryEmailAddress?.emailAddress
   const [youtubeLink, setYoutubeLink] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
@@ -273,322 +275,327 @@ export default function OpusClip() {
     }
   };
 
-// Updated handleFileChange function for better file validation
-const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  // Skip if a video is already processed
-  if (videoProcessed) return;
+  // Updated handleFileChange function for better file validation
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Skip if a video is already processed
+    if (videoProcessed) return;
 
-  if (e.target.files?.[0]) {
-    const newFile = e.target.files[0];
+    if (e.target.files?.[0]) {
+      const newFile = e.target.files[0];
 
-    // Check file size (4000MB = 4000 * 1024 * 1024 bytes)
-    const maxSizeBytes = 4000 * 1024 * 1024;
-    if (newFile.size > maxSizeBytes) {
-      setErrorMessage("File size must be less than 4GB");
-      toast.error("File size must be less than 4GB", {
-        position: "top-right",
-        duration: 3000,
-      });
-      return;
-    }
-
-    // For video duration check, we need to create a video element
-    const videoElement = document.createElement('video');
-    videoElement.preload = 'metadata';
-
-    videoElement.onloadedmetadata = () => {
-      window.URL.revokeObjectURL(videoElement.src);
-
-      // Check duration (2 hours = 7200 seconds)
-      if (videoElement.duration > 7200) {
-        setErrorMessage("Video duration must be less than 2 hours");
-        toast.error("Video duration must be less than 2 hours", {
+      // Check file size (4000MB = 4000 * 1024 * 1024 bytes)
+      const maxSizeBytes = 4000 * 1024 * 1024;
+      if (newFile.size > maxSizeBytes) {
+        setErrorMessage("File size must be less than 4GB");
+        toast.error("File size must be less than 4GB", {
           position: "top-right",
           duration: 3000,
         });
         return;
       }
 
-      // If all checks pass, set the file
-      setFile(newFile);
+      // For video duration check, we need to create a video element
+      const videoElement = document.createElement('video');
+      videoElement.preload = 'metadata';
 
-      // Clear any previous errors
-      setErrorMessage(null);
+      videoElement.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(videoElement.src);
 
-      // Process the file upload immediately
-      setTimeout(() => {
-        if (!processingRef.current) {
-          handleProcess(null, newFile);
+        // Check duration (2 hours = 7200 seconds)
+        if (videoElement.duration > 7200) {
+          setErrorMessage("Video duration must be less than 2 hours");
+          toast.error("Video duration must be less than 2 hours", {
+            position: "top-right",
+            duration: 3000,
+          });
+          return;
         }
-      }, 100);
-    };
 
-    videoElement.onerror = () => {
-      setErrorMessage("Cannot read video metadata. Please try another file.");
-      toast.error("Cannot read video metadata", {
-        position: "top-right",
+        // If all checks pass, set the file
+        setFile(newFile);
+
+        // Clear any previous errors
+        setErrorMessage(null);
+
+        // Process the file upload immediately
+        setTimeout(() => {
+          if (!processingRef.current) {
+            handleProcess(null, newFile);
+          }
+        }, 100);
+      };
+
+      videoElement.onerror = () => {
+        setErrorMessage("Cannot read video metadata. Please try another file.");
+        toast.error("Cannot read video metadata", {
+          position: "top-right",
+          duration: 3000,
+        });
+      };
+
+      videoElement.src = URL.createObjectURL(newFile);
+    }
+  };
+
+  // Updated handleProcess function with improved task handling
+  const handleProcess = async (ytLink: string | null = null, uploadedFile: File | null = null) => {
+    const linkToProcess = ytLink || youtubeLink;
+    const fileToProcess = uploadedFile || file;
+
+    // Clear previous errors
+    setErrorMessage(null);
+
+    // Prevent multiple simultaneous processing
+    if (processingRef.current || isLoading) return;
+
+    // Validate input
+    const linkValid = linkToProcess ? validateYoutubeUrl(linkToProcess) : false;
+
+    if (!linkValid && !fileToProcess) {
+      const error = "Please provide a valid YouTube link or upload a file";
+      setErrorMessage(error);
+      toast.error(error, {
+        position: "top-center",
         duration: 3000,
       });
-    };
-
-    videoElement.src = URL.createObjectURL(newFile);
-  }
-};
-
-// Updated handleProcess function with improved task handling
-const handleProcess = async (ytLink: string | null = null, uploadedFile: File | null = null) => {
-  const linkToProcess = ytLink || youtubeLink;
-  const fileToProcess = uploadedFile || file;
-
-  // Clear previous errors
-  setErrorMessage(null);
-
-  // Prevent multiple simultaneous processing
-  if (processingRef.current || isLoading) return;
-
-  // Validate input
-  const linkValid = linkToProcess ? validateYoutubeUrl(linkToProcess) : false;
-
-  if (!linkValid && !fileToProcess) {
-    const error = "Please provide a valid YouTube link or upload a file";
-    setErrorMessage(error);
-    toast.error(error, {
-      position: "top-center",
-      duration: 3000,
-    });
-    return;
-  }
-
-  // Set loading state and prevent re-processing
-  setIsLoading(true);
-  processingRef.current = true;
-
-  try {
-    let response;
-
-    if (linkValid) {
-      // Process YouTube link
-      console.log('Processing YouTube link:', linkToProcess);
-
-      // Sanitize YouTube URL first
-      const sanitizedLink = sanitizeYoutubeUrl(linkToProcess);
-      console.log('Sanitized link:', sanitizedLink);
-
-      // Pre-check if video exists
-      const videoId = getYoutubeVideoId(sanitizedLink);
-      if (videoId) {
-        const videoExists = await checkYoutubeVideoExists(videoId);
-        if (!videoExists) {
-          throw new Error("This YouTube video is unavailable or doesn't exist. Please check the link and try again.");
-        }
-
-        // Check video duration
-        const durationSeconds = await checkYoutubeDuration(videoId);
-        if (durationSeconds > 7200) { // 2 hours = 7200 seconds
-          throw new Error("Video must be less than 2 hours long. Please choose a shorter video.");
-        }
-      }
-
-      response = await fetch(`https://cravio-ai.onrender.com/process-youtube`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ youtube_url: sanitizedLink }),
-      });
-    } else if (fileToProcess) {
-      // Process file upload
-      console.log('Processing file upload:', fileToProcess.name);
-
-      const formData = new FormData();
-      formData.append('file', fileToProcess);
-
-      // Use the opusclip endpoint for task-based processing
-      response = await fetch(`https://cravio-ai.onrender.com/opusclip/upload-file`, {
-        method: 'POST',
-        body: formData,
-      });
+      return;
     }
 
-    if (!response?.ok) {
-      // Handle error response
-      let errorMessage = 'Failed to process request';
+    // Set loading state and prevent re-processing
+    setIsLoading(true);
+    processingRef.current = true;
 
-      try {
-        const errorData = await response?.json();
-        console.error('API Error:', errorData);
+    try {
+      let response;
 
-        // Extract meaningful error message
-        if (errorData?.detail) {
-          // Handle case where detail is an object with message
-          if (typeof errorData.detail === 'object' && errorData.detail.message) {
-            errorMessage = errorData.detail.message;
+      if (linkValid) {
+        // Process YouTube link
+        console.log('Processing YouTube link:', linkToProcess);
 
-            // Also log possible solutions if available
-            if (errorData.detail.possible_solutions) {
-              console.info('Possible solutions:', errorData.detail.possible_solutions);
+        // Sanitize YouTube URL first
+        const sanitizedLink = sanitizeYoutubeUrl(linkToProcess);
+        console.log('Sanitized link:', sanitizedLink);
 
-              // Show solutions in toast
-              const solutions = errorData.detail.possible_solutions.join(', ');
-              errorMessage += `. Possible solutions: ${solutions}`;
-            }
-          } else {
-            // Handle special cases in error messages for better UX
-            if (typeof errorData.detail === 'string') {
-              if (errorData.detail.includes("404") && errorData.detail.includes("unavailable")) {
-                errorMessage = "This YouTube video is unavailable or doesn't exist. Please check the link and try again.";
-              } else if (errorData.detail.includes("private") || errorData.detail.includes("restricted")) {
-                errorMessage = "This video is private or has age restrictions. Please try another video.";
-              } else {
-                errorMessage = errorData.detail;
+        // Pre-check if video exists
+        const videoId = getYoutubeVideoId(sanitizedLink);
+        if (videoId) {
+          const videoExists = await checkYoutubeVideoExists(videoId);
+          if (!videoExists) {
+            throw new Error("This YouTube video is unavailable or doesn't exist. Please check the link and try again.");
+          }
+
+          // Check video duration
+          const durationSeconds = await checkYoutubeDuration(videoId);
+          if (durationSeconds > 7200) { // 2 hours = 7200 seconds
+            throw new Error("Video must be less than 2 hours long. Please choose a shorter video.");
+          }
+        }
+
+        response = await fetch(`https://cravio-ai.onrender.com/process-youtube`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ youtube_url: sanitizedLink }),
+        });
+      } else if (fileToProcess) {
+        // Process file upload
+        console.log('Processing file upload:', fileToProcess.name);
+
+        const formData = new FormData();
+        formData.append('file', fileToProcess);
+
+        // Use the opusclip endpoint for task-based processing
+        response = await fetch(`https://cravio-ai.onrender.com/opusclip/upload-file`, {
+          method: 'POST',
+          body: formData,
+        });
+      }
+
+      if (!response?.ok) {
+        // Handle error response
+        let errorMessage = 'Failed to process request';
+
+        try {
+          const errorData = await response?.json();
+          console.error('API Error:', errorData);
+
+          // Extract meaningful error message
+          if (errorData?.detail) {
+            // Handle case where detail is an object with message
+            if (typeof errorData.detail === 'object' && errorData.detail.message) {
+              errorMessage = errorData.detail.message;
+
+              // Also log possible solutions if available
+              if (errorData.detail.possible_solutions) {
+                console.info('Possible solutions:', errorData.detail.possible_solutions);
+
+                // Show solutions in toast
+                const solutions = errorData.detail.possible_solutions.join(', ');
+                errorMessage += `. Possible solutions: ${solutions}`;
               }
             } else {
-              errorMessage = String(errorData.detail);
+              // Handle special cases in error messages for better UX
+              if (typeof errorData.detail === 'string') {
+                if (errorData.detail.includes("404") && errorData.detail.includes("unavailable")) {
+                  errorMessage = "This YouTube video is unavailable or doesn't exist. Please check the link and try again.";
+                } else if (errorData.detail.includes("private") || errorData.detail.includes("restricted")) {
+                  errorMessage = "This video is private or has age restrictions. Please try another video.";
+                } else {
+                  errorMessage = errorData.detail;
+                }
+              } else {
+                errorMessage = String(errorData.detail);
+              }
             }
           }
+        } catch (parseError) {
+          console.error("Error parsing response:", parseError);
+          errorMessage = `Server error (${response?.status}): Please try again later`;
         }
-      } catch (parseError) {
-        console.error("Error parsing response:", parseError);
-        errorMessage = `Server error (${response?.status}): Please try again later`;
+
+        throw new Error(errorMessage);
       }
 
-      throw new Error(errorMessage);
-    }
+      const result = await response?.json();
+      console.log('Processing result:', result);
 
-    const result = await response?.json();
-    console.log('Processing result:', result);
+      // Check if this is a task-based response
+      if (result.task_id) {
 
-    // Check if this is a task-based response
-    if (result.task_id) {
-      
-      // Set state to indicate processing has started
-      setVideoProcessed(true);
-      
-      // Keep the loading state active
-      setIsLoading(true);
-      
-      // Initial toast notification
-      toast.info("Video processing started. This may take a few minutes...", {
-        position: "top-right",
-        duration: 5000,
-      });
+        // Set state to indicate processing has started
+        setVideoProcessed(true);
 
-      // Start polling for task status
-      const taskResult = await pollTaskStatus(result.task_id);
-      
-      // Update UI with completed task info
-      setThumbnail(taskResult.thumbnail_url);
-      setVideoUrl(taskResult.video_url);
-      setCreditUsage(taskResult.credit_usage || 1);
-      
-      // Show task completion toast
-      toast.success("Processing completed successfully!", {
-        position: "top-right",
+        // Keep the loading state active
+        setIsLoading(true);
+
+        // Initial toast notification
+        toast.info("Video processing started. This may take a few seconds...", {
+          position: "top-right",
+          duration: 5000,
+        });
+
+        // Start polling for task status
+        const taskResult = await pollTaskStatus(result.task_id);
+
+        // Update UI with completed task info
+        setThumbnail(taskResult.thumbnail_url);
+        setVideoUrl(taskResult.video_url);
+        setCreditUsage(taskResult.credit_usage || 1);
+
+        // Show task completion toast
+        toast.success("Processing completed successfully!", {
+          position: "top-right",
+          duration: 4000,
+        });
+
+        // Set loading to false now that processing is complete
+        setIsLoading(false);
+        // Make 3 sec delay then router.push("/admin/projects")
+        setTimeout(() => {
+          router.push("/admin/projects");
+        }, 3000)
+      } else {
+        // Handle direct response (non-task based)
+        setThumbnail(result?.thumbnail_url);
+        setCreditUsage(result?.credit_usage || 1);
+        setVideoProcessed(true);
+        setVideoUrl(result?.video_url);
+        setIsLoading(false);
+
+        toast.success("Processing successful!", {
+          position: "top-right",
+          duration: 4000,
+        });
+      }
+    } catch (error) {
+      console.error('Processing error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Failed to process request';
+      setErrorMessage(errorMsg);
+
+      toast.error(errorMsg, {
+        position: "top-center",
         duration: 4000,
       });
-      
-      // Set loading to false now that processing is complete
-      setIsLoading(false);
-    } else {
-      // Handle direct response (non-task based)
-      setThumbnail(result?.thumbnail_url);
-      setCreditUsage(result?.credit_usage || 1);
-      setVideoProcessed(true);
-      setVideoUrl(result?.video_url);
-      setIsLoading(false);
 
-      toast.success("Processing successful!", {
-        position: "top-right",
-        duration: 4000,
-      });
+      // Reset processed state on error
+      setVideoProcessed(false);
+      setTaskProgress(0);
+      setIsLoading(false);
+    } finally {
+      processingRef.current = false;
     }
-  } catch (error) {
-    console.error('Processing error:', error);
-    const errorMsg = error instanceof Error ? error.message : 'Failed to process request';
-    setErrorMessage(errorMsg);
+  };
 
-    toast.error(errorMsg, {
-      position: "top-center",
-      duration: 4000,
-    });
-    
-    // Reset processed state on error
-    setVideoProcessed(false);
-    setTaskProgress(0);
-    setIsLoading(false);
-  } finally {
-    processingRef.current = false;
-  }
-};
+  // Improved task status polling function
+  const pollTaskStatus = async (taskId: string): Promise<TaskResult> => {
+    return new Promise((resolve, reject) => {
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch(`https://cravio-ai.onrender.com/task-status/${taskId}`);
 
-// Improved task status polling function
-const pollTaskStatus = async (taskId: string): Promise<TaskResult> => {
-  return new Promise((resolve, reject) => {
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`https://cravio-ai.onrender.com/task-status/${taskId}`);
-        
-        if (!res.ok) {
-          clearInterval(interval);
-          return reject(new Error(`Error fetching status: ${res.status}`));
-        }
-
-        const statusData: TaskStatus = await res.json();
-        console.log('Task status:', statusData);
-
-        // Update progress if available
-        if (statusData.status === 'progress' && statusData.percent_complete !== undefined) {
-          const progressPercent = Math.round(statusData.percent_complete);
-          setTaskProgress(progressPercent);
-          
-          // Only show progress toast every 10% to avoid spamming
-          if (progressPercent % 10 === 0) {
-            toast.info(`Processing: ${progressPercent}%`, {
-              position: "top-right",
-              duration: 2000,
-              id: `progress-toast-${taskId}`  // Use ID to prevent duplicate toasts
-            });
+          if (!res.ok) {
+            clearInterval(interval);
+            return reject(new Error(`Error fetching status: ${res.status}`));
           }
-        }
 
-        if (statusData.status === 'success' && statusData.result) {
-          clearInterval(interval);
-          return resolve(statusData.result);
-        }
+          const statusData: TaskStatus = await res.json();
+          console.log('Task status:', statusData);
 
-        if (statusData.status === 'failure' || statusData.status === 'failed') {
+          // Update progress if available
+          if (statusData.status === 'progress' && statusData.percent_complete !== undefined) {
+            const progressPercent = Math.round(statusData.percent_complete);
+            setTaskProgress(progressPercent);
+
+            // Only show progress toast every 10% to avoid spamming
+            if (progressPercent % 10 === 0) {
+              toast.info(`Processing: ${progressPercent}%`, {
+                position: "top-right",
+                duration: 2000,
+                id: `progress-toast-${taskId}`  // Use ID to prevent duplicate toasts
+              });
+            }
+          }
+
+          if (statusData.status === 'success' && statusData.result) {
+            clearInterval(interval);
+            return resolve(statusData.result);
+          }
+
+          if (statusData.status === 'failure' || statusData.status === 'failed') {
+            clearInterval(interval);
+            return reject(new Error(statusData.message || 'Task failed'));
+          }
+        } catch (err) {
           clearInterval(interval);
-          return reject(new Error(statusData.message || 'Task failed'));
+          reject(err);
         }
-      } catch (err) {
-        clearInterval(interval);
-        reject(err);
+      }, 5000); // Poll every 5 seconds
+    });
+  };
+
+  const handleSubmit = async () => {
+
+    try {
+      if (!videoUrl) {
+        await handleProcess()
+      } else {
+        await handleOpusClip()
       }
-    }, 5000); // Poll every 5 seconds
-  });
-};
-
-const handleSubmit = async () => {
-
-  try {
-    if (!videoUrl) {
-      await handleProcess()
-    } else {
-      await handleOpusClip()
+    } catch (err) {
+      console.error(err);
     }
-  } catch (err) {
-    console.error(err);
-  }
-};
+  };
 
-const handleOpusClip = async () => {
-  // check videoUrl , thumbnail and creditUsage is avalable or not
-  setIsLoading(true);
-  if(!videoUrl || !thumbnail || !creditUsage) {
-    return toast.error(`Missing ${!videoUrl ? 'videoUrl' : !thumbnail ? 'thumbnail' : 'creditUsage'}`, {
-      position: "top-center",
-      duration: 4000,
-    })}
+  const handleOpusClip = async () => {
+    // check videoUrl , thumbnail and creditUsage is avalable or not
+    setIsLoading(true);
+    if (!videoUrl || !thumbnail || !creditUsage) {
+      return toast.error(`Missing ${!videoUrl ? 'videoUrl' : !thumbnail ? 'thumbnail' : 'creditUsage'}`, {
+        position: "top-center",
+        duration: 4000,
+      })
+    }
 
     // fetch opusclip api
     try {
@@ -612,42 +619,46 @@ const handleOpusClip = async () => {
       const data = await res.json()
       console.log(data)
       // Check if this is a task-based response
-    if (data.task_id) {
-      
-      // Set state to indicate processing has started
-      setVideoProcessed(true);
-      
-      // Keep the loading state active
-      setIsLoading(true);
-      
-      // Initial toast notification
-      toast.info("Video processing started. This may take a few minutes...", {
-        position: "top-right",
-        duration: 5000,
-      });
+      if (data.task_id) {
 
-      // Start polling for task status
-      await pollTaskStatus(data.task_id);
-      
-      // Show task completion toast
-      toast.success("Processing completed successfully!", {
-        position: "top-right",
-        duration: 4000,
-      });
-      
-      // Set loading to false now that processing is complete
-      setIsLoading(false);
-    } 
+        // Set state to indicate processing has started
+        setVideoProcessed(true);
+
+        // Keep the loading state active
+        setIsLoading(true);
+
+        // Initial toast notification
+        toast.info("Video processing started. This may take a few seconds...", {
+          position: "top-right",
+          duration: 5000,
+        });
+
+        // Start polling for task status
+        await pollTaskStatus(data.task_id);
+
+        // Show task completion toast
+        toast.success("Processing completed successfully!", {
+          position: "top-right",
+          duration: 4000,
+        });
+        
+      }
     } catch (error) {
       console.error(error)
       toast.error("Failed to process request", {
         position: "top-center",
         duration: 4000,
-      } )
+      })
     } finally {
       setIsLoading(false)
+      setThumbnail(null);
+      setCreditUsage(null);
+      setVideoProcessed(false);
+      setVideoUrl(null); // Clear the stored video URL
+      setTaskProgress(0); // Reset task progress
+      resetForm();
     }
-}
+  }
 
   const isSubmitEnabled = (isValidYoutubeLink || file) && !videoProcessed;
 
@@ -669,21 +680,29 @@ const handleOpusClip = async () => {
           <div className="absolute inset-0 z-0">
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 rounded-xl"
-              initial={{ rotate: 0 }}
+              initial={{ rotate: 0, scale: 1 }}
               animate={{
                 rotate: 360,
-                backgroundPosition: ["0% 0%", "100% 100%"],
-                scale: [1, 1.02, 1]
+                scale: [1, 1.01, 1], // Slight scale for subtle pulse
               }}
               transition={{
-                rotate: { duration: 3, repeat: Infinity, ease: "linear" },
-                backgroundPosition: { duration: 3, repeat: Infinity, ease: "linear" },
-                scale: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+                rotate: {
+                  duration: 10, // Slower full rotation for premium feel
+                  repeat: Infinity,
+                  ease: "linear",
+                },
+                scale: {
+                  duration: 6,
+                  repeat: Infinity,
+                  repeatType: "mirror",
+                  ease: "easeInOut",
+                },
               }}
             />
             <div className="absolute inset-0.5 bg-black rounded-xl" />
           </div>
         )}
+
 
         <div className="space-y-4 md:space-y-6 relative z-10">
           <div className="flex items-center gap-2 sm:gap-3 bg-zinc-900 border border-zinc-700 text-white p-3 md:p-4 rounded-lg">
