@@ -583,6 +583,7 @@ const handleSubmit = async () => {
 
 const handleOpusClip = async () => {
   // check videoUrl , thumbnail and creditUsage is avalable or not
+  setIsLoading(true);
   if(!videoUrl || !thumbnail || !creditUsage) {
     return toast.error(`Missing ${!videoUrl ? 'videoUrl' : !thumbnail ? 'thumbnail' : 'creditUsage'}`, {
       position: "top-center",
@@ -615,7 +616,9 @@ const handleOpusClip = async () => {
       toast.error("Failed to process request", {
         position: "top-center",
         duration: 4000,
-      })
+      } )
+    } finally {
+      setIsLoading(false)
     }
 }
 

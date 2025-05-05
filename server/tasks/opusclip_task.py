@@ -246,7 +246,7 @@ class OpusClipProcessTask(Task):
         super().on_failure(exc, task_id, args, kwargs, einfo)
 
 @celery_app.task(bind=True, base=OpusClipProcessTask)
-def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email):
+def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
     """
     Process a video to create short viral clips
     
@@ -350,7 +350,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email):
                 
             # Save transcript to file
             with open(temp_transcript_path, 'w') as f:
-                json.dump(transcription, f)
+                json.dump(transcription.model_dump(), f)  # Using model_dump() for OpenAI object
                 
             logger.info(f"Transcription completed and saved to {temp_transcript_path}")
             
@@ -473,21 +473,23 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email):
                 clip_filename = f"{unique_id}_clip_{i+1}.mp4"
                 temp_clip_path = os.path.join(TEMP_DIR, clip_filename)
                 
-                # Create clip with subtitle
                 # Calculate output dimensions for 9:16 aspect ratio
                 target_height = 1920
                 target_width = 1080
                 
-                # Define filter for adding subtitles
-                subtitle_escaped = subtitle.replace("'", "\\'").replace('"', '\\"')
+                # Create a subtitle file instead of embedding directly in command
+                subtitle_file = os.path.join(TEMP_DIR, f"{unique_id}_subtitle_{i+1}.txt")
+                with open(subtitle_file, 'w') as f:
+                    f.write(subtitle)
                 
-                # Create the clip using FFmpeg
+                # Create the clip using FFmpeg with a safer approach
+                # First create the clip without subtitles
                 ffmpeg_cmd = [
                     'ffmpeg',
                     '-ss', str(clip_start),
                     '-i', temp_video_path,
                     '-t', str(clip_end - clip_start),
-                    '-vf', f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2,drawtext=text='{subtitle_escaped}':fontcolor=yellow:fontsize=30:box=1:boxcolor=black@0.5:boxborderw=5:x=(w-text_w)/2:y=(h-text_h)/2",
+                    '-vf', f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2",
                     '-c:v', 'libx264',
                     '-c:a', 'aac',
                     '-y',  # Overwrite output file if it exists
@@ -495,6 +497,39 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email):
                 ]
                 
                 subprocess.run(ffmpeg_cmd, check=True)
+                
+                # Now add subtitles as a separate overlay text (if subtitle is not empty)
+                if subtitle.strip():
+                    temp_with_subtitle_path = os.path.join(TEMP_DIR, f"{unique_id}_clip_sub_{i+1}.mp4")
+                    
+                    # Read subtitle from file to avoid command line issues
+                    with open(subtitle_file, 'r') as f:
+                        subtitle_text = f.read().strip().replace('\n', ' ')
+                    
+                    # Truncate subtitle if too long (prevent command line issues)
+                    if len(subtitle_text) > 100:
+                        subtitle_text = subtitle_text[:97] + "..."
+                    
+                    # Escape special characters for drawtext filter
+                    subtitle_text = subtitle_text.replace("'", "'\\\\''").replace(':', '\\:').replace(',', '\\,')
+                    
+                    ffmpeg_subtitle_cmd = [
+                        'ffmpeg',
+                        '-i', temp_clip_path,
+                        '-vf', f"drawtext=text='{subtitle_text}':fontcolor=yellow:fontsize=30:box=1:boxcolor=black@0.5:boxborderw=5:x=(w-tw)/2:y=h-th-50",
+                        '-c:a', 'copy',
+                        '-y',
+                        temp_with_subtitle_path
+                    ]
+                    
+                    try:
+                        subprocess.run(ffmpeg_subtitle_cmd, check=True)
+                        # If successful, replace original clip with subtitled version
+                        shutil.move(temp_with_subtitle_path, temp_clip_path)
+                    except Exception as subtitle_error:
+                        logger.error(f"Error adding subtitles: {str(subtitle_error)}")
+                        # Continue with the clip without subtitles
+                
                 logger.info(f"Created clip {i+1}: {temp_clip_path}")
                 
                 # Upload clip to S3
@@ -517,8 +552,10 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email):
                     "caption": caption,
                 })
                 
-                # Clean up temporary clip file
+                # Clean up temporary clip files
                 os.remove(temp_clip_path)
+                if os.path.exists(subtitle_file):
+                    os.remove(subtitle_file)
                 
             except Exception as e:
                 logger.error(f"Error processing clip {i+1}: {str(e)}")
@@ -539,16 +576,19 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email):
                 "createdAt": datetime.now()
             }
             # find user by email
-            user = users_collection.find_one({"email": user_email})
-            if not user:
-                print(f"User with email {user_email} not found in database.")
-                return False
-            # Insert into database
-            result = users_collection.update_one(
-            {"email": user_email},
-            {"$push": {"opusclips": opusclip_doc}}
-            )
-            logger.info(f"Saved OpusClip to database with ID: {unique_id}")
+            if user_email:
+                user = users_collection.find_one({"email": user_email})
+                if not user:
+                    logger.warning(f"User with email {user_email} not found in database.")
+                else:
+                    # Insert into database
+                    result = users_collection.update_one(
+                        {"email": user_email},
+                        {"$push": {"opusclips": opusclip_doc}}
+                    )
+                    logger.info(f"Saved OpusClip to database with ID: {unique_id}")
+            else:
+                logger.warning("No user email provided, skipping database save")
             
         except Exception as e:
             logger.error(f"Error saving to database: {str(e)}")
