@@ -239,7 +239,7 @@ class OpusClipRequest(BaseModel):
     email: str 
 
 @router.post("/opusclip")
-async def process_opusclip(request: OpusClipRequest):
+async def opusclip(request: OpusClipRequest):
     """
     Process a video with OpusClip after checking and deducting user credits
     """
