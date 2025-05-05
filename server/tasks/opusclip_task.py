@@ -481,8 +481,10 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 # For 9:16 aspect ratio
                 # target_height = 1920
                 # target_width = 1080
-                target_height = 1280
-                target_width = 720
+                # target_height = 640
+                # target_width = 360
+                target_height = 640
+                target_width = 360
                 
                 # Create subtitle file for FFmpeg subtitle filter
                 subtitle_file = os.path.join(TEMP_DIR, f"{unique_id}_subtitle_{i+1}.srt")
@@ -518,6 +520,10 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                     '-t', str(clip_end - clip_start),
                     '-c:v', 'libx264',
                     '-preset', 'ultrafast',
+                    '-crf', '28', 
+                    '-threads', '2',
+                    '-max_muxing_queue_size', '512',
+                    '-b:a', '64k', 
                     '-c:a', 'aac',
                     '-y',
                     temp_raw_clip
@@ -540,6 +546,10 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                     '-map', '0:a',
                     '-c:v', 'libx264',
                     '-preset', 'ultrafast',
+                    '-crf', '28',
+                    '-threads', '2',
+                    '-max_muxing_queue_size', '512',
+                    '-b:a', '64k', 
                     '-c:a', 'aac',
                     '-y',
                     temp_clip_path
@@ -562,6 +572,10 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                         '-i', temp_raw_clip,
                         '-vf', vf_filter,
                         '-preset', 'ultrafast',
+                        '-crf', '28',
+                        '-threads', '2',
+                        '-max_muxing_queue_size', '512',
+                        '-b:a', '64k', 
                         '-c:a', 'copy',
                         '-y',
                         temp_clip_path
@@ -579,6 +593,10 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                             '-i', temp_raw_clip,
                             '-vf', f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2",
                             '-preset', 'ultrafast',
+                            '-crf', '28',
+                            '-threads', '2',
+                            '-max_muxing_queue_size', '512',
+                            '-b:a', '64k', 
                             '-c:a', 'copy',
                             '-y',
                             temp_clip_path
