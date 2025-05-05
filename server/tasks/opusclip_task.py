@@ -384,6 +384,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
             identify up to 10 potential viral clips that are approximately 30 seconds each.
             
             Find moments that are engaging, surprising, emotional, or contain valuable information. Look for:
+            - starting hook that attracts viewers
             - Memorable quotes or statements
             - Surprising revelations
             - Emotional moments
@@ -406,7 +407,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                         "start": 120.5,
                         "end": 150.2,
                         "subtitle": "This is the transcript text for this clip",
-                        "caption": "You won't believe what happens next! #viral"
+                        "caption": "You won't believe what happens next! "
                     }}
                 ]
             }}
@@ -448,6 +449,52 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 "caption": "Check out this highlight! #viral"
             }]
         
+        # Helper function for improved SRT generation
+        def create_improved_srt(subtitle_text, clip_start, clip_end, words_per_line=4, max_width_percent=80):
+            """
+            Creates an improved SRT file with better word wrapping and timing.
+            
+            Args:
+                subtitle_text (str): The full subtitle text for the clip
+                clip_start (float): Start time of the clip in seconds
+                clip_end (float): End time of the clip in seconds
+                words_per_line (int): Target number of words per line (3-5 recommended)
+                max_width_percent (int): Maximum width percentage of the video (80% recommended)
+                
+            Returns:
+                str: Formatted SRT content
+            """
+            words = subtitle_text.split()
+            total_words = len(words)
+            
+            # Calculate how many lines we'll need
+            total_lines = (total_words + words_per_line - 1) // words_per_line
+            
+            # Calculate duration for each line
+            clip_duration = clip_end - clip_start
+            line_duration = clip_duration / total_lines if total_lines > 0 else clip_duration
+            
+            srt_content = ""
+            line_num = 1
+            
+            for i in range(0, total_words, words_per_line):
+                # Get words for this line
+                line_words = words[i:i+words_per_line]
+                
+                # Calculate timing for this line
+                line_start = clip_start + (line_num - 1) * line_duration
+                line_end = line_start + line_duration
+                
+                # Format times as HH:MM:SS,mmm
+                start_time = time.strftime('%H:%M:%S', time.gmtime(line_start)) + f",{int((line_start % 1) * 1000):03d}"
+                end_time = time.strftime('%H:%M:%S', time.gmtime(line_end)) + f",{int((line_end % 1) * 1000):03d}"
+                
+                # Add this line to SRT content
+                srt_content += f"{line_num}\n{start_time} --> {end_time}\n{' '.join(line_words)}\n\n"
+                line_num += 1
+            
+            return srt_content
+        
         # Process and create each clip
         processed_clips = []
         
@@ -478,38 +525,23 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 clip_filename = f"{unique_id}_clip_{i+1}.mp4"
                 temp_clip_path = os.path.join(TEMP_DIR, clip_filename)
                 
-                # For 9:16 aspect ratio
-                # target_height = 1920
-                # target_width = 1080
-                # target_height = 640
-                # target_width = 360
+                # Set target dimensions
                 target_height = 640
                 target_width = 360
                 
-                # Create subtitle file for FFmpeg subtitle filter
+                # Calculate maximum subtitle width (80% of video width)
+                subtitle_max_width = int(target_width * 0.8)
+                
+                # Create subtitle file with improved formatting
                 subtitle_file = os.path.join(TEMP_DIR, f"{unique_id}_subtitle_{i+1}.srt")
                 
-                # Format subtitle as SRT file with one word per line for better readability
-                words = subtitle.split()
-                srt_content = ""
-                words_per_line = 3  # Adjust for better visibility
-                for j in range(0, len(words), words_per_line):
-                    line_words = words[j:j+words_per_line]
-                    line_num = j // words_per_line + 1
-                    # Calculate timing for each line (distribute evenly across clip duration)
-                    line_duration = (clip_end - clip_start) / ((len(words) // words_per_line) + 1)
-                    line_start = clip_start + (line_num - 1) * line_duration
-                    line_end = line_start + line_duration
-                    
-                    # Format times as HH:MM:SS,mmm
-                    start_time = time.strftime('%H:%M:%S', time.gmtime(line_start)) + f",{int((line_start % 1) * 1000):03d}"
-                    end_time = time.strftime('%H:%M:%S', time.gmtime(line_end)) + f",{int((line_end % 1) * 1000):03d}"
-                    
-                    srt_content += f"{line_num}\n{start_time} --> {end_time}\n{' '.join(line_words)}\n\n"
+                # Create improved SRT content with 3-5 words per line
+                words_per_line = 4  # Adjust between 3-5 for best visual appeal
+                srt_content = create_improved_srt(subtitle, clip_start, clip_end, words_per_line, 80)
                 
                 with open(subtitle_file, 'w') as f:
                     f.write(srt_content)
-                logger.info(f"Created SRT subtitle file: {subtitle_file}")
+                logger.info(f"Created improved SRT subtitle file: {subtitle_file}")
                 
                 # First extract the clip segment
                 temp_raw_clip = os.path.join(TEMP_DIR, f"{unique_id}_raw_clip_{i+1}.mp4")
@@ -534,19 +566,22 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 # Now create the final clip with proper aspect ratio and subtitles
                 # Fix backslash issue in path for subtitles
                 subtitle_path = subtitle_file.replace('\\', '/')
-                filter_complex = "[0:v]scale={0}:{1}:force_original_aspect_ratio=decrease,pad={0}:{1}:(ow-iw)/2:(oh-ih)/2[v];".format(target_width, target_height)
-                filter_complex += "[v]subtitles='{0}':force_style='FontName=Arial,FontSize=24,PrimaryColour=&Hffffff,OutlineColour=&H000000,Bold=1,Alignment=2'[outv]".format(subtitle_path)
+                
+                # Advanced subtitle styling with ASS filter for better control
+                # This will position subtitles at the center bottom with proper styling
+                ass_style = "FontName=Arial,FontSize=24,PrimaryColour=&H00FFFF,OutlineColour=&H000000,BackColour=&H80000000,Bold=1,Alignment=2,MarginV=30"
+                filter_complex = f"[0:v]scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2[v];"
+                filter_complex += f"[v]subtitles='{subtitle_path}':force_style='{ass_style}'[outv]"
                 
                 ffmpeg_process_cmd = [
                     'ffmpeg',
                     '-i', temp_raw_clip,
-                    '-i', subtitle_file,
                     '-filter_complex', filter_complex,
                     '-map', '[outv]',
                     '-map', '0:a',
                     '-c:v', 'libx264',
-                    '-preset', 'ultrafast',
-                    '-crf', '28',
+                    '-preset', 'ultrafast',  # Better quality
+                    '-crf', '28',         # Better quality
                     '-threads', '2',
                     '-max_muxing_queue_size', '512',
                     '-b:a', '64k', 
@@ -557,52 +592,131 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 
                 try:
                     subprocess.run(ffmpeg_process_cmd, check=True)
-                    logger.info(f"Created final clip with subtitles: {temp_clip_path}")
+                    logger.info(f"Created final clip with improved subtitles: {temp_clip_path}")
                 except Exception as e:
                     logger.error(f"Error creating clip with subtitles: {str(e)}")
                     
-                    # Fallback: Try a simpler approach with drawtext if subtitles filter fails
-                    # Safe fallback without f-string escaping issues
-                    short_subtitle = subtitle[:100].replace("'", "")
-                    vf_filter = "scale={0}:{1}:force_original_aspect_ratio=decrease,pad={0}:{1}:(ow-iw)/2:(oh-ih)/2,".format(target_width, target_height)
-                    vf_filter += "drawtext=text='{0}':fontcolor=yellow:fontsize=30:box=1:boxcolor=black@0.5:boxborderw=5:x=(w-tw)/2:y=h-(2*lh)".format(short_subtitle)
-                    
-                    fallback_cmd = [
-                        'ffmpeg',
-                        '-i', temp_raw_clip,
-                        '-vf', vf_filter,
-                        '-preset', 'ultrafast',
-                        '-crf', '28',
-                        '-threads', '2',
-                        '-max_muxing_queue_size', '512',
-                        '-b:a', '64k', 
-                        '-c:a', 'copy',
-                        '-y',
-                        temp_clip_path
-                    ]
-                    
+                    # Enhanced fallback method with better subtitle styling
                     try:
-                        subprocess.run(fallback_cmd, check=True)
-                        logger.info(f"Created clip with fallback subtitle method: {temp_clip_path}")
-                    except Exception as fallback_error:
-                        logger.error(f"Fallback subtitling also failed: {str(fallback_error)}")
+                        # Create a temporary ASS subtitle file for better control
+                        ass_file = os.path.join(TEMP_DIR, f"{unique_id}_subtitle_{i+1}.ass")
                         
-                        # Last resort: Just use the raw clip with proper aspect ratio
-                        last_resort_cmd = [
+                        # Basic ASS header
+                        ass_header = """[Script Info]
+ScriptType: v4.00+
+PlayResX: 384
+PlayResY: 288
+WrapStyle: 0
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,20,&H00FFFF,&H000000,&H000000,&H80000000,1,0,0,0,100,100,0,0,1,2,0,2,10,10,30,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+"""
+                        
+                        # Parse the SRT content and convert to ASS
+                        ass_content = ass_header
+                        lines = srt_content.strip().split('\n\n')
+                        for line in lines:
+                            parts = line.split('\n')
+                            if len(parts) >= 3:
+                                timecode = parts[1].replace(',', '.')
+                                start_time, end_time = timecode.split(' --> ')
+                                text = parts[2]
+                                
+                                # Add event line
+                                ass_content += f"Dialogue: 0,{start_time},{end_time},Default,,0,0,0,,{text}\n"
+                        
+                        with open(ass_file, 'w') as f:
+                            f.write(ass_content)
+                        
+                        # Use the ASS file with ffmpeg
+                        ass_path = ass_file.replace('\\', '/')
+                        filter_complex = f"[0:v]scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2[v];"
+                        filter_complex += f"[v]ass='{ass_path}'[outv]"
+                        
+                        fallback_cmd = [
                             'ffmpeg',
                             '-i', temp_raw_clip,
-                            '-vf', f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2",
+                            '-filter_complex', filter_complex,
+                            '-map', '[outv]',
+                            '-map', '0:a',
+                            '-c:v', 'libx264',
                             '-preset', 'ultrafast',
                             '-crf', '28',
                             '-threads', '2',
                             '-max_muxing_queue_size', '512',
                             '-b:a', '64k', 
-                            '-c:a', 'copy',
+                            '-c:a', 'aac',
                             '-y',
                             temp_clip_path
                         ]
-                        subprocess.run(last_resort_cmd, check=True)
-                        logger.info(f"Created clip without subtitles: {temp_clip_path}")
+                        
+                        subprocess.run(fallback_cmd, check=True)
+                        logger.info(f"Created clip with ASS subtitle fallback: {temp_clip_path}")
+                        
+                        # Clean up ASS file
+                        if os.path.exists(ass_file):
+                            os.remove(ass_file)
+                            
+                    except Exception as fallback_error:
+                        logger.error(f"ASS subtitle fallback also failed: {str(fallback_error)}")
+                        
+                        # Last resort: Simple drawtext method with careful styling
+                        try:
+                            # Process subtitle text for drawtext
+                            # Break into lines with 3-5 words per line
+                            words = subtitle.split()
+                            formatted_lines = []
+                            for j in range(0, len(words), words_per_line):
+                                line = ' '.join(words[j:j+words_per_line])
+                                formatted_lines.append(line)
+                            
+                            formatted_text = '\\n'.join(formatted_lines)
+                            safe_text = formatted_text.replace("'", "").replace('"', '')
+                            
+                            # Create dynamic filter with drawtext for each line
+                            vf_filter = f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2,"
+                            vf_filter += f"drawtext=text='{safe_text}':fontcolor=yellow:fontsize=20:box=1:boxcolor=black@0.5:boxborderw=5:x=(w-text_w)/2:y=h-text_h-30:line_spacing=10"
+                            
+                            final_resort_cmd = [
+                                'ffmpeg',
+                                '-i', temp_raw_clip,
+                                '-vf', vf_filter,
+                                '-c:v', 'libx264',
+                                '-preset', 'ultrafast',
+                                '-crf', '28',
+                                '-threads', '2',
+                                '-max_muxing_queue_size', '512',
+                                '-b:a', '64k', 
+                                '-c:a', 'aac',
+                                '-y',
+                                temp_clip_path
+                            ]
+                            
+                            subprocess.run(final_resort_cmd, check=True)
+                            logger.info(f"Created clip with drawtext fallback: {temp_clip_path}")
+                        except Exception as final_error:
+                            logger.error(f"All subtitle methods failed: {str(final_error)}")
+                            
+                            # Absolute last resort: Just use the raw clip with proper aspect ratio
+                            last_resort_cmd = [
+                                'ffmpeg',
+                                '-i', temp_raw_clip,
+                                '-vf', f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2",
+                                '-preset', 'ultrafast',
+                                '-crf', '28',
+                                '-threads', '2',
+                                '-max_muxing_queue_size', '512',
+                                '-b:a', '64k', 
+                                '-c:a', 'aac',
+                                '-y',
+                                temp_clip_path
+                            ]
+                            subprocess.run(last_resort_cmd, check=True)
+                            logger.info(f"Created clip without subtitles: {temp_clip_path}")
                 
                 # Verify clip was created
                 if not os.path.exists(temp_clip_path) or os.path.getsize(temp_clip_path) < 1000:
@@ -693,3 +807,48 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
     except Exception as e:
         logger.error(f"Error in OpusClip processing task: {str(e)}")
         raise Exception(f"OpusClip processing failed: {str(e)}")
+    
+def create_improved_srt(subtitle_text, clip_start, clip_end, words_per_line=4, max_width_percent=80):
+    """
+    Creates an improved SRT file with better word wrapping and timing.
+    
+    Args:
+        subtitle_text (str): The full subtitle text for the clip
+        clip_start (float): Start time of the clip in seconds
+        clip_end (float): End time of the clip in seconds
+        words_per_line (int): Target number of words per line (3-5 recommended)
+        max_width_percent (int): Maximum width percentage of the video (80% recommended)
+        
+    Returns:
+        str: Formatted SRT content
+    """
+    words = subtitle_text.split()
+    total_words = len(words)
+    
+    # Calculate how many lines we'll need
+    total_lines = (total_words + words_per_line - 1) // words_per_line
+    
+    # Calculate duration for each line
+    clip_duration = clip_end - clip_start
+    line_duration = clip_duration / total_lines if total_lines > 0 else clip_duration
+    
+    srt_content = ""
+    line_num = 1
+    
+    for i in range(0, total_words, words_per_line):
+        # Get words for this line
+        line_words = words[i:i+words_per_line]
+        
+        # Calculate timing for this line
+        line_start = clip_start + (line_num - 1) * line_duration
+        line_end = line_start + line_duration
+        
+        # Format times as HH:MM:SS,mmm
+        start_time = time.strftime('%H:%M:%S', time.gmtime(line_start)) + f",{int((line_start % 1) * 1000):03d}"
+        end_time = time.strftime('%H:%M:%S', time.gmtime(line_end)) + f",{int((line_end % 1) * 1000):03d}"
+        
+        # Add this line to SRT content
+        srt_content += f"{line_num}\n{start_time} --> {end_time}\n{' '.join(line_words)}\n\n"
+        line_num += 1
+    
+    return srt_content
