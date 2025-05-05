@@ -446,7 +446,6 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
         
         # Process and create each clip
         processed_clips = []
-        clip_count = len(clips)
         
         for i, clip in enumerate(clips):
             try:
@@ -466,10 +465,9 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                         continue
                 
                 # Update task state
-                progress = 40 + (50 * (i / clip_count))
                 self.update_state(state='PROGRESS', meta={
-                    'status': f'Processing clip {i+1}/{clip_count}', 
-                    'percent_complete': progress
+                    'status': 'Processing clip ', 
+                    'percent_complete': 50
                 })
                 
                 # Create clip output path
@@ -486,6 +484,10 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                     f.write(subtitle)
                 
                 # Create the clip using FFmpeg with a safer approach
+                self.update_state(state='PROGRESS', meta={
+                'status': 'Saving results to database', 
+                'percent_complete': 70
+                })
                 # First create the clip without subtitles
                 ffmpeg_cmd = [
                     'ffmpeg',
@@ -612,6 +614,8 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
         return {
             "message": "Viral clip processing complete",
             "clips": processed_clips,
+            "transcript": full_transcript,
+            "gpt-clips_data": clips_data
         }
         
     except Exception as e:
