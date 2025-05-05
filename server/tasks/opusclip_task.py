@@ -479,8 +479,10 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 temp_clip_path = os.path.join(TEMP_DIR, clip_filename)
                 
                 # For 9:16 aspect ratio
-                target_height = 1920
-                target_width = 1080
+                # target_height = 1920
+                # target_width = 1080
+                target_height = 1280
+                target_width = 720
                 
                 # Create subtitle file for FFmpeg subtitle filter
                 subtitle_file = os.path.join(TEMP_DIR, f"{unique_id}_subtitle_{i+1}.srt")
@@ -515,6 +517,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                     '-i', temp_video_path,
                     '-t', str(clip_end - clip_start),
                     '-c:v', 'libx264',
+                    '-preset', 'ultrafast',
                     '-c:a', 'aac',
                     '-y',
                     temp_raw_clip
@@ -536,6 +539,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                     '-map', '[outv]',
                     '-map', '0:a',
                     '-c:v', 'libx264',
+                    '-preset', 'ultrafast',
                     '-c:a', 'aac',
                     '-y',
                     temp_clip_path
@@ -557,6 +561,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                         'ffmpeg',
                         '-i', temp_raw_clip,
                         '-vf', vf_filter,
+                        '-preset', 'ultrafast',
                         '-c:a', 'copy',
                         '-y',
                         temp_clip_path
@@ -573,6 +578,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                             'ffmpeg',
                             '-i', temp_raw_clip,
                             '-vf', f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2",
+                            '-preset', 'ultrafast',
                             '-c:a', 'copy',
                             '-y',
                             temp_clip_path
