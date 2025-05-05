@@ -445,7 +445,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 "start": 0,
                 "end": min(30, duration),
                 "subtitle": "Highlight clip",
-                "caption": "Check out this highlight!"
+                "caption": "Check out this highlight! #viral"
             }]
         
         # Process and create each clip
@@ -523,12 +523,16 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 logger.info(f"Extracted raw clip: {temp_raw_clip}")
                 
                 # Now create the final clip with proper aspect ratio and subtitles
+                # Fix backslash issue in path for subtitles
+                subtitle_path = subtitle_file.replace('\\', '/')
+                filter_complex = "[0:v]scale={0}:{1}:force_original_aspect_ratio=decrease,pad={0}:{1}:(ow-iw)/2:(oh-ih)/2[v];".format(target_width, target_height)
+                filter_complex += "[v]subtitles='{0}':force_style='FontName=Arial,FontSize=24,PrimaryColour=&Hffffff,OutlineColour=&H000000,Bold=1,Alignment=2'[outv]".format(subtitle_path)
+                
                 ffmpeg_process_cmd = [
                     'ffmpeg',
                     '-i', temp_raw_clip,
                     '-i', subtitle_file,
-                    '-filter_complex',
-                    f"[0:v]scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2[v];[v]subtitles='{subtitle_file.replace('\\', '/')}':force_style='FontName=Arial,FontSize=24,PrimaryColour=&Hffffff,OutlineColour=&H000000,Bold=1,Alignment=2'[outv]",
+                    '-filter_complex', filter_complex,
                     '-map', '[outv]',
                     '-map', '0:a',
                     '-c:v', 'libx264',
@@ -544,10 +548,15 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                     logger.error(f"Error creating clip with subtitles: {str(e)}")
                     
                     # Fallback: Try a simpler approach with drawtext if subtitles filter fails
+                    # Safe fallback without f-string escaping issues
+                    short_subtitle = subtitle[:100].replace("'", "")
+                    vf_filter = "scale={0}:{1}:force_original_aspect_ratio=decrease,pad={0}:{1}:(ow-iw)/2:(oh-ih)/2,".format(target_width, target_height)
+                    vf_filter += "drawtext=text='{0}':fontcolor=yellow:fontsize=30:box=1:boxcolor=black@0.5:boxborderw=5:x=(w-tw)/2:y=h-(2*lh)".format(short_subtitle)
+                    
                     fallback_cmd = [
                         'ffmpeg',
                         '-i', temp_raw_clip,
-                        '-vf', f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2,drawtext=text='{subtitle[:100]}':fontcolor=yellow:fontsize=30:box=1:boxcolor=black@0.5:boxborderw=5:x=(w-tw)/2:y=h-(2*lh)",
+                        '-vf', vf_filter,
                         '-c:a', 'copy',
                         '-y',
                         temp_clip_path
