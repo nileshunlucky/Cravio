@@ -246,7 +246,7 @@ class OpusClipProcessTask(Task):
         super().on_failure(exc, task_id, args, kwargs, einfo)
 
 @celery_app.task(bind=True, base=OpusClipProcessTask)
-def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
+def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email):
     """
     Process a video to create short viral clips
     

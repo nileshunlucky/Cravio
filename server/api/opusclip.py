@@ -10,7 +10,7 @@ from botocore.exceptions import ClientError
 import re
 import aiofiles
 import urllib.parse
-from tasks.opusclip_task import process_video
+from tasks.opusclip_task import process_video, process_opusclip
 from db import users_collection
 
 # Configure logging
@@ -270,7 +270,7 @@ async def process_opusclip(request: OpusClipRequest):
         logger.info(f"Deducted {request.creditUsage} credits from user {request.email}")
         
         # Start Celery task to process the video
-        task = process_video.delay(
+        task = process_opusclip.delay(
             s3_video_url=request.videoUrl,
             s3_thumbnail_url=request.thumbnail,
             user_email=request.email
