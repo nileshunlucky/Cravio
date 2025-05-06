@@ -231,7 +231,7 @@ const ClipPage = () => {
         <div className="max-w-md w-full bg-neutral-900 border border-neutral-800 p-6 rounded-xl text-center">
           <h2 className="text-xl font-bold mb-3">No Clips Found</h2>
           <p className="text-neutral-400">
-            This collection doesn't have any clips or the clip ID is invalid.
+            This collection doesn&apos;t have any clips or the clip ID is invalid.
           </p>
           <Button 
             variant="outline"

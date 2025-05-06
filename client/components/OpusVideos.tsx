@@ -22,7 +22,6 @@ const formatDateAgo = (dateString: string): string => {
     const days = Math.round(hours / 24);
     const weeks = Math.round(days / 7);
     const months = Math.round(days / 30.44); // Average days in month
-    const years = Math.round(days / 365);
 
     if (seconds < 60) return "just now";
     if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
