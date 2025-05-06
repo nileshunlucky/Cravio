@@ -121,4 +121,6 @@
   }
 }
 
-
+.scroll-hidden::-webkit-scrollbar {
+  display: none; 
+}

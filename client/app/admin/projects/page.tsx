@@ -32,12 +32,11 @@ export default function ProjectPage() {
     const fetchVideos = async () => {
       if (!user?.primaryEmailAddress?.emailAddress) return
       const email = user.primaryEmailAddress.emailAddress
-      
+
       setLoading(true)
       try {
         const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`)
         const data = await res.json()
-        console.log(data?.opusclips)
         if (data.videos) {
           // Sort videos by created_at in descending order to show the latest first
           const sortedVideos = data.videos.sort((a: VideoType, b: VideoType) => {
@@ -64,7 +63,7 @@ export default function ProjectPage() {
           }),
         })
         const data = await res.json()
-    
+
         if (res.ok) {
           console.log('[Auto Delete] Success:', data.detail)
         } else {
@@ -73,8 +72,8 @@ export default function ProjectPage() {
       } catch (err) {
         console.error('[Auto Delete] Error:', err)
       }
-    }  
-    
+    }
+
     if (user) {
       fetchVideos()
       deleteOldVideos()
@@ -87,7 +86,7 @@ export default function ProjectPage() {
     const now = new Date()
     const diffTime = Math.abs(now.getTime() - date.getTime())
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-    
+
     if (diffDays === 0) {
       return 'Today'
     } else if (diffDays === 1) {
@@ -137,8 +136,8 @@ export default function ProjectPage() {
               if (!open) setSelectedVideo(null)
             }}>
               <DialogTrigger asChild>
-                <motion.div 
-                  className="cursor-pointer" 
+                <motion.div
+                  className="cursor-pointer"
                   whileHover={{ y: -5, transition: { duration: 0.2 } }}
                   onClick={() => {
                     setSelectedVideo(video)
@@ -147,9 +146,9 @@ export default function ProjectPage() {
                 >
                   <Card className="overflow-hidden rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
                     <div className="relative">
-                      <video 
-                        src={video.url} 
-                        className="w-full h-48 object-cover" 
+                      <video
+                        src={video.url}
+                        className="w-full h-48 object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end p-3">
                         <p className="text-white text-xs line-clamp-2">{video.caption}</p>
@@ -164,137 +163,137 @@ export default function ProjectPage() {
               </DialogTrigger>
 
               {selectedVideo && (
-<DialogContent className="max-w-3xl w-full p-0 overflow-hidden rounded-lg h-[90vh] md:h-[85vh]">
-      <div className="sr-only">
-        <DialogTitle>{selectedVideo.title}</DialogTitle>
-        <DialogDescription>Video details and controls</DialogDescription>
-      </div>
-      
-      <div className="flex flex-col h-full">
-        {/* Mobile close button */}
-        <div className="absolute right-4 top-4 z-10">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="bg-black/30 hover:bg-black/40 rounded-full text-white"
-            onClick={() => setIsDialogOpen(false)}
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-        
-        {/* Video Section */}
-        <div className="w-full bg-black flex items-center justify-center flex-shrink-0">
-          <video 
-            src={selectedVideo.url} 
-            controls 
-            className="w-full max-h-[40vh] md:max-h-[50vh] object-contain" 
-            autoPlay
-          />
-        </div>
-        
-        {/* Content Section with proper scrolling */}
-        <div className="flex-grow bg-white flex flex-col overflow-hidden">
-          {/* Header */}
-          <div className="p-4 flex items-center border-b flex-shrink-0">
-            <Avatar className="h-8 w-8 mr-2">
-              <AvatarImage src={user?.imageUrl || ''} />
-              <AvatarFallback>{user?.firstName?.charAt(0) || 'U'}</AvatarFallback>
-            </Avatar>
-            <div className="flex-grow">
-              <p className="text-sm font-medium">{user?.fullName || 'User'}</p>
-              <p className="text-xs text-gray-500">{formatDate(selectedVideo.created_at)}</p>
-            </div>
-            <a href={selectedVideo.url} download className="no-underline" target='_blank'>
-              <Button variant="ghost" size="sm" className="gap-1">
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">Download</span>
-              </Button>
-            </a>
-          </div>
-          
-          {/* Title */}
-          <div className="px-4 py-2 flex-shrink-0">
-            <h2 className="text-base font-semibold">{selectedVideo.title}</h2>
-          </div>
-          
-          {/* Tabs with scrollable content */}
-          <Tabs defaultValue="caption" className="flex flex-col flex-grow overflow-hidden">
-            <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
-              <TabsTrigger value="caption" className="text-sm">
-                <Copy className="h-4 w-4 mr-2" />
-                Caption
-              </TabsTrigger>
-              <TabsTrigger value="script" className="text-sm">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Script
-              </TabsTrigger>
-            </TabsList>
-            
-            {/* Caption Tab */}
-            <TabsContent 
-              value="caption" 
-              className="flex-1 overflow-auto p-4"
-            >
-              <div className="flex flex-col h-full">
-                <div className="flex justify-between items-start mb-4 sticky top-0 bg-white pb-2 z-10">
-                  <h3 className="text-sm font-medium">Caption</h3>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 px-2"
-                          onClick={() => copyToClipboard(selectedVideo.caption || "")}
+                <DialogContent className="max-w-3xl w-full p-0 overflow-hidden rounded-lg h-[90vh] md:h-[85vh]">
+                  <div className="sr-only">
+                    <DialogTitle>{selectedVideo.title}</DialogTitle>
+                    <DialogDescription>Video details and controls</DialogDescription>
+                  </div>
+
+                  <div className="flex flex-col h-full">
+                    {/* Mobile close button */}
+                    <div className="absolute right-4 top-4 z-10">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="bg-black/30 hover:bg-black/40 rounded-full text-white"
+                        onClick={() => setIsDialogOpen(false)}
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </div>
+
+                    {/* Video Section */}
+                    <div className="w-full bg-black flex items-center justify-center flex-shrink-0">
+                      <video
+                        src={selectedVideo.url}
+                        controls
+                        className="w-full max-h-[40vh] md:max-h-[50vh] object-contain"
+                        autoPlay
+                      />
+                    </div>
+
+                    {/* Content Section with proper scrolling */}
+                    <div className="flex-grow bg-white flex flex-col overflow-hidden">
+                      {/* Header */}
+                      <div className="p-4 flex items-center border-b flex-shrink-0">
+                        <Avatar className="h-8 w-8 mr-2">
+                          <AvatarImage src={user?.imageUrl || ''} />
+                          <AvatarFallback>{user?.firstName?.charAt(0) || 'U'}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-grow">
+                          <p className="text-sm font-medium">{user?.fullName || 'User'}</p>
+                          <p className="text-xs text-gray-500">{formatDate(selectedVideo.created_at)}</p>
+                        </div>
+                        <a href={selectedVideo.url} download className="no-underline" target='_blank'>
+                          <Button variant="ghost" size="sm" className="gap-1">
+                            <Download className="h-4 w-4" />
+                            <span className="hidden sm:inline">Download</span>
+                          </Button>
+                        </a>
+                      </div>
+
+                      {/* Title */}
+                      <div className="px-4 py-2 flex-shrink-0">
+                        <h2 className="text-base font-semibold">{selectedVideo.title}</h2>
+                      </div>
+
+                      {/* Tabs with scrollable content */}
+                      <Tabs defaultValue="caption" className="flex flex-col flex-grow overflow-hidden">
+                        <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
+                          <TabsTrigger value="caption" className="text-sm">
+                            <Copy className="h-4 w-4 mr-2" />
+                            Caption
+                          </TabsTrigger>
+                          <TabsTrigger value="script" className="text-sm">
+                            <MessageCircle className="h-4 w-4 mr-2" />
+                            Script
+                          </TabsTrigger>
+                        </TabsList>
+
+                        {/* Caption Tab */}
+                        <TabsContent
+                          value="caption"
+                          className="flex-1 overflow-auto p-4"
                         >
-                          {copied ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{copied ? "Copied!" : "Copy caption"}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg flex-1 overflow-auto">
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                    {selectedVideo.caption || "No caption available"}
-                  </p>
-                </div>
-              </div>
-            </TabsContent>
-            
-            {/* Script Tab */}
-            <TabsContent 
-              value="script" 
-              className="flex-1 overflow-auto p-4"
-            >
-              <div className="flex flex-col h-full">
-                <div className="sticky top-0 bg-white pb-2 z-10">
-                  <h3 className="text-sm font-medium">Script</h3>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg flex-1 overflow-auto">
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                    {selectedVideo.script || "No script available"}
-                  </p>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
-    </DialogContent>
+                          <div className="flex flex-col h-full">
+                            <div className="flex justify-between items-start mb-4 sticky top-0 bg-white pb-2 z-10">
+                              <h3 className="text-sm font-medium">Caption</h3>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 px-2"
+                                      onClick={() => copyToClipboard(selectedVideo.caption || "")}
+                                    >
+                                      {copied ? (
+                                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                      ) : (
+                                        <Copy className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{copied ? "Copied!" : "Copy caption"}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                            <div className="bg-gray-50 p-4 rounded-lg flex-1 overflow-auto">
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                {selectedVideo.caption || "No caption available"}
+                              </p>
+                            </div>
+                          </div>
+                        </TabsContent>
+
+                        {/* Script Tab */}
+                        <TabsContent
+                          value="script"
+                          className="flex-1 overflow-auto p-4"
+                        >
+                          <div className="flex flex-col h-full">
+                            <div className="sticky top-0 bg-white pb-2 z-10">
+                              <h3 className="text-sm font-medium">Script</h3>
+                            </div>
+                            <div className="bg-gray-50 p-4 rounded-lg flex-1 overflow-auto">
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                {selectedVideo.script || "No script available"}
+                              </p>
+                            </div>
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    </div>
+                  </div>
+                </DialogContent>
               )}
             </Dialog>
           ))}
         </div>
       )}
-      
+
       {!loading && videos.length === 0 && (
         <div className="text-center py-12">
           <h3 className="text-lg font-medium text-gray-700">No videos yet</h3>

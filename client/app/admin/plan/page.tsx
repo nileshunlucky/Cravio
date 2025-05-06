@@ -231,7 +231,7 @@ const Plans: React.FC = () => {
                 <div className="mt-4 text-center">
                   <span className={cn(
                     "text-4xl font-bold",
-                    plan.highlight ? "text-5xl text-blue-600" : ""
+                    plan.highlight ? "text-5xl " : ""
                   )}>
                     ${plan.price}
                   </span>
