@@ -10,7 +10,7 @@ const Monitize = () => {
   const isInView = useInView(ref, { once: true, amount: 0.4 })
 
   return (
-    <section ref={ref} className="h-screen flex items-center justify-center bg-white px-6">
+    <section ref={ref} className="h-screen flex items-center justify-center px-6">
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -23,14 +23,14 @@ const Monitize = () => {
             Monetize Effortlessly with AI
           </h2>
           <p className="mt-4 text-muted-foreground text-lg md:text-xl">
-            Creators are making <span className="text-black font-semibold">$10,000+/month</span> using our AI-powered faceless content clip generator.
+            Creators are making <span className=" font-semibold">$10,000+/month</span> using our AI-powered faceless content clip generator.
             All you need is an idea — we handle the rest.
           </p>
         </div>
 
         {/* TikTok Balance Image in Card */}
-        <Card className="max-w-3xl mx-auto shadow-xl rounded-2xl border border-muted">
-          <CardContent className="p-0">
+        <Card className="max-w-3xl mx-auto  rounded-2xl ">
+          <CardContent >
             <Image
               src="/tiktok-sample.jpg" // Make sure this image exists in your public folder
               alt="TikTok Balance Screenshot"

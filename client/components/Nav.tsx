@@ -10,6 +10,7 @@ import {
 } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button'; // From ShadCN UI
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 const Nav = () => {
   return (
@@ -17,10 +18,10 @@ const Nav = () => {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className="w-full px-6 py-4 flex justify-between items-center border-b border-gray-200 bg-white shadow-sm"
+      className="w-full px-9 md:px-6 py-4 flex justify-between items-center border-b shadow-sm"
     >
       <Link href="/" className="text-2xl font-semibold tracking-tight">
-        Cravio AI
+        <Image src="/logo.png" alt="Logo" width={45} height={45}/>
       </Link>
 
       <div className="flex items-center gap-4">

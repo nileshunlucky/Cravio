@@ -211,7 +211,7 @@ const Plans: React.FC = () => {
           >
             <Card className={cn(
               "relative overflow-hidden h-full",
-              plan.highlight ? "border-2 border-blue-500 dark:border-blue-400 shadow-xl bg-gradient-to-b from-white to-blue-50 dark:from-gray-900 dark:to-gray-800" : ""
+              plan.highlight ? "border-2 border-blue-500  shadow-xl" : ""
             )}>
               {plan.highlight && (
                 <div className="absolute top-0 right-0 bg-blue-500 text-white px-3 py-1 rounded-bl-lg text-sm font-medium">
@@ -223,7 +223,7 @@ const Plans: React.FC = () => {
               )}>
                 <CardTitle className={cn(
                   "text-xl text-center",
-                  plan.highlight ? "text-2xl text-blue-600 dark:text-blue-400" : ""
+                  plan.highlight ? "text-2xl text-blue-600" : ""
                 )}>
                   {plan.name}
                 </CardTitle>
@@ -231,7 +231,7 @@ const Plans: React.FC = () => {
                 <div className="mt-4 text-center">
                   <span className={cn(
                     "text-4xl font-bold",
-                    plan.highlight ? "text-5xl text-blue-600 dark:text-blue-400" : ""
+                    plan.highlight ? "text-5xl text-blue-600" : ""
                   )}>
                     ${plan.price}
                   </span>
@@ -330,9 +330,9 @@ const Plans: React.FC = () => {
           ))}
         </Accordion>
 
-        <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg text-center">
+        <div className=" p-6 rounded-lg text-center border">
           <h3 className="text-xl font-semibold mb-2">Please chat to our friendly team</h3>
-          <p className="mb-4 text-gray-500 dark:text-gray-400">We&apos;re here to help with any questions you might have.</p>
+          <p className="mb-4">We&apos;re here to help with any questions you might have.</p>
           <a href="mailto:cravio.ai@gmail.com"><Button className="flex items-center">
             <MessageSquare className="h-5 w-5 mr-2" />
             Get in touch

@@ -176,8 +176,8 @@ const Page = () => {
                             {/* Step circle */}
                             <div
                                 className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 z-10
-                                    ${currentStep === step ? 'bg-blue-500 text-white' :
-                                    currentStep > step ? 'bg-black text-white' : 'bg-gray-200 text-gray-600'}`}
+                                    ${currentStep === step ? 'bg-blue-500 ' :
+                                    currentStep > step ? '' : ''}`}
                             >
                                 <span className="text-xs sm:text-sm">{step}</span>
                             </div>
@@ -185,7 +185,7 @@ const Page = () => {
                             {/* Connector line */}
                             {index < 3 && (
                                 <div className="flex-1 h-1 mx-1 sm:mx-2">
-                                    <div className={`h-full ${currentStep > step ? 'bg-black' : 'bg-gray-200'}`}></div>
+                                    <div className={`h-full ${currentStep > step ? 'bg-white' : ''}`}></div>
                                 </div>
                             )}
                         </React.Fragment>

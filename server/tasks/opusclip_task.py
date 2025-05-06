@@ -130,19 +130,19 @@ def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
             ffprobe_data = json.loads(result.stdout)
             video_duration = float(ffprobe_data['format']['duration'])
             
-            # Calculate credit usage: 1 minute = 5 credits, minimum 5 credits
+            # Calculate credit usage: 1 minute = 3 credits, minimum 3 credits
             duration_minutes = video_duration / 60
             # check if videoduration is greater than 2hrs return error less than 2hrs
             if duration_minutes > 120:
                 raise Exception("Video duration is greater than 2 hours")
-            credit_usage = max(5, int(5 * round(duration_minutes + 0.5)))
+            credit_usage = max(3, int(3 * round(duration_minutes + 0.5)))
             
             logger.info(f"Video duration: {video_duration} seconds ({duration_minutes:.2f} minutes)")
             logger.info(f"Credit usage: {credit_usage} credits")
         except Exception as e:
             logger.error(f"Error calculating duration: {str(e)}")
             video_duration = 0
-            credit_usage = 5  # Default minimum
+            credit_usage = 3  # Default minimum
         
         # Generate thumbnail if it doesn't exist (for uploaded files)
         if not os.path.exists(temp_thumbnail_path):

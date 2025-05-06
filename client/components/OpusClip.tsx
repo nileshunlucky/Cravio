@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { Link, CloudUpload, Loader2, AlertCircle } from 'lucide-react';
+import { Link, CloudUpload, Loader2, AlertCircle, Info } from 'lucide-react';
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 // Define TypeScript interfaces
 interface TaskResult {
@@ -44,6 +45,14 @@ export default function OpusClip() {
   const inputRef = useRef<HTMLInputElement>(null);
   const processingRef = useRef<boolean>(false);
   const initialRenderRef = useRef<boolean>(true);
+  const [showMobileTip, setShowMobileTip] = useState(false)
+
+  const toggleMobileTip = () => {
+    // Only show tooltip on small screens
+    if (window.innerWidth < 768) {
+      setShowMobileTip(!showMobileTip)
+    }
+  }
 
   // Improved YouTube URL validation function
   const validateYoutubeUrl = (url: string): boolean => {
@@ -641,7 +650,7 @@ export default function OpusClip() {
           position: "top-right",
           duration: 4000,
         });
-        
+
       }
     } catch (error) {
       console.error(error)
@@ -812,7 +821,7 @@ export default function OpusClip() {
             {/* Thumbnail with 16:9 aspect ratio */}
             <div className="relative w-full pb-[56.25%]">
               <img
-                src={thumbnail}
+                src={thumbnail || undefined}
                 alt="Video thumbnail"
                 className="absolute inset-0 w-full h-full object-contain"
               />
@@ -831,7 +840,20 @@ export default function OpusClip() {
                     </linearGradient>
                   </defs>
                 </svg>
-                <span className="font-medium text-white">{creditUsage}</span>
+                <span className="font-medium ">{creditUsage}</span>
+                <TooltipProvider>
+                  <Tooltip open={showMobileTip || undefined}>
+                    <TooltipTrigger asChild>
+                      <Info
+                        className="w-4 h-4 text-zinc-400 cursor-pointer"
+                        onClick={toggleMobileTip}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p>3 credits = 1 min video processing</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
           </div>

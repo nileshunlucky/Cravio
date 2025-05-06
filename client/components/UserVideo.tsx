@@ -101,7 +101,7 @@ const UserVideo: React.FC<UserVideoProps> = ({ value, onChange }) => {
       transition={{ duration: 0.5 }}
       className="w-full"
     >
-      <Card className="bg-black border-white border-2 rounded-none shadow-2xl min-h-screen flex flex-col items-center justify-center relative">
+      <Card className=" rounded-none shadow-2xl min-h-screen flex flex-col items-center justify-center relative">
         <CardContent className="flex flex-col items-center justify-center p-6 space-y-6 w-full">
           <input
             type="file"
@@ -114,7 +114,7 @@ const UserVideo: React.FC<UserVideoProps> = ({ value, onChange }) => {
           {!videoURL && !isLoading && (
             <Button
               variant="ghost"
-              className="text-white border border-white hover:bg-white hover:text-black transition-colors duration-300"
+              className=" transition-colors duration-300"
               onClick={handleUploadClick}
             >
               <UploadCloud className="mr-2 h-5 w-5" />
@@ -124,7 +124,7 @@ const UserVideo: React.FC<UserVideoProps> = ({ value, onChange }) => {
 
           {isLoading && (
             <div className="text-white flex flex-col items-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white mb-4"></div>
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2  mb-4"></div>
               <p>Processing video...</p>
             </div>
           )}

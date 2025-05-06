@@ -12,8 +12,8 @@ const voices = [
   { id: 'fable', name: 'Fable', gender: 'Male', lang: 'English', preview: '/voice/fable.mpeg' },
   { id: 'alloy', name: 'Alloy', gender: 'Male', lang: 'English', preview: '/voice/alloy.mpeg' },
   { id: 'ash', name: 'Ash', gender: 'Male', lang: 'English', preview: '/voice/ash.mpeg' },
-  { id: 'coral', name: 'Coral', gender: 'Male', lang: 'English', preview: '/voice/coral.mpeg' },
-  { id: 'sage', name: 'Sage', gender: 'Male', lang: 'English', preview: '/voice/sage.mpeg' },
+  { id: 'coral', name: 'Coral', gender: 'Female', lang: 'English', preview: '/voice/coral.mpeg' },
+  { id: 'sage', name: 'Sage', gender: 'Female', lang: 'English', preview: '/voice/sage.mpeg' },
 ]
 
 type RedditVoiceProps = {
@@ -79,7 +79,7 @@ const RedditVoice = ({ value, onChange, onSubmit, onBack, loading }: RedditVoice
         {voices.map((voice) => (
           <div
             key={voice.id}
-            className={`border p-4 rounded-md shadow-sm cursor-pointer transition ${selected === voice.id ? 'border-blue-500 bg-blue-50' : 'bg-white'
+            className={`border p-4 rounded-md shadow-sm cursor-pointer transition ${selected === voice.id ? 'border-blue-500' : ''
               }`}
             onClick={() => handleSelect(voice.id)}
           >

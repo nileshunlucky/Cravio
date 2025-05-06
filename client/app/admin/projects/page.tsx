@@ -37,6 +37,7 @@ export default function ProjectPage() {
       try {
         const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`)
         const data = await res.json()
+        console.log(data?.opusclips)
         if (data.videos) {
           // Sort videos by created_at in descending order to show the latest first
           const sortedVideos = data.videos.sort((a: VideoType, b: VideoType) => {

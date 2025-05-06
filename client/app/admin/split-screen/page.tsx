@@ -153,8 +153,8 @@ const Page = () => {
                             {/* Step circle */}
                             <div
                                 className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 z-10
-                                    ${currentStep === step ? 'bg-blue-500 text-white' :
-                                    currentStep > step ? 'bg-black text-white' : 'bg-gray-200 text-gray-600'}`}
+                                    ${currentStep === step ? 'bg-blue-500' :
+                                    currentStep > step ? '' : ''}`}
                             >
                                 <span className="text-xs sm:text-sm">{step}</span>
                             </div>
@@ -162,7 +162,7 @@ const Page = () => {
                             {/* Connector line */}
                             {index < 2 && (
                                 <div className="flex-1 h-1 mx-1 sm:mx-2">
-                                    <div className={`h-full ${currentStep > step ? 'bg-black' : 'bg-gray-200'}`}></div>
+                                    <div className={`h-full ${currentStep > step ? 'bg-white' : 'bg-gray-200'}`}></div>
                                 </div>
                             )}
                         </React.Fragment>
@@ -179,7 +179,7 @@ const Page = () => {
             
             {/* Component Container - Centered */}
             <div className="w-full max-w-3xl mx-auto">
-                <div className="bg-white rounded-lg shadow-sm p-3">
+                <div className="rounded-lg shadow-sm p-3">
                     {currentStep === 1 && (
                         <div className="space-y-6">
                             <h2 className="text-xl font-semibold text-center">Upload Your Video</h2>

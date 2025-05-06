@@ -44,7 +44,7 @@ const RedditVideo = ({ value, onChange, onNext, onBack }: RedditVideoProps) => {
             key={index}
             className={clsx(
               'rounded-md border p-2 transition shadow-sm cursor-pointer',
-              selected === index ? 'border-blue-600 bg-blue-50' : 'border-gray-200 bg-white'
+              selected === index ? 'border-blue-600 ' : ''
             )}
             onClick={() => setSelected(index)}
           >

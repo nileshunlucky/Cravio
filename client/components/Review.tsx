@@ -61,7 +61,7 @@ const Review = () => {
   const isInView = useInView(ref, { once: true, amount: 0.3 })
 
   return (
-    <section ref={ref} className="px-6 py-20 bg-white">
+    <section ref={ref} className="px-6 py-20 ">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -97,7 +97,7 @@ const Review = () => {
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-gray-700 leading-relaxed">&ldquo;{t.quote}&rdquo;</p>
+                <p className="text-sm text-gray-500 leading-relaxed">&ldquo;{t.quote}&rdquo;</p>
               </CardContent>
             </Card>
           ))}
