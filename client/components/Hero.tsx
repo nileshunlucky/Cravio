@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import * as THREE from 'three';
 import gsap from 'gsap';
@@ -297,75 +297,6 @@ const Hero = () => {
     };
     
     animate();
-
-    // GSAP advanced animations
-    const createAnimations = () => {
-      // Master timeline
-      const masterTl = gsap.timeline({
-        defaults: { ease: 'power3.out' },
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: 'top 80%',
-          end: 'bottom 20%',
-          toggleActions: 'play none none none'
-        }
-      });
-      
-      // Camera model animation
-      masterTl.fromTo(cameraSphere.position, 
-        { x: 5, y: -2, z: -3 }, 
-        { x: 0, y: 0, z: 0, duration: 2, ease: 'elastic.out(1, 0.5)' },
-        0
-      );
-      
-      masterTl.fromTo(cameraSphere.rotation, 
-        { x: Math.PI * 0.5, y: -Math.PI * 0.5 }, 
-        { x: 0, y: 0, duration: 2.2, ease: 'elastic.out(1, 0.4)' },
-        0
-      );
-      
-      // Camera scale animation
-      masterTl.fromTo(cameraSphere.scale, 
-        { x: 0.4, y: 0.4, z: 0.4 }, 
-        { x: 1, y: 1, z: 1, duration: 1.8, ease: 'back.out(1.7)' },
-        0
-      );
-      
-      // Text animations with better staggering
-      const textElements = document.querySelectorAll('.hero-text');
-      masterTl.fromTo(textElements, 
-        { y: 120, opacity: 0, rotationX: 20 }, 
-        { y: 0, opacity: 1, rotationX: 0, duration: 1, stagger: 0.15, ease: 'power4.out' },
-        0.3
-      );
-      
-      // Subtitle animation
-      const subText = document.querySelector('.hero-subtext');
-      masterTl.fromTo(subText, 
-        { y: 40, opacity: 0 }, 
-        { y: 0, opacity: 1, duration: 1, ease: 'power3.out' },
-        1
-      );
-      
-      // Button animation with attention-grabbing effect
-      const cta = document.querySelector('.hero-cta');
-      masterTl.fromTo(cta, 
-        { y: 30, opacity: 0, scale: 0.9 }, 
-        { y: 0, opacity: 1, scale: 1, duration: 0.8, ease: 'back.out(1.7)' },
-        1.2
-      );
-      
-      // Add a pulse animation to the button
-      gsap.to('.hero-cta .pulse-ring', {
-        scale: 1.1,
-        opacity: 0,
-        duration: 1.5,
-        repeat: -1,
-        ease: 'power1.out'
-      });
-      
-      return masterTl;
-    };
     
     return () => {
       window.removeEventListener('resize', updateSize);
