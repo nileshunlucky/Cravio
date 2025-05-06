@@ -11,18 +11,11 @@ const Hero = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const modelRef = useRef<THREE.Group | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     // Initialize GSAP plugins
     gsap.registerPlugin(ScrollTrigger);
     
-    // Check for mobile devices
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
 
     if (!canvasRef.current) return;
 
@@ -374,11 +367,8 @@ const Hero = () => {
       return masterTl;
     };
     
-    const masterTimeline = createAnimations();
-
     return () => {
       window.removeEventListener('resize', updateSize);
-      window.removeEventListener('resize', checkMobile);
       
       if (modelRef.current) {
         scene.remove(modelRef.current);
