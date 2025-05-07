@@ -6,7 +6,6 @@ import { Link, CloudUpload, Loader2, AlertCircle, Info } from 'lucide-react';
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 // Define TypeScript interfaces
@@ -30,7 +29,6 @@ const cn = (...classes: (string | undefined | null | false)[]) => {
 
 export default function OpusClip() {
   const { user } = useUser();
-  const router = useRouter()
   const email = user?.primaryEmailAddress?.emailAddress
   const [youtubeLink, setYoutubeLink] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
@@ -270,20 +268,6 @@ export default function OpusClip() {
     }
   };
 
-  // Function to check YouTube video duration
-  const checkYoutubeDuration = async (videoId: string): Promise<number> => {
-    try {
-      // Call backend API to get video duration
-      const response = await fetch(`https://cravio-ai.onrender.com/check-youtube-duration?videoId=${videoId}`);
-      if (!response.ok) throw new Error("Failed to get video duration");
-      const data = await response.json();
-      return data.durationSeconds || 0;
-    } catch (error) {
-      console.error("Error checking YouTube video duration:", error);
-      return 0; // Return 0 to allow processing if we can't check
-    }
-  };
-
   // Updated handleFileChange function for better file validation
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Skip if a video is already processed
@@ -392,12 +376,6 @@ export default function OpusClip() {
           if (!videoExists) {
             throw new Error("This YouTube video is unavailable or doesn't exist. Please check the link and try again.");
           }
-
-          // Check video duration
-          const durationSeconds = await checkYoutubeDuration(videoId);
-          if (durationSeconds > 7200) { // 2 hours = 7200 seconds
-            throw new Error("Video must be less than 2 hours long. Please choose a shorter video.");
-          }
         }
 
         response = await fetch(`https://cravio-ai.onrender.com/process-youtube`, {
@@ -500,10 +478,6 @@ export default function OpusClip() {
 
         // Set loading to false now that processing is complete
         setIsLoading(false);
-        // Make 3 sec delay then router.push("/admin/projects")
-        setTimeout(() => {
-          router.push("/admin/projects");
-        }, 3000)
       } else {
         // Handle direct response (non-task based)
         setThumbnail(result?.thumbnail_url);
@@ -720,15 +694,15 @@ export default function OpusClip() {
               ref={inputRef}
               id="youtube"
               type="url"
-              placeholder="COMING SOON"
+              placeholder="Drop a YouTube link"
               value={youtubeLink}
               onChange={(e) => setYoutubeLink(e.target.value)}
               className={cn(
                 "flex-1 bg-transparent text-white border-none focus:outline-none focus:ring-0",
                 "placeholder:text-zinc-400 placeholder:font-medium placeholder:text-base md:placeholder:text-lg",
-                "cursor-not-allowed opacity-50"
+                // "cursor-not-allowed opacity-50"
               )}
-              disabled
+              
             />
             {videoProcessed && (
               <motion.p
