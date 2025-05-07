@@ -321,12 +321,12 @@ const Hero = () => {
           {/* Text content section */}
           <div className="w-full lg:w-1/2 z-10 mb-12 lg:mb-0 text-center lg:text-left">
             <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold mb-8 tracking-tight">
-              <span className="block hero-text bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Transform</span>
-              <span className="block hero-text bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Videos into</span>
-              <span className="block hero-text bg-gradient-to-r from-white via-white to-red-300 bg-clip-text text-transparent">Shorts</span>
+              <span className="block hero-text bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">1 long video,</span>
+              <span className="block hero-text bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">10 viral clips.</span>
+              <span className="block hero-text bg-gradient-to-r from-white via-white to-red-300 bg-clip-text text-transparent">Create 10x faster.</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-md mx-auto lg:mx-0 hero-subtext">
-              Powerful tools backed by AI to turn long videos into engaging shorts.
+            Cravio ai turns long videos into short viral clips in secounds ✨
             </p>
             <Link href="/admin/dashboard"><div className="hero-cta relative inline-block">
               <div className="pulse-ring absolute inset-0 border-2 border-red-500 rounded-md opacity-70"></div>
