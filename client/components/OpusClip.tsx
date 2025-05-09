@@ -647,12 +647,17 @@ export default function OpusClip() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-1 sm:p-6 gap-7">
+      {/* Background text - Changed from OpusClip to CRAVIO */}
+      <div className="absolute inset-0 md:flex items-center justify-center overflow-hidden pointer-events-none hidden">
+        <h1 className="text-[23vw] font-bold text-zinc-700/30 select-none">CRAVIO</h1>
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className={cn(
-          "relative rounded-xl w-full max-w-2xl text-center shadow-2xl",
+          "relative rounded-xl w-full max-w-2xl text-center shadow-2xl bg-black",
           "p-6 md:p-10",
           "border border-b-0 border-zinc-700 overflow-hidden",
           isLoading && "border-transparent"
@@ -702,7 +707,7 @@ export default function OpusClip() {
                 "placeholder:text-zinc-400 placeholder:font-medium placeholder:text-base md:placeholder:text-lg",
                 // "cursor-not-allowed opacity-50"
               )}
-              
+
             />
             {videoProcessed && (
               <motion.p

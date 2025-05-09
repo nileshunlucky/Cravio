@@ -40,12 +40,10 @@ const fetures = [
   {
     title: "Reddit Story",
     url: "/admin/reddit-story",
-    img: "/reddit.png",
   },
   {
     title: "Split Screen",
     url: "/admin/split-screen",
-    img: "/twitch.png",
   },
 ]
 
@@ -77,7 +75,6 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <Link href={item.url}>
-                      <img src={item.img} className="w-6 h-6" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
