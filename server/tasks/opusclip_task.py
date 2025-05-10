@@ -68,6 +68,12 @@ def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
                 'status': 'Downloading YouTube video', 
                 'percent_complete': 10
             })
+
+            cookies_path = "/tmp/cookies.txt"
+
+            # Write cookies.txt from environment variable
+            with open(cookies_path, "w") as f:
+                f.write(os.environ["COOKIES_TXT"])
             
             # Download YouTube video
             ydl_opts = {
@@ -75,7 +81,7 @@ def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
                 'outtmpl': temp_video_path,
                 'quiet': False,
                 'writethumbnail': True,
-                'cookiesfrombrowser': ('chrome',),
+                'cookiefile': cookies_path,
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
