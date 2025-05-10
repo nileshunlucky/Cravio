@@ -75,6 +75,7 @@ def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
                 'outtmpl': temp_video_path,
                 'quiet': False,
                 'writethumbnail': True,
+                'cookiesfrombrowser': ('chrome',),
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
