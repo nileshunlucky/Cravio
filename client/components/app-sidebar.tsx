@@ -1,4 +1,4 @@
-import { LayoutDashboard, Folder, CircleFadingArrowUp, Handshake} from "lucide-react"
+import { LayoutDashboard, CircleFadingArrowUp, Handshake} from "lucide-react"
 
 import {
   Sidebar,
@@ -28,17 +28,6 @@ const items = [
     title: "Affiliate",
     url: "/admin/affiliate",
     icon: Handshake ,
-  },
-]
-
-const fetures = [
-  {
-    title: "Reddit Story",
-    url: "/admin/reddit-story",
-  },
-  {
-    title: "Split Screen",
-    url: "/admin/split-screen",
   },
 ]
 
