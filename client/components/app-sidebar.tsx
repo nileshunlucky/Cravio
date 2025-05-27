@@ -20,11 +20,6 @@ const items = [
     icon: LayoutDashboard ,
   },
   {
-    title: "Projects",
-    url: "/admin/projects",
-    icon: Folder,
-  },
-  {
     title: "Plan",
     url: "/admin/plan",
     icon: CircleFadingArrowUp ,
@@ -68,20 +63,6 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
 
-          <SidebarGroupLabel className="text-xl font-medium">Features</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {fetures.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url}>
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>

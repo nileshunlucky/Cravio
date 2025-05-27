@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, HelpCircle, MessageSquare } from 'lucide-react';
+import { Check, HelpCircle, MessageSquare, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { useUser } from '@clerk/clerk-react';
 import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 // Define types for Razorpay
 interface RazorpayOptions {
@@ -45,7 +46,6 @@ interface PricingPlan {
   price: number;
   description: string;
   features: string[];
-  videos: number;
   highlight?: boolean;
   credit: number;
   planId: string;
@@ -55,34 +55,32 @@ const Plans: React.FC = () => {
   const { user } = useUser();
   const router = useRouter();
   const [loading, setLoading] = useState(false)
+  const [showMobileTip, setShowMobileTip] = useState(false);
   const pricingPlans: PricingPlan[] = [
     {
       name: 'BASIC',
-      price: 9.99,
-      credit: 250,
-      planId: "plan_QLjO4aUd0kgvdx",
+      price: 19,
+      credit: 300,
+      planId: "plan_QZrlzY5jFsQOgb",
       description: 'Perfect for beginners and small projects',
-      features: ['250 Credits', 'HD resolution', 'Email support'],
-      videos: 25
+      features: ['300 Credits', 'HD resolution', 'Email support'],
     },
     {
       name: 'PRO',
-      price: 24.9,
-      credit: 700,
-      planId: "plan_QLjOSlbc9e8LUs",
+      price: 49,
+      credit: 800,
+      planId: "plan_QZrmhupRIuRSJI",
       description: 'Ideal for professionals and growing businesses',
-      features: ['700 Credits', '4K resolution', 'Priority email & chat support'],
-      videos: 70,
+      features: ['800 Credits', '4K resolution', 'Priority email & chat support'],
       highlight: true
     },
     {
       name: 'PREMIUM',
-      price: 49.9,
-      credit: 1500,
-      planId: "plan_QLjOiOlriagyoQ",
+      price: 69,
+      credit: 1200,
+      planId: "plan_QZrnHENcbpA1xP",
       description: 'Everything you need for enterprise-level content',
-      features: ['1500 Credits', '4K resolution', '24/7 priority support',],
-      videos: 150
+      features: ['1100 Credits + 100 bonus', '4K resolution', '24/7 priority support',]
     }
   ];
 
@@ -102,10 +100,6 @@ const Plans: React.FC = () => {
     {
       question: "Do you have a refund policy?",
       answer: "Unfortunately, we do not offer refunds. You can cancel your plan anytime and your plan will remain active until the end of the billing cycle."
-    },
-    {
-      question: "What is an AI video credit?",
-      answer: "An AI video is a video auto-edited by Cravio AI. We currently generate Story and ChatGPT videos."
     },
     {
       question: "Can I monetize videos created with Cravio?",
@@ -181,6 +175,13 @@ const Plans: React.FC = () => {
     setLoading(false)
   };
 
+  const toggleMobileTip = () => {
+    // Only show tooltip on small screens
+    if (window.innerWidth < 768) {
+      setShowMobileTip(!showMobileTip)
+    }
+  }
+
   return (
     <div className="container mx-auto py-16 px-4 md:px-6">
       <Toaster />
@@ -243,17 +244,34 @@ const Plans: React.FC = () => {
                   "font-semibold mb-4 text-center",
                   plan.highlight ? "text-lg" : ""
                 )}>
-                  {plan.videos} AI videos per month
                 </p>
                 <ul className="space-y-3">
                   {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-center">
+                    <div className="flex items-center gap-2" key={i}>
+                    <li className="flex items-center">
                       <Check className={cn(
                         "h-5 w-5 mr-2 flex-shrink-0",
                         plan.highlight ? "text-blue-500" : "text-green-500"
                       )} />
                       <span>{feature}</span>
                     </li>
+                      {feature.includes("Credits") && (
+                        <TooltipProvider>
+                          <Tooltip open={showMobileTip || undefined}>
+                            <TooltipTrigger asChild>
+                              <Info
+                                className="w-4 h-4 text-zinc-400 cursor-pointer"
+                                onClick={toggleMobileTip}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                                <p>1 credit = 1 min video processing</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )
+                      }
+                    </div>
                   ))}
                 </ul>
               </CardContent>

@@ -829,7 +829,7 @@ export default function OpusClip() {
                       />
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                      <p>3 credits = 1 min video processing</p>
+                      <p>1 credit = 1 min video processing</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
