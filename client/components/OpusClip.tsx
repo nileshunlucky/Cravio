@@ -85,7 +85,7 @@ export default function OpusClip() {
       // Other parameters that might cause issues
       parsed.searchParams.delete('list');
       parsed.searchParams.delete('index');
-      parsed.searchParams.delete('t'); // Timestamp parameter
+      parsed.searchParams.delete('t'); // Timestamp parameter 
 
       // Keep only the v parameter for youtube.com
       if (parsed.hostname.includes('youtube.com')) {
