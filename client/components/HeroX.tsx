@@ -28,7 +28,7 @@ const HeroX = () => {
                             </Button>
                         </div></Link>
                     </div>
-                    <div className="w-full lg:w-1/2 flex justify-center relative">
+                    <div className="w-full lg:w-1/2 flex justify-center relative ">
                         <video
                             className="w-full h-auto max-w-lg rounded-lg shadow-lg"
                             autoPlay
