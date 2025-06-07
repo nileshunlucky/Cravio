@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Download, Heart, Share2, BookmarkIcon, ArrowLeft, MoreHorizontal } from 'lucide-react';
+import { Download, ArrowLeft, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -36,8 +36,6 @@ const ClipPage = () => {
   const [opusClip, setOpusClip] = useState<OpusClip | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [liked, setLiked] = useState<boolean[]>([]);
-  const [isSaved, setIsSaved] = useState<boolean[]>([]);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
   useEffect(() => {
@@ -77,8 +75,6 @@ const ClipPage = () => {
 
         // Initialize states for each clip
         if (foundClip.clips) {
-          setLiked(new Array(foundClip.clips.length).fill(false));
-          setIsSaved(new Array(foundClip.clips.length).fill(false));
           videoRefs.current = videoRefs.current.slice(0, foundClip.clips.length);
         }
       } catch (err) {
@@ -155,22 +151,6 @@ const ClipPage = () => {
   };
 
   // Toggle like state
-  const toggleLike = (index: number) => {
-    setLiked(prev => {
-      const updated = [...prev];
-      updated[index] = !updated[index];
-      return updated;
-    });
-  };
-
-  // Toggle save state
-  const toggleSave = (index: number) => {
-    setIsSaved(prev => {
-      const updated = [...prev];
-      updated[index] = !updated[index];
-      return updated;
-    });
-  };
 
   // Handle video reference
   const setVideoRef = (element: HTMLVideoElement | null, index: number) => {
