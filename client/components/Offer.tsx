@@ -5,8 +5,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { motion } from 'framer-motion'
-import { X, Loader2, Zap, Clock, Scissors } from 'lucide-react'
-import { toast } from 'sonner'
+import { X, Loader2 } from 'lucide-react'
+import { toast } from 'sonner' // Assuming you have a toast component
 import { useUser } from '@clerk/nextjs'
 
 // Define Razorpay types
@@ -40,11 +40,12 @@ interface RazorpayResponse {
     razorpay_signature: string;
 }
 
+
 interface WindowWithRazorpay extends Window {
     Razorpay?: RazorpayConstructor;
 }
 
-const TrialOffer = () => {
+const Offer = () => {
     const { user } = useUser()
     const [show, setShow] = useState(true)
     const [loading, setLoading] = useState(false)
@@ -82,8 +83,8 @@ const TrialOffer = () => {
                 key: orderData.key_id,
                 amount: orderData.amount * 100, // Amount in paise
                 currency: orderData.currency,
-                name: "Cravio AI Trial",
-                description: "60 Credits Trial - $1",
+                name: "LIMITED TIME OFFER",
+                description: "60 Credits for $1",
                 order_id: orderData.order_id,
                 handler: async function (response: RazorpayResponse) {
                     try {
@@ -109,26 +110,27 @@ const TrialOffer = () => {
                         const result = await verifyResponse.json()
 
                         // Success message
-                        toast.success("Welcome to Cravio AI! 🎉", {
-                            description: `Your trial has started with ${result.credits} credits`
+                        toast.success("Payment Successful!", {
+                            description: `You have been credited with ${result.credits} credits`
                         })
 
                         // Hide the offer after successful purchase
                         setShow(false)
-                        localStorage.setItem('trialClaimed', 'true')
+                        localStorage.setItem('offerClaimed', 'true')
                     } catch (err) {
-                        toast.error(`Payment verification failed: ${err instanceof Error ? err.message : String(err)}`)
+                        toast.error(`Something went wrong during payment verification ${err instanceof Error ? err.message : String(err)}`)
                     }
                 },
                 prefill: {
                     email: email
                 },
                 theme: {
-                    color: "#000000"
+                    color: "#3B82F6"
                 }
             }
 
             // Load Razorpay script if not already loaded
+            // Use type assertion here
             const customWindow = window as WindowWithRazorpay;
 
             if (!customWindow.Razorpay) {
@@ -141,7 +143,7 @@ const TrialOffer = () => {
             }
 
         } catch (err) {
-            toast.error(`Payment failed: ${err instanceof Error ? err.message : String(err)}`)
+            toast.error(`Something went wrong during payment: ${err instanceof Error ? err.message : String(err)}`)
         } finally {
             setLoading(false)
         }
@@ -152,188 +154,124 @@ const TrialOffer = () => {
         return new Promise<void>((resolve, reject) => {
             const script = document.createElement('script')
             script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-            script.onload = () => resolve()
+            script.onload = () => {
+                // After the script loads, the Razorpay object should be on window.
+                // We resolve the promise.
+                resolve();
+            }
             script.onerror = () => reject()
             document.body.appendChild(script)
         })
     }
 
-    // Check if trial already claimed
+
+    // Check if offer already claimed
     useEffect(() => {
-        const claimed = localStorage.getItem('trialClaimed') === 'true'
+        const claimed = localStorage.getItem('offerClaimed') === 'true'
         if (claimed) {
             setShow(false)
         }
     }, [])
 
-    if (!show) return null
 
     return (
+        // Centering the component using fixed positioning and transform
         <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 30, scale: 0.95 }}
-            transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+            exit={{ opacity: 0, y: 30, scale: 0.9 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
             className="fixed inset-0 flex items-center justify-center z-50 p-4"
-            style={{
-                backdropFilter: 'blur(8px)',
-                backgroundColor: 'rgba(0, 0, 0, 0.6)'
-            }}
+            style={{ backdropFilter: 'blur(4px)', backgroundColor: 'rgba(0, 0, 0, 0.1)' }}
             onClick={(e) => {
                 if (e.target === e.currentTarget) {
-                    setShow(false)
+                    // setShow(false); // Decide if clicking outside closes it
                 }
             }}
         >
+            {/* Card container with shiny background animation */}
             <motion.div
                 onClick={(e) => e.stopPropagation()}
-                className="relative w-full max-w-md"
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
+                className="relative w-full max-w-sm border shadow-xl rounded-2xl overflow-hidden"
+                style={{
+                    backgroundImage: 'linear-gradient(120deg, rgba(0,0,0,0.6) 0%, rgba(20,20,20,0.4) 50%, rgba(0,0,0,0.6) 100%)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)', // for Safari support
+                    backgroundColor: 'rgba(0, 0, 0, 0.4)', // fallback background
+                    borderRadius: '16px', // optional: rounded corners
+                    border: '1px solid rgba(255, 255, 255, 0.1)', // subtle border
+
+                    backgroundSize: '200% 200%',
+                }}
+                animate={{
+                    backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+                }}
+                transition={{
+                    duration: 6,
+                    ease: 'linear',
+                    repeat: Infinity,
+                }}
             >
-                {/* Gradient glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-zinc-800 via-black to-zinc-800 rounded-3xl blur-xl opacity-60" />
-
-                <Card className="relative bg-gradient-to-br from-zinc-900 via-black to-zinc-900 border border-zinc-800 shadow-2xl rounded-3xl overflow-hidden">
-                    {/* Subtle animated background pattern */}
-                    <div className="absolute inset-0 opacity-5">
-                        <motion.div
-                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent"
-                            animate={{
-                                x: ['-100%', '100%'],
-                            }}
-                            transition={{
-                                duration: 3,
-                                repeat: Infinity,
-                                ease: 'linear',
-                            }}
-                        />
-                    </div>
-
-                    <CardContent className="relative p-8 text-center space-y-6">
+                <Card className="bg-transparent border-none shadow-none rounded-2xl">
+                    <CardContent className="relative p-6 pt-8 text-center flex flex-col gap-4 items-center">
                         {/* Close Button */}
                         <button
                             onClick={() => setShow(false)}
-                            className="absolute top-4 right-4 text-zinc-500 hover:text-zinc-300 transition-colors"
-                            aria-label="Close"
+                            className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 transition-colors"
+                            aria-label="Close Offer"
                         >
                             <X className="h-5 w-5" />
                         </button>
 
-                        {/* Trial Badge */}
+                        {/* Badge */}
+                        <Badge className="bg-gradient-to-r from-red-500 to-red-700 text-white text-sm px-3 py-1 shadow-md">
+                            $1 trial
+                        </Badge>
+
+                        {/* Headline */}
+                        <h2 className="text-2xl font-semibold text-white flex whitespace-nowrap items-center gap-1">
+                            Get
+                            {/* Inline SVG with gradient - adjusted for better visual */}
+                            <svg width="20" height="20" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" className="inline text-yellow-500">
+                                <defs>
+                                    <linearGradient id="iconGradient" gradientTransform="rotate(90)">
+                                        <stop offset="0%" stopColor="#FFE629" />
+                                        <stop offset="100%" stopColor="#FFA057" />
+                                    </linearGradient>
+                                </defs>
+                                <path
+                                    d="M13.2319 2.28681C13.5409 2.38727 13.75 2.6752 13.75 3.00005V9.25005H19C19.2821 9.25005 19.5403 9.40834 19.6683 9.65972C19.7963 9.9111 19.7725 10.213 19.6066 10.4412L11.6066 21.4412C11.4155 21.7039 11.077 21.8137 10.7681 21.7133C10.4591 21.6128 10.25 21.3249 10.25 21.0001V14.7501H5C4.71791 14.7501 4.45967 14.5918 4.33167 14.3404C4.20366 14.089 4.22753 13.7871 4.39345 13.5589L12.3935 2.55892C12.5845 2.2962 12.923 2.18635 13.2319 2.28681Z"
+                                    fill="url(#iconGradient)"
+                                    stroke="currentColor"
+                                />
+                            </svg>
+                            60 Credits for $1 Only
+                        </h2>
+
+                        {/* Description Text */}
+                        <p className="text-zinc-400 px-4">
+                            Worth for beginners to explore how our Cravio ai can skyrocket your content creation.
+                        </p>
+
+                        {/* Claim Now Button with Gradient and Animation */}
                         <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                        >
-                            <Badge className="bg-gradient-to-r from-zinc-700 to-zinc-800 text-zinc-200 border border-zinc-600 px-4 py-1 text-sm font-medium">
-                                TRIAL OFFER
-                            </Badge>
-                        </motion.div>
-
-                        {/* Main Headline */}
-                        <div className="space-y-2">
-                            <h2 className="text-3xl font-bold text-white">
-                                Try Cravio AI
-                            </h2>
-                            <div className="flex items-center justify-center gap-2 text-2xl font-bold">
-                                <span className="text-zinc-400">60 Credits for</span>
-                                <span className="text-white bg-gradient-to-r from-zinc-200 to-white bg-clip-text">
-                                    $1
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Value Proposition */}
-                        <motion.div
-                            className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 space-y-3"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4 }}
-                        >
-                            <p className="text-zinc-300 text-sm leading-relaxed">
-                                Transform your long videos into viral short clips instantly.
-                                Stop spending hours editing – let AI do it in seconds.
-                            </p>
-
-                            <div className="grid grid-cols-3 gap-4 pt-2">
-                                <div className="flex flex-col items-center gap-1">
-                                    <div className="bg-zinc-800 p-2 rounded-lg">
-                                        <Scissors className="h-4 w-4 text-zinc-400" />
-                                    </div>
-                                    <span className="text-xs text-zinc-500">Auto Clips</span>
-                                </div>
-                                <div className="flex flex-col items-center gap-1">
-                                    <div className="bg-zinc-800 p-2 rounded-lg">
-                                        <Clock className="h-4 w-4 text-zinc-400" />
-                                    </div>
-                                    <span className="text-xs text-zinc-500">Seconds</span>
-                                </div>
-                                <div className="flex flex-col items-center gap-1">
-                                    <div className="bg-zinc-800 p-2 rounded-lg">
-                                        <Zap className="h-4 w-4 text-zinc-400" />
-                                    </div>
-                                    <span className="text-xs text-zinc-500">AI Powered</span>
-                                </div>
-                            </div>
-                        </motion.div>
-
-                        {/* Credit Information */}
-                        <div className="text-center">
-                            <p className="text-zinc-500 text-sm">
-
-                                    // < svg width="20" height="20" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" className="inline text-yellow-500" >
-    //                             <defs>
-    //                                 <linearGradient id="iconGradient" gradientTransform="rotate(90)">
-    //                                     <stop offset="0%" stopColor="#FFE629" />
-    //                                     <stop offset="100%" stopColor="#FFA057" />
-    //                                 </linearGradient>
-    //                             </defs>
-    //                             <path
-                                        d="M13.2319 2.28681C13.5409 2.38727 13.75 2.6752 13.75 3.00005V9.25005H19C19.2821 9.25005 19.5403 9.40834 19.6683 9.65972C19.7963 9.9111 19.7725 10.213 19.6066 10.4412L11.6066 21.4412C11.4155 21.7039 11.077 21.8137 10.7681 21.7133C10.4591 21.6128 10.25 21.3249 10.25 21.0001V14.7501H5C4.71791 14.7501 4.45967 14.5918 4.33167 14.3404C4.20366 14.089 4.22753 13.7871 4.39345 13.5589L12.3935 2.55892C12.5845 2.2962 12.923 2.18635 13.2319 2.28681Z"
-                                        fill="url(#iconGradient)"
-                                        stroke="currentColor"
-                                    />
-                                </svg >
-
-                                1 Credit = 1 Minute of Video Processing
-                            </p>
-                            <p className="text-zinc-600 text-xs mt-1">
-                                Process up to 60 minutes of content
-                            </p>
-                        </div>
-
-                        {/* CTA Button */}
-                        <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.98 }}
                             className="w-full"
                         >
                             <Button
-                                className="w-full bg-white hover:bg-zinc-100 text-black px-8 py-4 text-lg font-semibold rounded-xl shadow-lg transition-all duration-300 ease-out"
+                                className="w-full bg-gradient-to-r from-zinc-200 to-zinc-400 hover:to-zinc-600 text-black px-8 py-3 text-lg font-semibold rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
                                 onClick={handleSubmit}
                                 disabled={loading}
                             >
                                 {loading ? (
                                     <>
-                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                        Starting Trial...
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Claiming
                                     </>
                                 ) : (
-                                    <>
-                                        <Zap className="mr-2 h-5 w-5" />
-                                        Start Trial - $1
-                                    </>
+                                    "Claim Now"
                                 )}
                             </Button>
                         </motion.div>
-
-                        {/* Trust indicators */}
-                        <div className="flex justify-center items-center gap-4 text-xs text-zinc-600">
-                            <span>✓ Instant Access</span>
-                            <span>✓ No Commitment</span>
-                            <span>✓ Cancel Anytime</span>
-                        </div>
                     </CardContent>
                 </Card>
             </motion.div>
@@ -341,4 +279,21 @@ const TrialOffer = () => {
     )
 }
 
-export default TrialOffer;
+export default Offer
+
+
+
+
+    // < svg width = "20" height = "20" viewBox = "0 0 24 24" strokeWidth = "1.5" fill = "none" xmlns = "http://www.w3.org/2000/svg" className = "inline text-yellow-500" >
+    //                             <defs>
+    //                                 <linearGradient id="iconGradient" gradientTransform="rotate(90)">
+    //                                     <stop offset="0%" stopColor="#FFE629" />
+    //                                     <stop offset="100%" stopColor="#FFA057" />
+    //                                 </linearGradient>
+    //                             </defs>
+    //                             <path
+    //                                 d="M13.2319 2.28681C13.5409 2.38727 13.75 2.6752 13.75 3.00005V9.25005H19C19.2821 9.25005 19.5403 9.40834 19.6683 9.65972C19.7963 9.9111 19.7725 10.213 19.6066 10.4412L11.6066 21.4412C11.4155 21.7039 11.077 21.8137 10.7681 21.7133C10.4591 21.6128 10.25 21.3249 10.25 21.0001V14.7501H5C4.71791 14.7501 4.45967 14.5918 4.33167 14.3404C4.20366 14.089 4.22753 13.7871 4.39345 13.5589L12.3935 2.55892C12.5845 2.2962 12.923 2.18635 13.2319 2.28681Z"
+    //                                 fill="url(#iconGradient)"
+    //                                 stroke="currentColor"
+    //                             />
+    //                         </svg >
