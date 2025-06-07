@@ -410,7 +410,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
             Respond in JSON format with an array of clips. Each clip should include:
             - start: the start time in seconds (float)
             - end: the end time in seconds (float, approximately 30 seconds after start)
-            - subtitle: the transcript text for this clip
+            - subtitle: the same transcript text for this clip as used
             - caption: a catchy, attention-grabbing caption for social media
             - virality_score: a score from 1% to 100% indicating how likely this clip is to go viral
 
@@ -423,7 +423,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                     {{
                         "start": 120.5,
                         "end": 150.2,
-                        "subtitle": "This is the transcript text for this clip",
+                        "subtitle": "same transcript used for this clip",
                         "caption": "You won't believe what happens next! ",
                         "virality_score": "85%"
                     }}

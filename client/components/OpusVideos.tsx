@@ -9,7 +9,7 @@ interface OpusClip {
     thumbnail: string;
     uniqueId: string;
     createdAt: string; // Assuming ISO date string
-    title?: string; // Optional: if you have titles
+    caption?: string; // Optional: if you have titles
 }
 
 // Helper function to format dates (e.g., "2 hours ago", "Mar 15, 2023")
@@ -37,6 +37,8 @@ const formatDateAgo = (dateString: string): string => {
         day: 'numeric',
     });
 };
+
+
 
 
 const OpusVideos = () => {
@@ -68,6 +70,7 @@ const OpusVideos = () => {
                 const data = await res.json();
                 // Ensure data.opusclips is an array, provide default if not
                 setOpusClips(Array.isArray(data?.opusclips) ? data.opusclips : []);
+                console.log('Fetched Opus Clips:', data.opusclips);
             } catch (err) {
                 console.error('Error fetching videos:', err);
                 setError(err instanceof Error ? err.message : 'An unknown error occurred.');
@@ -134,7 +137,7 @@ const OpusVideos = () => {
                                     {/* Background color helps if image is transparent or doesn't load perfectly */}
                                     <img
                                         src={clip.thumbnail || 'https://placehold.co/320x180/1a1a1a/777777?text=Video'}
-                                        alt={clip.title || `Video ${clip.uniqueId}`}
+                                        alt={clip.caption || `Video ${clip.uniqueId}`}
                                         className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
                                         onError={(e) => {
                                             const target = e.target as HTMLImageElement;
@@ -144,12 +147,6 @@ const OpusVideos = () => {
                                     />
                                 </div>
                                 <div className="p-3 space-y-1">
-                                    {/* Optional: Display title if available */}
-                                    {clip.title && (
-                                        <h3 className="text-sm font-semibold text-neutral-100 truncate group-hover:text-sky-400 transition-colors" title={clip.title}>
-                                            {clip.title}
-                                        </h3>
-                                    )}
                                     <p className="text-xs text-neutral-400">
                                         {formatDateAgo(clip.createdAt)}
                                     </p>

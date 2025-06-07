@@ -16,6 +16,7 @@ interface Clip {
   clipUrl: string;
   subtitle: string;
   caption: string;
+  viralityScore: string;
 }
 
 // Define the structure of an Opus Clip
@@ -52,28 +53,28 @@ const ClipPage = () => {
       try {
         const email = user.primaryEmailAddress.emailAddress;
         const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`);
-        
+
         if (!res.ok) {
           throw new Error(`Failed to fetch data: ${res.status} ${res.statusText}`);
         }
-        
+
         const userData = await res.json();
-        
+
         if (!userData?.opusclips || !Array.isArray(userData.opusclips)) {
           throw new Error("Invalid user data format");
         }
-        
+
         // Find the specific clip with matching uniqueId
         const foundClip = userData.opusclips.find(
           (clip: OpusClip) => clip.uniqueId === slug
         );
-        
+
         if (!foundClip) {
           throw new Error("Clip not found");
         }
-        
+
         setOpusClip(foundClip);
-        
+
         // Initialize states for each clip
         if (foundClip.clips) {
           setLiked(new Array(foundClip.clips.length).fill(false));
@@ -133,7 +134,7 @@ const ClipPage = () => {
   const handleDownload = (url: string, index: number) => {
     const link = document.createElement('a');
     link.href = url;
-    link.download = `clip-${index+1}.mp4`;
+    link.download = `clip-${index + 1}.mp4`;
     link.target = "_blank";
     document.body.appendChild(link);
     link.click();
@@ -143,7 +144,7 @@ const ClipPage = () => {
   // Toggle play/pause for a video
   const togglePlay = (index: number) => {
     const videoRef = videoRefs.current[index];
-    
+
     if (videoRef) {
       if (videoRef.paused) {
         videoRef.play();
@@ -185,9 +186,9 @@ const ClipPage = () => {
             <Skeleton className="h-6 w-6 rounded-full mr-2" />
             <Skeleton className="h-6 w-32" />
           </div>
-          
+
           <Skeleton className="h-[80vh] w-full rounded-xl mb-4" />
-          
+
           <div className="flex justify-between items-center mb-3">
             <div className="flex space-x-4">
               <Skeleton className="h-8 w-8 rounded-full" />
@@ -196,7 +197,7 @@ const ClipPage = () => {
             </div>
             <Skeleton className="h-8 w-8 rounded-full" />
           </div>
-          
+
           <Skeleton className="h-4 w-32 mb-2" />
           <Skeleton className="h-4 w-full mb-2" />
           <Skeleton className="h-4 w-3/4" />
@@ -212,7 +213,7 @@ const ClipPage = () => {
         <div className="max-w-md w-full bg-neutral-900 border border-neutral-800 p-6 rounded-xl text-center">
           <h2 className="text-xl font-bold mb-3 text-red-400">Error</h2>
           <p className="text-neutral-300">{error}</p>
-          <Button 
+          <Button
             variant="outline"
             className="mt-4 border-neutral-700 hover:bg-neutral-800"
             onClick={() => router.back()}
@@ -233,7 +234,7 @@ const ClipPage = () => {
           <p className="text-neutral-400">
             This collection doesn&apos;t have any clips or the clip ID is invalid.
           </p>
-          <Button 
+          <Button
             variant="outline"
             className="mt-4 border-neutral-700 hover:bg-neutral-800"
             onClick={() => router.back()}
@@ -245,6 +246,13 @@ const ClipPage = () => {
     );
   }
 
+  const getViralityColor = (scoreStr: string): string => {
+  const score = parseInt(scoreStr.replace("%", ""));
+  if (score <= 30) return "text-red-500";
+  if (score <= 70) return "text-yellow-400";
+  return "text-green-500";
+};
+
   return (
     <div className="w-full min-h-screen bg-black p-4">
       <motion.div
@@ -254,12 +262,12 @@ const ClipPage = () => {
         className="max-w-md mx-auto relative pb-16"
       >
         {/* Header navigation */}
-        <motion.div 
+        <motion.div
           variants={itemVariants}
           className="sticky top-0 z-10 bg-black/90 backdrop-blur-sm flex items-center justify-between p-4 border-b border-neutral-800"
         >
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
             className="hover:bg-neutral-800"
             onClick={() => router.back()}
@@ -267,8 +275,8 @@ const ClipPage = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-medium">Collection</h1>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
             className="hover:bg-neutral-800"
           >
@@ -288,7 +296,7 @@ const ClipPage = () => {
                 {/* User info header */}
                 <div className="flex items-center p-3">
                   <Avatar className="h-8 w-8 mr-2 border border-neutral-700">
-                    <img 
+                    <img
                       src={user?.imageUrl || "https://placehold.co/100/333/FFF?text=U"}
                       alt="User"
                       className="rounded-full"
@@ -300,15 +308,23 @@ const ClipPage = () => {
                       {opusClip.createdAt?.$date ? formatDate(opusClip.createdAt.$date) : ""}
                     </p>
                   </div>
-                  <Badge variant="outline" className="text-xs bg-neutral-800 border-neutral-700">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs bg-neutral-800 border-neutral-700">
                     Clip {index + 1}
                   </Badge>
+                  <Badge variant="outline" className="text-xs bg-neutral-800 border-neutral-700">
+                    Virality Score:{" "}
+                    <span className={`font-bold ${getViralityColor(clip.viralityScore)}`}>
+                      {clip.viralityScore}
+                    </span>
+                  </Badge>
+                  </div>
                 </div>
-                
+
                 {/* Video with 9:16 aspect ratio */}
                 <div className="relative aspect-[9/16] bg-black overflow-hidden mb-2">
                   <video
-                    ref={(el) => setVideoRef(el, index)} 
+                    ref={(el) => setVideoRef(el, index)}
                     src={clip.clipUrl}
                     poster={opusClip.thumbnail}
                     className="absolute w-full h-full object-cover"
@@ -317,17 +333,17 @@ const ClipPage = () => {
                   >
                     Your browser does not support the video tag.
                   </video>
-                  
+
                   {/* Play/pause overlay (invisible but clickable) */}
-                  <div 
+                  <div
                     className="absolute inset-0 cursor-pointer z-10"
                     onClick={() => togglePlay(index)}
                   />
-                  
+
                   {/* Download button */}
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
+                  <Button
+                    variant="outline"
+                    size="icon"
                     className="absolute top-4 right-4 bg-black/30 hover:bg-black/50 border-0 backdrop-blur-sm z-20"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -338,28 +354,28 @@ const ClipPage = () => {
                     <span className="sr-only">Download</span>
                   </Button>
                 </div>
-                
+
                 {/* Action buttons */}
                 <div className="flex justify-between items-center px-4 py-2">
                   <div className="flex space-x-4">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className={`hover:bg-neutral-800 ${liked[index] ? 'text-red-500' : ''}`}
                       onClick={() => toggleLike(index)}
                     >
                       <Heart className={`h-6 w-6 ${liked[index] ? 'fill-red-500' : ''}`} />
                     </Button>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="icon"
                       className="hover:bg-neutral-800"
                     >
                       <Share2 className="h-6 w-6" />
                     </Button>
                   </div>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="icon"
                     className={`hover:bg-neutral-800 ${isSaved[index] ? 'text-white' : ''}`}
                     onClick={() => toggleSave(index)}
@@ -367,14 +383,14 @@ const ClipPage = () => {
                     <BookmarkIcon className={`h-6 w-6 ${isSaved[index] ? 'fill-white' : ''}`} />
                   </Button>
                 </div>
-                
+
                 {/* Caption & subtitle */}
                 <div className="px-4 pt-1">
                   {/* Caption */}
                   <p className="text-sm font-medium mb-2">
                     {clip.caption}
                   </p>
-                  
+
                   {/* Subtitle */}
                   <p className="text-sm text-neutral-400 leading-relaxed">
                     {clip.subtitle}
