@@ -403,7 +403,8 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
             - end: the end time in seconds (float, approximately 30 seconds after start)
             - subtitle: the transcript text for this clip
             - caption: a catchy, attention-grabbing caption for social media
-            
+            - virality_score: a score from 1% to 100% indicating how likely this clip is to go viral
+
             Transcript:
             {full_transcript}
             
@@ -414,7 +415,8 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                         "start": 120.5,
                         "end": 150.2,
                         "subtitle": "This is the transcript text for this clip",
-                        "caption": "You won't believe what happens next! "
+                        "caption": "You won't believe what happens next! ",
+                        "virality_score": "85%"
                     }}
                 ]
             }}
@@ -558,7 +560,8 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 clip_end = clip["end"]
                 subtitle = clip["subtitle"]
                 caption = clip["caption"]
-                
+                virality_score = clip.get("virality_score", "50%")  # Default to 50% if not provided
+
                 # Ensure clip is not longer than 60 seconds
                 if clip_end - clip_start > 60:
                     clip_end = clip_start + 30
@@ -580,15 +583,15 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 temp_clip_path = os.path.join(TEMP_DIR, clip_filename)
                 
                 # Set target dimensions
-                target_height = 640
-                target_width = 360
-                
+                target_height = 1920
+                target_width = 1080
+
                 # Create subtitle file with improved word-level formatting
                 subtitle_file = os.path.join(TEMP_DIR, f"{unique_id}_subtitle_{i+1}.srt")
-                
+
                 # Create word-level SRT content with whisper timestamps if available
                 srt_content = create_word_level_srt(subtitle, clip_start, clip_end, transcription, i)
-                
+
                 with open(subtitle_file, 'w') as f:
                     f.write(srt_content)
                 logger.info(f"Created word-level SRT subtitle file: {subtitle_file}")
@@ -853,6 +856,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                     "clipUrl": clip_url,
                     "subtitle": subtitle,
                     "caption": caption,
+                    "viralityScore": virality_score,
                 })
                 
                 # Clean up temporary clip files
