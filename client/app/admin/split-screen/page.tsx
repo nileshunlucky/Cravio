@@ -9,6 +9,7 @@ import { useUser } from "@clerk/nextjs"
 import { toast } from "sonner"
 import { Button } from '@/components/ui/button'
 import LoadingAndDownload from '@/components/LoadingAndDownload'
+import Offer from '@/components/Offer';
 
 const Page = () => {
     const router = useRouter();
@@ -143,6 +144,7 @@ const Page = () => {
 
     return (
         <div className="container mx-auto py-8 max-w-4xl flex flex-col items-center">
+            <Offer/>
             <h1 className="text-2xl font-bold text-center mb-8">Split Screen Creator</h1>
             
             {/* Step indicator */}

@@ -708,7 +708,7 @@ export default function OpusClip() {
                 "placeholder:text-zinc-400 placeholder:font-medium placeholder:text-base md:placeholder:text-lg",
                 // "cursor-not-allowed opacity-50"
               )}
-
+              disabled={videoProcessed || isLoading}
             />
             {videoProcessed && (
               <motion.p
