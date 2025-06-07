@@ -355,35 +355,6 @@ const ClipPage = () => {
                   </Button>
                 </div>
 
-                {/* Action buttons */}
-                <div className="flex justify-between items-center px-4 py-2">
-                  <div className="flex space-x-4">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={`hover:bg-neutral-800 ${liked[index] ? 'text-red-500' : ''}`}
-                      onClick={() => toggleLike(index)}
-                    >
-                      <Heart className={`h-6 w-6 ${liked[index] ? 'fill-red-500' : ''}`} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="hover:bg-neutral-800"
-                    >
-                      <Share2 className="h-6 w-6" />
-                    </Button>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`hover:bg-neutral-800 ${isSaved[index] ? 'text-white' : ''}`}
-                    onClick={() => toggleSave(index)}
-                  >
-                    <BookmarkIcon className={`h-6 w-6 ${isSaved[index] ? 'fill-white' : ''}`} />
-                  </Button>
-                </div>
-
                 {/* Caption & subtitle */}
                 <div className="px-4 pt-1">
                   {/* Caption */}

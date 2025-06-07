@@ -70,7 +70,7 @@ const OpusVideos = () => {
                 const data = await res.json();
                 // Ensure data.opusclips is an array, provide default if not
                 setOpusClips(Array.isArray(data?.opusclips) ? data.opusclips : []);
-                console.log('Fetched Opus Clips:', data.opusclips);
+                
             } catch (err) {
                 console.error('Error fetching videos:', err);
                 setError(err instanceof Error ? err.message : 'An unknown error occurred.');
