@@ -226,7 +226,7 @@ const Offer = () => {
 
                         {/* Badge */}
                         <Badge className="bg-gradient-to-r from-red-500 to-red-700 text-white text-sm px-3 py-1 shadow-md">
-                            $1 trial
+                           Exclusive $1 trial
                         </Badge>
 
                         {/* Headline */}
@@ -251,7 +251,7 @@ const Offer = () => {
 
                         {/* Description Text */}
                         <p className="text-zinc-400 px-4">
-                            Worth for beginners to explore how our Cravio ai can skyrocket your content creation.
+                            Perfect for creators to grow fast & scale with Cravio ai.
                         </p>
 
                         {/* Claim Now Button with Gradient and Animation */}
@@ -269,7 +269,7 @@ const Offer = () => {
                                         Claiming
                                     </>
                                 ) : (
-                                    "Claim Now"
+                                    "Claim $1 Trial"
                                 )}
                             </Button>
                         </motion.div>
