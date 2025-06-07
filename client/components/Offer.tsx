@@ -128,7 +128,7 @@ const Offer = () => {
                 amount: orderData.amount * 100, // Amount in paise
                 currency: orderData.currency,
                 name: "LIMITED TIME OFFER",
-                description: "100 Credits for $1",
+                description: "60 Credits for $1",
                 order_id: orderData.order_id,
                 handler: async function (response: RazorpayResponse) {
                     try {
@@ -199,9 +199,9 @@ const Offer = () => {
             const script = document.createElement('script')
             script.src = 'https://checkout.razorpay.com/v1/checkout.js'
             script.onload = () => {
-                 // After the script loads, the Razorpay object should be on window.
-                 // We resolve the promise.
-                 resolve();
+                // After the script loads, the Razorpay object should be on window.
+                // We resolve the promise.
+                resolve();
             }
             script.onerror = () => reject()
             document.body.appendChild(script)
@@ -240,7 +240,13 @@ const Offer = () => {
                 onClick={(e) => e.stopPropagation()}
                 className="relative w-full max-w-sm border shadow-xl rounded-2xl overflow-hidden"
                 style={{
-                    backgroundImage: 'linear-gradient(120deg, #ffffff 0%, #f9f9f9 50%, #ffffff 100%)',
+                    backgroundImage: 'linear-gradient(120deg, rgba(0,0,0,0.6) 0%, rgba(20,20,20,0.4) 50%, rgba(0,0,0,0.6) 100%)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)', // for Safari support
+                    backgroundColor: 'rgba(0, 0, 0, 0.4)', // fallback background
+                    borderRadius: '16px', // optional: rounded corners
+                    border: '1px solid rgba(255, 255, 255, 0.1)', // subtle border
+
                     backgroundSize: '200% 200%',
                 }}
                 animate={{
@@ -265,11 +271,11 @@ const Offer = () => {
 
                         {/* Badge */}
                         <Badge className="bg-gradient-to-r from-red-500 to-red-700 text-white text-sm px-3 py-1 shadow-md">
-                            LIMITED TIME OFFER | HURRY UP! 🔥
+                            LIMITED TIME OFFER
                         </Badge>
 
                         {/* Headline */}
-                        <h2 className="text-2xl font-semibold text-gray-900 flex whitespace-nowrap items-center gap-1">
+                        <h2 className="text-2xl font-semibold text-white flex whitespace-nowrap items-center gap-1">
                             Get
                             {/* Inline SVG with gradient - adjusted for better visual */}
                             <svg width="20" height="20" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" className="inline text-yellow-500">
@@ -285,16 +291,16 @@ const Offer = () => {
                                     stroke="currentColor"
                                 />
                             </svg>
-                            100 Credits for $1 Only
+                            60 Credits for $1 Only
                         </h2>
 
                         {/* Description Text */}
-                        <p className="text-gray-600 px-4">
+                        <p className="text-zinc-400 px-4">
                             Get this limited offer now before it disappears forever. Last chance!
                         </p>
 
                         {/* Countdown Timer */}
-                        <div className="text-xl font-bold text-red-600 tracking-wider">
+                        <div className="text-xl font-bold text-red-500 tracking-wider">
                             {timeLeft}
                         </div>
 
@@ -309,7 +315,7 @@ const Offer = () => {
                             className="w-full"
                         >
                             <Button
-                                className="w-full bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white px-8 py-3 text-lg font-semibold rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
+                                className="w-full bg-gradient-to-r from-zinc-200 to-zinc-400 hover:to-zinc-600 text-black px-8 py-3 text-lg font-semibold rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
                                 onClick={handleSubmit}
                                 disabled={loading}
                             >
