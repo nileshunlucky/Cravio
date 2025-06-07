@@ -307,25 +307,34 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
             'status': 'Extracting audio from video', 
             'percent_complete': 15
         })
-        
-        try:
-            ffmpeg_cmd = [
-                'ffmpeg',
-                '-i', temp_video_path,
-                '-vn',
-                '-ac', '1',
-                '-ar', '16000',
-                '-b:a', '32k',
-                '-y',
-                temp_audio_path
-            ]
-            subprocess.run(ffmpeg_cmd, check=True)
-            logger.info(f"Extracted and compressed audio to {temp_audio_path}")
-        except Exception as e:
-            logger.error(f"Error extracting audio: {str(e)}")
-            raise Exception(f"Failed to extract audio: {str(e)}")
 
+        bitrates = ['32k', '24k', '16k']  # Try progressively lower bitrates
+        max_size_bytes = 25 * 1024 * 1024  # 25 MB
+
+        for bitrate in bitrates:
+            try:
+                ffmpeg_cmd = [
+                    'ffmpeg',
+                    '-i', temp_video_path,
+                    '-vn',
+                    '-ac', '1',
+                    '-ar', '16000',
+                    '-b:a', bitrate,
+                    '-y',
+                    temp_audio_path
+                ]
+                subprocess.run(ffmpeg_cmd, check=True)
+                file_size = os.path.getsize(temp_audio_path)
+                logger.info(f"Extracted audio with bitrate {bitrate}, size: {file_size / (1024 * 1024):.2f} MB")
         
+                if file_size <= max_size_bytes:
+                 break  # Success — file is within limit
+                else:
+                   logger.warning(f"Audio too large ({file_size / (1024 * 1024):.2f} MB) at bitrate {bitrate}, trying lower bitrate...")
+            except Exception as e:
+                logger.error(f"Error extracting audio at {bitrate}: {str(e)}")
+                continue
+
         # Get video dimensions
         try:
             ffprobe_cmd = [
