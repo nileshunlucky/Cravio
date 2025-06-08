@@ -11,6 +11,7 @@ import re
 import aiofiles
 import urllib.parse
 from tasks.opusclip_task import process_video, process_opusclip
+from celery_config import celery_app
 from db import users_collection
 
 # Configure logging
@@ -287,3 +288,44 @@ async def opusclip(request: OpusClipRequest):
     except Exception as e:
         logger.error(f"Error processing OpusClip request: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+    
+@router.get("/task-status/{task_id}")
+async def get_task_status(task_id: str):
+    """
+    Get the status of a task by its ID.
+    """
+    try:
+        task = celery_app.AsyncResult(task_id)
+        
+        if task.state == 'PENDING':
+            response = {
+                'status': 'pending',
+                'message': 'Task is waiting for execution'
+            }
+        elif task.state == 'PROGRESS':
+            meta = task.info or {}
+            response = {
+                'status': 'progress',
+                'message': meta.get('status', 'Task is in progress'),
+                'percent_complete': meta.get('percent_complete', 0)
+            }
+        elif task.state == 'FAILURE':
+            response = {
+                'status': 'failed',
+                'message': str(task.info)
+            }
+        elif task.state == 'SUCCESS':
+            response = {
+                'status': 'success',
+                'result': task.info
+            }
+        else:
+            response = {
+                'status': task.state.lower(),
+                'message': task.info.get('status', '') if isinstance(task.info, dict) else '',
+                'result': task.info.get('result', '') if isinstance(task.info, dict) else task.info
+            }
+        
+        return JSONResponse(content=response)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
