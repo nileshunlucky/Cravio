@@ -13,6 +13,7 @@ from db import users_collection
 import openai
 from datetime import datetime
 import time
+import cv2
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -440,7 +441,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 ],
                 response_format={"type": "json_object"}
             )
-            
+
             # Parse the response
             clips_data = json.loads(response.choices[0].message.content)
             clips = clips_data.get("clips", [])
@@ -613,8 +614,8 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                     '-i', temp_video_path,
                     '-t', str(clip_end - clip_start),
                     '-c:v', 'libx264',
-                    '-preset', 'ultrafast',
-                    '-crf', '28', 
+                    '-preset', 'fast',
+                    '-crf', '18', 
                     '-threads', '2',
                     '-max_muxing_queue_size', '512',
                     '-b:a', '64k', 
@@ -625,31 +626,14 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 subprocess.run(ffmpeg_extract_cmd, check=True)
                 logger.info(f"Extracted raw clip: {temp_raw_clip}")
                 
-                success = process_clip_with_opusclip_subtitles(
+                success = create_high_quality_clip_with_face_detection(
                     temp_raw_clip, temp_clip_path, subtitle, 
                     clip_start, clip_end, unique_id, i, 
-                    target_width, target_height
                 )
 
                 if not success:
-                    logger.error(f"Failed to create clip with subtitles: {temp_clip_path}")
-                    # Final fallback: create clip without subtitles
-                    fallback_cmd = [
-                        'ffmpeg',
-                        '-i', temp_raw_clip,
-                        '-vf', f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,"
-                               f"pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2",
-                        '-preset', 'ultrafast',
-                        '-crf', '28',
-                        '-threads', '2',
-                        '-max_muxing_queue_size', '512',
-                        '-b:a', '64k',
-                        '-c:a', 'aac',
-                        '-y',
-                        temp_clip_path
-                    ]
-                    subprocess.run(fallback_cmd, check=True)
-                    logger.info(f"Created clip without subtitles as fallback: {temp_clip_path}")
+                    logger.error(f"Failed to create high-quality clip: {temp_clip_path}")
+                    continue
                 
                 # Verify clip was created
                 if not os.path.exists(temp_clip_path) or os.path.getsize(temp_clip_path) < 1000:
@@ -1236,3 +1220,303 @@ def process_clip_with_opusclip_subtitles(temp_raw_clip, temp_clip_path, subtitle
             except Exception as e3:
                 print(f"All subtitle methods failed: {str(e3)}")
                 return False
+
+
+def detect_faces_in_video(video_path, num_frames=5):
+    """
+    Detect faces in video and return the average face position
+    
+    Args:
+        video_path (str): Path to the video file
+        num_frames (int): Number of frames to analyze
+        
+    Returns:
+        dict: Contains face detection results with center coordinates
+    """
+    try:
+        # Initialize face detector
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        
+        # Open video
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            logger.error(f"Could not open video: {video_path}")
+            return None
+            
+        # Get video properties
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        
+        logger.info(f"Video dimensions: {width}x{height}, total frames: {total_frames}")
+        
+        face_positions = []
+        frame_interval = max(1, total_frames // num_frames)
+        
+        for i in range(0, min(total_frames, num_frames * frame_interval), frame_interval):
+            cap.set(cv2.CAP_PROP_POS_FRAMES, i)
+            ret, frame = cap.read()
+            
+            if not ret:
+                continue
+                
+            # Convert to grayscale for face detection
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            
+            # Detect faces
+            faces = face_cascade.detectMultiScale(
+                gray,
+                scaleFactor=1.1,
+                minNeighbors=5,
+                minSize=(30, 30),
+                flags=cv2.CASCADE_SCALE_IMAGE
+            )
+            
+            # If faces found, calculate center
+            if len(faces) > 0:
+                # Use the largest face
+                largest_face = max(faces, key=lambda x: x[2] * x[3])
+                x, y, w, h = largest_face
+                
+                face_center_x = x + w // 2
+                face_center_y = y + h // 2
+                
+                face_positions.append({
+                    'x': face_center_x,
+                    'y': face_center_y,
+                    'frame': i
+                })
+                
+                logger.info(f"Face detected in frame {i} at ({face_center_x}, {face_center_y})")
+        
+        cap.release()
+        
+        if face_positions:
+            # Calculate average face position
+            avg_x = sum(pos['x'] for pos in face_positions) / len(face_positions)
+            avg_y = sum(pos['y'] for pos in face_positions) / len(face_positions)
+            
+            return {
+                'faces_found': True,
+                'face_center_x': int(avg_x),
+                'face_center_y': int(avg_y),
+                'video_width': width,
+                'video_height': height,
+                'num_faces_detected': len(face_positions)
+            }
+        else:
+            logger.info("No faces detected in video")
+            return {
+                'faces_found': False,
+                'video_width': width,
+                'video_height': height
+            }
+            
+    except Exception as e:
+        logger.error(f"Error in face detection: {str(e)}")
+        return None
+
+def calculate_crop_parameters(video_width, video_height, face_data=None, target_aspect_ratio=9/16):
+    """
+    Calculate optimal crop parameters for 9:16 aspect ratio
+    
+    Args:
+        video_width (int): Original video width
+        video_height (int): Original video height
+        face_data (dict): Face detection results
+        target_aspect_ratio (float): Target aspect ratio (9:16 = 0.5625)
+        
+    Returns:
+        dict: Crop parameters for ffmpeg
+    """
+    current_aspect_ratio = video_width / video_height
+    
+    if current_aspect_ratio > target_aspect_ratio:
+        # Video is wider than target - need to crop width
+        target_width = int(video_height * target_aspect_ratio)
+        target_height = video_height
+        
+        if face_data and face_data.get('faces_found'):
+            # Center crop around face
+            face_x = face_data['face_center_x']
+            crop_x = max(0, min(face_x - target_width // 2, video_width - target_width))
+        else:
+            # Center crop
+            crop_x = (video_width - target_width) // 2
+            
+        crop_y = 0
+        
+    else:
+        # Video is taller than target - need to crop height
+        target_width = video_width
+        target_height = int(video_width / target_aspect_ratio)
+        
+        if face_data and face_data.get('faces_found'):
+            # Center crop around face
+            face_y = face_data['face_center_y']
+            crop_y = max(0, min(face_y - target_height // 2, video_height - target_height))
+        else:
+            # Center crop
+            crop_y = (video_height - target_height) // 2
+            
+        crop_x = 0
+    
+    return {
+        'crop_x': crop_x,
+        'crop_y': crop_y,
+        'crop_width': target_width,
+        'crop_height': target_height
+    }
+
+def create_high_quality_clip_with_face_detection(temp_raw_clip, temp_clip_path, subtitle, clip_start, clip_end, unique_id, clip_idx, target_width=1080, target_height=1920):
+    """
+    Create a high-quality 9:16 clip with intelligent face-based cropping and OpusClip-style subtitles
+    """
+    try:
+        logger.info(f"Processing clip {clip_idx} with face detection and high quality settings")
+        
+        # Step 1: Detect faces in the video
+        logger.info("Detecting faces in video...")
+        face_data = detect_faces_in_video(temp_raw_clip)
+        
+        if face_data:
+            logger.info(f"Face detection result: {face_data}")
+        else:
+            logger.warning("Face detection failed, using center crop")
+        
+        # Step 2: Calculate crop parameters
+        if face_data:
+            crop_params = calculate_crop_parameters(
+                face_data['video_width'], 
+                face_data['video_height'], 
+                face_data
+            )
+        else:
+            # Fallback: get video dimensions using ffprobe
+            ffprobe_cmd = [
+                'ffprobe',
+                '-v', 'error',
+                '-select_streams', 'v:0',
+                '-show_entries', 'stream=width,height',
+                '-of', 'json',
+                temp_raw_clip
+            ]
+            result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
+            video_info = json.loads(result.stdout)
+            width = int(video_info['streams'][0]['width'])
+            height = int(video_info['streams'][0]['height'])
+            
+            crop_params = calculate_crop_parameters(width, height, None)
+        
+        logger.info(f"Crop parameters: {crop_params}")
+        
+        # Step 3: Create subtitles
+        words = subtitle.strip().split()
+        total_words = len(words)
+        clip_duration = clip_end - clip_start
+        word_duration = clip_duration / total_words if total_words > 0 else clip_duration
+        
+        # Step 4: Build high-quality filter complex
+        # Crop first, then scale to exact target dimensions
+        filter_complex = f"crop={crop_params['crop_width']}:{crop_params['crop_height']}:{crop_params['crop_x']}:{crop_params['crop_y']}"
+        filter_complex += f",scale={target_width}:{target_height}"
+        
+        # Add subtitle filters - group words into chunks of 3
+        for group_start_idx in range(0, total_words, 3):
+            group_end_idx = min(group_start_idx + 3, total_words)
+            word_group = words[group_start_idx:group_end_idx]
+            
+            # For each word in the group, add highlighting
+            for word_idx in range(len(word_group)):
+                global_word_idx = group_start_idx + word_idx
+                current_word = word_group[word_idx]
+                
+                # Calculate timing for this specific word
+                word_start_time = global_word_idx * word_duration
+                word_end_time = word_start_time + word_duration
+                
+                # Create the full text line for this moment
+                full_text = " ".join(word_group)
+                
+                # Make text safe for ffmpeg
+                safe_full_text = full_text.replace("'", "").replace('"', "").replace(':', "").replace(',', "").replace('\\', "")
+                safe_current_word = current_word.replace("'", "").replace('"', "").replace(':', "").replace(',', "").replace('\\', "")
+                
+                # Add background text (white)
+                filter_complex += f",drawtext=text='{safe_full_text}':fontcolor=#FFFFFF:fontsize=48:box=1:boxcolor=black@0.8:" \
+                                 f"boxborderw=8:x=(w-text_w)/2:y=h*0.85:enable='between(t,{word_start_time},{word_end_time})':" \
+                                 f"shadowcolor=black:shadowx=3:shadowy=3:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+                
+                # Calculate position for highlighted word (approximate)
+                words_before = word_group[:word_idx]
+                if words_before:
+                    # Estimate position offset for the current word
+                    chars_before = sum(len(w) + 1 for w in words_before)  # +1 for space
+                    total_chars = len(full_text)
+                    word_offset_ratio = chars_before / total_chars if total_chars > 0 else 0
+                    word_x_pos = f"(w-text_w)/2+text_w*{word_offset_ratio}"
+                else:
+                    word_x_pos = "(w-text_w)/2"
+                
+                # Add highlighted word (green)
+                filter_complex += f",drawtext=text='{safe_current_word}':fontcolor=#00FF00:fontsize=48:box=0:" \
+                                 f"x={word_x_pos}:y=h*0.85:enable='between(t,{word_start_time},{word_end_time})':" \
+                                 f"shadowcolor=black:shadowx=3:shadowy=3:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        
+        # Step 5: Create high-quality FFmpeg command
+        ffmpeg_cmd = [
+            'ffmpeg',
+            '-i', temp_raw_clip,
+            '-vf', filter_complex,
+            '-c:v', 'libx264',
+            '-preset', 'medium',  # Better quality than ultrafast
+            '-crf', '20',         # High quality (lower = better quality)
+            '-profile:v', 'high',
+            '-level:v', '4.0',
+            '-pix_fmt', 'yuv420p',
+            '-threads', '4',      # More threads for better performance
+            '-max_muxing_queue_size', '1024',
+            '-b:a', '128k',       # Higher audio bitrate
+            '-c:a', 'aac',
+            '-ar', '44100',       # Higher audio sample rate
+            '-y',
+            temp_clip_path
+        ]
+        
+        logger.info(f"Executing FFmpeg command for high-quality clip {clip_idx}")
+        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            logger.error(f"FFmpeg failed for clip {clip_idx}: {result.stderr}")
+            return False
+        
+        # Verify the output file
+        if not os.path.exists(temp_clip_path) or os.path.getsize(temp_clip_path) < 1000:
+            logger.error(f"Clip creation failed or produced invalid file: {temp_clip_path}")
+            return False
+        
+        # Verify the aspect ratio of the output
+        ffprobe_cmd = [
+            'ffprobe',
+            '-v', 'error',
+            '-select_streams', 'v:0',
+            '-show_entries', 'stream=width,height',
+            '-of', 'json',
+            temp_clip_path
+        ]
+        result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
+        output_info = json.loads(result.stdout)
+        output_width = int(output_info['streams'][0]['width'])
+        output_height = int(output_info['streams'][0]['height'])
+        output_aspect = output_width / output_height
+        
+        logger.info(f"Output clip dimensions: {output_width}x{output_height}, aspect ratio: {output_aspect:.3f}")
+        
+        if abs(output_aspect - (9/16)) > 0.01:  # Allow small tolerance
+            logger.warning(f"Output aspect ratio {output_aspect:.3f} differs from target 9:16 (0.563)")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error creating high-quality clip {clip_idx}: {str(e)}")
+        return False

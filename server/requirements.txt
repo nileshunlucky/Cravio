@@ -20,3 +20,4 @@ pytz
 yt-dlp
 aiofiles
 boto3
+opencv-python
