@@ -833,8 +833,8 @@ WrapStyle: 0
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,42,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1
-Style: Highlight,Arial,42,&H0000FF00,&H0000FF00,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1
+Style: Default,Arial,64,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1
+Style: Highlight,Arial,64,&H0000FF00,&H0000FF00,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -922,10 +922,223 @@ def create_opusclip_ffmpeg_command(temp_raw_clip, temp_clip_path, subtitle_text,
     
     return ffmpeg_cmd
 
-# Replace the subtitle creation section in your process_opusclip function with this:
+def create_opusclip_style_srt(subtitle_text, clip_start, clip_end, transcription_data, clip_idx):
+    """
+    Creates OpusClip-style SRT with 3 words per line, with proper word-by-word highlighting.
+    Each word gets its own timing for precise highlighting.
+    """
+    import time
+    
+    words = subtitle_text.strip().split()
+    total_words = len(words)
+    
+    # Calculate timing for each individual word
+    clip_duration = clip_end - clip_start
+    word_duration = clip_duration / total_words if total_words > 0 else clip_duration
+    
+    srt_content = ""
+    line_num = 1
+    
+    # Group words into chunks of 3 for display
+    for group_start_idx in range(0, total_words, 3):
+        group_end_idx = min(group_start_idx + 3, total_words)
+        word_group = words[group_start_idx:group_end_idx]
+        
+        # For each word in the group, create individual timing
+        for word_idx in range(len(word_group)):
+            global_word_idx = group_start_idx + word_idx
+            current_word = word_group[word_idx]
+            
+            # Calculate timing for this specific word
+            word_start_time = global_word_idx * word_duration
+            word_end_time = word_start_time + word_duration
+            
+            # Format times as HH:MM:SS,mmm
+            start_time = time.strftime('%H:%M:%S', time.gmtime(word_start_time)) + f",{int((word_start_time % 1) * 1000):03d}"
+            end_time = time.strftime('%H:%M:%S', time.gmtime(word_end_time)) + f",{int((word_end_time % 1) * 1000):03d}"
+            
+            # Create the subtitle line with current word highlighted
+            subtitle_line = ""
+            for i, word in enumerate(word_group):
+                if i == word_idx:
+                    # Current word - highlight in green
+                    subtitle_line += f"<font color='#00FF00'><b>{word}</b></font>"
+                else:
+                    # Other words - keep white
+                    subtitle_line += f"<font color='#FFFFFF'>{word}</font>"
+                
+                # Add space between words (except for the last word)
+                if i < len(word_group) - 1:
+                    subtitle_line += " "
+            
+            # Add to SRT content
+            srt_content += f"{line_num}\n{start_time} --> {end_time}\n{subtitle_line}\n\n"
+            line_num += 1
+    
+    return srt_content
+
+def create_opusclip_ass_subtitles(subtitle_text, clip_start, clip_end, unique_id, clip_idx):
+    """
+    Creates ASS subtitle file with OpusClip-style formatting:
+    - 3 words per line
+    - Green highlight for currently spoken word only
+    - White color for other words
+    - Bold font, center positioning
+    """
+    import os
+    import time
+    
+    words = subtitle_text.strip().split()
+    total_words = len(words)
+    
+    # Calculate timing for each individual word
+    clip_duration = clip_end - clip_start
+    word_duration = clip_duration / total_words if total_words > 0 else clip_duration
+    
+    # Create ASS file path
+    ass_file = os.path.join("temp_videos", f"{unique_id}_opusclip_subtitle_{clip_idx}.ass")
+    
+    # ASS file header with OpusClip-style formatting
+    ass_header = """[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 0
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,64,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1
+Style: Highlight,Arial,64,&H0000FF00,&H0000FF00,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+"""
+    
+    ass_content = ass_header
+    
+    # Group words into chunks of 3 for display
+    for group_start_idx in range(0, total_words, 3):
+        group_end_idx = min(group_start_idx + 3, total_words)
+        word_group = words[group_start_idx:group_end_idx]
+        
+        # For each word in the group, create individual timing with highlighting
+        for word_idx in range(len(word_group)):
+            global_word_idx = group_start_idx + word_idx
+            
+            # Calculate timing for this specific word
+            word_start_time = global_word_idx * word_duration
+            word_end_time = word_start_time + word_duration
+            
+            # Format timestamp for ASS (H:MM:SS.CC format)
+            def seconds_to_ass_time(seconds):
+                hours = int(seconds // 3600)
+                minutes = int((seconds % 3600) // 60)
+                secs = seconds % 60
+                return f"{hours}:{minutes:02d}:{secs:05.2f}"
+            
+            start_time = seconds_to_ass_time(word_start_time)
+            end_time = seconds_to_ass_time(word_end_time)
+            
+            # Create the subtitle line with proper highlighting
+            subtitle_line = ""
+            for i, word in enumerate(word_group):
+                if i == word_idx:
+                    # Current word - highlight in green
+                    subtitle_line += f"{{\\c&H0000FF00&}}{word}{{\\c&H00FFFFFF&}}"
+                else:
+                    # Other words - keep white
+                    subtitle_line += word
+                
+                # Add space between words (except for the last word)
+                if i < len(word_group) - 1:
+                    subtitle_line += " "
+            
+            # Add dialogue line
+            ass_content += f"Dialogue: 0,{start_time},{end_time},Default,,0,0,0,,{subtitle_line}\n"
+    
+    # Write ASS file
+    with open(ass_file, 'w', encoding='utf-8') as f:
+        f.write(ass_content)
+    
+    return ass_file
+
+def create_opusclip_ffmpeg_command(temp_raw_clip, temp_clip_path, subtitle_text, clip_start, clip_end, unique_id, clip_idx, target_width=1080, target_height=1920):
+    """
+    Creates FFmpeg command with OpusClip-style subtitles using multiple drawtext filters.
+    Each word gets individual timing with proper highlighting.
+    """
+    words = subtitle_text.strip().split()
+    total_words = len(words)
+    
+    # Calculate timing for each individual word
+    clip_duration = clip_end - clip_start
+    word_duration = clip_duration / total_words if total_words > 0 else clip_duration
+    
+    # Base filter for scaling and padding
+    filter_complex = f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2"
+    
+    # Group words into chunks of 3 for display
+    for group_start_idx in range(0, total_words, 3):
+        group_end_idx = min(group_start_idx + 3, total_words)
+        word_group = words[group_start_idx:group_end_idx]
+        
+        # For each word in the group, create individual timing
+        for word_idx in range(len(word_group)):
+            global_word_idx = group_start_idx + word_idx
+            current_word = word_group[word_idx]
+            
+            # Calculate timing for this specific word
+            word_start_time = global_word_idx * word_duration
+            word_end_time = word_start_time + word_duration
+            
+            # Create the full text line for this moment
+            full_text = ""
+            for i, word in enumerate(word_group):
+                full_text += word
+                if i < len(word_group) - 1:
+                    full_text += " "
+            
+            # Make text safe for ffmpeg
+            safe_full_text = full_text.replace("'", "").replace('"', "").replace(':', "").replace(',', "")
+            safe_current_word = current_word.replace("'", "").replace('"', "").replace(':', "").replace(',', "")
+            
+            # Add white text for the full line
+            filter_complex += f",drawtext=text='{safe_full_text}':fontcolor=#FFFFFF:fontsize=42:box=1:boxcolor=black@0.8:" \
+                             f"boxborderw=5:x=(w-text_w)/2:y=h*0.85:enable='between(t,{word_start_time},{word_end_time})':" \
+                             f"shadowcolor=black:shadowx=2:shadowy=2:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+            
+            # Calculate position for the highlighted word
+            words_before = word_group[:word_idx]
+            words_before_text = " ".join(words_before) + (" " if words_before else "")
+            
+            # Add green highlight for the current word
+            word_x_offset = f"(w-text_w)/2+text_w*{len(words_before_text)}/text_w*{len(safe_full_text)}" if words_before_text else "(w-text_w)/2"
+            
+            filter_complex += f",drawtext=text='{safe_current_word}':fontcolor=#00FF00:fontsize=42:" \
+                             f"x={word_x_offset}:y=h*0.85:enable='between(t,{word_start_time},{word_end_time})':" \
+                             f"shadowcolor=black:shadowx=2:shadowy=2:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    
+    # Create FFmpeg command
+    ffmpeg_cmd = [
+        'ffmpeg',
+        '-i', temp_raw_clip,
+        '-vf', filter_complex,
+        '-c:v', 'libx264',
+        '-preset', 'ultrafast',
+        '-crf', '28',
+        '-threads', '2',
+        '-max_muxing_queue_size', '512',
+        '-b:a', '64k',
+        '-c:a', 'aac',
+        '-y',
+        temp_clip_path
+    ]
+    
+    return ffmpeg_cmd
+
 def process_clip_with_opusclip_subtitles(temp_raw_clip, temp_clip_path, subtitle, clip_start, clip_end, unique_id, i, target_width=1080, target_height=1920):
     """
-    Process a single clip with OpusClip-style subtitles.
+    Process a single clip with OpusClip-style subtitles with proper word-by-word highlighting.
     """
     import subprocess
     import os
@@ -982,7 +1195,7 @@ def process_clip_with_opusclip_subtitles(temp_raw_clip, temp_clip_path, subtitle
             
             # Method 3: Final fallback - simple SRT with basic styling
             try:
-                # Create simple SRT file
+                # Create simple SRT file with proper highlighting
                 srt_file = os.path.join("temp_videos", f"{unique_id}_simple_subtitle_{i}.srt")
                 srt_content = create_opusclip_style_srt(subtitle, clip_start, clip_end, None, i)
                 
@@ -993,7 +1206,7 @@ def process_clip_with_opusclip_subtitles(temp_raw_clip, temp_clip_path, subtitle
                 
                 # Use subtitles filter with custom styling
                 filter_complex = f"[0:v]scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2[v];"
-                filter_complex += f"[v]subtitles='{srt_path}':force_style='FontName=Arial,FontSize=42,PrimaryColour=&H0000FF00,Bold=1,Alignment=2,MarginV=80'[outv]"
+                filter_complex += f"[v]subtitles='{srt_path}':force_style='FontName=Arial,FontSize=42,Bold=1,Alignment=2,MarginV=80'[outv]"
                 
                 ffmpeg_cmd = [
                     'ffmpeg',
