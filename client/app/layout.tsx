@@ -40,7 +40,7 @@ export default function RootLayout({
       <html lang="en" suppressHydrationWarning>
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
           <Script
-            src="https://www.googletagmanager.com/gtag/js?id=G-RT8SFYPC2H"
+            src="https://www.googletagmanager.com/gtag/js?id=G-T0Z9E284TH"
             strategy="afterInteractive"
           />
           <Script
@@ -51,7 +51,7 @@ export default function RootLayout({
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
                 gtag('js', new Date());
-                gtag('config', 'G-RT8SFYPC2H', {
+                gtag('config', 'G-T0Z9E284TH', {
                   page_path: window.location.pathname,
                 });
               `,
