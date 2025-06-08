@@ -706,6 +706,8 @@ export default function OpusClip() {
               className={cn(
                 "flex-1 bg-transparent text-white border-none focus:outline-none focus:ring-0",
                 "placeholder:text-zinc-400 placeholder:font-medium placeholder:text-base md:placeholder:text-lg",
+                videoProcessed && "text-zinc-700",
+                isLoading && "text-zinc-700"
                 // "cursor-not-allowed opacity-50"
               )}
               disabled={videoProcessed || isLoading}
@@ -835,6 +837,10 @@ export default function OpusClip() {
                   </Tooltip>
                 </TooltipProvider>
               </div>
+            </div>
+
+            <div className="p-4 items-center justify-center gap-2">
+              <p>Using video you don’t own may violate copyright laws. By continuing, you confirm this is your own original content.</p>
             </div>
           </div>
         </motion.div>

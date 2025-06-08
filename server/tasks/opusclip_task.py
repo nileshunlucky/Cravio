@@ -137,20 +137,20 @@ def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
             ffprobe_data = json.loads(result.stdout)
             video_duration = float(ffprobe_data['format']['duration'])
             
-            # Calculate credit usage: 1 minute = 3 credits, minimum 3 credits
+            # Calculate credit usage: 1 minute = 1 credits, minimum 1 credits
             duration_minutes = video_duration / 60
             # check if videoduration is greater than 2hrs return error less than 2hrs
             if duration_minutes > 120:
                 raise Exception("Video duration is greater than 2 hours")
-            credit_usage = max(3, int(3 * round(duration_minutes + 0.5)))
-            
+            credit_usage = max(1, int(1 * round(duration_minutes + 0.5)))
+
             logger.info(f"Video duration: {video_duration} seconds ({duration_minutes:.2f} minutes)")
             logger.info(f"Credit usage: {credit_usage} credits")
         except Exception as e:
             logger.error(f"Error calculating duration: {str(e)}")
             video_duration = 0
-            credit_usage = 3  # Default minimum
-        
+            credit_usage = 1  # Default minimum
+
         # Generate thumbnail if it doesn't exist (for uploaded files)
         if not os.path.exists(temp_thumbnail_path):
             self.update_state(state='PROGRESS', meta={
@@ -625,222 +625,31 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 subprocess.run(ffmpeg_extract_cmd, check=True)
                 logger.info(f"Extracted raw clip: {temp_raw_clip}")
                 
-                # Now create the final clip with proper aspect ratio and subtitles
-                # Fix backslash issue in path for subtitles
-                subtitle_path = subtitle_file.replace('\\', '/')
-                
-                # Enhanced subtitle styling with ASS filter for better control
-                # Yellow bold font in center as requested
-                ass_style = ("FontName=Arial,FontSize=24,PrimaryColour=&H0000FFFF,SecondaryColour=&H0000FFFF,"
-                             "OutlineColour=&H000000,BackColour=&H80000000,Bold=1,Alignment=2,MarginV=30,"
-                             "BorderStyle=3,Outline=2,Shadow=1")
-                
-                filter_complex = f"[0:v]scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2[v];"
-                filter_complex += f"[v]subtitles='{subtitle_path}':force_style='{ass_style}'[outv]"
-                
-                ffmpeg_process_cmd = [
-                    'ffmpeg',
-                    '-i', temp_raw_clip,
-                    '-filter_complex', filter_complex,
-                    '-map', '[outv]',
-                    '-map', '0:a',
-                    '-c:v', 'libx264',
-                    '-preset', 'ultrafast',
-                    '-crf', '28', 
-                    '-threads', '2',
-                    '-max_muxing_queue_size', '512',
-                    '-b:a', '64k', 
-                    '-c:a', 'aac',
-                    '-y',
-                    temp_clip_path
-                ]
-                
-                try:
-                    subprocess.run(ffmpeg_process_cmd, check=True)
-                    logger.info(f"Created final clip with improved subtitles: {temp_clip_path}")
-                except Exception as e:
-                    logger.error(f"Error creating clip with subtitles: {str(e)}")
-                    
-                    # Enhanced fallback method with better subtitle styling
-                    try:
-                        # Create a temporary ASS subtitle file for better control
-                        ass_file = os.path.join(TEMP_DIR, f"{unique_id}_subtitle_{i+1}.ass")
-                        
-                        # Basic ASS header with yellow bold font
-                        ass_header = """[Script Info]
-ScriptType: v4.00+
-PlayResX: 384
-PlayResY: 288
-WrapStyle: 0
+                success = process_clip_with_opusclip_subtitles(
+                    temp_raw_clip, temp_clip_path, subtitle, 
+                    clip_start, clip_end, unique_id, i, 
+                    target_width, target_height
+                )
 
-[V4+ Styles]
-Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,24,&H0000FFFF,&H0000FFFF,&H000000,&H80000000,1,0,0,0,100,100,0,0,3,2,1,2,10,10,30,1
-
-[Events]
-Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-"""
-                        
-                        # Parse the SRT content and convert to ASS
-                        ass_content = ass_header
-                        lines = srt_content.strip().split('\n\n')
-                        for line in lines:
-                            parts = line.split('\n')
-                            if len(parts) >= 3:
-                                timecode = parts[1].replace(',', '.')
-                                start_time, end_time = timecode.split(' --> ')
-                                text = parts[2]
-                                
-                                # Add event line
-                                ass_content += f"Dialogue: 0,{start_time},{end_time},Default,,0,0,0,,{text}\n"
-                        
-                        with open(ass_file, 'w') as f:
-                            f.write(ass_content)
-                        
-                        # Use the ASS file with ffmpeg
-                        ass_path = ass_file.replace('\\', '/')
-                        filter_complex = f"[0:v]scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2[v];"
-                        filter_complex += f"[v]ass='{ass_path}'[outv]"
-                        
-                        fallback_cmd = [
-                            'ffmpeg',
-                            '-i', temp_raw_clip,
-                            '-filter_complex', filter_complex,
-                            '-map', '[outv]',
-                            '-map', '0:a',
-                            '-c:v', 'libx264',
-                            '-preset', 'ultrafast',
-                           '-crf', '28', 
-                           '-threads', '2',
-                           '-max_muxing_queue_size', '512',
-                           '-b:a', '64k', 
-                            '-c:a', 'aac',
-                            '-y',
-                            temp_clip_path
-                        ]
-                        
-                        subprocess.run(fallback_cmd, check=True)
-                        logger.info(f"Created clip with ASS subtitle fallback: {temp_clip_path}")
-                        
-                        # Clean up ASS file
-                        if os.path.exists(ass_file):
-                            os.remove(ass_file)
-                            
-                    except Exception as fallback_error:
-                        logger.error(f"ASS subtitle fallback also failed: {str(fallback_error)}")
-                        
-                        # Fallback: Use drawtext filter for each word with proper timing
-                        try:
-                            # Parse the SRT content to get word timing
-                            words_data = []
-                            lines = srt_content.strip().split('\n\n')
-                            for line in lines:
-                                parts = line.split('\n')
-                                if len(parts) >= 3:
-                                    timecode = parts[1]
-                                    start_time_str, end_time_str = timecode.split(' --> ')
-                                    
-                                    # Convert timestamp to seconds
-                                    def timestamp_to_seconds(ts):
-                                        h, m, s = ts.split(':')
-                                        s, ms = s.split(',')
-                                        return int(h) * 3600 + int(m) * 60 + int(s) + int(ms) / 1000
-                                    
-                                    start_seconds = timestamp_to_seconds(start_time_str)
-                                    end_seconds = timestamp_to_seconds(end_time_str)
-                                    
-                                    words_data.append({
-                                        'text': parts[2],
-                                        'start': start_seconds,
-                                        'end': end_seconds
-                                    })
-                            
-                            # Create a complex filter for each word with precise timing
-                            filter_chain = f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2"
-                            
-                            clip_duration = clip_end - clip_start
-                            
-                            for idx, word_data in enumerate(words_data):
-                                # Make sure word is safe for filter
-                                safe_word = word_data['text'].replace("'", "").replace('"', "").replace(':', "").replace(',', "")
-                                
-                                # Add drawtext filter for this word - yellow bold text
-                                filter_chain += f",drawtext=text='{safe_word}':fontcolor=yellow:fontsize=24:box=1:boxcolor=black@0.8:boxborderw=5" \
-                                             f":x=(w-text_w)/2:y=(h*0.9):enable='between(t,{word_data['start']},{word_data['end']})':" \
-                                             f"shadowcolor=black:shadowx=2:shadowy=2:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-                            
-                            final_resort_cmd = [
-                                'ffmpeg',
-                                '-i', temp_raw_clip,
-                                '-vf', filter_chain,
-                                '-c:v', 'libx264',
-                                '-preset', 'ultrafast',
-                                '-crf', '28', 
-                                '-threads', '2',
-                                '-max_muxing_queue_size', '512',
-                                '-b:a', '64k', 
-                                '-c:a', 'aac',
-                                '-y',
-                                temp_clip_path
-                            ]
-                            
-                            subprocess.run(final_resort_cmd, check=True)
-                            logger.info(f"Created clip with drawtext word-by-word fallback: {temp_clip_path}")
-                            
-                        except Exception as final_error:
-                            logger.error(f"Word-by-word drawtext fallback failed: {str(final_error)}")
-                            
-                            # Final fallback: Use a single drawtext for the entire subtitle
-                            try:
-                                # Process subtitle for better display
-                                words = subtitle.split()
-                                # Join with newlines to ensure 1 word per line
-                                formatted_subtitle = '\n'.join(words)
-                                # Make the subtitle text safe for the filter
-                                safe_subtitle = formatted_subtitle.replace("'", "").replace('"', "").replace(':', "").replace(',', "")
-                                
-                                # Use a single drawtext with yellow bold font
-                                single_text_cmd = [
-                                    'ffmpeg',
-                                    '-i', temp_raw_clip,
-                                    '-vf', f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,"
-                                           f"pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2,"
-                                           f"drawtext=text='{safe_subtitle}':fontcolor=yellow:fontsize=24:box=1:boxcolor=black@0.8:"
-                                           f"boxborderw=5:x=(w-text_w)/2:y=(h-text_h)/2:line_spacing=12:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-                                    '-c:v', 'libx264',
-                                    '-preset', 'ultrafast',
-                                    '-crf', '28', 
-                                    '-threads', '2',
-                                    '-max_muxing_queue_size', '512',
-                                    '-b:a', '64k', 
-                                    '-c:a', 'aac',
-                                    '-y',
-                                    temp_clip_path
-                                ]
-                                
-                                subprocess.run(single_text_cmd, check=True)
-                                logger.info(f"Created clip with simple drawtext fallback: {temp_clip_path}")
-                                
-                            except Exception as absolute_final_error:
-                                logger.error(f"All subtitle methods failed: {str(absolute_final_error)}")
-                                
-                                # Absolute last resort: Just use the raw clip with proper aspect ratio
-                                last_resort_cmd = [
-                                    'ffmpeg',
-                                    '-i', temp_raw_clip,
-                                    '-vf', f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,"
-                                           f"pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2",
-                                    '-preset', 'ultrafast',
-                                    '-crf', '28', 
-                                    '-threads', '2',
-                                    '-max_muxing_queue_size', '512',
-                                    '-b:a', '64k', 
-                                    '-c:a', 'aac',
-                                    '-y',
-                                    temp_clip_path
-                                ]
-                                subprocess.run(last_resort_cmd, check=True)
-                                logger.error(f"Created clip without subtitles as last resort: {temp_clip_path}")
+                if not success:
+                    logger.error(f"Failed to create clip with subtitles: {temp_clip_path}")
+                    # Final fallback: create clip without subtitles
+                    fallback_cmd = [
+                        'ffmpeg',
+                        '-i', temp_raw_clip,
+                        '-vf', f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,"
+                               f"pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2",
+                        '-preset', 'ultrafast',
+                        '-crf', '28',
+                        '-threads', '2',
+                        '-max_muxing_queue_size', '512',
+                        '-b:a', '64k',
+                        '-c:a', 'aac',
+                        '-y',
+                        temp_clip_path
+                    ]
+                    subprocess.run(fallback_cmd, check=True)
+                    logger.info(f"Created clip without subtitles as fallback: {temp_clip_path}")
                 
                 # Verify clip was created
                 if not os.path.exists(temp_clip_path) or os.path.getsize(temp_clip_path) < 1000:
@@ -933,45 +742,284 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         logger.error(f"Error in OpusClip processing task: {str(e)}")
         raise Exception(f"OpusClip processing failed: {str(e)}")
     
-def create_improved_srt(subtitle_text, clip_start, clip_end, words_per_line=1, max_width_percent=80):
+# Enhanced subtitle generation functions for OpusClip-style subtitles
+
+def create_opusclip_style_srt(subtitle_text, clip_start, clip_end, transcription_data, clip_idx):
     """
-    Creates an improved SRT file with better word wrapping and timing.
+    Creates OpusClip-style SRT with 3 words per line, green highlighting for current words.
     
     Args:
         subtitle_text (str): The full subtitle text for the clip
         clip_start (float): Start time of the clip in seconds
         clip_end (float): End time of the clip in seconds
-        words_per_line (int): Target number of words per line (default: 1 word per line)
-        max_width_percent (int): Maximum width percentage of the video (80% recommended)
+        transcription_data: The Whisper transcription data with word-level timestamps
+        clip_idx (int): The index of the current clip
         
     Returns:
-        str: Formatted SRT content
+        str: Formatted SRT content with OpusClip-style formatting
     """
-    words = subtitle_text.split()
+    import time
+    
+    words = subtitle_text.strip().split()
     total_words = len(words)
     
-    # Calculate how many lines we'll need
-    total_lines = total_words  # Since we're using 1 word per line
+    # Group words into chunks of 3
+    word_groups = []
+    for i in range(0, total_words, 3):
+        group = words[i:i+3]
+        word_groups.append(group)
     
-    # Calculate duration for each line to match speech rhythm
-    # Assume equal distribution of words across the clip duration
+    # Calculate timing for each group
     clip_duration = clip_end - clip_start
-    word_duration = clip_duration / total_words if total_words > 0 else clip_duration
+    group_duration = clip_duration / len(word_groups) if word_groups else clip_duration
     
     srt_content = ""
-    line_num = 1
     
-    for i in range(total_words):
-        # Calculate timing for this word
-        word_start = clip_start + (i * word_duration)
-        word_end = word_start + word_duration
+    for group_idx, word_group in enumerate(word_groups):
+        # Calculate timing for this group
+        group_start = clip_start + (group_idx * group_duration)
+        group_end = group_start + group_duration
+        
+        # Adjust to be relative to clip start for SRT
+        relative_start = group_start - clip_start
+        relative_end = group_end - clip_start
         
         # Format times as HH:MM:SS,mmm
-        start_time = time.strftime('%H:%M:%S', time.gmtime(word_start)) + f",{int((word_start % 1) * 1000):03d}"
-        end_time = time.strftime('%H:%M:%S', time.gmtime(word_end)) + f",{int((word_end % 1) * 1000):03d}"
+        start_time = time.strftime('%H:%M:%S', time.gmtime(relative_start)) + f",{int((relative_start % 1) * 1000):03d}"
+        end_time = time.strftime('%H:%M:%S', time.gmtime(relative_end)) + f",{int((relative_end % 1) * 1000):03d}"
         
-        # Add this word to SRT content
-        srt_content += f"{line_num}\n{start_time} --> {end_time}\n{words[i]}\n\n"
-        line_num += 1
+        # Create subtitle line with 3 words
+        subtitle_line = " ".join(word_group)
+        
+        # Add to SRT content
+        srt_content += f"{group_idx + 1}\n{start_time} --> {end_time}\n{subtitle_line}\n\n"
     
     return srt_content
+
+def create_opusclip_ass_subtitles(subtitle_text, clip_start, clip_end, unique_id, clip_idx):
+    """
+    Creates ASS subtitle file with OpusClip-style formatting:
+    - 3 words per line
+    - Green highlight for current words
+    - White default color
+    - Bold font
+    - Center positioning
+    """
+    import os
+    import time
+    
+    words = subtitle_text.strip().split()
+    total_words = len(words)
+    
+    # Group words into chunks of 3
+    word_groups = []
+    for i in range(0, total_words, 3):
+        group = words[i:i+3]
+        word_groups.append(group)
+    
+    # Calculate timing for each group
+    clip_duration = clip_end - clip_start
+    group_duration = clip_duration / len(word_groups) if word_groups else clip_duration
+    
+    # Create ASS file path
+    ass_file = os.path.join("temp_videos", f"{unique_id}_opusclip_subtitle_{clip_idx}.ass")
+    
+    # ASS file header with OpusClip-style formatting
+    ass_header = """[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 0
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,42,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1
+Style: Highlight,Arial,42,&H0000FF00,&H0000FF00,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+"""
+    
+    ass_content = ass_header
+    
+    # Create events for each word group
+    for group_idx, word_group in enumerate(word_groups):
+        # Calculate timing for this group
+        group_start = group_idx * group_duration
+        group_end = group_start + group_duration
+        
+        # Format timestamp for ASS (H:MM:SS.CC format)
+        def seconds_to_ass_time(seconds):
+            hours = int(seconds // 3600)
+            minutes = int((seconds % 3600) // 60)
+            secs = seconds % 60
+            return f"{hours}:{minutes:02d}:{secs:05.2f}"
+        
+        start_time = seconds_to_ass_time(group_start)
+        end_time = seconds_to_ass_time(group_end)
+        
+        # Create the subtitle line
+        subtitle_line = " ".join(word_group)
+        
+        # Add highlighted version (green)
+        ass_content += f"Dialogue: 0,{start_time},{end_time},Highlight,,0,0,0,,{subtitle_line}\n"
+    
+    # Write ASS file
+    with open(ass_file, 'w', encoding='utf-8') as f:
+        f.write(ass_content)
+    
+    return ass_file
+
+# Updated FFmpeg command generation for OpusClip-style subtitles
+def create_opusclip_ffmpeg_command(temp_raw_clip, temp_clip_path, subtitle_text, clip_start, clip_end, unique_id, clip_idx, target_width=1080, target_height=1920):
+    """
+    Creates FFmpeg command with OpusClip-style subtitles using drawtext filters.
+    """
+    words = subtitle_text.strip().split()
+    
+    # Group words into chunks of 3
+    word_groups = []
+    for i in range(0, len(words), 3):
+        group = words[i:i+3]
+        word_groups.append(" ".join(group))
+    
+    # Calculate timing for each group
+    clip_duration = clip_end - clip_start
+    group_duration = clip_duration / len(word_groups) if word_groups else clip_duration
+    
+    # Base filter for scaling and padding
+    filter_complex = f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2"
+    
+    # Add drawtext filter for each word group with OpusClip styling
+    for group_idx, word_group in enumerate(word_groups):
+        # Calculate timing
+        group_start = group_idx * group_duration
+        group_end = group_start + group_duration
+        
+        # Make text safe for ffmpeg
+        safe_text = word_group.replace("'", "").replace('"', "").replace(':', "").replace(',', "")
+        
+        # Add drawtext with OpusClip-style formatting
+        filter_complex += f",drawtext=text='{safe_text}':fontcolor=#00FF00:fontsize=42:box=1:boxcolor=black@0.8:" \
+                         f"boxborderw=5:x=(w-text_w)/2:y=h*0.85:enable='between(t,{group_start},{group_end})':" \
+                         f"shadowcolor=black:shadowx=2:shadowy=2:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    
+    # Create FFmpeg command
+    ffmpeg_cmd = [
+        'ffmpeg',
+        '-i', temp_raw_clip,
+        '-vf', filter_complex,
+        '-c:v', 'libx264',
+        '-preset', 'ultrafast',
+        '-crf', '28',
+        '-threads', '2',
+        '-max_muxing_queue_size', '512',
+        '-b:a', '64k',
+        '-c:a', 'aac',
+        '-y',
+        temp_clip_path
+    ]
+    
+    return ffmpeg_cmd
+
+# Replace the subtitle creation section in your process_opusclip function with this:
+def process_clip_with_opusclip_subtitles(temp_raw_clip, temp_clip_path, subtitle, clip_start, clip_end, unique_id, i, target_width=1080, target_height=1920):
+    """
+    Process a single clip with OpusClip-style subtitles.
+    """
+    import subprocess
+    import os
+    
+    try:
+        # Method 1: Try ASS subtitles first (best quality)
+        ass_file = create_opusclip_ass_subtitles(subtitle, clip_start, clip_end, unique_id, i)
+        
+        ass_path = ass_file.replace('\\', '/')
+        filter_complex = f"[0:v]scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2[v];"
+        filter_complex += f"[v]ass='{ass_path}'[outv]"
+        
+        ffmpeg_cmd = [
+            'ffmpeg',
+            '-i', temp_raw_clip,
+            '-filter_complex', filter_complex,
+            '-map', '[outv]',
+            '-map', '0:a',
+            '-c:v', 'libx264',
+            '-preset', 'ultrafast',
+            '-crf', '28',
+            '-threads', '2',
+            '-max_muxing_queue_size', '512',
+            '-b:a', '64k',
+            '-c:a', 'aac',
+            '-y',
+            temp_clip_path
+        ]
+        
+        subprocess.run(ffmpeg_cmd, check=True)
+        
+        # Clean up ASS file
+        if os.path.exists(ass_file):
+            os.remove(ass_file)
+            
+        return True
+        
+    except Exception as e:
+        print(f"ASS subtitle method failed: {str(e)}")
+        
+        # Method 2: Fallback to drawtext method
+        try:
+            ffmpeg_cmd = create_opusclip_ffmpeg_command(
+                temp_raw_clip, temp_clip_path, subtitle, 
+                clip_start, clip_end, unique_id, i, 
+                target_width, target_height
+            )
+            
+            subprocess.run(ffmpeg_cmd, check=True)
+            return True
+            
+        except Exception as e2:
+            print(f"Drawtext subtitle method also failed: {str(e2)}")
+            
+            # Method 3: Final fallback - simple SRT with basic styling
+            try:
+                # Create simple SRT file
+                srt_file = os.path.join("temp_videos", f"{unique_id}_simple_subtitle_{i}.srt")
+                srt_content = create_opusclip_style_srt(subtitle, clip_start, clip_end, None, i)
+                
+                with open(srt_file, 'w', encoding='utf-8') as f:
+                    f.write(srt_content)
+                
+                srt_path = srt_file.replace('\\', '/')
+                
+                # Use subtitles filter with custom styling
+                filter_complex = f"[0:v]scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2[v];"
+                filter_complex += f"[v]subtitles='{srt_path}':force_style='FontName=Arial,FontSize=42,PrimaryColour=&H0000FF00,Bold=1,Alignment=2,MarginV=80'[outv]"
+                
+                ffmpeg_cmd = [
+                    'ffmpeg',
+                    '-i', temp_raw_clip,
+                    '-filter_complex', filter_complex,
+                    '-map', '[outv]',
+                    '-map', '0:a',
+                    '-c:v', 'libx264',
+                    '-preset', 'ultrafast',
+                    '-crf', '28',
+                    '-threads', '2',
+                    '-max_muxing_queue_size', '512',
+                    '-b:a', '64k',
+                    '-c:a', 'aac',
+                    '-y',
+                    temp_clip_path
+                ]
+                
+                subprocess.run(ffmpeg_cmd, check=True)
+                
+                # Clean up SRT file
+                if os.path.exists(srt_file):
+                    os.remove(srt_file)
+                    
+                return True
+                
+            except Exception as e3:
+                print(f"All subtitle methods failed: {str(e3)}")
+                return False
