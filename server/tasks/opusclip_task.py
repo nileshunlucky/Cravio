@@ -161,12 +161,26 @@ def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
             
             # Download YouTube video
             ydl_opts = {
-                'format': 'best[ext=mp4]/best',
-                'outtmpl': temp_video_path,
-                'quiet': False,
-                'writethumbnail': True,
-                'cookiefile': cookies_path,
-            }
+        # Try multiple format options in order of preference
+        'format': (
+            'best[ext=mp4][height<=1080]/best[ext=mp4][height<=720]/'
+            'best[ext=mp4]/best[height<=1080]/best[height<=720]/'
+            'best/worst'
+        ),
+        'outtmpl': temp_video_path,
+        'quiet': False,
+        'writethumbnail': True,
+        'cookiefile': cookies_path,
+        # Additional options for better compatibility
+        'no_warnings': False,
+        'ignoreerrors': False,
+        # Force IPv4 to avoid some connection issues
+        'force_ipv4': True,
+        # Add user agent
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+    }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info_dict = ydl.extract_info(youtube_url, download=True)
