@@ -108,6 +108,18 @@ def extract_clip_transcript_from_whisper(transcription_data, clip_start, clip_en
             'word_count': 0
         }
 
+def clean_text_for_ffmpeg(text):
+    """Clean text to be safe for ffmpeg drawtext filter"""
+    # Remove or replace problematic characters
+    text = text.replace("'", "").replace('"', '').replace(':', '').replace(',', '')
+    text = text.replace('\\', '').replace('/', '').replace('|', '')
+    text = text.replace('[', '').replace(']', '').replace('(', '').replace(')', '')
+    text = text.replace('{', '').replace('}', '').replace('&', 'and')
+    text = text.replace('%', 'percent').replace('$', 'dollar')
+    text = re.sub(r'[^\w\s-]', '', text)  # Keep only alphanumeric, whitespace, and hyphens
+    text = re.sub(r'\s+', ' ', text).strip()  # Normalize whitespace
+    return text
+
 @celery_app.task(bind=True, base=VideoProcessTask)
 def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
     """
