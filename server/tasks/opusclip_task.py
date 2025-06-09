@@ -857,10 +857,10 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, target_
 
 def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, target_width=1080, target_height=1920):
     """
-    Create ultra high-quality 9:16 clip with accurate subtitle matching
+    Create ultra high-quality 9:16 clip with OpusClip-style karaoke subtitles
     """
     try:
-        logger.info(f"Processing clip {clip_idx} with accurate subtitles and ultra high quality")
+        logger.info(f"Processing clip {clip_idx} with OpusClip-style karaoke subtitles")
         
         # Step 1: Face detection and crop calculation (keeping existing logic)
         face_data = detect_faces_in_video(temp_raw_clip)
@@ -899,154 +899,105 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
                     'end': (i + 1) * word_duration
                 })
         
-        # Step 3: Build ultra high-quality filter complex
+        # Step 3: Build base video filter
         filter_complex = f"crop={crop_params['crop_width']}:{crop_params['crop_height']}:{crop_params['crop_x']}:{crop_params['crop_y']}"
-        filter_complex += f",scale={target_width}:{target_height}:flags=lanczos"  # Use high-quality scaling
+        filter_complex += f",scale={target_width}:{target_height}:flags=lanczos"
         
-        # Step 4: Improved subtitle system - group words into chunks of 2-3 for better readability
-        word_groups = []
-        current_group = []
-        current_group_duration = 0
-        max_group_duration = 3.0  # Maximum 3 seconds per group
-        max_words_per_group = 3
+        # Step 4: Create subtitle lines (2-4 words per line for better readability)
+        subtitle_lines = []
+        current_line_words = []
         
         for word_data in words_data:
-            word_duration = word_data['end'] - word_data['start']
+            current_line_words.append(word_data)
             
-            # Check if we should start a new group
-            if (len(current_group) >= max_words_per_group or 
-                current_group_duration + word_duration > max_group_duration):
-                
-                if current_group:  # Save current group
-                    word_groups.append({
-                        'words': current_group.copy(),
-                        'start_time': current_group[0]['start'],
-                        'end_time': current_group[-1]['end'],
-                        'full_text': ' '.join([w['word'].strip() for w in current_group])
+            # Create a line when we have 2-4 words or we're at the end
+            if len(current_line_words) >= 4 or word_data == words_data[-1]:
+                if current_line_words:
+                    line_text = ' '.join([w['word'].strip() for w in current_line_words])
+                    subtitle_lines.append({
+                        'words': current_line_words.copy(),
+                        'start_time': current_line_words[0]['start'],
+                        'end_time': current_line_words[-1]['end'],
+                        'text': line_text
                     })
-                
-                # Start new group
-                current_group = [word_data]
-                current_group_duration = word_duration
-            else:
-                # Add to current group
-                current_group.append(word_data)
-                current_group_duration += word_duration
+                    current_line_words = []
         
-        # Don't forget the last group
-        if current_group:
-            word_groups.append({
-                'words': current_group.copy(),
-                'start_time': current_group[0]['start'],
-                'end_time': current_group[-1]['end'],
-                'full_text': ' '.join([w['word'].strip() for w in current_group])
-            })
+        logger.info(f"Created {len(subtitle_lines)} subtitle lines")
         
-        logger.info(f"Created {len(word_groups)} word groups for subtitles")
-        
-        # Step 5: Add subtitle rendering for each word group with improved positioning
-        for group_idx, word_group in enumerate(word_groups):
-            group_text = word_group['full_text']
-            group_start = word_group['start_time']
-            group_end = word_group['end_time']
+        # Step 5: Add OpusClip-style karaoke subtitles
+        for line_idx, subtitle_line in enumerate(subtitle_lines):
+            line_text = subtitle_line['text']
+            line_start = subtitle_line['start_time']
+            line_end = subtitle_line['end_time']
+            line_words = subtitle_line['words']
             
             # Clean text for ffmpeg
-            safe_group_text = clean_text_for_ffmpeg(group_text)
+            safe_line_text = clean_text_for_ffmpeg(line_text)
             
-            # Improved font settings - much larger and bolder
-            font_size = 72  # Increased from 56
-            box_border = 15  # Increased border
-            shadow_offset = 6  # Increased shadow
+            # Font settings - OpusClip style
+            font_size = 64
+            stroke_width = 4
+            y_position = "h*0.75"  # Position subtitles in lower portion
             
-            # Add background text (white with strong black background)
-            filter_complex += f",drawtext=text='{safe_group_text}':" \
-                             f"fontcolor=#FFFFFF:" \
+            # Add base white text with black stroke (always visible during line duration)
+            filter_complex += f",drawtext=text='{safe_line_text}':" \
+                             f"fontcolor=white:" \
                              f"fontsize={font_size}:" \
-                             f"box=1:" \
-                             f"boxcolor=black@0.85:" \
-                             f"boxborderw={box_border}:" \
                              f"x=(w-text_w)/2:" \
-                             f"y=h*0.78:" \
-                             f"enable='between(t,{group_start},{group_end})':" \
-                             f"shadowcolor=black:" \
-                             f"shadowx={shadow_offset}:" \
-                             f"shadowy={shadow_offset}:" \
-                             f"fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:" \
-                             f"line_spacing=15"
+                             f"y={y_position}:" \
+                             f"enable='between(t,{line_start},{line_end})':" \
+                             f"borderw={stroke_width}:" \
+                             f"bordercolor=black:" \
+                             f"fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
             
-            # Step 6: Add precise individual word highlighting
-            for word_idx, word_data in enumerate(word_group['words']):
-                word_text = word_data['word'].strip()
+            # Add karaoke-style highlighting - reveal words progressively
+            for word_idx, word_data in enumerate(line_words):
                 word_start = word_data['start']
                 word_end = word_data['end']
                 
-                safe_word_text = clean_text_for_ffmpeg(word_text)
+                # Create progressive reveal effect - show words up to current word in yellow
+                words_to_highlight = line_words[:word_idx + 1]
+                highlighted_text = ' '.join([w['word'].strip() for w in words_to_highlight])
+                safe_highlighted_text = clean_text_for_ffmpeg(highlighted_text)
                 
-                # Calculate precise X position for the highlighted word
-                words_before_text = ' '.join([w['word'].strip() for w in word_group['words'][:word_idx]])
-                words_after_text = ' '.join([w['word'].strip() for w in word_group['words'][word_idx+1:]])
-                
-                # Use text measurement approach for better positioning
-                if word_idx == 0:
-                    # First word - align to start of text
-                    word_x_pos = "(w-text_w)/2"
-                elif word_idx == len(word_group['words']) - 1:
-                    # Last word - calculate from end
-                    if len(word_group['words']) == 2:
-                        word_x_pos = f"(w-text_w)/2+text_w*0.55"  # Approximate middle-end position
-                    else:
-                        word_x_pos = f"(w-text_w)/2+text_w*0.75"  # Approximate end position
-                else:
-                    # Middle word - calculate proportional position
-                    total_text_length = len(group_text)
-                    chars_before = len(words_before_text) + (1 if words_before_text else 0)  # +1 for space
-                    
-                    if total_text_length > 0:
-                        position_ratio = chars_before / total_text_length
-                        word_x_pos = f"(w-text_w)/2+text_w*{position_ratio:.3f}"
-                    else:
-                        word_x_pos = "(w-text_w)/2"
-                
-                # Add highlighted word with bright, contrasting color
-                filter_complex += f",drawtext=text='{safe_word_text}':" \
-                                 f"fontcolor=#00FF41:" \
+                # Add yellow highlighted text that grows word by word
+                filter_complex += f",drawtext=text='{safe_highlighted_text}':" \
+                                 f"fontcolor=#FFD700:" \
                                  f"fontsize={font_size}:" \
-                                 f"x={word_x_pos}:" \
-                                 f"y=h*0.78:" \
-                                 f"enable='between(t,{word_start},{word_end})':" \
-                                 f"shadowcolor=black:" \
-                                 f"shadowx={shadow_offset}:" \
-                                 f"shadowy={shadow_offset}:" \
+                                 f"x=(w-tw)/2:" \
+                                 f"y={y_position}:" \
+                                 f"enable='between(t,{word_start},{line_end})':" \
+                                 f"borderw={stroke_width}:" \
+                                 f"bordercolor=black:" \
                                  f"fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
         
-        # Step 7: Create ultra high-quality FFmpeg command
+        # Step 6: Create ultra high-quality FFmpeg command
         ffmpeg_cmd = [
             'ffmpeg',
             '-i', temp_raw_clip,
             '-vf', filter_complex,
             '-c:v', 'libx264',
-            '-preset', 'slower',      # Much higher quality preset
-            '-crf', '16',             # Very high quality (lower = better)
+            '-preset', 'slower',
+            '-crf', '16',
             '-profile:v', 'high',
             '-level:v', '4.1',
             '-pix_fmt', 'yuv420p',
-            '-tune', 'film',          # Optimize for film content
+            '-tune', 'film',
             '-x264-params', 'ref=6:bframes=6:me=umh:subme=8:trellis=2:aq-mode=2:aq-strength=1.0',
-            '-threads', '6',          # More threads for better performance
+            '-threads', '6',
             '-max_muxing_queue_size', '2048',
-            '-b:a', '192k',           # Higher audio bitrate
+            '-b:a', '192k',
             '-c:a', 'aac',
-            '-ar', '48000',           # Professional audio sample rate
-            '-ac', '2',               # Stereo audio
-            '-af', 'aresample=async=1:min_hard_comp=0.100000:first_pts=0',  # Audio sync
+            '-ar', '48000',
+            '-ac', '2',
+            '-af', 'aresample=async=1:min_hard_comp=0.100000:first_pts=0',
             '-y',
             temp_clip_path
         ]
         
-        logger.info(f"Executing ultra high-quality FFmpeg command for clip {clip_idx}")
-        logger.info(f"Filter complex: {filter_complex}")
+        logger.info(f"Executing FFmpeg command for clip {clip_idx}")
         
-        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=300)  # 5 minute timeout
+        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=300)
         
         if result.returncode != 0:
             logger.error(f"FFmpeg failed for clip {clip_idx}: {result.stderr}")
@@ -1057,10 +1008,9 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             logger.error(f"Clip creation failed or produced invalid file: {temp_clip_path}")
             return False
         
-        logger.info(f"Successfully created ultra high-quality clip {clip_idx}")
+        logger.info(f"Successfully created clip {clip_idx} with karaoke subtitles")
         return True
         
     except Exception as e:
-        logger.error(f"Error creating ultra high-quality clip {clip_idx}: {str(e)}")
+        logger.error(f"Error creating clip {clip_idx}: {str(e)}")
         return False
-

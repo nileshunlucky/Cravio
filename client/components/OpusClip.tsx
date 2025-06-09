@@ -839,7 +839,7 @@ export default function OpusClip() {
               </div>
             </div>
 
-            <div className="p-4 items-center justify-center gap-2">
+            <div className="p-4 items-center justify-center gap-2 text-sm text-zinc-400 text-center">
               <p>Using video you don’t own may violate copyright laws. By continuing, you confirm this is your own original content.</p>
             </div>
           </div>
