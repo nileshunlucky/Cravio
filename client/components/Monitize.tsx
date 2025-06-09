@@ -1,13 +1,35 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef , useEffect, useState} from 'react'
 import { motion, useInView } from 'framer-motion'
 import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
+import { useUser } from "@clerk/nextjs"
 
 const Monitize = () => {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, amount: 0.4 })
+  const { user } = useUser()
+  const [users, setUsers] = useState([])
+
+  useEffect(() => {
+    const fetchVideos = async () => {
+      if (!user?.primaryEmailAddress?.emailAddress) return
+      const email = user.primaryEmailAddress.emailAddress
+  
+        try {
+          const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`)
+          const data = await res.json()
+          setUsers(data.email)
+        } catch (error) {
+          console.error('Error fetching videos:', error)
+        } 
+      }
+      
+      if (user) {
+        fetchVideos()
+      }
+    }, [user])
 
   return (
     <section ref={ref} className="h-screen flex items-center justify-center px-6">
@@ -20,7 +42,7 @@ const Monitize = () => {
         {/* Text Content */}
         <div>
           <h2 className="text-4xl md:text-5xl font-semibold tracking-tight">
-            Monetize Effortlessly with AI
+            {users.length > 0 && `${users}+ Creators Trust Cravio Ai`}
           </h2>
           <p className="mt-4 text-muted-foreground text-lg md:text-xl">
             Creators are making <span className=" font-semibold">$10,000+/month</span> using our AI-powered faceless content clip generator.
