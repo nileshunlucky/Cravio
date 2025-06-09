@@ -561,7 +561,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
             
             return srt_content
         
-        # Process and create each clip
+        # Process and create each clip                 
         processed_clips = []
         
         for i, clip in enumerate(clips):

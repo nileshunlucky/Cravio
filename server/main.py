@@ -2,8 +2,6 @@ from fastapi import FastAPI, HTTPException, Request, Body, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from db import users_collection
-from api.reddit_story import router as reddit_router
-from api.split_screen import router as sp_router
 from subscription import router as subscription_router
 from delete_videos import router as delete_router
 from limited_offer import router as limited_offer_router
@@ -21,15 +19,13 @@ app = FastAPI()
 # Allow CORS for your frontend (update this with your Next.js domain)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://cravioai.in", "https://www.cravioai.in"], 
+    allow_origins=["https://cravioai.in", "https://www.cravioai.in"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # add routers
-app.include_router(reddit_router)
-app.include_router(sp_router)
 app.include_router(subscription_router)
 app.include_router(delete_router)
 app.include_router(limited_offer_router)
