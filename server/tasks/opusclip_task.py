@@ -159,74 +159,17 @@ def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
             with open(cookies_path, "w") as f:
                 f.write(os.environ["COOKIES_TXT"])
             
+            # Download YouTube video
             ydl_opts = {
-                # Try multiple format options in order of preference
-                'format': (
-                    'best[ext=mp4][height<=1080]/best[ext=mp4][height<=720]/'
-                    'best[ext=mp4]/best[height<=1080]/best[height<=720]/'
-                    'best/worst'
-                ),
+                'format': 'best[ext=mp4]/best',
                 'outtmpl': temp_video_path,
                 'quiet': False,
                 'writethumbnail': True,
                 'cookiefile': cookies_path,
-                # Additional options for better compatibility
-                'no_warnings': False,
-                'ignoreerrors': False,
-                # Force IPv4 to avoid some connection issues
-                'force_ipv4': True,
-                # Add user agent
-                'http_headers': {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                }
             }
             
-            download_success = False
-            
-            try:
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    # First, try to extract info without downloading to check available formats
-                    try:
-                        info_dict = ydl.extract_info(youtube_url, download=False)
-                        logger.info(f"Video title: {info_dict.get('title', 'Unknown')}")
-                        logger.info(f"Available formats: {len(info_dict.get('formats', []))}")
-                        
-                        # Now download with the info we have
-                        ydl.download([youtube_url])
-                        download_success = True
-                        
-                    except Exception as extract_error:
-                        logger.warning(f"Initial extraction failed: {extract_error}")
-                        
-                        # Fallback: try with even simpler format selection
-                        ydl_opts['format'] = 'best/worst'
-                        
-                        with yt_dlp.YoutubeDL(ydl_opts) as ydl_fallback:
-                            info_dict = ydl_fallback.extract_info(youtube_url, download=True)
-                            download_success = True
-                            
-            except Exception as download_error:
-                logger.error(f"YouTube download failed: {download_error}")
-                
-                # Final fallback: try without format specification
-                try:
-                    logger.info("Trying final fallback without format specification...")
-                    ydl_opts_final = {
-                        'outtmpl': temp_video_path,
-                        'quiet': False,
-                        'writethumbnail': True,
-                        'cookiefile': cookies_path,
-                        'force_ipv4': True,
-                        # Remove format specification entirely
-                    }
-                    
-                    with yt_dlp.YoutubeDL(ydl_opts_final) as ydl_final:
-                        info_dict = ydl_final.extract_info(youtube_url, download=True)
-                        download_success = True
-                        
-                except Exception as final_error:
-                    logger.error(f"All YouTube download attempts failed: {final_error}")
-                    raise Exception(f"Failed to download YouTube video after multiple attempts: {final_error}")
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info_dict = ydl.extract_info(youtube_url, download=True)
                 
             if not os.path.exists(temp_video_path):
                 raise Exception("Failed to download YouTube video")
