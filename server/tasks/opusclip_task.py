@@ -161,12 +161,28 @@ def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
             
             # Download YouTube video
             ydl_opts = {
-                'format': 'best[ext=mp4]/best',
-                'outtmpl': temp_video_path,
-                'quiet': False,
-                'writethumbnail': True,
-                'cookiefile': cookies_path,
-            }
+        # More flexible format selection - try multiple options
+        'format': 'best[height<=1080][ext=mp4]/best[height<=720][ext=mp4]/best[ext=mp4]/best[height<=1080]/best[height<=720]/best',
+        'outtmpl': temp_video_path,
+        'quiet': False,
+        'no_warnings': False,
+        'writethumbnail': True,
+        'cookiefile': cookies_path,
+        # Additional options to handle restrictions
+        'ignoreerrors': False,
+        'no_check_certificate': True,
+        'prefer_ffmpeg': True,
+        # Add user agent to avoid blocking
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        },
+        # Retry settings
+        'retries': 3,
+        'fragment_retries': 3,
+        'skip_unavailable_fragments': True,
+        # Extract info first to check available formats
+        'listformats': False,
+    }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info_dict = ydl.extract_info(youtube_url, download=True)
@@ -857,10 +873,10 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, target_
 
 def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, target_width=1080, target_height=1920):
     """
-    Create ultra high-quality 9:16 clip with simple yellow karaoke subtitles
+    Create ultra high-quality 9:16 clip with OpusClip-style karaoke subtitles
     """
     try:
-        logger.info(f"Processing clip {clip_idx} with simple karaoke subtitles")
+        logger.info(f"Processing clip {clip_idx} with OpusClip-style karaoke subtitles")
         
         # Step 1: Face detection and crop calculation (keeping existing logic)
         face_data = detect_faces_in_video(temp_raw_clip)
@@ -903,14 +919,14 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
         filter_complex = f"crop={crop_params['crop_width']}:{crop_params['crop_height']}:{crop_params['crop_x']}:{crop_params['crop_y']}"
         filter_complex += f",scale={target_width}:{target_height}:flags=lanczos"
         
-        # Step 4: Create subtitle lines (3-5 words per line for better readability)
+        # Step 4: Create subtitle lines (2-4 words per line for better readability)
         subtitle_lines = []
         current_line_words = []
         
         for word_data in words_data:
             current_line_words.append(word_data)
             
-            # Create a line when we have 3-5 words or we're at the end
+            # Create a line when we have 2-4 words or we're at the end
             if len(current_line_words) >= 4 or word_data == words_data[-1]:
                 if current_line_words:
                     line_text = ' '.join([w['word'].strip() for w in current_line_words])
@@ -924,32 +940,49 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
         
         logger.info(f"Created {len(subtitle_lines)} subtitle lines")
         
-        # Step 5: Add simple karaoke subtitles - one drawtext per word/phrase
+        # Step 5: Add OpusClip-style karaoke subtitles
         for line_idx, subtitle_line in enumerate(subtitle_lines):
+            line_text = subtitle_line['text']
+            line_start = subtitle_line['start_time']
+            line_end = subtitle_line['end_time']
             line_words = subtitle_line['words']
             
-            # Font settings - clean and bold
-            font_size = 56
-            stroke_width = 3
-            y_position = "h*0.78"  # Position subtitles in lower portion
+            # Clean text for ffmpeg
+            safe_line_text = clean_text_for_ffmpeg(line_text)
             
-            # Add karaoke effect - show progressive text revelation
+            # Font settings - OpusClip style
+            font_size = 64
+            stroke_width = 4
+            y_position = "h*0.75"  # Position subtitles in lower portion
+            
+            # Add base white text with black stroke (always visible during line duration)
+            filter_complex += f",drawtext=text='{safe_line_text}':" \
+                             f"fontcolor=white:" \
+                             f"fontsize={font_size}:" \
+                             f"x=(w-text_w)/2:" \
+                             f"y={y_position}:" \
+                             f"enable='between(t,{line_start},{line_end})':" \
+                             f"borderw={stroke_width}:" \
+                             f"bordercolor=black:" \
+                             f"fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+            
+            # Add karaoke-style highlighting - reveal words progressively
             for word_idx, word_data in enumerate(line_words):
                 word_start = word_data['start']
-                word_end = subtitle_line['end_time']  # Show until end of line
+                word_end = word_data['end']
                 
-                # Create text that shows all words up to current word
-                words_to_show = line_words[:word_idx + 1]
-                text_to_show = ' '.join([w['word'].strip() for w in words_to_show])
-                safe_text = clean_text_for_ffmpeg(text_to_show)
+                # Create progressive reveal effect - show words up to current word in yellow
+                words_to_highlight = line_words[:word_idx + 1]
+                highlighted_text = ' '.join([w['word'].strip() for w in words_to_highlight])
+                safe_highlighted_text = clean_text_for_ffmpeg(highlighted_text)
                 
-                # Add single yellow text with black outline
-                filter_complex += f",drawtext=text='{safe_text}':" \
+                # Add yellow highlighted text that grows word by word
+                filter_complex += f",drawtext=text='{safe_highlighted_text}':" \
                                  f"fontcolor=#FFD700:" \
                                  f"fontsize={font_size}:" \
-                                 f"x=(w-text_w)/2:" \
+                                 f"x=(w-tw)/2:" \
                                  f"y={y_position}:" \
-                                 f"enable='between(t,{word_start},{word_end})':" \
+                                 f"enable='between(t,{word_start},{line_end})':" \
                                  f"borderw={stroke_width}:" \
                                  f"bordercolor=black:" \
                                  f"fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
@@ -987,7 +1020,7 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             logger.error(f"Clip creation failed or produced invalid file: {temp_clip_path}")
             return False
         
-        logger.info(f"Successfully created clip {clip_idx} with simple karaoke subtitles")
+        logger.info(f"Successfully created clip {clip_idx} with karaoke subtitles")
         return True
         
     except Exception as e:
