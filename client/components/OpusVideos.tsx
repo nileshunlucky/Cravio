@@ -126,7 +126,7 @@ const OpusVideos = () => {
             )}
 
             {!loading && !error && opusclips.length > 0 && (
-                <div className="flex flex-row-reverse overflow-x-auto scroll-hidden space-x-4 pb-4 scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-neutral-800">
+                <div className="flex overflow-x-auto scroll-hidden space-x-4 pb-4 scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-neutral-800">
                     {opusclips.map((clip) => (
                         <div
                             key={clip.uniqueId} // Use uniqueId for the key

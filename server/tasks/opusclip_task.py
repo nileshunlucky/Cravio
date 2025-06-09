@@ -1065,23 +1065,16 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, target_
         'crop_height': target_height
     }
 
-def create_high_quality_clip_with_face_detection(temp_raw_clip, temp_clip_path, subtitle, clip_start, clip_end, unique_id, clip_idx, target_width=1080, target_height=1920):
+def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, target_width=1080, target_height=1920):
     """
-    Create a high-quality 9:16 clip with intelligent face-based cropping and OpusClip-style subtitles
+    Create ultra high-quality 9:16 clip with accurate subtitle matching
     """
     try:
-        logger.info(f"Processing clip {clip_idx} with face detection and high quality settings")
+        logger.info(f"Processing clip {clip_idx} with accurate subtitles and ultra high quality")
         
-        # Step 1: Detect faces in the video
-        logger.info("Detecting faces in video...")
+        # Step 1: Face detection and crop calculation (keeping existing logic)
         face_data = detect_faces_in_video(temp_raw_clip)
         
-        if face_data:
-            logger.info(f"Face detection result: {face_data}")
-        else:
-            logger.warning("Face detection failed, using center crop")
-        
-        # Step 2: Calculate crop parameters
         if face_data:
             crop_params = calculate_crop_parameters(
                 face_data['video_width'], 
@@ -1089,131 +1082,195 @@ def create_high_quality_clip_with_face_detection(temp_raw_clip, temp_clip_path, 
                 face_data
             )
         else:
-            # Fallback: get video dimensions using ffprobe
+            # Fallback crop calculation
             ffprobe_cmd = [
-                'ffprobe',
-                '-v', 'error',
-                '-select_streams', 'v:0',
-                '-show_entries', 'stream=width,height',
-                '-of', 'json',
-                temp_raw_clip
+                'ffprobe', '-v', 'error', '-select_streams', 'v:0',
+                '-show_entries', 'stream=width,height', '-of', 'json', temp_raw_clip
             ]
             result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
             video_info = json.loads(result.stdout)
             width = int(video_info['streams'][0]['width'])
             height = int(video_info['streams'][0]['height'])
-            
             crop_params = calculate_crop_parameters(width, height, None)
         
-        logger.info(f"Crop parameters: {crop_params}")
+        # Step 2: Get accurate word timing from clip transcript
+        words_data = clip_transcript_data['words']
         
-        # Step 3: Create subtitles
-        words = subtitle.strip().split()
-        total_words = len(words)
-        clip_duration = clip_end - clip_start
-        word_duration = clip_duration / total_words if total_words > 0 else clip_duration
-        
-        # Step 4: Build high-quality filter complex
-        # Crop first, then scale to exact target dimensions
-        filter_complex = f"crop={crop_params['crop_width']}:{crop_params['crop_height']}:{crop_params['crop_x']}:{crop_params['crop_y']}"
-        filter_complex += f",scale={target_width}:{target_height}"
-        
-        # Add subtitle filters - group words into chunks of 3
-        for group_start_idx in range(0, total_words, 3):
-            group_end_idx = min(group_start_idx + 3, total_words)
-            word_group = words[group_start_idx:group_end_idx]
+        if not words_data:
+            # Fallback to splitting text evenly
+            text_words = clip_transcript_data['text'].split()
+            word_duration = clip_duration / len(text_words) if text_words else clip_duration
             
-            # For each word in the group, add highlighting
-            for word_idx in range(len(word_group)):
-                global_word_idx = group_start_idx + word_idx
-                current_word = word_group[word_idx]
-                
-                # Calculate timing for this specific word
-                word_start_time = global_word_idx * word_duration
-                word_end_time = word_start_time + word_duration
-                
-                # Create the full text line for this moment
-                full_text = " ".join(word_group)
-                
-                # Make text safe for ffmpeg
-                safe_full_text = full_text.replace("'", "").replace('"', "").replace(':', "").replace(',', "").replace('\\', "")
-                safe_current_word = current_word.replace("'", "").replace('"', "").replace(':', "").replace(',', "").replace('\\', "")
-                
-                # Add background text (white)
-                filter_complex += f",drawtext=text='{safe_full_text}':fontcolor=#FFFFFF:fontsize=48:box=1:boxcolor=black@0.8:" \
-                                 f"boxborderw=8:x=(w-text_w)/2:y=h*0.85:enable='between(t,{word_start_time},{word_end_time})':" \
-                                 f"shadowcolor=black:shadowx=3:shadowy=3:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-                
-                # Calculate position for highlighted word (approximate)
-                words_before = word_group[:word_idx]
-                if words_before:
-                    # Estimate position offset for the current word
-                    chars_before = sum(len(w) + 1 for w in words_before)  # +1 for space
-                    total_chars = len(full_text)
-                    word_offset_ratio = chars_before / total_chars if total_chars > 0 else 0
-                    word_x_pos = f"(w-text_w)/2+text_w*{word_offset_ratio}"
-                else:
-                    word_x_pos = "(w-text_w)/2"
-                
-                # Add highlighted word (green)
-                filter_complex += f",drawtext=text='{safe_current_word}':fontcolor=#00FF00:fontsize=48:box=0:" \
-                                 f"x={word_x_pos}:y=h*0.85:enable='between(t,{word_start_time},{word_end_time})':" \
-                                 f"shadowcolor=black:shadowx=3:shadowy=3:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+            words_data = []
+            for i, word in enumerate(text_words):
+                words_data.append({
+                    'word': word,
+                    'start': i * word_duration,
+                    'end': (i + 1) * word_duration
+                })
         
-        # Step 5: Create high-quality FFmpeg command
+        # Step 3: Build ultra high-quality filter complex
+        filter_complex = f"crop={crop_params['crop_width']}:{crop_params['crop_height']}:{crop_params['crop_x']}:{crop_params['crop_y']}"
+        filter_complex += f",scale={target_width}:{target_height}:flags=lanczos"  # Use high-quality scaling
+        
+        # Step 4: Improved subtitle system - group words into chunks of 2-3 for better readability
+        word_groups = []
+        current_group = []
+        current_group_duration = 0
+        max_group_duration = 3.0  # Maximum 3 seconds per group
+        max_words_per_group = 3
+        
+        for word_data in words_data:
+            word_duration = word_data['end'] - word_data['start']
+            
+            # Check if we should start a new group
+            if (len(current_group) >= max_words_per_group or 
+                current_group_duration + word_duration > max_group_duration):
+                
+                if current_group:  # Save current group
+                    word_groups.append({
+                        'words': current_group.copy(),
+                        'start_time': current_group[0]['start'],
+                        'end_time': current_group[-1]['end'],
+                        'full_text': ' '.join([w['word'].strip() for w in current_group])
+                    })
+                
+                # Start new group
+                current_group = [word_data]
+                current_group_duration = word_duration
+            else:
+                # Add to current group
+                current_group.append(word_data)
+                current_group_duration += word_duration
+        
+        # Don't forget the last group
+        if current_group:
+            word_groups.append({
+                'words': current_group.copy(),
+                'start_time': current_group[0]['start'],
+                'end_time': current_group[-1]['end'],
+                'full_text': ' '.join([w['word'].strip() for w in current_group])
+            })
+        
+        logger.info(f"Created {len(word_groups)} word groups for subtitles")
+        
+        # Step 5: Add subtitle rendering for each word group with improved positioning
+        for group_idx, word_group in enumerate(word_groups):
+            group_text = word_group['full_text']
+            group_start = word_group['start_time']
+            group_end = word_group['end_time']
+            
+            # Clean text for ffmpeg
+            safe_group_text = clean_text_for_ffmpeg(group_text)
+            
+            # Improved font settings - much larger and bolder
+            font_size = 72  # Increased from 56
+            box_border = 15  # Increased border
+            shadow_offset = 6  # Increased shadow
+            
+            # Add background text (white with strong black background)
+            filter_complex += f",drawtext=text='{safe_group_text}':" \
+                             f"fontcolor=#FFFFFF:" \
+                             f"fontsize={font_size}:" \
+                             f"box=1:" \
+                             f"boxcolor=black@0.85:" \
+                             f"boxborderw={box_border}:" \
+                             f"x=(w-text_w)/2:" \
+                             f"y=h*0.78:" \
+                             f"enable='between(t,{group_start},{group_end})':" \
+                             f"shadowcolor=black:" \
+                             f"shadowx={shadow_offset}:" \
+                             f"shadowy={shadow_offset}:" \
+                             f"fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:" \
+                             f"line_spacing=15"
+            
+            # Step 6: Add precise individual word highlighting
+            for word_idx, word_data in enumerate(word_group['words']):
+                word_text = word_data['word'].strip()
+                word_start = word_data['start']
+                word_end = word_data['end']
+                
+                safe_word_text = clean_text_for_ffmpeg(word_text)
+                
+                # Calculate precise X position for the highlighted word
+                words_before_text = ' '.join([w['word'].strip() for w in word_group['words'][:word_idx]])
+                words_after_text = ' '.join([w['word'].strip() for w in word_group['words'][word_idx+1:]])
+                
+                # Use text measurement approach for better positioning
+                if word_idx == 0:
+                    # First word - align to start of text
+                    word_x_pos = "(w-text_w)/2"
+                elif word_idx == len(word_group['words']) - 1:
+                    # Last word - calculate from end
+                    if len(word_group['words']) == 2:
+                        word_x_pos = f"(w-text_w)/2+text_w*0.55"  # Approximate middle-end position
+                    else:
+                        word_x_pos = f"(w-text_w)/2+text_w*0.75"  # Approximate end position
+                else:
+                    # Middle word - calculate proportional position
+                    total_text_length = len(group_text)
+                    chars_before = len(words_before_text) + (1 if words_before_text else 0)  # +1 for space
+                    
+                    if total_text_length > 0:
+                        position_ratio = chars_before / total_text_length
+                        word_x_pos = f"(w-text_w)/2+text_w*{position_ratio:.3f}"
+                    else:
+                        word_x_pos = "(w-text_w)/2"
+                
+                # Add highlighted word with bright, contrasting color
+                filter_complex += f",drawtext=text='{safe_word_text}':" \
+                                 f"fontcolor=#00FF41:" \
+                                 f"fontsize={font_size}:" \
+                                 f"x={word_x_pos}:" \
+                                 f"y=h*0.78:" \
+                                 f"enable='between(t,{word_start},{word_end})':" \
+                                 f"shadowcolor=black:" \
+                                 f"shadowx={shadow_offset}:" \
+                                 f"shadowy={shadow_offset}:" \
+                                 f"fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        
+        # Step 7: Create ultra high-quality FFmpeg command
         ffmpeg_cmd = [
             'ffmpeg',
             '-i', temp_raw_clip,
             '-vf', filter_complex,
             '-c:v', 'libx264',
-            '-preset', 'medium',  # Better quality than ultrafast
-            '-crf', '20',         # High quality (lower = better quality)
+            '-preset', 'slower',      # Much higher quality preset
+            '-crf', '16',             # Very high quality (lower = better)
             '-profile:v', 'high',
-            '-level:v', '4.0',
+            '-level:v', '4.1',
             '-pix_fmt', 'yuv420p',
-            '-threads', '4',      # More threads for better performance
-            '-max_muxing_queue_size', '1024',
-            '-b:a', '128k',       # Higher audio bitrate
+            '-tune', 'film',          # Optimize for film content
+            '-x264-params', 'ref=6:bframes=6:me=umh:subme=8:trellis=2:aq-mode=2:aq-strength=1.0',
+            '-threads', '6',          # More threads for better performance
+            '-max_muxing_queue_size', '2048',
+            '-b:a', '192k',           # Higher audio bitrate
             '-c:a', 'aac',
-            '-ar', '44100',       # Higher audio sample rate
+            '-ar', '48000',           # Professional audio sample rate
+            '-ac', '2',               # Stereo audio
+            '-af', 'aresample=async=1:min_hard_comp=0.100000:first_pts=0',  # Audio sync
             '-y',
             temp_clip_path
         ]
         
-        logger.info(f"Executing FFmpeg command for high-quality clip {clip_idx}")
-        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
+        logger.info(f"Executing ultra high-quality FFmpeg command for clip {clip_idx}")
+        logger.info(f"Filter complex: {filter_complex}")
+        
+        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=300)  # 5 minute timeout
         
         if result.returncode != 0:
             logger.error(f"FFmpeg failed for clip {clip_idx}: {result.stderr}")
             return False
         
-        # Verify the output file
+        # Verify the output
         if not os.path.exists(temp_clip_path) or os.path.getsize(temp_clip_path) < 1000:
             logger.error(f"Clip creation failed or produced invalid file: {temp_clip_path}")
             return False
         
-        # Verify the aspect ratio of the output
-        ffprobe_cmd = [
-            'ffprobe',
-            '-v', 'error',
-            '-select_streams', 'v:0',
-            '-show_entries', 'stream=width,height',
-            '-of', 'json',
-            temp_clip_path
-        ]
-        result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
-        output_info = json.loads(result.stdout)
-        output_width = int(output_info['streams'][0]['width'])
-        output_height = int(output_info['streams'][0]['height'])
-        output_aspect = output_width / output_height
-        
-        logger.info(f"Output clip dimensions: {output_width}x{output_height}, aspect ratio: {output_aspect:.3f}")
-        
-        if abs(output_aspect - (9/16)) > 0.01:  # Allow small tolerance
-            logger.warning(f"Output aspect ratio {output_aspect:.3f} differs from target 9:16 (0.563)")
-        
+        logger.info(f"Successfully created ultra high-quality clip {clip_idx}")
         return True
         
     except Exception as e:
-        logger.error(f"Error creating high-quality clip {clip_idx}: {str(e)}")
+        logger.error(f"Error creating ultra high-quality clip {clip_idx}: {str(e)}")
         return False
+
