@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["python312", "ffmpeg", "libGL"]
+nixPkgs = ["python312", "ffmpeg", "libGL", "mesa"]
 
 [phases.build]
 cmds = ["pip install --no-cache-dir -r requirements.txt"]
