@@ -481,7 +481,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
             # Prompt for GPT
             prompt = f"""
             You are an expert at finding viral moments in videos. Given the following transcript with timestamps, 
-            identify up to 10 potential viral clips that are approximately 30 seconds each.
+            identify up to 10 potential viral clips that are approximately 30 seconds each. max 10 clips. make low clips but viral and engaging.
             
             Find moments that are engaging, surprising, emotional, or contain valuable information. Look for:
             - starting hook that attracts viewers
@@ -595,7 +595,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                     '-t', str(clip_end - clip_start),
                     '-c:v', 'libx264',
                     '-preset', 'fast',
-                    '-crf', '18', 
+                    '-crf', '23', 
                     '-threads', '2',
                     '-max_muxing_queue_size', '512',
                     '-b:a', '64k', 
