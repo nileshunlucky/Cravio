@@ -37,6 +37,299 @@ class VideoProcessTask(Task):
         logger.error(f"Task {task_id} failed: {exc}")
         super().on_failure(exc, task_id, args, kwargs, einfo)
 
+import re
+from math import ceil
+
+def extract_clip_transcript_from_whisper(transcription_data, clip_start, clip_end):
+    """
+    Extract the exact transcript text that appears in the clip timeframe
+    
+    Args:
+        transcription_data: Whisper transcription with segments
+        clip_start (float): Start time of clip in seconds
+        clip_end (float): End time of clip in seconds
+        
+    Returns:
+        dict: Contains transcript text and word-level timing data
+    """
+    try:
+        clip_words = []
+        clip_text = ""
+        
+        if hasattr(transcription_data, 'segments'):
+            for segment in transcription_data.segments:
+                # Check if segment overlaps with our clip
+                segment_start = segment.start
+                segment_end = segment.end
+                
+                # If segment overlaps with clip timeframe
+                if segment_start < clip_end and segment_end > clip_start:
+                    # If we have word-level data
+                    if hasattr(segment, 'words') and segment.words:
+                        for word_data in segment.words:
+                            word_start = word_data.start
+                            word_end = word_data.end
+                            
+                            # Include words that are within or overlap the clip timeframe
+                            if word_start < clip_end and word_end > clip_start:
+                                # Adjust timing to be relative to clip start
+                                relative_start = max(0, word_start - clip_start)
+                                relative_end = min(clip_end - clip_start, word_end - clip_start)
+                                
+                                clip_words.append({
+                                    'word': word_data.word.strip(),
+                                    'start': relative_start,
+                                    'end': relative_end,
+                                    'original_start': word_start,
+                                    'original_end': word_end
+                                })
+                                
+                                clip_text += word_data.word.strip() + " "
+                    else:
+                        # Fallback to segment text if no word-level data
+                        # Calculate what portion of the segment is in our clip
+                        overlap_start = max(segment_start, clip_start)
+                        overlap_end = min(segment_end, clip_end)
+                        
+                        if overlap_end > overlap_start:
+                            clip_text += segment.text.strip() + " "
+        
+        return {
+            'text': clip_text.strip(),
+            'words': clip_words,
+            'word_count': len(clip_words)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error extracting clip transcript: {str(e)}")
+        return {
+            'text': "Unable to extract transcript",
+            'words': [],
+            'word_count': 0
+        }
+
+def create_accurate_word_level_srt(clip_transcript_data, clip_duration):
+    """
+    Create SRT with accurate word timing based on Whisper data
+    
+    Args:
+        clip_transcript_data (dict): Result from extract_clip_transcript_from_whisper
+        clip_duration (float): Duration of the clip in seconds
+        
+    Returns:
+        str: Formatted SRT content
+    """
+    try:
+        words = clip_transcript_data['words']
+        
+        if not words:
+            # Fallback to text splitting if no word data
+            text_words = clip_transcript_data['text'].split()
+            word_duration = clip_duration / len(text_words) if text_words else clip_duration
+            
+            srt_content = ""
+            for i, word in enumerate(text_words):
+                start_time = i * word_duration
+                end_time = (i + 1) * word_duration
+                
+                start_str = format_srt_time(start_time)
+                end_str = format_srt_time(end_time)
+                
+                srt_content += f"{i+1}\n{start_str} --> {end_str}\n{word}\n\n"
+            
+            return srt_content
+        
+        # Use actual Whisper word timing
+        srt_content = ""
+        for i, word_data in enumerate(words):
+            start_str = format_srt_time(word_data['start'])
+            end_str = format_srt_time(word_data['end'])
+            
+            srt_content += f"{i+1}\n{start_str} --> {end_str}\n{word_data['word']}\n\n"
+        
+        return srt_content
+        
+    except Exception as e:
+        logger.error(f"Error creating SRT: {str(e)}")
+        return ""
+
+def format_srt_time(seconds):
+    """Format seconds to SRT time format HH:MM:SS,mmm"""
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    millisecs = int((seconds % 1) * 1000)
+    
+    return f"{hours:02d}:{minutes:02d}:{secs:02d},{millisecs:03d}"
+
+def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, target_width=1080, target_height=1920):
+    """
+    Create ultra high-quality 9:16 clip with accurate subtitle matching
+    """
+    try:
+        logger.info(f"Processing clip {clip_idx} with accurate subtitles and ultra high quality")
+        
+        # Step 1: Face detection and crop calculation (keeping existing logic)
+        face_data = detect_faces_in_video(temp_raw_clip)
+        
+        if face_data:
+            crop_params = calculate_crop_parameters(
+                face_data['video_width'], 
+                face_data['video_height'], 
+                face_data
+            )
+        else:
+            # Fallback crop calculation
+            ffprobe_cmd = [
+                'ffprobe', '-v', 'error', '-select_streams', 'v:0',
+                '-show_entries', 'stream=width,height', '-of', 'json', temp_raw_clip
+            ]
+            result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
+            video_info = json.loads(result.stdout)
+            width = int(video_info['streams'][0]['width'])
+            height = int(video_info['streams'][0]['height'])
+            crop_params = calculate_crop_parameters(width, height, None)
+        
+        # Step 2: Get accurate word timing from clip transcript
+        words_data = clip_transcript_data['words']
+        
+        if not words_data:
+            # Fallback to splitting text evenly
+            text_words = clip_transcript_data['text'].split()
+            word_duration = clip_duration / len(text_words) if text_words else clip_duration
+            
+            words_data = []
+            for i, word in enumerate(text_words):
+                words_data.append({
+                    'word': word,
+                    'start': i * word_duration,
+                    'end': (i + 1) * word_duration
+                })
+        
+        # Step 3: Build ultra high-quality filter complex
+        filter_complex = f"crop={crop_params['crop_width']}:{crop_params['crop_height']}:{crop_params['crop_x']}:{crop_params['crop_y']}"
+        filter_complex += f",scale={target_width}:{target_height}:flags=lanczos"  # Use high-quality scaling
+        
+        # Step 4: Add accurate subtitle filters
+        # Group words into chunks of 3 for better readability
+        word_groups = []
+        for i in range(0, len(words_data), 3):
+            group = words_data[i:i+3]
+            if group:
+                word_groups.append({
+                    'words': group,
+                    'start_time': group[0]['start'],
+                    'end_time': group[-1]['end'],
+                    'full_text': ' '.join([w['word'] for w in group])
+                })
+        
+        # Add subtitle rendering for each word group
+        for group_idx, word_group in enumerate(word_groups):
+            group_text = word_group['full_text']
+            group_start = word_group['start_time']
+            group_end = word_group['end_time']
+            
+            # Clean text for ffmpeg
+            safe_group_text = clean_text_for_ffmpeg(group_text)
+            
+            # Add background text (all words in white with black background)
+            filter_complex += f",drawtext=text='{safe_group_text}':fontcolor=#FFFFFF:fontsize=56:" \
+                             f"box=1:boxcolor=black@0.8:boxborderw=10:" \
+                             f"x=(w-text_w)/2:y=h*0.82:" \
+                             f"enable='between(t,{group_start},{group_end})':" \
+                             f"shadowcolor=black:shadowx=4:shadowy=4:" \
+                             f"fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:line_spacing=10"
+            
+            # Add individual word highlighting
+            for word_idx, word_data in enumerate(word_group['words']):
+                word_text = word_data['word']
+                word_start = word_data['start']
+                word_end = word_data['end']
+                
+                safe_word_text = clean_text_for_ffmpeg(word_text)
+                
+                # Calculate approximate X position for the highlighted word
+                words_before = word_group['words'][:word_idx]
+                if words_before:
+                    # Estimate character position
+                    chars_before = sum(len(w['word']) + 1 for w in words_before)  # +1 for space
+                    total_chars = len(group_text)
+                    
+                    # Calculate relative position
+                    if total_chars > 0:
+                        char_ratio = chars_before / total_chars
+                        # Adjust positioning to be more accurate
+                        word_x_offset = f"text_w*{char_ratio:.3f}"
+                        word_x_pos = f"(w-text_w)/2+{word_x_offset}"
+                    else:
+                        word_x_pos = "(w-text_w)/2"
+                else:
+                    word_x_pos = "(w-text_w)/2"
+                
+                # Add highlighted word (bright green/yellow for better visibility)
+                filter_complex += f",drawtext=text='{safe_word_text}':fontcolor=#00FF41:fontsize=56:" \
+                                 f"x={word_x_pos}:y=h*0.82:" \
+                                 f"enable='between(t,{word_start},{word_end})':" \
+                                 f"shadowcolor=black:shadowx=4:shadowy=4:" \
+                                 f"fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        
+        # Step 5: Create ultra high-quality FFmpeg command
+        ffmpeg_cmd = [
+            'ffmpeg',
+            '-i', temp_raw_clip,
+            '-vf', filter_complex,
+            '-c:v', 'libx264',
+            '-preset', 'slower',      # Much higher quality preset
+            '-crf', '16',             # Very high quality (lower = better)
+            '-profile:v', 'high',
+            '-level:v', '4.1',
+            '-pix_fmt', 'yuv420p',
+            '-tune', 'film',          # Optimize for film content
+            '-x264-params', 'ref=6:bframes=6:me=umh:subme=8:trellis=2:aq-mode=2:aq-strength=1.0',
+            '-threads', '6',          # More threads for better performance
+            '-max_muxing_queue_size', '2048',
+            '-b:a', '192k',           # Higher audio bitrate
+            '-c:a', 'aac',
+            '-ar', '48000',           # Professional audio sample rate
+            '-ac', '2',               # Stereo audio
+            '-af', 'aresample=async=1:min_hard_comp=0.100000:first_pts=0',  # Audio sync
+            '-y',
+            temp_clip_path
+        ]
+        
+        logger.info(f"Executing ultra high-quality FFmpeg command for clip {clip_idx}")
+        logger.info(f"Filter complex: {filter_complex}")
+        
+        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=300)  # 5 minute timeout
+        
+        if result.returncode != 0:
+            logger.error(f"FFmpeg failed for clip {clip_idx}: {result.stderr}")
+            return False
+        
+        # Verify the output
+        if not os.path.exists(temp_clip_path) or os.path.getsize(temp_clip_path) < 1000:
+            logger.error(f"Clip creation failed or produced invalid file: {temp_clip_path}")
+            return False
+        
+        logger.info(f"Successfully created ultra high-quality clip {clip_idx}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error creating ultra high-quality clip {clip_idx}: {str(e)}")
+        return False
+
+def clean_text_for_ffmpeg(text):
+    """Clean text to be safe for ffmpeg drawtext filter"""
+    # Remove or replace problematic characters
+    text = text.replace("'", "").replace('"', '').replace(':', '').replace(',', '')
+    text = text.replace('\\', '').replace('/', '').replace('|', '')
+    text = text.replace('[', '').replace(']', '').replace('(', '').replace(')', '')
+    text = text.replace('{', '').replace('}', '').replace('&', 'and')
+    text = text.replace('%', 'percent').replace('$', 'dollar')
+    text = re.sub(r'[^\w\s-]', '', text)  # Keep only alphanumeric, whitespace, and hyphens
+    text = re.sub(r'\s+', ' ', text).strip()  # Normalize whitespace
+    return text
+
 @celery_app.task(bind=True, base=VideoProcessTask)
 def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
     """
@@ -411,7 +704,6 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
             Respond in JSON format with an array of clips. Each clip should include:
             - start: the start time in seconds (float)
             - end: the end time in seconds (float, approximately 30 seconds after start)
-            - subtitle: the same transcript text for this clip as used
             - caption: a catchy, attention-grabbing caption for social media
             - virality_score: a score from 1% to 100% indicating how likely this clip is to go viral
 
@@ -424,7 +716,6 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                     {{
                         "start": 120.5,
                         "end": 150.2,
-                        "subtitle": "same transcript used for this clip",
                         "caption": "You won't believe what happens next! ",
                         "virality_score": "85%"
                     }}
@@ -468,99 +759,6 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 "caption": "Check out this highlight! #viral"
             }]
         
-        # Helper function for word-level SRT generation
-        def create_word_level_srt(subtitle_text, clip_start, clip_end, transcription_data, clip_idx):
-            """
-            Creates an SRT file with word-level timing for better audio synchronization.
-            
-            Args:
-                subtitle_text (str): The full subtitle text for the clip
-                clip_start (float): Start time of the clip in seconds
-                clip_end (float): End time of the clip in seconds
-                transcription_data: The Whisper transcription data with word-level timestamps
-                clip_idx (int): The index of the current clip
-                
-            Returns:
-                str: Formatted SRT content
-            """
-            # Extract words from the subtitle text
-            subtitle_words = subtitle_text.strip().lower().split()
-            
-            try:
-                # Try to use word-level timestamps from Whisper if available
-                if hasattr(transcription_data, 'segments'):
-                    # Create a list of all words with their timestamps
-                    all_words = []
-                    for segment in transcription_data.segments:
-                        # Check if segment has word-level timestamps
-                        if hasattr(segment, 'words') and segment.words:
-                            for word_data in segment.words:
-                                if hasattr(word_data, 'word') and hasattr(word_data, 'start') and hasattr(word_data, 'end'):
-                                    all_words.append({
-                                        'word': word_data.word.strip().lower(),
-                                        'start': word_data.start,
-                                        'end': word_data.end
-                                    })
-                
-                    # Filter words that are within our clip timeframe
-                    clip_words = [w for w in all_words if w['start'] >= clip_start and w['end'] <= clip_end]
-                    
-                    # If we found matching words with timestamps
-                    if clip_words:
-                        srt_content = ""
-                        for i, word_data in enumerate(clip_words):
-                            word = word_data['word'].strip().lower().strip('.,!?;:"\'')
-                            # Skip empty words
-                            if not word:
-                                continue
-                                
-                            # Adjust timing to be relative to clip start
-                            word_start = word_data['start'] - clip_start
-                            word_end = word_data['end'] - clip_start
-                            
-                            # Format times as HH:MM:SS,mmm
-                            start_time = time.strftime('%H:%M:%S', time.gmtime(word_start)) + f",{int((word_start % 1) * 1000):03d}"
-                            end_time = time.strftime('%H:%M:%S', time.gmtime(word_end)) + f",{int((word_end % 1) * 1000):03d}"
-                            
-                            # Add this word to SRT content
-                            srt_content += f"{i+1}\n{start_time} --> {end_time}\n{word_data['word'].strip()}\n\n"
-                        
-                        if srt_content:
-                            return srt_content
-            
-            except Exception as e:
-                logger.warning(f"Error creating word-level SRT from Whisper data for clip {clip_idx}: {str(e)}")
-            
-            # Fallback: Evenly distribute words across the clip duration
-            words = subtitle_text.split()
-            total_words = len(words)
-            
-            # Calculate duration for each word
-            clip_duration = clip_end - clip_start
-            word_duration = clip_duration / total_words if total_words > 0 else clip_duration
-            
-            srt_content = ""
-            line_num = 1
-            
-            for i in range(total_words):
-                # Calculate timing for this word
-                word_start = clip_start + (i * word_duration)
-                word_end = word_start + word_duration
-                
-                # Format times as HH:MM:SS,mmm
-                # For the SRT file, we need to adjust to be relative to the clip start
-                relative_start = word_start - clip_start
-                relative_end = word_end - clip_start
-                
-                start_time = time.strftime('%H:%M:%S', time.gmtime(relative_start)) + f",{int((relative_start % 1) * 1000):03d}"
-                end_time = time.strftime('%H:%M:%S', time.gmtime(relative_end)) + f",{int((relative_end % 1) * 1000):03d}"
-                
-                # Add this word to SRT content
-                srt_content += f"{line_num}\n{start_time} --> {end_time}\n{words[i]}\n\n"
-                line_num += 1
-            
-            return srt_content
-        
         # Process and create each clip                 
         processed_clips = []
         
@@ -568,7 +766,6 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
             try:
                 clip_start = clip["start"]
                 clip_end = clip["end"]
-                subtitle = clip["subtitle"]
                 caption = clip["caption"]
                 virality_score = clip.get("virality_score", "50%")  # Default to 50% if not provided
 
@@ -587,24 +784,17 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                     'status': f'Processing clip {i+1}/{len(clips)}', 
                     'percent_complete': 50 + (i * 30 // len(clips))
                 })
+
+                clip_transcript_data = extract_clip_transcript_from_whisper(transcription, clip_start, clip_end)
+                clip_duration = clip_end - clip_start
+                
+                logger.info(f"Clip {i+1} transcript: '{clip_transcript_data['text'][:100]}...'")
+                logger.info(f"Clip {i+1} has {clip_transcript_data['word_count']} words")
                 
                 # Create clip output path
                 clip_filename = f"{unique_id}_clip_{i+1}.mp4"
                 temp_clip_path = os.path.join(TEMP_DIR, clip_filename)
                 
-                # Set target dimensions
-                target_height = 1920
-                target_width = 1080
-
-                # Create subtitle file with improved word-level formatting
-                subtitle_file = os.path.join(TEMP_DIR, f"{unique_id}_subtitle_{i+1}.srt")
-
-                # Create word-level SRT content with whisper timestamps if available
-                srt_content = create_word_level_srt(subtitle, clip_start, clip_end, transcription, i)
-
-                with open(subtitle_file, 'w') as f:
-                    f.write(srt_content)
-                logger.info(f"Created word-level SRT subtitle file: {subtitle_file}")
                 
                 # First extract the clip segment
                 temp_raw_clip = os.path.join(TEMP_DIR, f"{unique_id}_raw_clip_{i+1}.mp4")
@@ -626,9 +816,10 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 subprocess.run(ffmpeg_extract_cmd, check=True)
                 logger.info(f"Extracted raw clip: {temp_raw_clip}")
                 
-                success = create_high_quality_clip_with_face_detection(
-                    temp_raw_clip, temp_clip_path, subtitle, 
-                    clip_start, clip_end, unique_id, i, 
+
+                success = create_ultra_high_quality_clip_with_accurate_subtitles(
+                    temp_raw_clip, temp_clip_path, clip_transcript_data, 
+                    clip_duration, unique_id, i
                 )
 
                 if not success:
@@ -656,13 +847,13 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
                 # Add clip to processed clips
                 processed_clips.append({
                     "clipUrl": clip_url,
-                    "subtitle": subtitle,
+                    "subtitle": clip_transcript_data['text'],
                     "caption": caption,
                     "viralityScore": virality_score,
                 })
                 
                 # Clean up temporary clip files
-                for file_path in [temp_raw_clip, temp_clip_path, subtitle_file]:
+                for file_path in [temp_raw_clip, temp_clip_path, temp_transcript_path]:
                     if os.path.exists(file_path):
                         os.remove(file_path)
                 
@@ -727,500 +918,6 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
         raise Exception(f"OpusClip processing failed: {str(e)}")
     
 # Enhanced subtitle generation functions for OpusClip-style subtitles
-
-def create_opusclip_style_srt(subtitle_text, clip_start, clip_end, transcription_data, clip_idx):
-    """
-    Creates OpusClip-style SRT with 3 words per line, green highlighting for current words.
-    
-    Args:
-        subtitle_text (str): The full subtitle text for the clip
-        clip_start (float): Start time of the clip in seconds
-        clip_end (float): End time of the clip in seconds
-        transcription_data: The Whisper transcription data with word-level timestamps
-        clip_idx (int): The index of the current clip
-        
-    Returns:
-        str: Formatted SRT content with OpusClip-style formatting
-    """
-    import time
-    
-    words = subtitle_text.strip().split()
-    total_words = len(words)
-    
-    # Group words into chunks of 3
-    word_groups = []
-    for i in range(0, total_words, 3):
-        group = words[i:i+3]
-        word_groups.append(group)
-    
-    # Calculate timing for each group
-    clip_duration = clip_end - clip_start
-    group_duration = clip_duration / len(word_groups) if word_groups else clip_duration
-    
-    srt_content = ""
-    
-    for group_idx, word_group in enumerate(word_groups):
-        # Calculate timing for this group
-        group_start = clip_start + (group_idx * group_duration)
-        group_end = group_start + group_duration
-        
-        # Adjust to be relative to clip start for SRT
-        relative_start = group_start - clip_start
-        relative_end = group_end - clip_start
-        
-        # Format times as HH:MM:SS,mmm
-        start_time = time.strftime('%H:%M:%S', time.gmtime(relative_start)) + f",{int((relative_start % 1) * 1000):03d}"
-        end_time = time.strftime('%H:%M:%S', time.gmtime(relative_end)) + f",{int((relative_end % 1) * 1000):03d}"
-        
-        # Create subtitle line with 3 words
-        subtitle_line = " ".join(word_group)
-        
-        # Add to SRT content
-        srt_content += f"{group_idx + 1}\n{start_time} --> {end_time}\n{subtitle_line}\n\n"
-    
-    return srt_content
-
-def create_opusclip_ass_subtitles(subtitle_text, clip_start, clip_end, unique_id, clip_idx):
-    """
-    Creates ASS subtitle file with OpusClip-style formatting:
-    - 3 words per line
-    - Green highlight for current words
-    - White default color
-    - Bold font
-    - Center positioning
-    """
-    import os
-    import time
-    
-    words = subtitle_text.strip().split()
-    total_words = len(words)
-    
-    # Group words into chunks of 3
-    word_groups = []
-    for i in range(0, total_words, 3):
-        group = words[i:i+3]
-        word_groups.append(group)
-    
-    # Calculate timing for each group
-    clip_duration = clip_end - clip_start
-    group_duration = clip_duration / len(word_groups) if word_groups else clip_duration
-    
-    # Create ASS file path
-    ass_file = os.path.join("temp_videos", f"{unique_id}_opusclip_subtitle_{clip_idx}.ass")
-    
-    # ASS file header with OpusClip-style formatting
-    ass_header = """[Script Info]
-ScriptType: v4.00+
-PlayResX: 1080
-PlayResY: 1920
-WrapStyle: 0
-
-[V4+ Styles]
-Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,64,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1
-Style: Highlight,Arial,64,&H0000FF00,&H0000FF00,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1
-
-[Events]
-Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-"""
-    
-    ass_content = ass_header
-    
-    # Create events for each word group
-    for group_idx, word_group in enumerate(word_groups):
-        # Calculate timing for this group
-        group_start = group_idx * group_duration
-        group_end = group_start + group_duration
-        
-        # Format timestamp for ASS (H:MM:SS.CC format)
-        def seconds_to_ass_time(seconds):
-            hours = int(seconds // 3600)
-            minutes = int((seconds % 3600) // 60)
-            secs = seconds % 60
-            return f"{hours}:{minutes:02d}:{secs:05.2f}"
-        
-        start_time = seconds_to_ass_time(group_start)
-        end_time = seconds_to_ass_time(group_end)
-        
-        # Create the subtitle line
-        subtitle_line = " ".join(word_group)
-        
-        # Add highlighted version (green)
-        ass_content += f"Dialogue: 0,{start_time},{end_time},Highlight,,0,0,0,,{subtitle_line}\n"
-    
-    # Write ASS file
-    with open(ass_file, 'w', encoding='utf-8') as f:
-        f.write(ass_content)
-    
-    return ass_file
-
-# Updated FFmpeg command generation for OpusClip-style subtitles
-def create_opusclip_ffmpeg_command(temp_raw_clip, temp_clip_path, subtitle_text, clip_start, clip_end, unique_id, clip_idx, target_width=1080, target_height=1920):
-    """
-    Creates FFmpeg command with OpusClip-style subtitles using drawtext filters.
-    """
-    words = subtitle_text.strip().split()
-    
-    # Group words into chunks of 3
-    word_groups = []
-    for i in range(0, len(words), 3):
-        group = words[i:i+3]
-        word_groups.append(" ".join(group))
-    
-    # Calculate timing for each group
-    clip_duration = clip_end - clip_start
-    group_duration = clip_duration / len(word_groups) if word_groups else clip_duration
-    
-    # Base filter for scaling and padding
-    filter_complex = f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2"
-    
-    # Add drawtext filter for each word group with OpusClip styling
-    for group_idx, word_group in enumerate(word_groups):
-        # Calculate timing
-        group_start = group_idx * group_duration
-        group_end = group_start + group_duration
-        
-        # Make text safe for ffmpeg
-        safe_text = word_group.replace("'", "").replace('"', "").replace(':', "").replace(',', "")
-        
-        # Add drawtext with OpusClip-style formatting
-        filter_complex += f",drawtext=text='{safe_text}':fontcolor=#00FF00:fontsize=42:box=1:boxcolor=black@0.8:" \
-                         f"boxborderw=5:x=(w-text_w)/2:y=h*0.85:enable='between(t,{group_start},{group_end})':" \
-                         f"shadowcolor=black:shadowx=2:shadowy=2:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-    
-    # Create FFmpeg command
-    ffmpeg_cmd = [
-        'ffmpeg',
-        '-i', temp_raw_clip,
-        '-vf', filter_complex,
-        '-c:v', 'libx264',
-        '-preset', 'ultrafast',
-        '-crf', '28',
-        '-threads', '2',
-        '-max_muxing_queue_size', '512',
-        '-b:a', '64k',
-        '-c:a', 'aac',
-        '-y',
-        temp_clip_path
-    ]
-    
-    return ffmpeg_cmd
-
-def create_opusclip_style_srt(subtitle_text, clip_start, clip_end, transcription_data, clip_idx):
-    """
-    Creates OpusClip-style SRT with 3 words per line, with proper word-by-word highlighting.
-    Each word gets its own timing for precise highlighting.
-    """
-    import time
-    
-    words = subtitle_text.strip().split()
-    total_words = len(words)
-    
-    # Calculate timing for each individual word
-    clip_duration = clip_end - clip_start
-    word_duration = clip_duration / total_words if total_words > 0 else clip_duration
-    
-    srt_content = ""
-    line_num = 1
-    
-    # Group words into chunks of 3 for display
-    for group_start_idx in range(0, total_words, 3):
-        group_end_idx = min(group_start_idx + 3, total_words)
-        word_group = words[group_start_idx:group_end_idx]
-        
-        # For each word in the group, create individual timing
-        for word_idx in range(len(word_group)):
-            global_word_idx = group_start_idx + word_idx
-            current_word = word_group[word_idx]
-            
-            # Calculate timing for this specific word
-            word_start_time = global_word_idx * word_duration
-            word_end_time = word_start_time + word_duration
-            
-            # Format times as HH:MM:SS,mmm
-            start_time = time.strftime('%H:%M:%S', time.gmtime(word_start_time)) + f",{int((word_start_time % 1) * 1000):03d}"
-            end_time = time.strftime('%H:%M:%S', time.gmtime(word_end_time)) + f",{int((word_end_time % 1) * 1000):03d}"
-            
-            # Create the subtitle line with current word highlighted
-            subtitle_line = ""
-            for i, word in enumerate(word_group):
-                if i == word_idx:
-                    # Current word - highlight in green
-                    subtitle_line += f"<font color='#00FF00'><b>{word}</b></font>"
-                else:
-                    # Other words - keep white
-                    subtitle_line += f"<font color='#FFFFFF'>{word}</font>"
-                
-                # Add space between words (except for the last word)
-                if i < len(word_group) - 1:
-                    subtitle_line += " "
-            
-            # Add to SRT content
-            srt_content += f"{line_num}\n{start_time} --> {end_time}\n{subtitle_line}\n\n"
-            line_num += 1
-    
-    return srt_content
-
-def create_opusclip_ass_subtitles(subtitle_text, clip_start, clip_end, unique_id, clip_idx):
-    """
-    Creates ASS subtitle file with OpusClip-style formatting:
-    - 3 words per line
-    - Green highlight for currently spoken word only
-    - White color for other words
-    - Bold font, center positioning
-    """
-    import os
-    import time
-    
-    words = subtitle_text.strip().split()
-    total_words = len(words)
-    
-    # Calculate timing for each individual word
-    clip_duration = clip_end - clip_start
-    word_duration = clip_duration / total_words if total_words > 0 else clip_duration
-    
-    # Create ASS file path
-    ass_file = os.path.join("temp_videos", f"{unique_id}_opusclip_subtitle_{clip_idx}.ass")
-    
-    # ASS file header with OpusClip-style formatting
-    ass_header = """[Script Info]
-ScriptType: v4.00+
-PlayResX: 1080
-PlayResY: 1920
-WrapStyle: 0
-
-[V4+ Styles]
-Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,64,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1
-Style: Highlight,Arial,64,&H0000FF00,&H0000FF00,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1
-
-[Events]
-Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-"""
-    
-    ass_content = ass_header
-    
-    # Group words into chunks of 3 for display
-    for group_start_idx in range(0, total_words, 3):
-        group_end_idx = min(group_start_idx + 3, total_words)
-        word_group = words[group_start_idx:group_end_idx]
-        
-        # For each word in the group, create individual timing with highlighting
-        for word_idx in range(len(word_group)):
-            global_word_idx = group_start_idx + word_idx
-            
-            # Calculate timing for this specific word
-            word_start_time = global_word_idx * word_duration
-            word_end_time = word_start_time + word_duration
-            
-            # Format timestamp for ASS (H:MM:SS.CC format)
-            def seconds_to_ass_time(seconds):
-                hours = int(seconds // 3600)
-                minutes = int((seconds % 3600) // 60)
-                secs = seconds % 60
-                return f"{hours}:{minutes:02d}:{secs:05.2f}"
-            
-            start_time = seconds_to_ass_time(word_start_time)
-            end_time = seconds_to_ass_time(word_end_time)
-            
-            # Create the subtitle line with proper highlighting
-            subtitle_line = ""
-            for i, word in enumerate(word_group):
-                if i == word_idx:
-                    # Current word - highlight in green
-                    subtitle_line += f"{{\\c&H0000FF00&}}{word}{{\\c&H00FFFFFF&}}"
-                else:
-                    # Other words - keep white
-                    subtitle_line += word
-                
-                # Add space between words (except for the last word)
-                if i < len(word_group) - 1:
-                    subtitle_line += " "
-            
-            # Add dialogue line
-            ass_content += f"Dialogue: 0,{start_time},{end_time},Default,,0,0,0,,{subtitle_line}\n"
-    
-    # Write ASS file
-    with open(ass_file, 'w', encoding='utf-8') as f:
-        f.write(ass_content)
-    
-    return ass_file
-
-def create_opusclip_ffmpeg_command(temp_raw_clip, temp_clip_path, subtitle_text, clip_start, clip_end, unique_id, clip_idx, target_width=1080, target_height=1920):
-    """
-    Creates FFmpeg command with OpusClip-style subtitles using multiple drawtext filters.
-    Each word gets individual timing with proper highlighting.
-    """
-    words = subtitle_text.strip().split()
-    total_words = len(words)
-    
-    # Calculate timing for each individual word
-    clip_duration = clip_end - clip_start
-    word_duration = clip_duration / total_words if total_words > 0 else clip_duration
-    
-    # Base filter for scaling and padding
-    filter_complex = f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2"
-    
-    # Group words into chunks of 3 for display
-    for group_start_idx in range(0, total_words, 3):
-        group_end_idx = min(group_start_idx + 3, total_words)
-        word_group = words[group_start_idx:group_end_idx]
-        
-        # For each word in the group, create individual timing
-        for word_idx in range(len(word_group)):
-            global_word_idx = group_start_idx + word_idx
-            current_word = word_group[word_idx]
-            
-            # Calculate timing for this specific word
-            word_start_time = global_word_idx * word_duration
-            word_end_time = word_start_time + word_duration
-            
-            # Create the full text line for this moment
-            full_text = ""
-            for i, word in enumerate(word_group):
-                full_text += word
-                if i < len(word_group) - 1:
-                    full_text += " "
-            
-            # Make text safe for ffmpeg
-            safe_full_text = full_text.replace("'", "").replace('"', "").replace(':', "").replace(',', "")
-            safe_current_word = current_word.replace("'", "").replace('"', "").replace(':', "").replace(',', "")
-            
-            # Add white text for the full line
-            filter_complex += f",drawtext=text='{safe_full_text}':fontcolor=#FFFFFF:fontsize=42:box=1:boxcolor=black@0.8:" \
-                             f"boxborderw=5:x=(w-text_w)/2:y=h*0.85:enable='between(t,{word_start_time},{word_end_time})':" \
-                             f"shadowcolor=black:shadowx=2:shadowy=2:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-            
-            # Calculate position for the highlighted word
-            words_before = word_group[:word_idx]
-            words_before_text = " ".join(words_before) + (" " if words_before else "")
-            
-            # Add green highlight for the current word
-            word_x_offset = f"(w-text_w)/2+text_w*{len(words_before_text)}/text_w*{len(safe_full_text)}" if words_before_text else "(w-text_w)/2"
-            
-            filter_complex += f",drawtext=text='{safe_current_word}':fontcolor=#00FF00:fontsize=42:" \
-                             f"x={word_x_offset}:y=h*0.85:enable='between(t,{word_start_time},{word_end_time})':" \
-                             f"shadowcolor=black:shadowx=2:shadowy=2:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-    
-    # Create FFmpeg command
-    ffmpeg_cmd = [
-        'ffmpeg',
-        '-i', temp_raw_clip,
-        '-vf', filter_complex,
-        '-c:v', 'libx264',
-        '-preset', 'ultrafast',
-        '-crf', '28',
-        '-threads', '2',
-        '-max_muxing_queue_size', '512',
-        '-b:a', '64k',
-        '-c:a', 'aac',
-        '-y',
-        temp_clip_path
-    ]
-    
-    return ffmpeg_cmd
-
-def process_clip_with_opusclip_subtitles(temp_raw_clip, temp_clip_path, subtitle, clip_start, clip_end, unique_id, i, target_width=1080, target_height=1920):
-    """
-    Process a single clip with OpusClip-style subtitles with proper word-by-word highlighting.
-    """
-    import subprocess
-    import os
-    
-    try:
-        # Method 1: Try ASS subtitles first (best quality)
-        ass_file = create_opusclip_ass_subtitles(subtitle, clip_start, clip_end, unique_id, i)
-        
-        ass_path = ass_file.replace('\\', '/')
-        filter_complex = f"[0:v]scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2[v];"
-        filter_complex += f"[v]ass='{ass_path}'[outv]"
-        
-        ffmpeg_cmd = [
-            'ffmpeg',
-            '-i', temp_raw_clip,
-            '-filter_complex', filter_complex,
-            '-map', '[outv]',
-            '-map', '0:a',
-            '-c:v', 'libx264',
-            '-preset', 'ultrafast',
-            '-crf', '28',
-            '-threads', '2',
-            '-max_muxing_queue_size', '512',
-            '-b:a', '64k',
-            '-c:a', 'aac',
-            '-y',
-            temp_clip_path
-        ]
-        
-        subprocess.run(ffmpeg_cmd, check=True)
-        
-        # Clean up ASS file
-        if os.path.exists(ass_file):
-            os.remove(ass_file)
-            
-        return True
-        
-    except Exception as e:
-        print(f"ASS subtitle method failed: {str(e)}")
-        
-        # Method 2: Fallback to drawtext method
-        try:
-            ffmpeg_cmd = create_opusclip_ffmpeg_command(
-                temp_raw_clip, temp_clip_path, subtitle, 
-                clip_start, clip_end, unique_id, i, 
-                target_width, target_height
-            )
-            
-            subprocess.run(ffmpeg_cmd, check=True)
-            return True
-            
-        except Exception as e2:
-            print(f"Drawtext subtitle method also failed: {str(e2)}")
-            
-            # Method 3: Final fallback - simple SRT with basic styling
-            try:
-                # Create simple SRT file with proper highlighting
-                srt_file = os.path.join("temp_videos", f"{unique_id}_simple_subtitle_{i}.srt")
-                srt_content = create_opusclip_style_srt(subtitle, clip_start, clip_end, None, i)
-                
-                with open(srt_file, 'w', encoding='utf-8') as f:
-                    f.write(srt_content)
-                
-                srt_path = srt_file.replace('\\', '/')
-                
-                # Use subtitles filter with custom styling
-                filter_complex = f"[0:v]scale={target_width}:{target_height}:force_original_aspect_ratio=decrease,pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2[v];"
-                filter_complex += f"[v]subtitles='{srt_path}':force_style='FontName=Arial,FontSize=42,Bold=1,Alignment=2,MarginV=80'[outv]"
-                
-                ffmpeg_cmd = [
-                    'ffmpeg',
-                    '-i', temp_raw_clip,
-                    '-filter_complex', filter_complex,
-                    '-map', '[outv]',
-                    '-map', '0:a',
-                    '-c:v', 'libx264',
-                    '-preset', 'ultrafast',
-                    '-crf', '28',
-                    '-threads', '2',
-                    '-max_muxing_queue_size', '512',
-                    '-b:a', '64k',
-                    '-c:a', 'aac',
-                    '-y',
-                    temp_clip_path
-                ]
-                
-                subprocess.run(ffmpeg_cmd, check=True)
-                
-                # Clean up SRT file
-                if os.path.exists(srt_file):
-                    os.remove(srt_file)
-                    
-                return True
-                
-            except Exception as e3:
-                print(f"All subtitle methods failed: {str(e3)}")
-                return False
-
 
 def detect_faces_in_video(video_path, num_frames=5):
     """
