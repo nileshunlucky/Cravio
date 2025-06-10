@@ -2,14 +2,12 @@
 
 import { useRef, useEffect, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
-import { useUser } from "@clerk/nextjs"
-import { Play, Eye } from 'lucide-react'
+import { Eye } from 'lucide-react'
 
 const Monitize = () => {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, amount: 0.4 })
-  const { user } = useUser()
-  const [users, setUsers] = useState([])
+  const [userCount, setUserCount] = useState(100)
 
   // Sample video clips URLs - replace with your actual clip URLs
   const viralClips = [
@@ -24,39 +22,25 @@ const Monitize = () => {
   ]
 
   useEffect(() => {
-    const fetchVideos = async () => {
-      if (!user?.primaryEmailAddress?.emailAddress) return
-      const email = user.primaryEmailAddress.emailAddress
-  
+    const fetchUserCount = async () => { 
       try {
-        const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`)
+        const res = await fetch(`https://cravio-ai.onrender.com/users-emails`)
         const data = await res.json()
-        setUsers(data.email)
+        // Calculate total number of users from the email list
+        const totalUsers = Array.isArray(data) ? data.length : 100
+        setUserCount(totalUsers)
       } catch (error) {
-        console.error('Error fetching videos:', error)
+        console.error('Error fetching user count:', error)
+        setUserCount(100) // Fallback value
       } 
     }
       
-    if (user) {
-      fetchVideos()
-    }
-  }, [user])
+    fetchUserCount()
+  }, [])
 
-  const VideoClip = ({ src, index }: { src: string; index: number }) => {
-    const [isPlaying, setIsPlaying] = useState(false)
-    const [views] = useState(Math.floor(Math.random() * 950000) + 50000) // Random views between 50k-1M
+  const VideoClip: React.FC<{ src: string; index: number }> = ({ src, index }) => {
+    const [views] = useState(Math.floor(Math.random() * 950000) + 50000)
     const videoRef = useRef<HTMLVideoElement>(null)
-
-    const togglePlay = () => {
-      if (videoRef.current) {
-        if (isPlaying) {
-          videoRef.current.pause()
-        } else {
-          videoRef.current.play()
-        }
-        setIsPlaying(!isPlaying)
-      }
-    }
 
     const formatViews = (num : number) => {
       if (num >= 1000000) {
@@ -66,6 +50,14 @@ const Monitize = () => {
       }
       return num.toString()
     }
+
+    useEffect(() => {
+      if (videoRef.current) {
+        videoRef.current.play().catch((error: unknown) => {
+          console.log('Auto-play failed:', error)
+        })
+      }
+    }, [])
 
     return (
       <motion.div
@@ -80,22 +72,11 @@ const Monitize = () => {
             src={src}
             loop
             muted
+            autoPlay
             playsInline
             className="w-full h-full object-cover"
             style={{ aspectRatio: '9/16' }}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
           />
-          
-          {/* Play/Pause Overlay */}
-          <div 
-            className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-            onClick={togglePlay}
-          >
-            <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-full p-3">
-              <Play className="w-8 h-8 text-white" fill="white" />
-            </div>
-          </div>
 
           {/* Bottom Overlay with Stats */}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
@@ -103,9 +84,6 @@ const Monitize = () => {
               <div className="flex items-center space-x-2">
                 <Eye className="w-4 h-4" />
                 <span>{formatViews(views)}</span>
-              </div>
-              <div className="bg-red-500 px-2 py-1 rounded-full text-xs font-bold">
-                VIRAL
               </div>
             </div>
           </div>
@@ -115,41 +93,41 @@ const Monitize = () => {
   }
 
   return (
-    <section ref={ref} className="min-h-screen flex flex-col items-center justify-center px-6 py-20 bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+    <section ref={ref} className="min-h-screen flex flex-col items-center justify-center px-6 py-20 bg-black">
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={isInView ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: 0.8, ease: 'easeOut' }}
-        className="max-w-6xl text-center space-y-16"
+        className="max-w-6xl text-center space-y-8 sm:space-y-12 lg:space-y-16"
       >
         {/* Text Content */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <motion.h2 
-            className="text-5xl md:text-7xl font-bold tracking-tight text-white"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-white leading-tight"
             initial={{ opacity: 0, y: 30 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <span className="bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-              {users.length > 0 ? `${users}+` : '100+'} Creators
+            <span className="bg-gradient-to-r from-red-600 via-yellow-500 to-orange-500 bg-clip-text text-transparent">
+              {userCount}+ Creators
             </span>
             <br />
             <span className="text-white">Trust Cravio AI</span>
           </motion.h2>
           
           <motion.p 
-            className="text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed"
+            className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed px-4"
             initial={{ opacity: 0, y: 30 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            Transform long videos into viral short clips in seconds. Our AI-powered platform helps creators 
-            <span className="text-yellow-400 font-semibold"> go viral instantly</span> with professionally 
-            edited content that captures attention and drives engagement.
+            Our AI-powered platform helps creators 
+            <span className="bg-gradient-to-r from-green-500 to-green-700 bg-clip-text text-transparent font-bold uppercase"> Go viral instantly</span> with professionally <br />
+            edited content adding subtitles and captions.
           </motion.p>
           
           <motion.div 
-            className="flex items-center justify-center space-x-8 text-gray-400"
+            className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4 md:space-x-8 text-gray-400"
             initial={{ opacity: 0, y: 30 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.6 }}
@@ -160,13 +138,13 @@ const Monitize = () => {
             </div>
             <div className="w-px h-12 bg-gray-600"></div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-white">5 Sec</div>
-              <div className="text-sm">Processing Time</div>
+              <div className="text-3xl font-bold text-white">1K+</div>
+              <div className="text-sm">Clips Created</div>
             </div>
             <div className="w-px h-12 bg-gray-600"></div>
             <div className="text-center">
               <div className="text-3xl font-bold text-white">98%</div>
-              <div className="text-sm">Success Rate</div>
+              <div className="text-sm">Virality Score</div>
             </div>
           </motion.div>
         </div>
@@ -178,9 +156,6 @@ const Monitize = () => {
           transition={{ duration: 0.8, delay: 0.8 }}
           className="w-full"
         >
-          <h3 className="text-2xl md:text-3xl font-bold text-white mb-8">
-            See How Creators Are Going Viral
-          </h3>
           
           {/* Scrolling Video Container */}
           <div className="relative overflow-hidden">
@@ -204,18 +179,6 @@ const Monitize = () => {
               ))}
             </motion.div>
           </div>
-        </motion.div>
-
-        {/* Call to Action */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8, delay: 1.0 }}
-          className="pt-8"
-        >
-          <button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-2xl">
-            Start Creating Viral Content
-          </button>
         </motion.div>
       </motion.div>
     </section>

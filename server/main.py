@@ -40,6 +40,12 @@ def get_user(email: str):
         return user
     raise HTTPException(status_code=404, detail="User not found")
 
+# get users email
+@app.get("/users-emails")
+def get_users():
+    users = list(users_collection.find({}, {"_id": 0, "email": 1}))
+    return users
+
 @app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check():
     return {"status": "OK"}
