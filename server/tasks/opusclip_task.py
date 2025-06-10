@@ -885,7 +885,7 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
                              f"x=(w-text_w)/2:" \
                              f"y={y_position}:" \
                              f"enable='between(t,{line_start:.3f},{line_end:.3f})':" \
-                             f"font='Arial Black'"
+                             f"font='Impact'"
         
         # Step 6: Create ultra high-quality FFmpeg command
         ffmpeg_cmd = [
