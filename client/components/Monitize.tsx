@@ -182,4 +182,4 @@ const Monitize = () => {
   )
 }
 
-export default Monitize
+export default Monitize  
