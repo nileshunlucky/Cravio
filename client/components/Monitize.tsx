@@ -62,7 +62,7 @@ const Monitize = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.1 }}
-        className="relative flex-shrink-0 w-48 h-85 bg-black rounded-2xl overflow-hidden shadow-2xl border border-gray-800"
+        className="relative flex-shrink-0 w-32 h-56 sm:w-40 sm:h-72 md:w-48 md:h-85 bg-black rounded-2xl overflow-hidden shadow-2xl border border-gray-800"
       >
         <div className="relative w-full h-full">
           <video
@@ -77,10 +77,10 @@ const Monitize = () => {
           />
 
           {/* Bottom Overlay with Stats */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
-            <div className="flex items-center justify-between text-white text-sm">
-              <div className="flex items-center space-x-2">
-                <Eye className="w-4 h-4" />
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-2 sm:p-4">
+            <div className="flex items-center justify-between text-white text-xs sm:text-sm">
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>{formatViews(views)}</span>
               </div>
             </div>
@@ -91,17 +91,17 @@ const Monitize = () => {
   }
 
   return (
-    <section ref={ref} className="min-h-screen flex flex-col items-center justify-center px-6 py-20 bg-black">
+    <section ref={ref} className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-20 bg-black">
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={isInView ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: 0.8, ease: 'easeOut' }}
-        className="max-w-6xl text-center space-y-8 sm:space-y-12 lg:space-y-16"
+        className="max-w-6xl text-center space-y-8 sm:space-y-12 lg:space-y-16 overflow-x-hidden"
       >
         {/* Text Content */}
         <div className="space-y-4 sm:space-y-6">
           <motion.h2 
-            className="text-5xl md:text-7xl font-bold tracking-tight text-white leading-tight"
+            className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight text-white leading-tight"
             initial={{ opacity: 0, y: 30 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -114,7 +114,7 @@ const Monitize = () => {
           </motion.h2>
           
           <motion.p 
-            className="text-base md:text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed px-4"
+            className="text-sm sm:text-base md:text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed px-4"
             initial={{ opacity: 0, y: 30 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.4 }}
@@ -131,18 +131,18 @@ const Monitize = () => {
             transition={{ duration: 0.8, delay: 0.6 }}
           >
             <div className="text-center">
-              <div className="text-3xl font-bold text-white">10M+</div>
-              <div className="text-sm">Views Generated</div>
+              <div className="text-xl sm:text-3xl font-bold text-white">10M+</div>
+              <div className="text-xs sm:text-sm">Views Generated</div>
             </div>
-            <div className="w-px h-12 bg-gray-600"></div>
+            <div className="hidden sm:block w-px h-12 bg-gray-600"></div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-white">1K+</div>
-              <div className="text-sm">Clips Created</div>
+              <div className="text-xl sm:text-3xl font-bold text-white">1K+</div>
+              <div className="text-xs sm:text-sm">Clips Created</div>
             </div>
-            <div className="w-px h-12 bg-gray-600"></div>
+            <div className="hidden sm:block w-px h-12 bg-gray-600"></div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-white">98%</div>
-              <div className="text-sm">Virality Score</div>
+              <div className="text-xl sm:text-3xl font-bold text-white">98%</div>
+              <div className="text-xs sm:text-sm">Virality Score</div>
             </div>
           </motion.div>
         </div>
@@ -156,7 +156,7 @@ const Monitize = () => {
         >
           
           {/* Scrolling Video Container */}
-          <div className="relative overflow-hidden">
+          <div className="relative overflow-x-auto overflow-y-hidden">
             <motion.div
               animate={{
                 x: [0, -100 * (viralClips.length / 2)]
@@ -169,8 +169,7 @@ const Monitize = () => {
                   ease: "linear",
                 },
               }}
-              className="flex space-x-6"
-              style={{ width: `${viralClips.length * 200}px` }}
+              className="flex space-x-3 sm:space-x-4 md:space-x-6 w-max"
             >
               {viralClips.concat(viralClips).map((clip, index) => (
                 <VideoClip key={index} src={clip} index={index} />
