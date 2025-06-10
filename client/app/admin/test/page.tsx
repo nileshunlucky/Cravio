@@ -11,14 +11,12 @@ const Monitize = () => {
 
   // Sample video clips URLs - replace with your actual clip URLs
   const viralClips = [
-    "/Video-769.mp4",
-    "/Video-769.mp4",
-    "/Video-769.mp4",
-    "/Video-769.mp4",
-    "/Video-769.mp4",
-    "/Video-769.mp4",
-    "/Video-769.mp4",
-    "/Video-769.mp4",
+    "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576854/Video-252_f4rrxp.mp4",
+    "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576847/Video-563_b73y61.mp4",
+    "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576850/Video-288_wqhsdk.mp4",
+    "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576849/Video-654_sgfhha.mp4",
+    "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576850/Video-846_waesdk.mp4",
+    "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576849/Video-552_twvtsz.mp4",
   ]
 
   useEffect(() => {
@@ -103,7 +101,7 @@ const Monitize = () => {
         {/* Text Content */}
         <div className="space-y-4 sm:space-y-6">
           <motion.h2 
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-white leading-tight"
+            className="text-5xl md:text-7xl font-bold tracking-tight text-white leading-tight"
             initial={{ opacity: 0, y: 30 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -116,13 +114,13 @@ const Monitize = () => {
           </motion.h2>
           
           <motion.p 
-            className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed px-4"
+            className="text-base md:text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed px-4"
             initial={{ opacity: 0, y: 30 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            Our AI-powered platform helps creators 
-            <span className="bg-gradient-to-r from-green-500 to-green-700 bg-clip-text text-transparent font-bold uppercase"> Go viral instantly</span> with professionally <br />
+            Our AI helps creators 
+            <span className="bg-gradient-to-r from-green-500 to-green-700 bg-clip-text text-transparent font-bold uppercase"> Go viral instantly</span> with professionally
             edited content adding subtitles and captions.
           </motion.p>
           
