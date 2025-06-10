@@ -857,10 +857,10 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, target_
 
 def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, target_width=1080, target_height=1920):
     """
-    Create ultra high-quality 9:16 clip with OpusClip-style karaoke subtitles
+    Create ultra high-quality 9:16 clip with clean, professional subtitles
     """
     try:
-        logger.info(f"Processing clip {clip_idx} with OpusClip-style karaoke subtitles")
+        logger.info(f"Processing clip {clip_idx} with professional subtitles")
         
         # Step 1: Face detection and crop calculation (keeping existing logic)
         face_data = detect_faces_in_video(temp_raw_clip)
@@ -903,14 +903,14 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
         filter_complex = f"crop={crop_params['crop_width']}:{crop_params['crop_height']}:{crop_params['crop_x']}:{crop_params['crop_y']}"
         filter_complex += f",scale={target_width}:{target_height}:flags=lanczos"
         
-        # Step 4: Create subtitle lines (2-4 words per line for better readability)
+        # Step 4: Create subtitle lines (3-5 words per line for better readability)
         subtitle_lines = []
         current_line_words = []
         
         for word_data in words_data:
             current_line_words.append(word_data)
             
-            # Create a line when we have 2-4 words or we're at the end
+            # Create a line when we have 3-5 words or we're at the end
             if len(current_line_words) >= 4 or word_data == words_data[-1]:
                 if current_line_words:
                     line_text = ' '.join([w['word'].strip() for w in current_line_words])
@@ -924,52 +924,33 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
         
         logger.info(f"Created {len(subtitle_lines)} subtitle lines")
         
-        # Step 5: Add OpusClip-style karaoke subtitles
+        # Step 5: Add clean, professional subtitles - ONE subtitle per line at a time
         for line_idx, subtitle_line in enumerate(subtitle_lines):
             line_text = subtitle_line['text']
             line_start = subtitle_line['start_time']
             line_end = subtitle_line['end_time']
-            line_words = subtitle_line['words']
             
             # Clean text for ffmpeg
             safe_line_text = clean_text_for_ffmpeg(line_text)
             
-            # Font settings - OpusClip style
-            font_size = 64
-            stroke_width = 4
-            y_position = "h*0.75"  # Position subtitles in lower portion
+            # Professional subtitle settings
+            font_size = 72  # Larger, more readable
+            stroke_width = 6  # Thicker outline for better contrast
+            y_position = "h*0.78"  # Position subtitles in lower portion
             
-            # Add base white text with black stroke (always visible during line duration)
+            # Add single, clean yellow subtitle with black outline
             filter_complex += f",drawtext=text='{safe_line_text}':" \
-                             f"fontcolor=white:" \
+                             f"fontcolor=#FFD700:" \
                              f"fontsize={font_size}:" \
                              f"x=(w-text_w)/2:" \
                              f"y={y_position}:" \
                              f"enable='between(t,{line_start},{line_end})':" \
                              f"borderw={stroke_width}:" \
-                             f"bordercolor=black:" \
-                             f"fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-            
-            # Add karaoke-style highlighting - reveal words progressively
-            for word_idx, word_data in enumerate(line_words):
-                word_start = word_data['start']
-                word_end = word_data['end']
-                
-                # Create progressive reveal effect - show words up to current word in yellow
-                words_to_highlight = line_words[:word_idx + 1]
-                highlighted_text = ' '.join([w['word'].strip() for w in words_to_highlight])
-                safe_highlighted_text = clean_text_for_ffmpeg(highlighted_text)
-                
-                # Add yellow highlighted text that grows word by word
-                filter_complex += f",drawtext=text='{safe_highlighted_text}':" \
-                                 f"fontcolor=#FFD700:" \
-                                 f"fontsize={font_size}:" \
-                                 f"x=(w-tw)/2:" \
-                                 f"y={y_position}:" \
-                                 f"enable='between(t,{word_start},{line_end})':" \
-                                 f"borderw={stroke_width}:" \
-                                 f"bordercolor=black:" \
-                                 f"fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+                             f"bordercolor=#000000:" \
+                             f"font='Arial Black':" \
+                             f"box=1:" \
+                             f"boxcolor=#000000@0.3:" \
+                             f"boxborderw=8"
         
         # Step 6: Create ultra high-quality FFmpeg command
         ffmpeg_cmd = [
@@ -978,7 +959,7 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             '-vf', filter_complex,
             '-c:v', 'libx264',
             '-preset', 'fast',
-            '-crf', '20',
+            '-crf', '18',  # Higher quality
             '-level:v', '4.1',
             '-pix_fmt', 'yuv420p',
             '-threads', '2',
@@ -1004,9 +985,24 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             logger.error(f"Clip creation failed or produced invalid file: {temp_clip_path}")
             return False
         
-        logger.info(f"Successfully created clip {clip_idx} with karaoke subtitles")
+        logger.info(f"Successfully created clip {clip_idx} with professional subtitles")
         return True
         
     except Exception as e:
         logger.error(f"Error creating clip {clip_idx}: {str(e)}")
         return False
+
+
+def clean_text_for_ffmpeg(text):
+    """Enhanced text cleaning for ffmpeg drawtext filter"""
+    # Remove or replace problematic characters
+    text = text.replace("'", "").replace('"', '').replace(':', '').replace(',', '')
+    text = text.replace('\\', '').replace('/', '').replace('|', '')
+    text = text.replace('[', '').replace(']', '').replace('(', '').replace(')', '')
+    text = text.replace('{', '').replace('}', '').replace('&', 'and')
+    text = text.replace('%', 'percent').replace('$', 'dollar')
+    text = text.replace('=', 'equals').replace('+', 'plus')
+    text = re.sub(r'[^\w\s-]', '', text)  # Keep only alphanumeric, whitespace, and hyphens
+    text = re.sub(r'\s+', ' ', text).strip()  # Normalize whitespace
+    text = text.upper()  # Make text uppercase for better visibility
+    return text
