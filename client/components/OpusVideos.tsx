@@ -127,7 +127,7 @@ const OpusVideos = () => {
 
             {!loading && !error && opusclips.length > 0 && (
                 <div className="flex overflow-x-auto scroll-hidden space-x-4 pb-4 scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-neutral-800">
-                    {opusclips.map((clip) => (
+                    {[...opusclips].reverse().map((clip) => (
                         <div
                             key={clip.uniqueId} // Use uniqueId for the key
                             className="flex-shrink-0 w-72 md:w-80 bg-neutral-800 rounded-xl overflow-hidden shadow-lg transition-all duration-300 ease-in-out hover:scale-105 group"

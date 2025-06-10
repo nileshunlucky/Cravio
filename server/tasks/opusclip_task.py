@@ -40,86 +40,6 @@ class VideoProcessTask(Task):
 import re
 from math import ceil
 
-def extract_clip_transcript_from_whisper(transcription_data, clip_start, clip_end):
-    """
-    Extract the exact transcript text that appears in the clip timeframe
-    
-    Args:
-        transcription_data: Whisper transcription with segments
-        clip_start (float): Start time of clip in seconds
-        clip_end (float): End time of clip in seconds
-        
-    Returns:
-        dict: Contains transcript text and word-level timing data
-    """
-    try:
-        clip_words = []
-        clip_text = ""
-        
-        if hasattr(transcription_data, 'segments'):
-            for segment in transcription_data.segments:
-                # Check if segment overlaps with our clip
-                segment_start = segment.start
-                segment_end = segment.end
-                
-                # If segment overlaps with clip timeframe
-                if segment_start < clip_end and segment_end > clip_start:
-                    # If we have word-level data
-                    if hasattr(segment, 'words') and segment.words:
-                        for word_data in segment.words:
-                            word_start = word_data.start
-                            word_end = word_data.end
-                            
-                            # Include words that are within or overlap the clip timeframe
-                            if word_start < clip_end and word_end > clip_start:
-                                # Adjust timing to be relative to clip start
-                                relative_start = max(0, word_start - clip_start)
-                                relative_end = min(clip_end - clip_start, word_end - clip_start)
-                                
-                                clip_words.append({
-                                    'word': word_data.word.strip(),
-                                    'start': relative_start,
-                                    'end': relative_end,
-                                    'original_start': word_start,
-                                    'original_end': word_end
-                                })
-                                
-                                clip_text += word_data.word.strip() + " "
-                    else:
-                        # Fallback to segment text if no word-level data
-                        # Calculate what portion of the segment is in our clip
-                        overlap_start = max(segment_start, clip_start)
-                        overlap_end = min(segment_end, clip_end)
-                        
-                        if overlap_end > overlap_start:
-                            clip_text += segment.text.strip() + " "
-        
-        return {
-            'text': clip_text.strip(),
-            'words': clip_words,
-            'word_count': len(clip_words)
-        }
-        
-    except Exception as e:
-        logger.error(f"Error extracting clip transcript: {str(e)}")
-        return {
-            'text': "Unable to extract transcript",
-            'words': [],
-            'word_count': 0
-        }
-
-def clean_text_for_ffmpeg(text):
-    """Clean text to be safe for ffmpeg drawtext filter"""
-    # Remove or replace problematic characters
-    text = text.replace("'", "").replace('"', '').replace(':', '').replace(',', '')
-    text = text.replace('\\', '').replace('/', '').replace('|', '')
-    text = text.replace('[', '').replace(']', '').replace('(', '').replace(')', '')
-    text = text.replace('{', '').replace('}', '').replace('&', 'and')
-    text = text.replace('%', 'percent').replace('$', 'dollar')
-    text = re.sub(r'[^\w\s-]', '', text)  # Keep only alphanumeric, whitespace, and hyphens
-    text = re.sub(r'\s+', ' ', text).strip()  # Normalize whitespace
-    return text
-
 @celery_app.task(bind=True, base=VideoProcessTask)
 def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
     """
@@ -857,10 +777,10 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, target_
 
 def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, target_width=1080, target_height=1920):
     """
-    Create ultra high-quality 9:16 clip with clean, professional subtitles
+    Create ultra high-quality 9:16 clip with accurate karaoke-style subtitles
     """
     try:
-        logger.info(f"Processing clip {clip_idx} with professional subtitles")
+        logger.info(f"Processing clip {clip_idx} with karaoke-style subtitles")
         
         # Step 1: Face detection and crop calculation (keeping existing logic)
         face_data = detect_faces_in_video(temp_raw_clip)
@@ -887,7 +807,7 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
         words_data = clip_transcript_data['words']
         
         if not words_data:
-            # Fallback to splitting text evenly
+            # Fallback to splitting text evenly if no word timing available
             text_words = clip_transcript_data['text'].split()
             word_duration = clip_duration / len(text_words) if text_words else clip_duration
             
@@ -903,54 +823,69 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
         filter_complex = f"crop={crop_params['crop_width']}:{crop_params['crop_height']}:{crop_params['crop_x']}:{crop_params['crop_y']}"
         filter_complex += f",scale={target_width}:{target_height}:flags=lanczos"
         
-        # Step 4: Create subtitle lines (3-5 words per line for better readability)
+        # Step 4: Create subtitle lines with proper text wrapping (2-4 words per line for 9:16 format)
         subtitle_lines = []
         current_line_words = []
+        max_chars_per_line = 25  # Optimal for 9:16 mobile viewing
         
         for word_data in words_data:
-            current_line_words.append(word_data)
+            # Calculate current line length if we add this word
+            current_line_text = ' '.join([w['word'].strip() for w in current_line_words])
+            potential_line_text = current_line_text + ' ' + word_data['word'].strip() if current_line_words else word_data['word'].strip()
             
-            # Create a line when we have 3-5 words or we're at the end
-            if len(current_line_words) >= 4 or word_data == words_data[-1]:
-                if current_line_words:
-                    line_text = ' '.join([w['word'].strip() for w in current_line_words])
-                    subtitle_lines.append({
-                        'words': current_line_words.copy(),
-                        'start_time': current_line_words[0]['start'],
-                        'end_time': current_line_words[-1]['end'],
-                        'text': line_text
-                    })
-                    current_line_words = []
+            # Check if we should start a new line
+            should_break = (
+                len(current_line_words) >= 4 or  # Max 4 words per line
+                len(potential_line_text) > max_chars_per_line or  # Max characters per line
+                word_data == words_data[-1]  # Last word
+            )
+            
+            if should_break and current_line_words:
+                # Create subtitle line
+                line_text = ' '.join([w['word'].strip() for w in current_line_words])
+                subtitle_lines.append({
+                    'words': current_line_words.copy(),
+                    'start_time': current_line_words[0]['start'],
+                    'end_time': current_line_words[-1]['end'],
+                    'text': line_text.upper()  # Convert to uppercase for better visibility
+                })
+                current_line_words = [word_data] if word_data != words_data[-1] else []
+            else:
+                current_line_words.append(word_data)
         
-        logger.info(f"Created {len(subtitle_lines)} subtitle lines")
+        # Handle last line if it exists
+        if current_line_words:
+            line_text = ' '.join([w['word'].strip() for w in current_line_words])
+            subtitle_lines.append({
+                'words': current_line_words.copy(),
+                'start_time': current_line_words[0]['start'],
+                'end_time': current_line_words[-1]['end'],
+                'text': line_text.upper()
+            })
         
-        # Step 5: Add clean, professional subtitles - ONE subtitle per line at a time
+        logger.info(f"Created {len(subtitle_lines)} subtitle lines for clip timing")
+        
+        # Step 5: Add karaoke-style subtitles - bold yellow, no stroke, no background
         for line_idx, subtitle_line in enumerate(subtitle_lines):
             line_text = subtitle_line['text']
             line_start = subtitle_line['start_time']
             line_end = subtitle_line['end_time']
             
-            # Clean text for ffmpeg
-            safe_line_text = clean_text_for_ffmpeg(line_text)
+            # Clean text for ffmpeg (keep it simple for karaoke style)
+            safe_line_text = clean_text_for_karaoke(line_text)
             
-            # Professional subtitle settings
-            font_size = 72  # Larger, more readable
-            stroke_width = 6  # Thicker outline for better contrast
-            y_position = "h*0.78"  # Position subtitles in lower portion
+            # Karaoke-style subtitle settings
+            font_size = 64  # Large but not overwhelming
+            y_position = "h*0.82"  # Position in lower area but not too low
             
-            # Add single, clean yellow subtitle with black outline
+            # Bold yellow subtitle with no stroke or background (karaoke style)
             filter_complex += f",drawtext=text='{safe_line_text}':" \
-                             f"fontcolor=#FFD700:" \
+                             f"fontcolor=#FFFF00:" \
                              f"fontsize={font_size}:" \
                              f"x=(w-text_w)/2:" \
                              f"y={y_position}:" \
-                             f"enable='between(t,{line_start},{line_end})':" \
-                             f"borderw={stroke_width}:" \
-                             f"bordercolor=#000000:" \
-                             f"font='Arial Black':" \
-                             f"box=1:" \
-                             f"boxcolor=#000000@0.3:" \
-                             f"boxborderw=8"
+                             f"enable='between(t,{line_start:.3f},{line_end:.3f})':" \
+                             f"font='Arial Black'"
         
         # Step 6: Create ultra high-quality FFmpeg command
         ffmpeg_cmd = [
@@ -973,6 +908,9 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
         ]
         
         logger.info(f"Executing FFmpeg command for clip {clip_idx}")
+        logger.info(f"Subtitle timing debug - Total lines: {len(subtitle_lines)}")
+        for i, line in enumerate(subtitle_lines):
+            logger.info(f"Line {i+1}: '{line['text']}' from {line['start_time']:.3f}s to {line['end_time']:.3f}s")
         
         result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=300)
         
@@ -985,7 +923,7 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             logger.error(f"Clip creation failed or produced invalid file: {temp_clip_path}")
             return False
         
-        logger.info(f"Successfully created clip {clip_idx} with professional subtitles")
+        logger.info(f"Successfully created clip {clip_idx} with karaoke-style subtitles")
         return True
         
     except Exception as e:
@@ -993,16 +931,97 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
         return False
 
 
-def clean_text_for_ffmpeg(text):
-    """Enhanced text cleaning for ffmpeg drawtext filter"""
-    # Remove or replace problematic characters
-    text = text.replace("'", "").replace('"', '').replace(':', '').replace(',', '')
-    text = text.replace('\\', '').replace('/', '').replace('|', '')
-    text = text.replace('[', '').replace(']', '').replace('(', '').replace(')', '')
-    text = text.replace('{', '').replace('}', '').replace('&', 'and')
-    text = text.replace('%', 'percent').replace('$', 'dollar')
-    text = text.replace('=', 'equals').replace('+', 'plus')
-    text = re.sub(r'[^\w\s-]', '', text)  # Keep only alphanumeric, whitespace, and hyphens
+def clean_text_for_karaoke(text):
+    """Simplified text cleaning for karaoke-style subtitles"""
+    # Keep it simple - just handle the most problematic characters
+    text = text.replace("'", "").replace('"', '').replace('\\', '')
+    text = text.replace(':', '').replace(';', '').replace('|', '')
+    text = text.replace('=', '').replace('+', '').replace('*', '')
+    text = re.sub(r'[^\w\s.,!?-]', '', text)  # Keep basic punctuation
     text = re.sub(r'\s+', ' ', text).strip()  # Normalize whitespace
-    text = text.upper()  # Make text uppercase for better visibility
     return text
+
+
+def extract_clip_transcript_from_whisper(transcription_data, clip_start, clip_end):
+    """
+    Enhanced function to extract exact transcript text with precise timing for the clip
+    
+    Args:
+        transcription_data: Whisper transcription with segments and words
+        clip_start (float): Start time of clip in seconds (absolute time from original video)
+        clip_end (float): End time of clip in seconds (absolute time from original video)
+        
+    Returns:
+        dict: Contains transcript text and word-level timing data relative to clip start
+    """
+    try:
+        clip_words = []
+        clip_text = ""
+        
+        logger.info(f"Extracting transcript for clip: {clip_start:.3f}s to {clip_end:.3f}s")
+        
+        if hasattr(transcription_data, 'segments'):
+            for segment in transcription_data.segments:
+                segment_start = segment.start
+                segment_end = segment.end
+                
+                # Check if segment overlaps with our clip timeframe
+                if segment_start < clip_end and segment_end > clip_start:
+                    logger.info(f"Processing segment: {segment_start:.3f}s to {segment_end:.3f}s")
+                    
+                    # If we have word-level data (preferred)
+                    if hasattr(segment, 'words') and segment.words:
+                        for word_data in segment.words:
+                            word_start = word_data.start
+                            word_end = word_data.end
+                            
+                            # Include words that overlap with the clip timeframe
+                            if word_start < clip_end and word_end > clip_start:
+                                # Convert absolute timing to relative timing (clip-based)
+                                relative_start = max(0, word_start - clip_start)
+                                relative_end = min(clip_end - clip_start, word_end - clip_start)
+                                
+                                # Ensure we don't have negative or invalid timing
+                                if relative_end > relative_start:
+                                    word_text = word_data.word.strip()
+                                    
+                                    clip_words.append({
+                                        'word': word_text,
+                                        'start': relative_start,
+                                        'end': relative_end,
+                                        'original_start': word_start,
+                                        'original_end': word_end
+                                    })
+                                    
+                                    clip_text += word_text + " "
+                                    logger.debug(f"Added word: '{word_text}' at {relative_start:.3f}s-{relative_end:.3f}s")
+                    else:
+                        # Fallback to segment text if no word-level data
+                        overlap_start = max(segment_start, clip_start)
+                        overlap_end = min(segment_end, clip_end)
+                        
+                        if overlap_end > overlap_start:
+                            clip_text += segment.text.strip() + " "
+                            logger.info(f"Added segment text (no word timing): '{segment.text.strip()}'")
+        
+        # Sort words by start time to ensure proper order
+        clip_words.sort(key=lambda x: x['start'])
+        
+        result = {
+            'text': clip_text.strip(),
+            'words': clip_words,
+            'word_count': len(clip_words)
+        }
+        
+        logger.info(f"Extracted {len(clip_words)} words for clip")
+        logger.info(f"Clip text preview: '{clip_text.strip()[:100]}...'")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error extracting clip transcript: {str(e)}")
+        return {
+            'text': "Unable to extract transcript",
+            'words': [],
+            'word_count': 0
+        }
