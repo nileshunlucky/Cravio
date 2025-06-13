@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { Link, CloudUpload, Loader2, AlertCircle, Info } from 'lucide-react';
+import { Link,
+  //  CloudUpload, 
+  Loader2, AlertCircle, Info } from 'lucide-react';
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useUser } from '@clerk/nextjs';
@@ -272,66 +274,66 @@ export default function OpusClip() {
   };
 
   // Updated handleFileChange function for better file validation
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Skip if a video is already processed
-    if (videoProcessed) return;
+  // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   // Skip if a video is already processed
+  //   if (videoProcessed) return;
 
-    if (e.target.files?.[0]) {
-      const newFile = e.target.files[0];
+  //   if (e.target.files?.[0]) {
+  //     const newFile = e.target.files[0];
 
-      // Check file size (4000MB = 4000 * 1024 * 1024 bytes)
-      const maxSizeBytes = 4000 * 1024 * 1024;
-      if (newFile.size > maxSizeBytes) {
-        setErrorMessage("File size must be less than 4GB");
-        toast.error("File size must be less than 4GB", {
-          position: "top-right",
-          duration: 3000,
-        });
-        return;
-      }
+  //     // Check file size (4000MB = 4000 * 1024 * 1024 bytes)
+  //     const maxSizeBytes = 4000 * 1024 * 1024;
+  //     if (newFile.size > maxSizeBytes) {
+  //       setErrorMessage("File size must be less than 4GB");
+  //       toast.error("File size must be less than 4GB", {
+  //         position: "top-right",
+  //         duration: 3000,
+  //       });
+  //       return;
+  //     }
 
-      // For video duration check, we need to create a video element
-      const videoElement = document.createElement('video');
-      videoElement.preload = 'metadata';
+  //     // For video duration check, we need to create a video element
+  //     const videoElement = document.createElement('video');
+  //     videoElement.preload = 'metadata';
 
-      videoElement.onloadedmetadata = () => {
-        window.URL.revokeObjectURL(videoElement.src);
+  //     videoElement.onloadedmetadata = () => {
+  //       window.URL.revokeObjectURL(videoElement.src);
 
-        // Check duration (2 hours = 7200 seconds)
-        if (videoElement.duration > 7200) {
-          setErrorMessage("Video duration must be less than 2 hours");
-          toast.error("Video duration must be less than 2 hours", {
-            position: "top-right",
-            duration: 3000,
-          });
-          return;
-        }
+  //       // Check duration (2 hours = 7200 seconds)
+  //       if (videoElement.duration > 7200) {
+  //         setErrorMessage("Video duration must be less than 2 hours");
+  //         toast.error("Video duration must be less than 2 hours", {
+  //           position: "top-right",
+  //           duration: 3000,
+  //         });
+  //         return;
+  //       }
 
-        // If all checks pass, set the file
-        setFile(newFile);
+  //       // If all checks pass, set the file
+  //       setFile(newFile);
 
-        // Clear any previous errors
-        setErrorMessage(null);
+  //       // Clear any previous errors
+  //       setErrorMessage(null);
 
-        // Process the file upload immediately
-        setTimeout(() => {
-          if (!processingRef.current) {
-            handleProcess(null, newFile);
-          }
-        }, 100);
-      };
+  //       // Process the file upload immediately
+  //       setTimeout(() => {
+  //         if (!processingRef.current) {
+  //           handleProcess(null, newFile);
+  //         }
+  //       }, 100);
+  //     };
 
-      videoElement.onerror = () => {
-        setErrorMessage("Cannot read video metadata. Please try another file.");
-        toast.error("Cannot read video metadata", {
-          position: "top-right",
-          duration: 3000,
-        });
-      };
+  //     videoElement.onerror = () => {
+  //       setErrorMessage("Cannot read video metadata. Please try another file.");
+  //       toast.error("Cannot read video metadata", {
+  //         position: "top-right",
+  //         duration: 3000,
+  //       });
+  //     };
 
-      videoElement.src = URL.createObjectURL(newFile);
-    }
-  };
+  //     videoElement.src = URL.createObjectURL(newFile);
+  //   }
+  // };
 
   // Updated handleProcess function with improved task handling
   const handleProcess = async (ytLink: string | null = null, uploadedFile: File | null = null) => {
