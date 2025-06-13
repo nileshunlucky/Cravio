@@ -259,7 +259,7 @@ const Offer = () => {
                             className="w-full"
                         >
                             <Button
-                                className="w-full bg-gradient-to-r from-zinc-200 to-zinc-400 hover:to-zinc-600 text-black px-8 py-3 text-lg font-semibold rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
+                                className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-8 py-3 text-lg font-semibold rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
                                 onClick={handleSubmit}
                                 disabled={loading}
                             >

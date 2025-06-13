@@ -212,10 +212,10 @@ const Plans: React.FC = () => {
           >
             <Card className={cn(
               "relative overflow-hidden h-full",
-              plan.highlight ? "border-2 border-blue-500  shadow-xl" : ""
+              plan.highlight ? "border-2 border-red-500  shadow-xl" : ""
             )}>
               {plan.highlight && (
-                <div className="absolute top-0 right-0 bg-blue-500 text-white px-3 py-1 rounded-bl-lg text-sm font-medium">
+                <div className="absolute top-0 right-0 bg-gradient-to-r from-red-600 to-yellow-500 text-white px-3 py-1 rounded-bl-lg text-sm font-medium">
                   MOST POPULAR
                 </div>
               )}
@@ -224,7 +224,7 @@ const Plans: React.FC = () => {
               )}>
                 <CardTitle className={cn(
                   "text-xl text-center",
-                  plan.highlight ? "text-2xl text-blue-600" : ""
+                  plan.highlight ? "text-2xl text-yellow-500" : ""
                 )}>
                   {plan.name}
                 </CardTitle>
@@ -251,7 +251,7 @@ const Plans: React.FC = () => {
                     <li className="flex items-center">
                       <Check className={cn(
                         "h-5 w-5 mr-2 flex-shrink-0",
-                        plan.highlight ? "text-blue-500" : "text-green-500"
+                        plan.highlight ? "text-orange-500" : "text-yellow-500"
                       )} />
                       <span>{feature}</span>
                     </li>
@@ -282,7 +282,7 @@ const Plans: React.FC = () => {
                   className={cn(
                     "w-full flex items-center justify-center gap-2",
                     plan.highlight
-                      ? "bg-blue-500 hover:bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/20 text-lg py-6"
+                      ? "bg-gradient-to-r from-red-600 to-yellow-500 hover:from-red-500 hover:to-yellow-400 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/20 text-lg py-6"
                       : ""
                   )}
                 >
@@ -337,7 +337,7 @@ const Plans: React.FC = () => {
             <AccordionItem key={index} value={`item-${index}`}>
               <AccordionTrigger className="text-left">
                 <div className="flex items-center">
-                  <HelpCircle className="h-5 w-5 mr-2 text-blue-500" />
+                  <HelpCircle className="h-5 w-5 mr-2 bg-gradient-to-r from-red-600 to-yellow-500 text-transparent bg-clip-text" />
                   {faq.question}
                 </div>
               </AccordionTrigger>

@@ -238,6 +238,9 @@ class OpusClipRequest(BaseModel):
     thumbnail: str  
     creditUsage: int
     email: str 
+    duration: str
+    aspectRatio: str
+    includeMoments: str
 
 @router.post("/opusclip")
 async def opusclip(request: OpusClipRequest):
@@ -274,7 +277,10 @@ async def opusclip(request: OpusClipRequest):
         task = process_opusclip.delay(
             s3_video_url=request.videoUrl,
             s3_thumbnail_url=request.thumbnail,
-            user_email=request.email
+            user_email=request.email,
+            duration=request.duration,
+            aspect_ratio=request.aspectRatio,
+            include_moments=request.includeMoments
         )
         
         return JSONResponse(

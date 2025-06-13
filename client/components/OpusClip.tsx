@@ -44,6 +44,9 @@ export default function OpusClip() {
   const processingRef = useRef<boolean>(false);
   const initialRenderRef = useRef<boolean>(true);
   const [showMobileTip, setShowMobileTip] = useState(false)
+  const [duration, setDuration] = useState<string>('30 sec');
+  const [aspectRatio, setAspectRatio] = useState<string>('9:16');
+  const [includeMoments, setIncludeMoments] = useState<string>('valuable engaging moments');
 
   const toggleMobileTip = () => {
     // Only show tooltip on small screens
@@ -591,7 +594,10 @@ export default function OpusClip() {
           videoUrl,
           thumbnail,
           creditUsage,
-          email
+          email,
+          duration,
+          aspectRatio,
+          includeMoments,
         }),
       })
 
@@ -735,7 +741,7 @@ export default function OpusClip() {
             </motion.div>
           )}
 
-          <div className={cn(
+          {/* <div className={cn(
             "inline-block rounded-xl hover:bg-zinc-800 hover:text-white text-zinc-400 transition-colors duration-200",
             videoProcessed && "opacity-50 pointer-events-none"
           )}>
@@ -760,7 +766,7 @@ export default function OpusClip() {
               <CloudUpload className="w-4 h-4 md:w-5 md:h-5" />
               <span>{file ? file.name : 'Upload File'}</span>
             </motion.label>
-          </div>
+          </div> */}
 
           <motion.div
             whileHover={isSubmitEnabled && !isLoading ? { scale: 1.02 } : {}}
@@ -781,7 +787,7 @@ export default function OpusClip() {
               {isLoading ? (
                 <div className="flex items-center justify-center gap-2">
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Processing{taskProgress > 0 && ` (${taskProgress}%)`}</span>
+                  <span className='text-green-500'>Processing{taskProgress > 0 && ` (${taskProgress}%)`}</span>
                 </div>
               ) : (
                 "Get clips in 1 click"
@@ -839,8 +845,34 @@ export default function OpusClip() {
               </div>
             </div>
 
-            <div className="p-4 items-center justify-center gap-2 text-sm text-zinc-400 text-center">
+            <div className="p-1 items-center justify-center gap-2 text-sm text-zinc-400 text-center">
               <p>Using video you don’t own may violate copyright laws. By continuing, you confirm this is your own original content.</p>
+            </div>
+
+            {/* Customization options */}
+            <div className="p-2 bg-zinc-800 text-zinc-400 flex flex-col gap-2 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="">
+                  <select onChange={(e) => setDuration(e.target.value)} name="duration" id="duration">
+                    <option value="30 sec">30s</option>
+                    <option value="45 sec">45s</option>
+                    <option value="60 sec">60s</option>
+                  </select>
+                </div>
+                <div className="">
+                   <select onChange={(e) => setAspectRatio(e.target.value)} name="aspect ratio" id="aspect ratio">
+                    <option value="9:16">9:16</option>
+                    <option value="1:1">1:1</option>
+                    <option value="16:9">16:9</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <p>Include specific moments</p>
+                <div className="">
+                  <input onChange={(e) => setIncludeMoments(e.target.value)} className="w-full focus:outline-none p-1 rounded-md" type='text' placeholder='Example: find some hilarious moments'/>
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>

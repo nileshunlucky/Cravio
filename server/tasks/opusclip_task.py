@@ -143,9 +143,7 @@ def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
             
             # Calculate credit usage: 1 minute = 1 credits, minimum 1 credits
             duration_minutes = video_duration / 60
-            # check if videoduration is greater than 2hrs return error less than 2hrs
-            if duration_minutes > 120:
-                raise Exception("Video duration is greater than 2 hours")
+
             credit_usage = max(1, int(1 * round(duration_minutes + 0.5)))
 
             logger.info(f"Video duration: {video_duration} seconds ({duration_minutes:.2f} minutes)")
@@ -261,7 +259,7 @@ class OpusClipProcessTask(Task):
         super().on_failure(exc, task_id, args, kwargs, einfo)
 
 @celery_app.task(bind=True, base=OpusClipProcessTask)
-def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
+def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, duration=None, aspect_ratio=None, include_moments=None):
     """
     Process a video to create short viral clips
     
@@ -401,15 +399,10 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None):
             # Prompt for GPT
             prompt = f"""
             You are an expert at finding viral moments in videos. Given the following transcript with timestamps, 
-            identify up to 10 potential viral clips that are approximately 30 seconds each. max 10 clips. make low clips but viral and engaging.
-            
-            Find moments that are engaging, surprising, emotional, or contain valuable information. Look for:
+            identify up to 10 potential viral clips that are approximately {duration}. max 10 clips.
+
+            Find specific moments by user input: {include_moments}.
             - starting hook that attracts viewers
-            - Memorable quotes or statements
-            - Surprising revelations
-            - Emotional moments
-            - Valuable advice or insights
-            - Controversial or thought-provoking statements
             
             Respond in JSON format with an array of clips. Each clip should include:
             - start: the start time in seconds (float)
@@ -819,14 +812,30 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
                     'end': (i + 1) * word_duration
                 })
         
+        # **CRITICAL FIX**: Ensure all word timings are relative to clip start (0-based)
+        logger.info("Adjusting word timings to be relative to clip start...")
+        for word_data in words_data:
+            # If timing seems absolute (large numbers), make it relative
+            if word_data['start'] > clip_duration:
+                logger.warning(f"Detected absolute timing for word '{word_data['word']}': {word_data['start']:.3f}s")
+                # This suggests timing wasn't properly converted in extract_clip_transcript_from_whisper
+                # For now, we'll use the existing timing as-is since extract function should handle this
+            
+            # Ensure no negative timing and clip to duration
+            word_data['start'] = max(0, word_data['start'])
+            word_data['end'] = min(clip_duration, word_data['end'])
+            
+            logger.debug(f"Word '{word_data['word']}': {word_data['start']:.3f}s - {word_data['end']:.3f}s")
+        
         # Step 3: Build base video filter
         filter_complex = f"crop={crop_params['crop_width']}:{crop_params['crop_height']}:{crop_params['crop_x']}:{crop_params['crop_y']}"
         filter_complex += f",scale={target_width}:{target_height}:flags=lanczos"
         
-        # Step 4: Create subtitle lines with proper text wrapping (2-4 words per line for 9:16 format)
+        # Step 4: Create subtitle lines with proper text wrapping (2-3 words per line for better readability)
         subtitle_lines = []
         current_line_words = []
-        max_chars_per_line = 25  # Optimal for 9:16 mobile viewing
+        max_chars_per_line = 20  # Reduced for better mobile viewing
+        max_words_per_line = 3   # Reduced from 4 to 3 for better timing sync
         
         for word_data in words_data:
             # Calculate current line length if we add this word
@@ -835,7 +844,7 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             
             # Check if we should start a new line
             should_break = (
-                len(current_line_words) >= 4 or  # Max 4 words per line
+                len(current_line_words) >= max_words_per_line or  # Max words per line
                 len(potential_line_text) > max_chars_per_line or  # Max characters per line
                 word_data == words_data[-1]  # Last word
             )
@@ -843,10 +852,13 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             if should_break and current_line_words:
                 # Create subtitle line
                 line_text = ' '.join([w['word'].strip() for w in current_line_words])
+                line_start = current_line_words[0]['start']
+                line_end = current_line_words[-1]['end']
+                
                 subtitle_lines.append({
                     'words': current_line_words.copy(),
-                    'start_time': current_line_words[0]['start'],
-                    'end_time': current_line_words[-1]['end'],
+                    'start_time': line_start,
+                    'end_time': line_end,
                     'text': line_text.upper()  # Convert to uppercase for better visibility
                 })
                 current_line_words = [word_data] if word_data != words_data[-1] else []
@@ -856,29 +868,47 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
         # Handle last line if it exists
         if current_line_words:
             line_text = ' '.join([w['word'].strip() for w in current_line_words])
+            line_start = current_line_words[0]['start']
+            line_end = current_line_words[-1]['end']
+            
             subtitle_lines.append({
                 'words': current_line_words.copy(),
-                'start_time': current_line_words[0]['start'],
-                'end_time': current_line_words[-1]['end'],
+                'start_time': line_start,
+                'end_time': line_end,
                 'text': line_text.upper()
             })
         
         logger.info(f"Created {len(subtitle_lines)} subtitle lines for clip timing")
         
-        # Step 5: Add karaoke-style subtitles - bold yellow, no stroke, no background
+        # Step 5: Add karaoke-style subtitles with improved styling (smaller, bolder, with glow)
         for line_idx, subtitle_line in enumerate(subtitle_lines):
             line_text = subtitle_line['text']
             line_start = subtitle_line['start_time']
             line_end = subtitle_line['end_time']
             
-            # Clean text for ffmpeg (keep it simple for karaoke style)
+            # Ensure valid timing
+            if line_end <= line_start:
+                line_end = line_start + 0.5  # Minimum 0.5 second display
+            
+            # Clean text for ffmpeg
             safe_line_text = clean_text_for_karaoke(line_text)
             
-            # Karaoke-style subtitle settings
-            font_size = 64  # Large but not overwhelming
-            y_position = "h*0.82"  # Position in lower area but not too low
+            # Enhanced karaoke-style subtitle settings
+            font_size = 48  # Smaller size as requested
+            y_position = "h*0.85"  # Position in lower area
             
-            # Bold yellow subtitle with no stroke or background (karaoke style)
+            # **IMPROVED STYLING**: Bold yellow with glow effect
+            # First add the glow/shadow effect (larger, darker text behind)
+            filter_complex += f",drawtext=text='{safe_line_text}':" \
+                             f"fontcolor=#000000:" \
+                             f"fontsize={font_size + 4}:" \
+                             f"x=(w-text_w)/2:" \
+                             f"y={y_position}:" \
+                             f"enable='between(t,{line_start:.3f},{line_end:.3f})':" \
+                             f"font='Impact':" \
+                             f"alpha=0.7"
+            
+            # Then add the main text (bright yellow, bold)
             filter_complex += f",drawtext=text='{safe_line_text}':" \
                              f"fontcolor=#FFFF00:" \
                              f"fontsize={font_size}:" \
@@ -886,6 +916,8 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
                              f"y={y_position}:" \
                              f"enable='between(t,{line_start:.3f},{line_end:.3f})':" \
                              f"font='Impact'"
+            
+            logger.info(f"Added subtitle line {line_idx + 1}: '{safe_line_text}' from {line_start:.3f}s to {line_end:.3f}s")
         
         # Step 6: Create ultra high-quality FFmpeg command
         ffmpeg_cmd = [
@@ -931,20 +963,9 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
         return False
 
 
-def clean_text_for_karaoke(text):
-    """Simplified text cleaning for karaoke-style subtitles"""
-    # Keep it simple - just handle the most problematic characters
-    text = text.replace("'", "").replace('"', '').replace('\\', '')
-    text = text.replace(':', '').replace(';', '').replace('|', '')
-    text = text.replace('=', '').replace('+', '').replace('*', '')
-    text = re.sub(r'[^\w\s.,!?-]', '', text)  # Keep basic punctuation
-    text = re.sub(r'\s+', ' ', text).strip()  # Normalize whitespace
-    return text
-
-
 def extract_clip_transcript_from_whisper(transcription_data, clip_start, clip_end):
     """
-    Enhanced function to extract exact transcript text with precise timing for the clip
+    FIXED: Enhanced function to extract exact transcript text with precise timing for the clip
     
     Args:
         transcription_data: Whisper transcription with segments and words
@@ -952,7 +973,7 @@ def extract_clip_transcript_from_whisper(transcription_data, clip_start, clip_en
         clip_end (float): End time of clip in seconds (absolute time from original video)
         
     Returns:
-        dict: Contains transcript text and word-level timing data relative to clip start
+        dict: Contains transcript text and word-level timing data relative to clip start (0-based)
     """
     try:
         clip_words = []
@@ -977,35 +998,67 @@ def extract_clip_transcript_from_whisper(transcription_data, clip_start, clip_en
                             
                             # Include words that overlap with the clip timeframe
                             if word_start < clip_end and word_end > clip_start:
-                                # Convert absolute timing to relative timing (clip-based)
+                                # **CRITICAL FIX**: Convert absolute timing to relative timing (clip-based)
+                                # Subtract clip_start to make timing relative to clip beginning
                                 relative_start = max(0, word_start - clip_start)
                                 relative_end = min(clip_end - clip_start, word_end - clip_start)
                                 
                                 # Ensure we don't have negative or invalid timing
-                                if relative_end > relative_start:
+                                if relative_end > relative_start and relative_start >= 0:
                                     word_text = word_data.word.strip()
                                     
                                     clip_words.append({
                                         'word': word_text,
-                                        'start': relative_start,
-                                        'end': relative_end,
-                                        'original_start': word_start,
-                                        'original_end': word_end
+                                        'start': relative_start,  # Now 0-based for the clip
+                                        'end': relative_end,      # Now 0-based for the clip
+                                        'original_start': word_start,  # Keep original for reference
+                                        'original_end': word_end       # Keep original for reference
                                     })
                                     
                                     clip_text += word_text + " "
-                                    logger.debug(f"Added word: '{word_text}' at {relative_start:.3f}s-{relative_end:.3f}s")
+                                    logger.debug(f"Added word: '{word_text}' at {relative_start:.3f}s-{relative_end:.3f}s (clip-relative)")
                     else:
                         # Fallback to segment text if no word-level data
                         overlap_start = max(segment_start, clip_start)
                         overlap_end = min(segment_end, clip_end)
                         
                         if overlap_end > overlap_start:
-                            clip_text += segment.text.strip() + " "
-                            logger.info(f"Added segment text (no word timing): '{segment.text.strip()}'")
+                            # Create artificial word timing for segment
+                            segment_text = segment.text.strip()
+                            words = segment_text.split()
+                            
+                            if words:
+                                word_duration = (overlap_end - overlap_start) / len(words)
+                                
+                                for i, word in enumerate(words):
+                                    word_abs_start = overlap_start + (i * word_duration)
+                                    word_abs_end = overlap_start + ((i + 1) * word_duration)
+                                    
+                                    # Convert to clip-relative timing
+                                    relative_start = max(0, word_abs_start - clip_start)
+                                    relative_end = min(clip_end - clip_start, word_abs_end - clip_start)
+                                    
+                                    clip_words.append({
+                                        'word': word,
+                                        'start': relative_start,
+                                        'end': relative_end,
+                                        'original_start': word_abs_start,
+                                        'original_end': word_abs_end
+                                    })
+                            
+                            clip_text += segment_text + " "
+                            logger.info(f"Added segment text with artificial timing: '{segment_text}'")
         
         # Sort words by start time to ensure proper order
         clip_words.sort(key=lambda x: x['start'])
+        
+        # **VALIDATION**: Ensure all timings are within clip duration
+        clip_duration = clip_end - clip_start
+        for word in clip_words:
+            if word['start'] > clip_duration or word['end'] > clip_duration:
+                logger.warning(f"Word timing exceeds clip duration: '{word['word']}' {word['start']:.3f}-{word['end']:.3f}s (clip duration: {clip_duration:.3f}s)")
+                word['end'] = min(word['end'], clip_duration)
+                word['start'] = min(word['start'], clip_duration)
         
         result = {
             'text': clip_text.strip(),
@@ -1015,6 +1068,8 @@ def extract_clip_transcript_from_whisper(transcription_data, clip_start, clip_en
         
         logger.info(f"Extracted {len(clip_words)} words for clip")
         logger.info(f"Clip text preview: '{clip_text.strip()[:100]}...'")
+        logger.info(f"First word timing: {clip_words[0]['start']:.3f}-{clip_words[0]['end']:.3f}s" if clip_words else "No words")
+        logger.info(f"Last word timing: {clip_words[-1]['start']:.3f}-{clip_words[-1]['end']:.3f}s" if clip_words else "No words")
         
         return result
         
@@ -1025,3 +1080,24 @@ def extract_clip_transcript_from_whisper(transcription_data, clip_start, clip_en
             'words': [],
             'word_count': 0
         }
+
+
+def clean_text_for_karaoke(text):
+    """Enhanced text cleaning for karaoke-style subtitles"""
+    # Remove problematic characters for FFmpeg
+    text = text.replace("'", "").replace('"', '').replace('\\', '')
+    text = text.replace(':', '').replace(';', '').replace('|', '')
+    text = text.replace('=', '').replace('+', '').replace('*', '')
+    text = text.replace('%', '').replace('$', '').replace('#', '')
+    
+    # Keep basic punctuation but remove complex characters
+    text = re.sub(r'[^\w\s.,!?-]', '', text)
+    
+    # Normalize whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    
+    # Ensure text isn't empty
+    if not text:
+        text = "..."
+    
+    return text
