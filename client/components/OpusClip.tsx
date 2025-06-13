@@ -9,6 +9,13 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useUser } from '@clerk/nextjs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select"
 
 // Define TypeScript interfaces
 interface TaskResult {
@@ -852,27 +859,40 @@ export default function OpusClip() {
             </div>
 
             {/* Customization options */}
-            <div className="p-2 bg-zinc-800 text-zinc-400 flex flex-col gap-2 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="">
-                  <select onChange={(e) => setDuration(e.target.value)} name="duration" id="duration">
-                    <option value="30 sec">30s</option>
-                    <option value="45 sec">45s</option>
-                    <option value="60 sec">60s</option>
-                  </select>
+            <div className="p-2 bg-zinc-900 text-zinc-400 flex flex-col gap-2 rounded-xl">
+              <div className="flex items-center gap-5">
+                <div className="flex items-center gap-2">
+                  <p>clip duration</p>
+                  <Select value={duration} onValueChange={setDuration}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="30 sec">30s</SelectItem>
+            <SelectItem value="45 sec">45s</SelectItem>
+            <SelectItem value="60 sec">60s</SelectItem>
+          </SelectContent>
+        </Select>
                 </div>
-                <div className="">
-                   <select onChange={(e) => setAspectRatio(e.target.value)} name="aspect ratio" id="aspect ratio">
-                    <option value="9:16">9:16</option>
-                    <option value="1:1">1:1</option>
-                    <option value="16:9">16:9</option>
-                  </select>
+                <div className="flex items-center gap-2">
+                <p>aspect ratio</p>
+
+                   <Select value={aspectRatio} onValueChange={setAspectRatio}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="9:16">9:16</SelectItem>
+            <SelectItem value="1:1">1:1</SelectItem>
+            <SelectItem value="16:9">16:9</SelectItem>
+          </SelectContent>
+        </Select>
                 </div>
               </div>
-              <div className="flex flex-col items-center gap-2">
+              <div className="flex flex-col w-full">
                 <p>Include specific moments</p>
-                <div className="">
-                  <input onChange={(e) => setIncludeMoments(e.target.value)} className="w-full focus:outline-none p-1 rounded-md" type='text' placeholder='Example: find some hilarious moments'/>
+                <div className="w-full">
+                  <input onChange={(e) => setIncludeMoments(e.target.value)} className="w-full focus:outline-none p-1 rounded-xl border border-zinc-600" type='text' placeholder='Example: find some hilarious moments'/>
                 </div>
               </div>
             </div>
