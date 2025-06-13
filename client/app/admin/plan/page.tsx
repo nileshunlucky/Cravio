@@ -224,7 +224,7 @@ const Plans: React.FC = () => {
               )}>
                 <CardTitle className={cn(
                   "text-xl text-center",
-                  plan.highlight ? "text-2xl text-yellow-500" : ""
+                  plan.highlight ? "text-2xl bg-gradient-to-r from-red-600 to-yellow-500 bg-clip-text text-transparent" : ""
                 )}>
                   {plan.name}
                 </CardTitle>
@@ -337,7 +337,7 @@ const Plans: React.FC = () => {
             <AccordionItem key={index} value={`item-${index}`}>
               <AccordionTrigger className="text-left">
                 <div className="flex items-center">
-                  <HelpCircle className="h-5 w-5 mr-2 bg-gradient-to-r from-red-600 to-yellow-500 text-transparent bg-clip-text" />
+                  <HelpCircle className="h-5 w-5 mr-2 text-zinc-400" />
                   {faq.question}
                 </div>
               </AccordionTrigger>
