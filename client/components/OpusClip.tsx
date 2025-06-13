@@ -863,7 +863,7 @@ export default function OpusClip() {
               <div className="flex items-center gap-5">
                 <div className="flex items-center gap-2">
                   <p>clip duration</p>
-                  <Select value={duration} onValueChange={setDuration}>
+                  <Select disabled={isLoading} value={duration} onValueChange={setDuration}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -877,7 +877,7 @@ export default function OpusClip() {
                 <div className="flex items-center gap-2">
                 <p>aspect ratio</p>
 
-                   <Select value={aspectRatio} onValueChange={setAspectRatio}>
+                   <Select disabled={isLoading} value={aspectRatio} onValueChange={setAspectRatio}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -892,7 +892,7 @@ export default function OpusClip() {
               <div className="flex flex-col gap-2 w-full">
                 <p>Include specific moments</p>
                 <div className="w-full">
-                  <input onChange={(e) => setIncludeMoments(e.target.value)} className="w-full focus:outline-none p-2 rounded border border-zinc-500 text-white" type='text' placeholder='Example: find some hilarious moments'/>
+                  <input disabled={isLoading} onChange={(e) => setIncludeMoments(e.target.value)} className="w-full focus:outline-none p-2 rounded border border-zinc-500 text-white" type='text' placeholder='Example: find some hilarious moments'/>
                 </div>
               </div>
             </div>

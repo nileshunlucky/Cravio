@@ -894,19 +894,12 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             safe_line_text = clean_text_for_karaoke(line_text)
             
             # Enhanced karaoke-style subtitle settings
-            font_size = 48  # Smaller size as requested
+            font_size = 50  # Smaller size as requested
             y_position = "h*0.85"  # Position in lower area
-            
-            # **IMPROVED STYLING**: Bold yellow with glow effect
-            # First add the glow/shadow effect (larger, darker text behind)
-            filter_complex += f",drawtext=text='{safe_line_text}':" \
-                             f"fontcolor=#000000:" \
-                             f"fontsize={font_size + 4}:" \
-                             f"x=(w-text_w)/2:" \
-                             f"y={y_position}:" \
-                             f"enable='between(t,{line_start:.3f},{line_end:.3f})':" \
-                             f"font='Impact':" \
-                             f"alpha=0.7"
+
+            from pathlib import Path
+
+            font_path = Path("assets/Roboto-Bold.ttf").resolve()
             
             # Then add the main text (bright yellow, bold)
             filter_complex += f",drawtext=text='{safe_line_text}':" \
@@ -915,7 +908,7 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
                              f"x=(w-text_w)/2:" \
                              f"y={y_position}:" \
                              f"enable='between(t,{line_start:.3f},{line_end:.3f})':" \
-                             f"font='Impact'"
+                             f"fontfile='{font_path}':" 
             
             logger.info(f"Added subtitle line {line_idx + 1}: '{safe_line_text}' from {line_start:.3f}s to {line_end:.3f}s")
         
