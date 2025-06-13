@@ -796,7 +796,7 @@ export default function OpusClip() {
               {isLoading ? (
                 <div className="flex items-center justify-center gap-2">
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  <span className='text-green-500'>Processing{taskProgress > 0 && ` (${taskProgress}%)`}</span>
+                  <span className='text-white'>Processing{taskProgress > 0 && ` (${taskProgress}%)`}</span>
                 </div>
               ) : (
                 "Get clips in 1 click"
@@ -859,7 +859,7 @@ export default function OpusClip() {
             </div>
 
             {/* Customization options */}
-            <div className="p-2 bg-zinc-900 text-zinc-400 flex flex-col gap-2 rounded-xl">
+            <div className="p-3 bg-zinc-950 text-zinc-400 flex flex-col gap-4 rounded-xl mt-3">
               <div className="flex items-center gap-5">
                 <div className="flex items-center gap-2">
                   <p>clip duration</p>
@@ -889,10 +889,10 @@ export default function OpusClip() {
         </Select>
                 </div>
               </div>
-              <div className="flex flex-col w-full">
+              <div className="flex flex-col gap-2 w-full">
                 <p>Include specific moments</p>
                 <div className="w-full">
-                  <input onChange={(e) => setIncludeMoments(e.target.value)} className="w-full focus:outline-none p-1 rounded-xl border border-zinc-600" type='text' placeholder='Example: find some hilarious moments'/>
+                  <input onChange={(e) => setIncludeMoments(e.target.value)} className="w-full focus:outline-none p-2 rounded border border-zinc-500 text-white" type='text' placeholder='Example: find some hilarious moments'/>
                 </div>
               </div>
             </div>
