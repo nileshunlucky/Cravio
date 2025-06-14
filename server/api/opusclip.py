@@ -241,6 +241,7 @@ class OpusClipRequest(BaseModel):
     duration: str
     aspectRatio: str
     includeMoments: str
+    subtitleColor: str
 
 @router.post("/opusclip")
 async def opusclip(request: OpusClipRequest):
@@ -280,7 +281,8 @@ async def opusclip(request: OpusClipRequest):
             user_email=request.email,
             duration=request.duration,
             aspect_ratio=request.aspectRatio,
-            include_moments=request.includeMoments
+            include_moments=request.includeMoments,
+            subtitle_color=request.subtitleColor
         )
         
         return JSONResponse(

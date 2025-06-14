@@ -18,6 +18,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select"
+import { Card } from "@/components/ui/card"
 
 // Define TypeScript interfaces
 interface TaskResult {
@@ -610,6 +611,7 @@ export default function OpusClip() {
           duration,
           aspectRatio,
           includeMoments,
+          subtitleColor
         }),
       })
 
@@ -907,27 +909,28 @@ export default function OpusClip() {
             </div>
 
             <div className={`p-3 bg-zinc-900 text-zinc-400 flex flex-col gap-4 rounded-xl mt-3 ${isLoading ? "opacity-50" : ""}`}>
-              <div className="flex gap-4 justify-between w-full">
+              <div className="flex gap-4 flex-wrap justify-start">
                 {videoOptions.map((option) => (
-                  <Button
+                  <Card
                     key={option.value}
                     onClick={() => !isLoading && setSubtitleColor(option.value)}
-                    disabled={isLoading}
-                    className={`rounded-xl overflow-hidden border border-zinc-600 transition-all flex flex-col gap-2 items-center w-24 sm:w-28 md:w-32 
-          ${subtitleColor === option.value ? "border-white" : ""}
-          ${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                    className={`cursor-pointer transition-all w-24 sm:w-28 md:w-32 flex flex-col items-center border-2 rounded-xl overflow-hidden 
+          ${subtitleColor === option.value ? "border-white" : "border-zinc-600 hover:border-white"} 
+          ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
-                    <video
-                      src={option.src}
-                      muted
-                      autoPlay
-                      loop
-                      className="h-full w-full object-contain"
-                    />
-                    <div className="text-center text-xs py-1 text-zinc-300 capitalize">
-                      <p>{option.label}</p>
+                    <div className="w-full aspect-[9/16]">
+                      <video
+                        src={option.src}
+                        muted
+                        autoPlay
+                        loop
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                  </Button>
+                    <div className="text-center text-xs py-2 text-zinc-300 capitalize w-full">
+                      {option.label}
+                    </div>
+                  </Card>
                 ))}
               </div>
             </div>

@@ -259,7 +259,7 @@ class OpusClipProcessTask(Task):
         super().on_failure(exc, task_id, args, kwargs, einfo)
 
 @celery_app.task(bind=True, base=OpusClipProcessTask)
-def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, duration=None, aspect_ratio=None, include_moments=None):
+def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, duration=None, aspect_ratio=None, include_moments=None, subtitle_color=None):
     """
     Process a video to create short viral clips
     
@@ -524,7 +524,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, dura
 
                 success = create_ultra_high_quality_clip_with_accurate_subtitles(
                     temp_raw_clip, temp_clip_path, clip_transcript_data, 
-                    clip_duration, unique_id, i
+                    clip_duration, unique_id, i, subtitle_color
                 )
 
                 if not success:
@@ -770,7 +770,7 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, target_
         'crop_height': target_height
     }
 
-def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, target_width=1080, target_height=1920):
+def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, target_width=1080, target_height=1920, subtitle_color=None):
     """
     Create ultra high-quality 9:16 clip with accurate karaoke-style subtitles
     """
@@ -903,14 +903,12 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
 
             font_path = Path("assets/Roboto-Bold.ttf").resolve()
 
-            subtitleColor = "green"  # Default color, can be changed dynamically
-
             # Set subtitle color dynamically
-            if subtitleColor == "yellow":
+            if subtitle_color == "yellow":
                 font_color = "#FFFF00"
-            elif subtitleColor == "green":
+            elif subtitle_color == "green":
                 font_color = "#00FF00"
-            elif subtitleColor == "white":
+            elif subtitle_color == "white":
                 font_color = "#FFFFFF"
             else:
                 font_color = "#FFFFFF"  # fallback default
