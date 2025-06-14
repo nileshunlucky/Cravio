@@ -718,7 +718,7 @@ def detect_faces_in_video(video_path, num_frames=5):
         logger.error(f"Error in face detection: {str(e)}")
         return None
 
-def calculate_crop_parameters(video_width, video_height, face_data=None, aspect_ratio="9:16"):
+def calculate_crop_parameters(video_width, video_height, aspect_ratio, face_data=None):
     """
     Calculate optimal crop parameters for different aspect ratios
     
@@ -818,7 +818,7 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, aspect_
     }
 
 
-def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, subtitle_color, aspect_ratio="9:16"):
+def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, subtitle_color, aspect_ratio):
     """
     Create ultra high-quality clip with accurate karaoke-style subtitles for different aspect ratios
     """
@@ -964,11 +964,11 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             
             # FIXED: Font size based on aspect ratio
             if aspect_ratio == "16:9":
-                font_size = 48  # Smaller for landscape
+                font_size = 45  # Smaller for landscape
             elif aspect_ratio == "1:1":
-                font_size = 56  # Medium for square
+                font_size = 50  # Medium for square
             else:  # 9:16
-                font_size = 64  # Larger for portrait
+                font_size = 50  # Larger for portrait
             
             from pathlib import Path
             font_path = Path("assets/Roboto-Bold.ttf").resolve()
