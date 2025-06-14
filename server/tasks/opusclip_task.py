@@ -524,7 +524,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, dura
 
                 success = create_ultra_high_quality_clip_with_accurate_subtitles(
                     temp_raw_clip, temp_clip_path, clip_transcript_data, 
-                    clip_duration, unique_id, i, subtitle_color
+                    clip_duration, unique_id, i, subtitle_color, aspect_ratio
                 )
 
                 if not success:
@@ -718,19 +718,29 @@ def detect_faces_in_video(video_path, num_frames=5):
         logger.error(f"Error in face detection: {str(e)}")
         return None
 
-def calculate_crop_parameters(video_width, video_height, face_data=None, target_aspect_ratio=9/16):
+def calculate_crop_parameters(video_width, video_height, face_data=None, aspect_ratio="9:16"):
     """
-    Calculate optimal crop parameters for 9:16 aspect ratio
+    Calculate optimal crop parameters for different aspect ratios
     
     Args:
         video_width (int): Original video width
         video_height (int): Original video height
         face_data (dict): Face detection results
-        target_aspect_ratio (float): Target aspect ratio (9:16 = 0.5625)
+        aspect_ratio (str): Target aspect ratio ("9:16", "1:1", "16:9")
         
     Returns:
         dict: Crop parameters for ffmpeg
     """
+    # Convert aspect ratio string to float
+    if aspect_ratio == "9:16":
+        target_aspect_ratio = 9/16  # 0.5625
+    elif aspect_ratio == "1:1":
+        target_aspect_ratio = 1.0   # 1.0
+    elif aspect_ratio == "16:9":
+        target_aspect_ratio = 16/9  # 1.7778
+    else:
+        target_aspect_ratio = 9/16  # default to 9:16
+    
     current_aspect_ratio = video_width / video_height
     
     if current_aspect_ratio > target_aspect_ratio:
@@ -770,12 +780,22 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, target_
         'crop_height': target_height 
     }
 
-def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, subtitle_color, target_width=1080, target_height=1920):
+def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, subtitle_color,  aspect_ratio="9:16"):
     """
     Create ultra high-quality 9:16 clip with accurate karaoke-style subtitles
     """
     try:
         logger.info(f"Processing clip {clip_idx} with karaoke-style subtitles")
+
+        # Add target dimensions based on aspect ratio
+        if aspect_ratio == "9:16":
+            target_width, target_height = 1080, 1920
+        elif aspect_ratio == "1:1":
+            target_width, target_height = 1080, 1080
+        elif aspect_ratio == "16:9":
+            target_width, target_height = 1920, 1080
+        else:
+            target_width, target_height = 1080, 1920
         
         # Step 1: Face detection and crop calculation (keeping existing logic)
         face_data = detect_faces_in_video(temp_raw_clip)
