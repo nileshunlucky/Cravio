@@ -894,16 +894,28 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             safe_line_text = clean_text_for_karaoke(line_text)
             
             # Enhanced karaoke-style subtitle settings
-            font_size = 50  # Smaller size as requested
-            y_position = "h*0.85"  # Position in lower area
+            font_size = 64  # Smaller size as requested
+            y_position = "h*0.78"  # Position in lower area
 
             from pathlib import Path
 
             font_path = Path("assets/Roboto-Bold.ttf").resolve()
-            
+
+            subtitleColor = "green"  # Default color, can be changed dynamically
+
+            # Set subtitle color dynamically
+            if subtitleColor == "yellow":
+                font_color = "#FFFF00"
+            elif subtitleColor == "green":
+                font_color = "#00FF00"
+            elif subtitleColor == "white":
+                font_color = "#FFFFFF"
+            else:
+                font_color = "#FFFFFF"  # fallback default
+
             # Then add the main text (bright yellow, bold)
             filter_complex += f",drawtext=text='{safe_line_text}':" \
-                             f"fontcolor=#FFFF00:" \
+                             f"fontcolor={font_color}:" \
                              f"fontsize={font_size}:" \
                              f"x=(w-text_w)/2:" \
                              f"y={y_position}:" \

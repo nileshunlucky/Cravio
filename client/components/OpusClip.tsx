@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { Link,
+import {
+  Link,
   //  CloudUpload, 
-  Loader2, AlertCircle, Info } from 'lucide-react';
+  Loader2, AlertCircle, Info
+} from 'lucide-react';
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useUser } from '@clerk/nextjs';
@@ -56,6 +58,7 @@ export default function OpusClip() {
   const [duration, setDuration] = useState<string>('30 sec');
   const [aspectRatio, setAspectRatio] = useState<string>('9:16');
   const [includeMoments, setIncludeMoments] = useState<string>('valuable engaging moments');
+  const [subtitleColor, setSubtitleColor] = useState<string>('yellow');
 
   const toggleMobileTip = () => {
     // Only show tooltip on small screens
@@ -660,6 +663,12 @@ export default function OpusClip() {
 
   const isSubmitEnabled = (isValidYoutubeLink || file) && !videoProcessed;
 
+  const videoOptions = [
+    { label: "Beasty", value: "yellow", src: "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576854/Video-252_f4rrxp.mp4" },
+    { label: "Karaoke", value: "green", src: "https://res.cloudinary.com/db17zxsjc/video/upload/v1749891577/lv_0_20250614142604_ijtizd.mp4" },
+    { label: "Simple", value: "white", src: "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576850/Video-288_wqhsdk.mp4" }
+  ]
+
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-1 sm:p-6 gap-7">
       {/* Background text - Changed from OpusClip to CRAVIO */}
@@ -859,41 +868,84 @@ export default function OpusClip() {
             </div>
 
             {/* Customization options */}
-            <div className="p-3 bg-zinc-950 text-zinc-400 flex flex-col gap-4 rounded-xl mt-3">
+            <div className="p-3 bg-zinc-900 text-zinc-400 flex flex-col gap-4 rounded-xl mt-3">
               <div className="flex items-center gap-5">
                 <div className="flex items-center gap-2">
                   <p>clip duration</p>
                   <Select disabled={isLoading} value={duration} onValueChange={setDuration}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="30 sec">30s</SelectItem>
-            <SelectItem value="45 sec">45s</SelectItem>
-            <SelectItem value="60 sec">60s</SelectItem>
-          </SelectContent>
-        </Select>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="30 seconds">30s</SelectItem>
+                      <SelectItem value="45 seconds">45s</SelectItem>
+                      <SelectItem value="60 seconds">60s</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex items-center gap-2">
-                <p>aspect ratio</p>
+                  <p>aspect ratio</p>
 
-                   <Select disabled={isLoading} value={aspectRatio} onValueChange={setAspectRatio}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="9:16">9:16</SelectItem>
-            <SelectItem value="1:1">1:1</SelectItem>
-            <SelectItem value="16:9">16:9</SelectItem>
-          </SelectContent>
-        </Select>
+                  <Select disabled={isLoading} value={aspectRatio} onValueChange={setAspectRatio}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="9:16">9:16</SelectItem>
+                      <SelectItem value="1:1">1:1</SelectItem>
+                      <SelectItem value="16:9">16:9</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="flex flex-col gap-2 w-full">
                 <p>Include specific moments</p>
                 <div className="w-full">
-                  <input disabled={isLoading} onChange={(e) => setIncludeMoments(e.target.value)} className="w-full focus:outline-none p-2 rounded border border-zinc-500 text-white" type='text' placeholder='Example: find some hilarious moments'/>
+                  <input disabled={isLoading} onChange={(e) => setIncludeMoments(e.target.value)} className={`w-full focus:outline-none p-2 rounded border border-zinc-500 ${isLoading ? 'text-zinc-600' : 'text-white'}`} type='text' placeholder='Example: find some hilarious moments' />
                 </div>
+              </div>
+            </div>
+
+            {/* Subtitle customization */}
+            {/* <div className="p-3 bg-zinc-900 text-zinc-400 flex flex-col gap-4 rounded-xl mt-3">
+              <div className="flex items-center gap-2">
+                <Select disabled={isLoading} value={subtitleColor} onValueChange={setSubtitleColor}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yellow">Yellow</SelectItem>
+                    <SelectItem value="green">Green</SelectItem>
+                    <SelectItem value="white">White</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div> */}
+
+            <div className={`p-3 bg-zinc-900 text-zinc-400 flex flex-col gap-4 rounded-xl mt-3 ${isLoading ? "opacity-50" : ""}`}>
+              <div className="flex items-center gap-3">
+                {videoOptions.map((option) => (
+                  <Button
+                    key={option.value}
+                    onClick={() => !isLoading && setSubtitleColor(option.value)}
+                    disabled={isLoading}
+                    className={`rounded-xl overflow-hidden flex flex-col border-2 transition-all ${subtitleColor === option.value
+                        ? "border-white"
+                        : "border-transparent hover:border-white"
+                      } ${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                  >
+                    <video
+                      src={option.src}
+                      muted
+                      autoPlay
+                      loop
+                      className="w-28 h-40 object-cover"
+                    />
+                    <div className="text-center text-xs py-1 text-zinc-300 capitalize">
+                      {option.label}
+                    </div>
+                  </Button>
+                ))}
               </div>
             </div>
           </div>
