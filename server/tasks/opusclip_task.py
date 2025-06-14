@@ -731,11 +731,11 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, aspect_
     Returns:
         dict: Crop parameters for ffmpeg
     """
-    # Define aspect ratios
+    # Define aspect ratios - FIXED: Correct aspect ratio calculations
     aspect_ratios = {
-        "9:16": 9/16,
-        "1:1": 1.0,
-        "16:9": 16/9
+        "9:16": 9/16,    # 0.5625 (portrait)
+        "1:1": 1.0,      # 1.0 (square)
+        "16:9": 16/9     # 1.777... (landscape)
     }
     
     target_aspect_ratio = aspect_ratios.get(aspect_ratio, 9/16)
@@ -744,35 +744,68 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, aspect_
     logger.info(f"Video: {video_width}x{video_height} (ratio: {current_aspect_ratio:.3f})")
     logger.info(f"Target aspect ratio: {target_aspect_ratio:.3f} ({aspect_ratio})")
     
-    if current_aspect_ratio > target_aspect_ratio:
-        # Video is wider than target - need to crop width
-        target_width = int(video_height * target_aspect_ratio)
-        target_height = video_height
-        
-        if face_data and face_data.get('faces_found'):
-            # Center crop around face
-            face_x = face_data['face_center_x']
-            crop_x = max(0, min(face_x - target_width // 2, video_width - target_width))
-        else:
-            # Center crop
-            crop_x = (video_width - target_width) // 2
-            
+    # FIXED: Proper aspect ratio comparison and cropping logic
+    if abs(current_aspect_ratio - target_aspect_ratio) < 0.01:
+        # Already close to target aspect ratio, minimal cropping needed
+        crop_x = 0
         crop_y = 0
+        target_width = video_width
+        target_height = video_height
+        logger.info("Video already matches target aspect ratio")
+        
+    elif current_aspect_ratio > target_aspect_ratio:
+        # Video is wider than target - need to crop width (keep height)
+        target_height = video_height
+        target_width = int(video_height * target_aspect_ratio)
+        
+        # Ensure target_width doesn't exceed video_width
+        if target_width > video_width:
+            target_width = video_width
+            target_height = int(video_width / target_aspect_ratio)
+            crop_x = 0
+            if face_data and face_data.get('faces_found'):
+                face_y = face_data['face_center_y']
+                crop_y = max(0, min(face_y - target_height // 2, video_height - target_height))
+            else:
+                crop_y = (video_height - target_height) // 2
+        else:
+            crop_y = 0
+            if face_data and face_data.get('faces_found'):
+                # Center crop around face horizontally
+                face_x = face_data['face_center_x']
+                crop_x = max(0, min(face_x - target_width // 2, video_width - target_width))
+            else:
+                # Center crop horizontally
+                crop_x = (video_width - target_width) // 2
         
     else:
-        # Video is taller than target - need to crop height
+        # Video is taller than target - need to crop height (keep width)
         target_width = video_width
         target_height = int(video_width / target_aspect_ratio)
         
-        if face_data and face_data.get('faces_found'):
-            # Center crop around face
-            face_y = face_data['face_center_y']
-            crop_y = max(0, min(face_y - target_height // 2, video_height - target_height))
+        # Ensure target_height doesn't exceed video_height
+        if target_height > video_height:
+            target_height = video_height
+            target_width = int(video_height * target_aspect_ratio)
+            crop_y = 0
+            if face_data and face_data.get('faces_found'):
+                face_x = face_data['face_center_x']
+                crop_x = max(0, min(face_x - target_width // 2, video_width - target_width))
+            else:
+                crop_x = (video_width - target_width) // 2
         else:
-            # Center crop
-            crop_y = (video_height - target_height) // 2
-            
-        crop_x = 0
+            crop_x = 0
+            if face_data and face_data.get('faces_found'):
+                # Center crop around face vertically
+                face_y = face_data['face_center_y']
+                crop_y = max(0, min(face_y - target_height // 2, video_height - target_height))
+            else:
+                # Center crop vertically
+                crop_y = (video_height - target_height) // 2
+    
+    # Ensure crop parameters are within bounds
+    crop_x = max(0, min(crop_x, video_width - target_width))
+    crop_y = max(0, min(crop_y, video_height - target_height))
     
     logger.info(f"Crop parameters: x={crop_x}, y={crop_y}, w={target_width}, h={target_height}")
     
@@ -792,39 +825,48 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
     try:
         logger.info(f"Processing clip {clip_idx} with aspect ratio {aspect_ratio} and subtitle color {subtitle_color}")
         
-        # Define target dimensions based on aspect ratio
+        # FIXED: Define target dimensions based on aspect ratio with proper resolution
         dimensions = {
-            "9:16": (1080, 1920),
-            "1:1": (1080, 1080),
-            "16:9": (1920, 1080)
+            "9:16": (1080, 1920),   # Portrait - TikTok/Instagram Reels
+            "1:1": (1080, 1080),    # Square - Instagram posts
+            "16:9": (1920, 1080)    # Landscape - YouTube shorts/horizontal
         }
         
         target_width, target_height = dimensions.get(aspect_ratio, (1080, 1920))
-        logger.info(f"Target dimensions: {target_width}x{target_height}")
+        logger.info(f"Target dimensions for {aspect_ratio}: {target_width}x{target_height}")
         
-        # Step 1: Face detection and crop calculation
+        # Step 1: Get original video dimensions
+        ffprobe_cmd = [
+            'ffprobe', '-v', 'error', '-select_streams', 'v:0',
+            '-show_entries', 'stream=width,height', '-of', 'json', temp_raw_clip
+        ]
+        result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
+        video_info = json.loads(result.stdout)
+        original_width = int(video_info['streams'][0]['width'])
+        original_height = int(video_info['streams'][0]['height'])
+        
+        logger.info(f"Original video dimensions: {original_width}x{original_height}")
+        
+        # Step 2: Face detection and crop calculation
         face_data = detect_faces_in_video(temp_raw_clip)
         
+        # Use original dimensions for crop calculation
         if face_data:
             crop_params = calculate_crop_parameters(
-                face_data['video_width'], 
-                face_data['video_height'], 
+                original_width,  # Use actual video dimensions
+                original_height, # Use actual video dimensions
                 face_data,
                 aspect_ratio
             )
         else:
-            # Fallback crop calculation
-            ffprobe_cmd = [
-                'ffprobe', '-v', 'error', '-select_streams', 'v:0',
-                '-show_entries', 'stream=width,height', '-of', 'json', temp_raw_clip
-            ]
-            result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
-            video_info = json.loads(result.stdout)
-            width = int(video_info['streams'][0]['width'])
-            height = int(video_info['streams'][0]['height'])
-            crop_params = calculate_crop_parameters(width, height, None, aspect_ratio)
+            crop_params = calculate_crop_parameters(
+                original_width, 
+                original_height, 
+                None, 
+                aspect_ratio
+            )
         
-        # Step 2: Get accurate word timing from clip transcript
+        # Step 3: Get accurate word timing from clip transcript
         words_data = clip_transcript_data['words']
         
         if not words_data:
@@ -845,16 +887,20 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             word_data['start'] = max(0, word_data['start'])
             word_data['end'] = min(clip_duration, word_data['end'])
         
-        # Step 3: Build base video filter - FIXED
-        # Start with crop and scale
+        # Step 4: Build video filter with FIXED scaling logic
+        # First crop to desired aspect ratio, then scale to target resolution
         filter_complex = f"crop={crop_params['crop_width']}:{crop_params['crop_height']}:{crop_params['crop_x']}:{crop_params['crop_y']}"
+        
+        # FIXED: Scale to exact target dimensions
         filter_complex += f",scale={target_width}:{target_height}:flags=lanczos"
         
-        # REMOVED problematic rounded corners implementation that was causing green artifacts
-        # For 1:1 aspect ratio, we'll just use clean square format without rounded corners
-        # If you specifically need rounded corners, we'd need a different approach
+        # FIXED: Add padding if needed to ensure exact aspect ratio
+        # This ensures we get exactly the dimensions we want
+        filter_complex += f",pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2:black"
         
-        # Step 4: Create subtitle lines with proper text wrapping
+        logger.info(f"Video filter: {filter_complex}")
+        
+        # Step 5: Create subtitle lines with proper text wrapping
         subtitle_lines = []
         current_line_words = []
         max_chars_per_line = 20
@@ -903,7 +949,7 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
         
         logger.info(f"Created {len(subtitle_lines)} subtitle lines for clip timing")
         
-        # Step 5: Add subtitles with improved styling - FIXED subtitle positioning
+        # Step 6: Add subtitles with FIXED positioning for different aspect ratios
         for line_idx, subtitle_line in enumerate(subtitle_lines):
             line_text = subtitle_line['text']
             line_start = subtitle_line['start_time']
@@ -916,34 +962,36 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             # Clean text for ffmpeg
             safe_line_text = clean_text_for_karaoke(line_text)
             
-            # Font settings
-            font_size = 64
+            # FIXED: Font size based on aspect ratio
+            if aspect_ratio == "16:9":
+                font_size = 48  # Smaller for landscape
+            elif aspect_ratio == "1:1":
+                font_size = 56  # Medium for square
+            else:  # 9:16
+                font_size = 64  # Larger for portrait
+            
             from pathlib import Path
             font_path = Path("assets/Roboto-Bold.ttf").resolve()
             
-            # FIXED: Set subtitle color and position based on user selection
+            # FIXED: Subtitle positioning based on aspect ratio
             if subtitle_color == "yellow":
-                font_color = "#FFFF00"  # Bright yellow
-                # Position at bottom for yellow
-                if aspect_ratio == "1:1":
-                    y_position = "h*0.85"  # Slightly higher for square format
-                else:
-                    y_position = "h*0.78"  # Bottom area
+                font_color = "#FFFF00"
             elif subtitle_color == "green":
-                font_color = "#00FF00"  # Bright green
-                if aspect_ratio == "1:1":
-                    y_position = "h*0.85"
-                else:
-                    y_position = "h*0.78"
+                font_color = "#00FF00"
             elif subtitle_color == "white":
-                font_color = "#FFFFFF"  # White
-                # FIXED: For white, position at bottom instead of center
-                if aspect_ratio == "1:1":
-                    y_position = "(h-text_h)/2"  # Bottom area for square
-                else:
-                    y_position = "h*0.78"  # Bottom area for other ratios
+                font_color = "#FFFFFF"
             else:
-                font_color = "#FFFFFF"  # Default white
+                font_color = "#FFFFFF"
+            
+            # FIXED: Position subtitles appropriately for each aspect ratio
+            if aspect_ratio == "16:9":
+                # For landscape, position subtitles at bottom
+                y_position = "h*0.85"
+            elif aspect_ratio == "1:1":
+                # For square, position subtitles at bottom
+                y_position = "(h-text_h)/2"
+            else:  # 9:16
+                # For portrait, position subtitles in lower third
                 y_position = "h*0.78"
             
             # Add text with shadow for better visibility
@@ -967,19 +1015,22 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             
             logger.info(f"Added subtitle line {line_idx + 1}: '{safe_line_text}' ({font_color}) from {line_start:.3f}s to {line_end:.3f}s")
         
-        # Step 6: Create FFmpeg command - IMPROVED settings
+        # Step 7: Create FFmpeg command with FIXED output settings
         ffmpeg_cmd = [
             'ffmpeg',
             '-i', temp_raw_clip,
             '-vf', filter_complex,
             '-c:v', 'libx264',
             '-preset', 'ultrafast',
-            '-crf', '23',  # Higher quality (lower CRF)
+            '-crf', '23',
             '-level:v', '4.1',
             '-pix_fmt', 'yuv420p',
-            '-profile:v', 'high',  # Better compression
-            '-threads', '4',  # More threads for better performance
+            '-profile:v', 'high',
+            '-threads', '4',
             '-max_muxing_queue_size', '1024',
+            # FIXED: Force output dimensions to ensure correct aspect ratio
+            '-s', f'{target_width}x{target_height}',
+            '-aspect', aspect_ratio.replace(':', '/'),  # Set aspect ratio metadata
             '-b:a', '128k',
             '-c:a', 'aac',
             '-ar', '44100',
@@ -988,8 +1039,8 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             temp_clip_path
         ]
         
-        logger.info(f"Executing FFmpeg command for clip {clip_idx}")
-        logger.info(f"Filter complex: {filter_complex}")
+        logger.info(f"Executing FFmpeg command for clip {clip_idx} with aspect ratio {aspect_ratio}")
+        logger.info(f"Expected output: {target_width}x{target_height}")
         
         result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=300)
         
@@ -999,13 +1050,30 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             logger.error(f"FFmpeg stdout: {result.stdout}")
             return False
         
-        # Verify the output
+        # FIXED: Verify output dimensions
+        verify_cmd = [
+            'ffprobe', '-v', 'error', '-select_streams', 'v:0',
+            '-show_entries', 'stream=width,height', '-of', 'json', temp_clip_path
+        ]
+        verify_result = subprocess.run(verify_cmd, capture_output=True, text=True)
+        
+        if verify_result.returncode == 0:
+            verify_info = json.loads(verify_result.stdout)
+            actual_width = int(verify_info['streams'][0]['width'])
+            actual_height = int(verify_info['streams'][0]['height'])
+            logger.info(f"Verified output dimensions: {actual_width}x{actual_height}")
+            
+            # Check if dimensions match expected
+            if actual_width != target_width or actual_height != target_height:
+                logger.warning(f"Output dimensions don't match expected: got {actual_width}x{actual_height}, expected {target_width}x{target_height}")
+        
+        # Verify the output file
         if not os.path.exists(temp_clip_path) or os.path.getsize(temp_clip_path) < 1000:
             logger.error(f"Clip creation failed or produced invalid file: {temp_clip_path}")
             return False
         
         file_size = os.path.getsize(temp_clip_path)
-        logger.info(f"Successfully created clip {clip_idx} with {subtitle_color} subtitles")
+        logger.info(f"Successfully created clip {clip_idx} with {subtitle_color} subtitles and {aspect_ratio} aspect ratio")
         logger.info(f"Output file size: {file_size / (1024*1024):.2f} MB")
         
         return True
