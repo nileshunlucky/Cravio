@@ -718,68 +718,6 @@ def detect_faces_in_video(video_path, num_frames=5):
         logger.error(f"Error in face detection: {str(e)}")
         return None
 
-def calculate_crop_parameters(video_width, video_height, face_data=None, aspect_ratio="9:16"):
-    """
-    Calculate optimal crop parameters for different aspect ratios
-    
-    Args:
-        video_width (int): Original video width
-        video_height (int): Original video height
-        face_data (dict): Face detection results
-        aspect_ratio (str): Target aspect ratio ("9:16", "1:1", "16:9")
-        
-    Returns:
-        dict: Crop parameters for ffmpeg
-    """
-    # Convert aspect ratio string to float
-    if aspect_ratio == "9:16":
-        target_aspect_ratio = 9/16  # 0.5625
-    elif aspect_ratio == "1:1":
-        target_aspect_ratio = 1.0   # 1.0
-    elif aspect_ratio == "16:9":
-        target_aspect_ratio = 16/9  # 1.7778
-    else:
-        target_aspect_ratio = 9/16  # default to 9:16
-    
-    current_aspect_ratio = video_width / video_height
-    
-    if current_aspect_ratio > target_aspect_ratio:
-        # Video is wider than target - need to crop width
-        target_width = int(video_height * target_aspect_ratio)
-        target_height = video_height
-        
-        if face_data and face_data.get('faces_found'):
-            # Center crop around face
-            face_x = face_data['face_center_x']
-            crop_x = max(0, min(face_x - target_width // 2, video_width - target_width))
-        else:
-            # Center crop
-            crop_x = (video_width - target_width) // 2
-            
-        crop_y = 0
-        
-    else:
-        # Video is taller than target - need to crop height
-        target_width = video_width
-        target_height = int(video_width / target_aspect_ratio)
-        
-        if face_data and face_data.get('faces_found'):
-            # Center crop around face
-            face_y = face_data['face_center_y']
-            crop_y = max(0, min(face_y - target_height // 2, video_height - target_height))
-        else:
-            # Center crop
-            crop_y = (video_height - target_height) // 2
-            
-        crop_x = 0
-    
-    return {
-        'crop_x': crop_x,
-        'crop_y': crop_y,
-        'crop_width': target_width,
-        'crop_height': target_height,
-        'aspect_ratio': aspect_ratio
-    }
 
 def get_final_dimensions_and_filter(aspect_ratio, crop_params):
     """
@@ -806,41 +744,153 @@ def get_final_dimensions_and_filter(aspect_ratio, crop_params):
     filter_parts = []
     filter_parts.append(f"crop={crop_params['crop_width']}:{crop_params['crop_height']}:{crop_params['crop_x']}:{crop_params['crop_y']}")
     
-    # Calculate how to fit the cropped video into final dimensions
+    # Calculate how to fit the cropped video into final dimensions with letterboxing
     crop_aspect = crop_params['crop_width'] / crop_params['crop_height']
     final_aspect = final_width / final_height
     
-    if abs(crop_aspect - final_aspect) < 0.01:  # Aspects are very close, just scale
-        filter_parts.append(f"scale={final_width}:{final_height}:flags=lanczos")
+    logger.info(f"Crop aspect: {crop_aspect:.4f}, Final aspect: {final_aspect:.4f}")
+    
+    # Always scale to fit within the final dimensions (maintaining aspect ratio)
+    # Calculate scale dimensions to fit inside the final frame
+    if crop_aspect > final_aspect:
+        # Cropped video is wider than final frame - fit to width
+        scale_width = final_width
+        scale_height = int(final_width / crop_aspect)
+        # Ensure height is even
+        if scale_height % 2 != 0:
+            scale_height -= 1
     else:
-        # Need to fit with black bars (letterbox/pillarbox)
-        if crop_aspect > final_aspect:
-            # Cropped video is wider than final - fit to width, add black bars top/bottom
-            scale_width = final_width
-            scale_height = int(final_width / crop_aspect)
-            # Make sure height is even
-            if scale_height % 2 != 0:
-                scale_height -= 1
-        else:
-            # Cropped video is taller than final - fit to height, add black bars left/right
-            scale_height = final_height
-            scale_width = int(final_height * crop_aspect)
-            # Make sure width is even
-            if scale_width % 2 != 0:
-                scale_width -= 1
-        
-        # Scale to calculated dimensions
-        filter_parts.append(f"scale={scale_width}:{scale_height}:flags=lanczos")
-        
-        # Add black bars to reach final dimensions
-        x_offset = (final_width - scale_width) // 2
-        y_offset = (final_height - scale_height) // 2
-        filter_parts.append(f"pad={final_width}:{final_height}:{x_offset}:{y_offset}:black")
+        # Cropped video is taller/same as final frame - fit to height
+        scale_height = final_height
+        scale_width = int(final_height * crop_aspect)
+        # Ensure width is even
+        if scale_width % 2 != 0:
+            scale_width -= 1
+    
+    # Make sure we don't exceed final dimensions
+    scale_width = min(scale_width, final_width)
+    scale_height = min(scale_height, final_height)
+    
+    logger.info(f"Scaling to: {scale_width}x{scale_height}")
+    
+    # Scale to calculated dimensions
+    filter_parts.append(f"scale={scale_width}:{scale_height}:flags=lanczos")
+    
+    # Add black padding to reach final dimensions (letterbox/pillarbox)
+    x_offset = (final_width - scale_width) // 2
+    y_offset = (final_height - scale_height) // 2
+    filter_parts.append(f"pad={final_width}:{final_height}:{x_offset}:{y_offset}:black")
+    
+    logger.info(f"Adding padding: x_offset={x_offset}, y_offset={y_offset}")
     
     return {
         'final_width': final_width,
         'final_height': final_height,
         'filter_string': ','.join(filter_parts)
+    }
+
+def calculate_crop_parameters(video_width, video_height, face_data=None, aspect_ratio="9:16"):
+    """
+    Calculate optimal crop parameters for different aspect ratios
+    FIXED: Better logic for maintaining aspect ratios with minimal cropping
+    
+    Args:
+        video_width (int): Original video width
+        video_height (int): Original video height
+        face_data (dict): Face detection results
+        aspect_ratio (str): Target aspect ratio ("9:16", "1:1", "16:9")
+        
+    Returns:
+        dict: Crop parameters for ffmpeg
+    """
+    # Convert aspect ratio string to float
+    if aspect_ratio == "9:16":
+        target_aspect_ratio = 9/16  # 0.5625
+    elif aspect_ratio == "1:1":
+        target_aspect_ratio = 1.0   # 1.0
+    elif aspect_ratio == "16:9":
+        target_aspect_ratio = 16/9  # 1.7778
+    else:
+        target_aspect_ratio = 9/16  # default to 9:16
+    
+    current_aspect_ratio = video_width / video_height
+    
+    logger.info(f"Original video: {video_width}x{video_height} (aspect: {current_aspect_ratio:.4f})")
+    logger.info(f"Target aspect ratio: {target_aspect_ratio:.4f}")
+    
+    # For 1:1 and 16:9, we want to do minimal cropping and rely on letterboxing
+    # Only crop if the video is significantly different from target aspect ratio
+    
+    if aspect_ratio == "1:1":
+        # For square output, minimal cropping - just take the center square
+        min_dimension = min(video_width, video_height)
+        target_width = min_dimension
+        target_height = min_dimension
+        
+        crop_x = (video_width - target_width) // 2
+        crop_y = (video_height - target_height) // 2
+        
+    elif aspect_ratio == "16:9":
+        # For 16:9, try to preserve as much content as possible
+        if current_aspect_ratio > target_aspect_ratio:
+            # Video is wider than 16:9, crop width
+            target_height = video_height
+            target_width = int(video_height * target_aspect_ratio)
+            crop_x = (video_width - target_width) // 2
+            crop_y = 0
+        else:
+            # Video is taller than 16:9, crop height
+            target_width = video_width
+            target_height = int(video_width / target_aspect_ratio)
+            crop_x = 0
+            crop_y = (video_height - target_height) // 2
+            
+    else:  # 9:16 or default
+        # For vertical video, we can be more aggressive with cropping
+        if current_aspect_ratio > target_aspect_ratio:
+            # Video is wider than target - need to crop width
+            target_width = int(video_height * target_aspect_ratio)
+            target_height = video_height
+            
+            if face_data and face_data.get('faces_found'):
+                # Center crop around face
+                face_x = face_data['face_center_x']
+                crop_x = max(0, min(face_x - target_width // 2, video_width - target_width))
+            else:
+                # Center crop
+                crop_x = (video_width - target_width) // 2
+                
+            crop_y = 0
+            
+        else:
+            # Video is taller than target - need to crop height
+            target_width = video_width
+            target_height = int(video_width / target_aspect_ratio)
+            
+            if face_data and face_data.get('faces_found'):
+                # Center crop around face
+                face_y = face_data['face_center_y']
+                crop_y = max(0, min(face_y - target_height // 2, video_height - target_height))
+            else:
+                # Center crop
+                crop_y = (video_height - target_height) // 2
+                
+            crop_x = 0
+    
+    # Ensure crop parameters are valid
+    target_width = min(target_width, video_width)
+    target_height = min(target_height, video_height)
+    crop_x = max(0, min(crop_x, video_width - target_width))
+    crop_y = max(0, min(crop_y, video_height - target_height))
+    
+    logger.info(f"Crop parameters: {target_width}x{target_height} at ({crop_x}, {crop_y})")
+    
+    return {
+        'crop_x': crop_x,
+        'crop_y': crop_y,
+        'crop_width': target_width,
+        'crop_height': target_height,
+        'aspect_ratio': aspect_ratio
     }
 
 def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, subtitle_color, aspect_ratio="9:16"):
