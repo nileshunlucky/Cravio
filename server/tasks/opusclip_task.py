@@ -777,34 +777,88 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, aspect_
         'crop_x': crop_x,
         'crop_y': crop_y,
         'crop_width': target_width,
-        'crop_height': target_height 
+        'crop_height': target_height,
+        'aspect_ratio': aspect_ratio
     }
 
-def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, subtitle_color,  aspect_ratio="9:16"):
+def get_final_dimensions_and_filter(aspect_ratio, crop_params):
     """
-    Create ultra high-quality 9:16 clip with accurate karaoke-style subtitles
+    Get final output dimensions and create appropriate filter for aspect ratio
+    
+    Args:
+        aspect_ratio (str): Target aspect ratio ("9:16", "1:1", "16:9")
+        crop_params (dict): Crop parameters from calculate_crop_parameters
+        
+    Returns:
+        dict: Contains final dimensions and filter string
+    """
+    # Set final output dimensions
+    if aspect_ratio == "9:16":
+        final_width, final_height = 1080, 1920
+    elif aspect_ratio == "1:1":
+        final_width, final_height = 1080, 1080
+    elif aspect_ratio == "16:9":
+        final_width, final_height = 1920, 1080
+    else:
+        final_width, final_height = 1080, 1920  # default
+    
+    # First crop the video
+    filter_parts = []
+    filter_parts.append(f"crop={crop_params['crop_width']}:{crop_params['crop_height']}:{crop_params['crop_x']}:{crop_params['crop_y']}")
+    
+    # Calculate how to fit the cropped video into final dimensions
+    crop_aspect = crop_params['crop_width'] / crop_params['crop_height']
+    final_aspect = final_width / final_height
+    
+    if abs(crop_aspect - final_aspect) < 0.01:  # Aspects are very close, just scale
+        filter_parts.append(f"scale={final_width}:{final_height}:flags=lanczos")
+    else:
+        # Need to fit with black bars (letterbox/pillarbox)
+        if crop_aspect > final_aspect:
+            # Cropped video is wider than final - fit to width, add black bars top/bottom
+            scale_width = final_width
+            scale_height = int(final_width / crop_aspect)
+            # Make sure height is even
+            if scale_height % 2 != 0:
+                scale_height -= 1
+        else:
+            # Cropped video is taller than final - fit to height, add black bars left/right
+            scale_height = final_height
+            scale_width = int(final_height * crop_aspect)
+            # Make sure width is even
+            if scale_width % 2 != 0:
+                scale_width -= 1
+        
+        # Scale to calculated dimensions
+        filter_parts.append(f"scale={scale_width}:{scale_height}:flags=lanczos")
+        
+        # Add black bars to reach final dimensions
+        x_offset = (final_width - scale_width) // 2
+        y_offset = (final_height - scale_height) // 2
+        filter_parts.append(f"pad={final_width}:{final_height}:{x_offset}:{y_offset}:black")
+    
+    return {
+        'final_width': final_width,
+        'final_height': final_height,
+        'filter_string': ','.join(filter_parts)
+    }
+
+def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, subtitle_color, aspect_ratio="9:16"):
+    """
+    Create ultra high-quality clip with accurate karaoke-style subtitles and proper aspect ratio handling
     """
     try:
-        logger.info(f"Processing clip {clip_idx} with karaoke-style subtitles")
-
-        # Add target dimensions based on aspect ratio
-        if aspect_ratio == "9:16":
-            target_width, target_height = 1080, 1920
-        elif aspect_ratio == "1:1":
-            target_width, target_height = 1080, 1080
-        elif aspect_ratio == "16:9":
-            target_width, target_height = 1920, 1080
-        else:
-            target_width, target_height = 1080, 1920
+        logger.info(f"Processing clip {clip_idx} with karaoke-style subtitles for aspect ratio {aspect_ratio}")
         
-        # Step 1: Face detection and crop calculation (keeping existing logic)
+        # Step 1: Face detection and crop calculation
         face_data = detect_faces_in_video(temp_raw_clip)
         
         if face_data:
             crop_params = calculate_crop_parameters(
                 face_data['video_width'], 
                 face_data['video_height'], 
-                face_data
+                face_data,
+                aspect_ratio
             )
         else:
             # Fallback crop calculation
@@ -816,9 +870,15 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             video_info = json.loads(result.stdout)
             width = int(video_info['streams'][0]['width'])
             height = int(video_info['streams'][0]['height'])
-            crop_params = calculate_crop_parameters(width, height, None)
+            crop_params = calculate_crop_parameters(width, height, None, aspect_ratio)
         
-        # Step 2: Get accurate word timing from clip transcript
+        # Step 2: Get final dimensions and create base filter
+        dimensions_data = get_final_dimensions_and_filter(aspect_ratio, crop_params)
+        filter_complex = dimensions_data['filter_string']
+        
+        logger.info(f"Final output will be {dimensions_data['final_width']}x{dimensions_data['final_height']}")
+        
+        # Step 3: Get accurate word timing from clip transcript
         words_data = clip_transcript_data['words']
         
         if not words_data:
@@ -837,42 +897,27 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
         # **CRITICAL FIX**: Ensure all word timings are relative to clip start (0-based)
         logger.info("Adjusting word timings to be relative to clip start...")
         for word_data in words_data:
-            # If timing seems absolute (large numbers), make it relative
-            if word_data['start'] > clip_duration:
-                logger.warning(f"Detected absolute timing for word '{word_data['word']}': {word_data['start']:.3f}s")
-                # This suggests timing wasn't properly converted in extract_clip_transcript_from_whisper
-                # For now, we'll use the existing timing as-is since extract function should handle this
-            
             # Ensure no negative timing and clip to duration
             word_data['start'] = max(0, word_data['start'])
             word_data['end'] = min(clip_duration, word_data['end'])
-            
-            logger.debug(f"Word '{word_data['word']}': {word_data['start']:.3f}s - {word_data['end']:.3f}s")
         
-        # Step 3: Build base video filter
-        filter_complex = f"crop={crop_params['crop_width']}:{crop_params['crop_height']}:{crop_params['crop_x']}:{crop_params['crop_y']}"
-        filter_complex += f",scale={target_width}:{target_height}:flags=lanczos"
-        
-        # Step 4: Create subtitle lines with proper text wrapping (2-3 words per line for better readability)
+        # Step 4: Create subtitle lines with proper text wrapping
         subtitle_lines = []
         current_line_words = []
-        max_chars_per_line = 20  # Reduced for better mobile viewing
-        max_words_per_line = 3   # Reduced from 4 to 3 for better timing sync
+        max_chars_per_line = 20
+        max_words_per_line = 3
         
         for word_data in words_data:
-            # Calculate current line length if we add this word
             current_line_text = ' '.join([w['word'].strip() for w in current_line_words])
             potential_line_text = current_line_text + ' ' + word_data['word'].strip() if current_line_words else word_data['word'].strip()
             
-            # Check if we should start a new line
             should_break = (
-                len(current_line_words) >= max_words_per_line or  # Max words per line
-                len(potential_line_text) > max_chars_per_line or  # Max characters per line
-                word_data == words_data[-1]  # Last word
+                len(current_line_words) >= max_words_per_line or
+                len(potential_line_text) > max_chars_per_line or
+                word_data == words_data[-1]
             )
             
             if should_break and current_line_words:
-                # Create subtitle line
                 line_text = ' '.join([w['word'].strip() for w in current_line_words])
                 line_start = current_line_words[0]['start']
                 line_end = current_line_words[-1]['end']
@@ -881,7 +926,7 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
                     'words': current_line_words.copy(),
                     'start_time': line_start,
                     'end_time': line_end,
-                    'text': line_text.upper()  # Convert to uppercase for better visibility
+                    'text': line_text.upper()
                 })
                 current_line_words = [word_data] if word_data != words_data[-1] else []
             else:
@@ -902,7 +947,7 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
         
         logger.info(f"Created {len(subtitle_lines)} subtitle lines for clip timing")
         
-        # Step 5: Add karaoke-style subtitles with improved styling (smaller, bolder, with glow)
+        # Step 5: Add karaoke-style subtitles with aspect ratio aware positioning
         for line_idx, subtitle_line in enumerate(subtitle_lines):
             line_text = subtitle_line['text']
             line_start = subtitle_line['start_time']
@@ -910,42 +955,50 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             
             # Ensure valid timing
             if line_end <= line_start:
-                line_end = line_start + 0.5  # Minimum 0.5 second display
+                line_end = line_start + 0.5
             
             # Clean text for ffmpeg
             safe_line_text = clean_text_for_karaoke(line_text)
             
-            # Enhanced karaoke-style subtitle settings
-            font_size = 64  # Smaller size as requested
-
+            # Adjust font size and positioning based on aspect ratio
+            if aspect_ratio == "9:16":
+                font_size = 64
+                y_position = "h*0.78"
+            elif aspect_ratio == "1:1":
+                font_size = 56
+                y_position = "h*0.85"  # Lower position for square format
+            elif aspect_ratio == "16:9":
+                font_size = 48
+                y_position = "h*0.88"  # Lower position for landscape
+            else:
+                font_size = 64
+                y_position = "h*0.78"
+            
             from pathlib import Path
-
             font_path = Path("assets/Roboto-Bold.ttf").resolve()
 
             # Set subtitle color dynamically
             if subtitle_color == "yellow":
                 font_color = "#FFFF00"
-                y_position = "h*0.78" 
             elif subtitle_color == "green":
                 font_color = "#00FF00"
-                y_position = "h*0.78"
             elif subtitle_color == "white":
                 font_color = "#FFFFFF"
-                y_position = "(h-text_h)/2"  # Centered vertically
+                if aspect_ratio == "1:1":
+                    y_position = "(h-text_h)/2"  # Centered vertically for white text in square
+                elif aspect_ratio == "16:9":
+                    y_position = "(h-text_h)/2"  # Centered vertically for white text in landscape
             else:
-                font_color = "#FFFFFF"  # fallback default
-                y_position = "h*0.78"
-
-            # Then add the main text (bright yellow, bold)
+                font_color = "#FFFFFF"
+            
+            # Add the subtitle
             filter_complex += f",drawtext=text='{safe_line_text}':" \
                              f"fontcolor={font_color}:" \
                              f"fontsize={font_size}:" \
                              f"x=(w-text_w)/2:" \
                              f"y={y_position}:" \
                              f"enable='between(t,{line_start:.3f},{line_end:.3f})':" \
-                             f"fontfile='{font_path}':" 
-            
-            logger.info(f"Added subtitle line {line_idx + 1}: '{safe_line_text}' from {line_start:.3f}s to {line_end:.3f}s")
+                             f"fontfile='{font_path}'"
         
         # Step 6: Create ultra high-quality FFmpeg command
         ffmpeg_cmd = [
@@ -954,7 +1007,7 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             '-vf', filter_complex,
             '-c:v', 'libx264',
             '-preset', 'veryfast',
-            '-crf', '22', 
+            '-crf', '22',
             '-level:v', '4.1',
             '-pix_fmt', 'yuv420p',
             '-threads', '2',
@@ -967,10 +1020,8 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             temp_clip_path
         ]
         
-        logger.info(f"Executing FFmpeg command for clip {clip_idx}")
-        logger.info(f"Subtitle timing debug - Total lines: {len(subtitle_lines)}")
-        for i, line in enumerate(subtitle_lines):
-            logger.info(f"Line {i+1}: '{line['text']}' from {line['start_time']:.3f}s to {line['end_time']:.3f}s")
+        logger.info(f"Executing FFmpeg command for clip {clip_idx} with aspect ratio {aspect_ratio}")
+        logger.info(f"Filter: {filter_complex}")
         
         result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=300)
         
@@ -983,7 +1034,7 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             logger.error(f"Clip creation failed or produced invalid file: {temp_clip_path}")
             return False
         
-        logger.info(f"Successfully created clip {clip_idx} with karaoke-style subtitles")
+        logger.info(f"Successfully created clip {clip_idx} with karaoke-style subtitles and {aspect_ratio} aspect ratio")
         return True
         
     except Exception as e:
