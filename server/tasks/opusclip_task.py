@@ -767,10 +767,10 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, target_
         'crop_x': crop_x,
         'crop_y': crop_y,
         'crop_width': target_width,
-        'crop_height': target_height
+        'crop_height': target_height 
     }
 
-def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, target_width=1080, target_height=1920, subtitle_color=None):
+def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, subtitle_color, target_width=1080, target_height=1920):
     """
     Create ultra high-quality 9:16 clip with accurate karaoke-style subtitles
     """
