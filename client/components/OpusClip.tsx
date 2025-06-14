@@ -909,7 +909,7 @@ export default function OpusClip() {
             </div>
 
             <div className={`p-3 bg-zinc-900 text-zinc-400 flex flex-col gap-4 rounded-xl mt-3 ${isLoading ? "opacity-50" : ""}`}>
-              <div className="flex gap-4 flex-wrap justify-start">
+              <div className="flex flex-wrap justify-between items-center w-full">
                 {videoOptions.map((option) => (
                   <Card
                     key={option.value}

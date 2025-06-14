@@ -524,7 +524,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, dura
 
                 success = create_ultra_high_quality_clip_with_accurate_subtitles(
                     temp_raw_clip, temp_clip_path, clip_transcript_data, 
-                    clip_duration, unique_id, i, subtitle_color
+                    clip_duration, unique_id, i, subtitle_color, aspect_ratio
                 )
 
                 if not success:
@@ -718,19 +718,27 @@ def detect_faces_in_video(video_path, num_frames=5):
         logger.error(f"Error in face detection: {str(e)}")
         return None
 
-def calculate_crop_parameters(video_width, video_height, face_data=None, target_aspect_ratio=9/16):
+def calculate_crop_parameters(video_width, video_height, face_data=None, aspect_ratio="9:16"):
     """
-    Calculate optimal crop parameters for 9:16 aspect ratio
+    Calculate optimal crop parameters for different aspect ratios
     
     Args:
         video_width (int): Original video width
         video_height (int): Original video height
         face_data (dict): Face detection results
-        target_aspect_ratio (float): Target aspect ratio (9:16 = 0.5625)
+        aspect_ratio (str): Target aspect ratio ("9:16", "1:1", "16:9")
         
     Returns:
         dict: Crop parameters for ffmpeg
     """
+    # Define aspect ratios
+    aspect_ratios = {
+        "9:16": 9/16,
+        "1:1": 1.0,
+        "16:9": 16/9
+    }
+    
+    target_aspect_ratio = aspect_ratios.get(aspect_ratio, 9/16)
     current_aspect_ratio = video_width / video_height
     
     if current_aspect_ratio > target_aspect_ratio:
@@ -767,24 +775,36 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, target_
         'crop_x': crop_x,
         'crop_y': crop_y,
         'crop_width': target_width,
-        'crop_height': target_height 
+        'crop_height': target_height,
+        'aspect_ratio': aspect_ratio
     }
 
-def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, subtitle_color, target_width=1080, target_height=1920):
+
+def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, subtitle_color, aspect_ratio="9:16"):
     """
-    Create ultra high-quality 9:16 clip with accurate karaoke-style subtitles
+    Create ultra high-quality clip with accurate karaoke-style subtitles for different aspect ratios
     """
     try:
-        logger.info(f"Processing clip {clip_idx} with karaoke-style subtitles")
+        logger.info(f"Processing clip {clip_idx} with aspect ratio {aspect_ratio}")
         
-        # Step 1: Face detection and crop calculation (keeping existing logic)
+        # Define target dimensions based on aspect ratio
+        dimensions = {
+            "9:16": (1080, 1920),
+            "1:1": (1080, 1080),
+            "16:9": (1920, 1080)
+        }
+        
+        target_width, target_height = dimensions.get(aspect_ratio, (1080, 1920))
+        
+        # Step 1: Face detection and crop calculation
         face_data = detect_faces_in_video(temp_raw_clip)
         
         if face_data:
             crop_params = calculate_crop_parameters(
                 face_data['video_width'], 
                 face_data['video_height'], 
-                face_data
+                face_data,
+                aspect_ratio
             )
         else:
             # Fallback crop calculation
@@ -796,7 +816,7 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             video_info = json.loads(result.stdout)
             width = int(video_info['streams'][0]['width'])
             height = int(video_info['streams'][0]['height'])
-            crop_params = calculate_crop_parameters(width, height, None)
+            crop_params = calculate_crop_parameters(width, height, None, aspect_ratio)
         
         # Step 2: Get accurate word timing from clip transcript
         words_data = clip_transcript_data['words']
@@ -814,24 +834,24 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
                     'end': (i + 1) * word_duration
                 })
         
-        # **CRITICAL FIX**: Ensure all word timings are relative to clip start (0-based)
-        logger.info("Adjusting word timings to be relative to clip start...")
+        # Adjust word timings
         for word_data in words_data:
-            # If timing seems absolute (large numbers), make it relative
-            if word_data['start'] > clip_duration:
-                logger.warning(f"Detected absolute timing for word '{word_data['word']}': {word_data['start']:.3f}s")
-                # This suggests timing wasn't properly converted in extract_clip_transcript_from_whisper
-                # For now, we'll use the existing timing as-is since extract function should handle this
-            
-            # Ensure no negative timing and clip to duration
             word_data['start'] = max(0, word_data['start'])
             word_data['end'] = min(clip_duration, word_data['end'])
-            
-            logger.debug(f"Word '{word_data['word']}': {word_data['start']:.3f}s - {word_data['end']:.3f}s")
         
-        # Step 3: Build base video filter
+        # Step 3: Build base video filter with rounded corners for 1:1
         filter_complex = f"crop={crop_params['crop_width']}:{crop_params['crop_height']}:{crop_params['crop_x']}:{crop_params['crop_y']}"
         filter_complex += f",scale={target_width}:{target_height}:flags=lanczos"
+        
+        # Add rounded corners for 1:1 aspect ratio
+        if aspect_ratio == "1:1":
+            corner_radius = min(target_width, target_height) // 20  # 5% of the smaller dimension
+            filter_complex += f",drawbox=x=0:y=0:w={corner_radius}:h={corner_radius}:color=black:t=fill"
+            filter_complex += f",drawbox=x={target_width-corner_radius}:y=0:w={corner_radius}:h={corner_radius}:color=black:t=fill"
+            filter_complex += f",drawbox=x=0:y={target_height-corner_radius}:w={corner_radius}:h={corner_radius}:color=black:t=fill"
+            filter_complex += f",drawbox=x={target_width-corner_radius}:y={target_height-corner_radius}:w={corner_radius}:h={corner_radius}:color=black:t=fill"
+            # Create rounded effect using geq filter
+            filter_complex += f",geq='if(lt(sqrt((X-{corner_radius})*(X-{corner_radius})+(Y-{corner_radius})*(Y-{corner_radius})),{corner_radius}),0,r(X,Y))':'if(lt(sqrt((X-({target_width}-{corner_radius}))*(X-({target_width}-{corner_radius}))+(Y-{corner_radius})*(Y-{corner_radius})),{corner_radius}),0,g(X,Y))':'if(lt(sqrt((X-{corner_radius})*(X-{corner_radius})+(Y-({target_height}-{corner_radius}))*(Y-({target_height}-{corner_radius}))),{corner_radius}),0,b(X,Y))'"
         
         # Step 4: Create subtitle lines with proper text wrapping (2-3 words per line for better readability)
         subtitle_lines = []
@@ -897,7 +917,6 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             
             # Enhanced karaoke-style subtitle settings
             font_size = 64  # Smaller size as requested
-            y_position = "h*0.78"  # Position in lower area
 
             from pathlib import Path
 
@@ -906,12 +925,16 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             # Set subtitle color dynamically
             if subtitle_color == "yellow":
                 font_color = "#FFFF00"
+                y_position = "h*0.78" 
             elif subtitle_color == "green":
                 font_color = "#00FF00"
+                y_position = "h*0.78"
             elif subtitle_color == "white":
                 font_color = "#FFFFFF"
+                y_position = "(h-text_h)/2"  # Centered vertically
             else:
                 font_color = "#FFFFFF"  # fallback default
+                y_position = "h*0.78"
 
             # Then add the main text (bright yellow, bold)
             filter_complex += f",drawtext=text='{safe_line_text}':" \
