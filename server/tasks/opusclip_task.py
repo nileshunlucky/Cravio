@@ -718,7 +718,7 @@ def detect_faces_in_video(video_path, num_frames=5):
         logger.error(f"Error in face detection: {str(e)}")
         return None
 
-def calculate_crop_parameters(video_width, video_height, face_data=None, aspect_ratio="9:16"):
+def calculate_crop_parameters(video_width, video_height, aspect_ratio, face_data=None):
     """
     Calculate optimal crop parameters for different aspect ratios
     
@@ -843,7 +843,7 @@ def get_final_dimensions_and_filter(aspect_ratio, crop_params):
         'filter_string': ','.join(filter_parts)
     }
 
-def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, subtitle_color, aspect_ratio="9:16"):
+def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_clip_path, clip_transcript_data, clip_duration, unique_id, clip_idx, subtitle_color, aspect_ratio):
     """
     Create ultra high-quality clip with accurate karaoke-style subtitles and proper aspect ratio handling
     """
