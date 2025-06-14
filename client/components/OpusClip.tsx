@@ -55,7 +55,7 @@ export default function OpusClip() {
   const processingRef = useRef<boolean>(false);
   const initialRenderRef = useRef<boolean>(true);
   const [showMobileTip, setShowMobileTip] = useState(false)
-  const [duration, setDuration] = useState<string>('30 sec');
+  const [duration, setDuration] = useState<string>('30 seconds');
   const [aspectRatio, setAspectRatio] = useState<string>('9:16');
   const [includeMoments, setIncludeMoments] = useState<string>('valuable engaging moments');
   const [subtitleColor, setSubtitleColor] = useState<string>('yellow');
@@ -906,48 +906,32 @@ export default function OpusClip() {
               </div>
             </div>
 
-            {/* Subtitle customization */}
-            {/* <div className="p-3 bg-zinc-900 text-zinc-400 flex flex-col gap-4 rounded-xl mt-3">
-              <div className="flex items-center gap-2">
-                <Select disabled={isLoading} value={subtitleColor} onValueChange={setSubtitleColor}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yellow">Yellow</SelectItem>
-                    <SelectItem value="green">Green</SelectItem>
-                    <SelectItem value="white">White</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div> */}
-
             <div className={`p-3 bg-zinc-900 text-zinc-400 flex flex-col gap-4 rounded-xl mt-3 ${isLoading ? "opacity-50" : ""}`}>
-              <div className="flex items-center gap-3">
-                {videoOptions.map((option) => (
-                  <Button
-                    key={option.value}
-                    onClick={() => !isLoading && setSubtitleColor(option.value)}
-                    disabled={isLoading}
-                    className={`rounded-xl overflow-hidden flex flex-col border-2 transition-all ${subtitleColor === option.value
-                        ? "border-white"
-                        : "border-transparent hover:border-white"
-                      } ${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                  >
-                    <video
-                      src={option.src}
-                      muted
-                      autoPlay
-                      loop
-                      className="w-28 h-40 object-cover"
-                    />
-                    <div className="text-center text-xs py-1 text-zinc-300 capitalize">
-                      {option.label}
-                    </div>
-                  </Button>
-                ))}
-              </div>
-            </div>
+  <div className="flex gap-4 justify-between w-full">
+    {videoOptions.map((option) => (
+      <Button
+        key={option.value}
+        onClick={() => !isLoading && setSubtitleColor(option.value)}
+        disabled={isLoading}
+        className={`rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 w-24 sm:w-28 md:w-32 
+          ${subtitleColor === option.value ? "border-white" : "border-transparent hover:border-white"}
+          ${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+      >
+        <video
+          src={option.src}
+          muted
+          autoPlay
+          loop
+          className="aspect-[9/16] w-full object-cover"
+        />
+        <div className="text-center text-xs py-1 text-zinc-300 capitalize">
+          {option.label}
+        </div>
+      </Button>
+    ))}
+  </div>
+</div>
+
           </div>
         </motion.div>
       )}

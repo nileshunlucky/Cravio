@@ -399,10 +399,12 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, dura
             # Prompt for GPT
             prompt = f"""
             You are an expert at finding viral moments in videos. Given the following transcript with timestamps, 
-            identify up to 10 potential viral clips that are approximately {duration}. max 10 clips.
+            identify up to 10 potential viral clips that are approximately {duration} long. max 10 clips.
 
             Find specific moments by user input: {include_moments}.
             - starting hook that attracts viewers
+            - emotional or surprising moments
+            - moments that are likely to go viral
             
             Respond in JSON format with an array of clips. Each clip should include:
             - start: the start time in seconds (float)
