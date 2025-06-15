@@ -9,12 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { CalendarDays, ArrowLeft, Clock } from 'lucide-react';
 
-export async function generateStaticParams() {
+
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
   const files = fs.readdirSync('content/blog');
   return files.map(file => ({
     slug: file.replace(/\.md$/, ''),
   }));
 }
+
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const filePath = path.join('content/blog', `${params.slug}.md`);
