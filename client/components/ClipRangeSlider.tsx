@@ -1,5 +1,6 @@
 import * as React from "react"
 import * as SliderPrimitive from "@radix-ui/react-slider"
+import { Button } from "./ui/button"
 
 export function ClipRangeSlider({
   duration = 120, // total duration in seconds (e.g., 2 minutes)
@@ -20,10 +21,9 @@ export function ClipRangeSlider({
 
   return (
     <div className="w-full space-y-3">
-      <div className="flex justify-between text-sm text-zinc-300">
-        <span>Start: {formatTime(value[0])}</span>
-        <span>Duration: {formatTime(duration)}</span>
-        <span>End: {formatTime(value[1])}</span>
+      <div className="flex gap-2">
+        <p>Processing timeframe</p>
+        <Button className="bg-green-600/50 text-green-500">Credit saver</Button>
       </div>
       <SliderPrimitive.Root
         className="relative flex w-full touch-none select-none items-center"
@@ -37,11 +37,12 @@ export function ClipRangeSlider({
         <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-zinc-700">
           <SliderPrimitive.Range className="absolute h-full bg-white rounded-full" />
         </SliderPrimitive.Track>
-        <SliderPrimitive.Thumb className="block h-4 w-4 rounded-full bg-white border-2 border-zinc-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
-        <SliderPrimitive.Thumb className="block h-4 w-4 rounded-full bg-white border-2 border-zinc-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
+        <SliderPrimitive.Thumb className="block h-5 w-5 rounded-full bg-black border-2 border-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
+        <SliderPrimitive.Thumb className="block h-5 w-5 rounded-full bg-black border-2 border-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
       </SliderPrimitive.Root>
-      <div className="text-xs text-zinc-400 text-center">
-        Selected clip: {formatTime(value[1] - value[0])} ({Math.ceil((value[1] - value[0]) / 60)} credits)
+      <div className="flex items-center justify-between text-sm">
+        <Button>{formatTime(value[0])}</Button>
+        <Button>{formatTime(value[1])}</Button>
       </div>
     </div>
   )

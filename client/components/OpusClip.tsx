@@ -64,6 +64,16 @@ export default function OpusClip() {
   const [clipRange, setClipRange] = useState<[number, number]>([10, 60])
   const [videoDuration, setVideoDuration] = useState<number>(0);
 
+  useEffect(() => {
+    if (clipRange) {
+      const [start, end] = clipRange;
+      const durationInSeconds = end - start;
+      const credits = Math.ceil(durationInSeconds / 60); // round up
+      setCreditUsage(credits);
+    }
+  }, [clipRange]);
+
+
   const toggleMobileTip = () => {
     // Only show tooltip on small screens
     if (window.innerWidth < 768) {
@@ -489,9 +499,9 @@ export default function OpusClip() {
         setVideoUrl(taskResult.video_url);
         setVideoDuration(taskResult.video_duration);
 
-       const creditsUsed = Math.ceil((taskResult.video_duration || 0) / 60);
-       setCreditUsage(creditsUsed);
-       
+        const creditsUsed = Math.ceil((taskResult.video_duration || 0) / 60);
+        setCreditUsage(creditsUsed);
+
         // Show task completion toast
         toast.success("Processing completed successfully!", {
           position: "top-right",
