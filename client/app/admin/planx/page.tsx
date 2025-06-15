@@ -217,10 +217,6 @@ const Plans: React.FC = () => {
     return isYearly ? plan.yearlyCredit : plan.monthlyCredit;
   };
 
-  const getDiscountPercentage = (plan: PricingPlan) => {
-    return Math.round(((plan.monthlyPrice - plan.yearlyPrice) / plan.monthlyPrice) * 100);
-  };
-
   return (
     <div className="container mx-auto py-16 px-4 md:px-6">
       <Toaster />
