@@ -505,6 +505,7 @@ export default function OpusClip() {
         setVideoProcessed(true);
         setVideoUrl(result?.video_url);
         setIsLoading(false);
+        
 
         toast.success("Processing successful!", {
           position: "top-right",
