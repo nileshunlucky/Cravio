@@ -488,8 +488,10 @@ export default function OpusClip() {
         setThumbnail(taskResult.thumbnail_url);
         setVideoUrl(taskResult.video_url);
         setVideoDuration(taskResult.video_duration);
-        setCreditUsage(Math.ceil(taskResult.video_duration / 60)); // Assuming 1 credit per minute
 
+       const creditsUsed = Math.ceil((taskResult.video_duration || 0) / 60);
+       setCreditUsage(creditsUsed);
+       
         // Show task completion toast
         toast.success("Processing completed successfully!", {
           position: "top-right",
@@ -505,7 +507,7 @@ export default function OpusClip() {
         setVideoProcessed(true);
         setVideoUrl(result?.video_url);
         setIsLoading(false);
-        
+
 
         toast.success("Processing successful!", {
           position: "top-right",
@@ -577,18 +579,6 @@ export default function OpusClip() {
       }, 5000); // Poll every 5 seconds
     });
   };
-
-  useEffect(() => {
-    const [start, end] = clipRange
-    const clipLengthInSeconds = end - start
-
-    if (clipLengthInSeconds > 0) {
-      const credits = Math.ceil(clipLengthInSeconds / 60) // round up to nearest minute
-      setCreditUsage(credits)
-    } else {
-      setCreditUsage(0)
-    }
-  }, [clipRange])
 
   const handleSubmit = async () => {
 

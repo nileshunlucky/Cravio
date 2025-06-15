@@ -141,7 +141,7 @@ def process_video(self, s3_bucket=None, s3_key=None, youtube_url=None):
             ffprobe_data = json.loads(result.stdout)
             video_duration = float(ffprobe_data['format']['duration'])
 
-            logger.info(f"Video duration: {video_duration} seconds ({duration_minutes:.2f} minutes)")
+            logger.info(f"Video duration: {video_duration} seconds")
         except Exception as e:
             logger.error(f"Error calculating duration: {str(e)}")
             video_duration = 0
