@@ -238,7 +238,7 @@ const Plans: React.FC = () => {
                                 "px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
                                 !isYearly
                                     ? "bg-black text-white shadow-sm"
-                                    : "text-gray-500 hover:text-gray-700 "
+                                    : "text-zinc-500 hover:text-zinc-700 "
                             )}
                         >
                             Monthly
@@ -249,11 +249,11 @@ const Plans: React.FC = () => {
                                 "px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2",
                                 isYearly
                                     ? "bg-black text-white shadow-sm"
-                                    : "text-gray-500  hover:text-gray-700"
+                                    : "text-zinc-500  hover:text-zinc-700"
                             )}
                         >
                             Yearly
-                            <span className="bg-gradient-to-r from-red-600 to-yellow-500 bg-clip-text text-transparent text-xs px-2 py-1 font-semibold">
+                            <span className="text-orange-500 px-2 py-1">
                                 (Save 50% off)
                             </span>
                         </button>
