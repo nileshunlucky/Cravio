@@ -135,7 +135,7 @@ const Plans: React.FC = () => {
       handler: async function (response: RazorpayResponse) {
         // Send request to the server to update the user's credits
         try {
-          const userRes = await fetch('https://cravio-ai.onrender.com//add-credits', {
+          const userRes = await fetch('https://cravio-ai.onrender.com/add-credits', {
             method: "POST",
             headers: {
               "Content-Type": "application/json"

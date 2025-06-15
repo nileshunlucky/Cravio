@@ -130,6 +130,7 @@ class SubscriptionRequest(BaseModel):
 class MonthlySubscriptionRequest(BaseModel):
     plan_id: str
 
+
 class YearlySubscriptionRequest(BaseModel):
     plan_id: str
 
@@ -138,7 +139,7 @@ class YearlySubscriptionRequest(BaseModel):
 @router.post("/create-monthly-subscription")
 async def create_monthly_subscription(request: MonthlySubscriptionRequest):
     try:
-        print(f"Creating monthly subscription with plan ID: {request.plan_id}, Plan: {request.plan_name}")
+        print(f"Creating monthly subscription with plan ID: {request.plan_id}")
         subscription = razorpay_client.subscription.create({
             "plan_id": request.plan_id,
             "total_count": 12, 
@@ -153,7 +154,7 @@ async def create_monthly_subscription(request: MonthlySubscriptionRequest):
 @router.post("/create-yearly-subscription")
 async def create_yearly_subscription(request: YearlySubscriptionRequest):
     try:
-        print(f"Creating yearly subscription with plan ID: {request.plan_id}, Plan: {request.plan_name}")
+        print(f"Creating yearly subscription with plan ID: {request.plan_id}")
         subscription = razorpay_client.subscription.create({
             "plan_id": request.plan_id,
             "total_count": 1,

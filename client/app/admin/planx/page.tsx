@@ -261,7 +261,7 @@ const Plans: React.FC = () => {
             >
               Yearly
               <span className="bg-gradient-to-r from-red-600 to-yellow-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                Save 50%
+                Save 50% off
               </span>
             </button>
           </div>
@@ -287,11 +287,6 @@ const Plans: React.FC = () => {
               {plan.highlight && (
                 <div className="absolute top-0 right-0 bg-gradient-to-r from-red-600 to-yellow-500 text-white px-3 py-1 rounded-bl-lg text-sm font-medium">
                   MOST POPULAR
-                </div>
-              )}
-              {isYearly && (
-                <div className="absolute top-0 left-0 bg-green-500 text-white px-3 py-1 rounded-br-lg text-sm font-medium">
-                  {getDiscountPercentage(plan)}% OFF
                 </div>
               )}
               <CardHeader className={cn(
