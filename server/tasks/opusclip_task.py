@@ -428,6 +428,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, clip
 
             Find specific moments by user input: {include_moments}.
             - starting hook that attracts viewers
+            - ending should complement the hook properly
             - emotional or surprising moments
             - moments that are likely to go viral
             

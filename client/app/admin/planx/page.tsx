@@ -43,44 +43,58 @@ interface RazorpayInstance {
 
 interface PricingPlan {
   name: string;
-  price: number;
+  monthlyPrice: number;
+  yearlyPrice: number;
   description: string;
   features: string[];
   highlight?: boolean;
-  credit: number;
-  planId: string;
+  monthlyCredit: number;
+  yearlyCredit: number;
+  monthlyPlanId: string;
+  yearlyPlanId: string;
 }
 
 const Plans: React.FC = () => {
   const { user } = useUser();
   const router = useRouter();
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
+  const [isYearly, setIsYearly] = useState(true); // Default to yearly
   const [showMobileTip, setShowMobileTip] = useState(false);
+  
   const pricingPlans: PricingPlan[] = [
     {
-      name: 'BASIC',
-      price: 19,
-      credit: 300,
-      planId: "plan_QZrlzY5jFsQOgb",
+      name: 'STARTER',
+      monthlyPrice: 19,
+      yearlyPrice: 9.5,
+      monthlyCredit: 300,
+      yearlyCredit: 3600, // 300 * 12
+      monthlyPlanId: "plan_QZrlzY5jFsQOgb",
+      yearlyPlanId: "plan_QhR8PRglXbPiag", // Add your yearly plan ID
       description: 'Perfect for beginners and small projects',
-      features: ['300 Credits', 'HD resolution', 'Email support'],
+      features: ['Credits per month', 'AI clipping with Virality Score', 'Powerful editor', "Remove Watermark"],
     },
     {
       name: 'PRO',
-      price: 49,
-      credit: 800,
-      planId: "plan_QZrmhupRIuRSJI",
+      monthlyPrice: 49,
+      yearlyPrice: 24.5,
+      monthlyCredit: 800,
+      yearlyCredit: 9600, // 800 * 12
+      monthlyPlanId: "plan_QZrmhupRIuRSJI",
+      yearlyPlanId: "plan_QhR9XPSR0wt7Ql", // Add your yearly plan ID
       description: 'Ideal for professionals and growing businesses',
-      features: ['800 Credits', '4K resolution', 'Priority email & chat support'],
+      features: ['Credits per month', 'Everything in STARTER plan, plus:',"Multiple aspect ratios (9:16, 1:1, 16:9)", "Speech enhancement",'Priority email & chat support'],
       highlight: true
     },
     {
       name: 'PREMIUM',
-      price: 69,
-      credit: 1200,
-      planId: "plan_QZrnHENcbpA1xP",
+      monthlyPrice: 69,
+      yearlyPrice: 34.5,
+      monthlyCredit: 1200,
+      yearlyCredit: 14400, // 1200 * 12
+      monthlyPlanId: "plan_QZrnHENcbpA1xP",
+      yearlyPlanId: "plan_QhRBCcX73kTS7P", // Add your yearly plan ID
       description: 'Everything you need for enterprise-level content',
-      features: ['1100 Credits + 100 bonus', '4K resolution', '24/7 priority support',]
+      features: ['Credits per month', 'Everything in PRO plan, plus:','Exclusive support for large projects',"API & custom integrations"],
     }
   ];
 
@@ -112,14 +126,25 @@ const Plans: React.FC = () => {
     visible: { opacity: 1, y: 0 }
   };
 
-  const handleSubscribe = async (planId: string) => {
-    setLoading(true)
-    const res = await fetch('https://cravio-ai.onrender.com/create-subscription', {
+  const handleSubscribe = async (plan: PricingPlan) => {
+    setLoading(true);
+    const planId = isYearly ? plan.yearlyPlanId : plan.monthlyPlanId;
+    const credits = isYearly ? plan.yearlyCredit : plan.monthlyCredit;
+    const price = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
+
+    // Use different API endpoints for monthly vs yearly
+    const apiEndpoint = isYearly 
+      ? 'https://cravio-ai.onrender.com/create-yearly-subscription'
+      : 'https://cravio-ai.onrender.com/create-monthly-subscription';
+
+    const res = await fetch(apiEndpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ plan_id: planId })
+      body: JSON.stringify({ 
+        plan_id: planId,
+      })
     });
 
     const data = await res.json();
@@ -135,33 +160,35 @@ const Plans: React.FC = () => {
       handler: async function (response: RazorpayResponse) {
         // Send request to the server to update the user's credits
         try {
-          const userRes = await fetch('https://cravio-ai.onrender.com//add-credits', {
+          const userRes = await fetch('https://cravio-ai.onrender.com/update-credits', {
             method: "POST",
             headers: {
               "Content-Type": "application/json"
             },
             body: JSON.stringify({
               user_email: user?.primaryEmailAddress?.emailAddress,
-              credits: pricingPlans.find(plan => plan.planId === planId)?.credit,
+              credits: credits,
               subscription_id: data.id,
-              price: Math.round(pricingPlans.find(plan => plan.planId === planId)?.price || 0),
+              price: Math.round(price),
+              billing_cycle: isYearly ? 'yearly' : 'monthly',
+              plan_name: plan.name,
               status: "active",
               last_credited: new Date().toISOString()
             })
           });
 
           const userData = await userRes.json();
-          console.log("success", userData)
-          console.log("response", response)
-          toast.success("Thanks for Subscribing us")
-          setLoading(false)
-          // deplay 3 sec then router.push("/admin/dashboard")
+          console.log("success", userData);
+          console.log("response", response);
+          toast.success("Thanks for Subscribing us");
+          setLoading(false);
+          // delay 3 sec then router.push("/admin/dashboard")
           setTimeout(() => {
-            router.push("/admin/dashboard")
+            router.push("/admin/dashboard");
           }, 3000);
         } catch (error) {
-          console.error(error)
-          setLoading(false)
+          console.error(error);
+          setLoading(false);
         }
       },
       prefill: {
@@ -172,15 +199,27 @@ const Plans: React.FC = () => {
 
     const razor = new ((window as unknown) as RazorpayWindow).Razorpay(options);
     razor.open();
-    setLoading(false)
+    setLoading(false);
   };
 
   const toggleMobileTip = () => {
     // Only show tooltip on small screens
     if (window.innerWidth < 768) {
-      setShowMobileTip(!showMobileTip)
+      setShowMobileTip(!showMobileTip);
     }
-  }
+  };
+
+  const getCurrentPrice = (plan: PricingPlan) => {
+    return isYearly ? plan.yearlyPrice : plan.monthlyPrice;
+  };
+
+  const getCurrentCredits = (plan: PricingPlan) => {
+    return isYearly ? plan.yearlyCredit : plan.monthlyCredit;
+  };
+
+  const getDiscountPercentage = (plan: PricingPlan) => {
+    return Math.round(((plan.monthlyPrice - plan.yearlyPrice) / plan.monthlyPrice) * 100);
+  };
 
   return (
     <div className="container mx-auto py-16 px-4 md:px-6">
@@ -193,9 +232,40 @@ const Plans: React.FC = () => {
         transition={{ duration: 0.5 }}
       >
         <h1 className="text-4xl md:text-5xl font-bold mb-4">Choose Your Plan</h1>
-        <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
+        <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto mb-8">
           Create stunning AI-powered videos for your business with our flexible subscription plans.
         </p>
+
+        {/* Billing Toggle */}
+        <div className="flex items-center justify-center mb-8">
+          <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg flex items-center">
+            <button
+              onClick={() => setIsYearly(false)}
+              className={cn(
+                "px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                !isYearly
+                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              )}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setIsYearly(true)}
+              className={cn(
+                "px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2",
+                isYearly
+                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              )}
+            >
+              Yearly
+              <span className="bg-gradient-to-r from-red-600 to-yellow-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                Save 50%
+              </span>
+            </button>
+          </div>
+        </div>
       </motion.div>
 
       <div className="grid md:grid-cols-3 gap-8 mb-16">
@@ -212,11 +282,16 @@ const Plans: React.FC = () => {
           >
             <Card className={cn(
               "relative overflow-hidden h-full",
-              plan.highlight ? "border-2 border-red-500  shadow-xl" : ""
+              plan.highlight ? "border-2 border-red-500 shadow-xl" : ""
             )}>
               {plan.highlight && (
                 <div className="absolute top-0 right-0 bg-gradient-to-r from-red-600 to-yellow-500 text-white px-3 py-1 rounded-bl-lg text-sm font-medium">
                   MOST POPULAR
+                </div>
+              )}
+              {isYearly && (
+                <div className="absolute top-0 left-0 bg-green-500 text-white px-3 py-1 rounded-br-lg text-sm font-medium">
+                  {getDiscountPercentage(plan)}% OFF
                 </div>
               )}
               <CardHeader className={cn(
@@ -232,29 +307,36 @@ const Plans: React.FC = () => {
                 <div className="mt-4 text-center">
                   <span className={cn(
                     "text-4xl font-bold",
-                    plan.highlight ? "text-5xl " : ""
+                    plan.highlight ? "text-5xl" : ""
                   )}>
-                    ${plan.price}
+                    ${getCurrentPrice(plan)}
                   </span>
-                  <span className="text-gray-500 dark:text-gray-400 ml-2">/month</span>
+                  <span className="text-gray-500 dark:text-gray-400 ml-2">
+                    /{isYearly ? 'month' : 'month'}
+                  </span>
+                  {isYearly && (
+                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      Billed annually (${(getCurrentPrice(plan) * 12).toFixed(1)}/year)
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
-                <p className={cn(
-                  "font-semibold mb-4 text-center",
-                  plan.highlight ? "text-lg" : ""
-                )}>
-                </p>
                 <ul className="space-y-3">
                   {plan.features.map((feature, i) => (
                     <div className="flex items-center gap-2" key={i}>
-                    <li className="flex items-center">
-                      <Check className={cn(
-                        "h-5 w-5 mr-2 flex-shrink-0",
-                        plan.highlight ? "text-orange-500" : "text-yellow-500"
-                      )} />
-                      <span>{feature}</span>
-                    </li>
+                      <li className="flex items-center">
+                        <Check className={cn(
+                          "h-5 w-5 mr-2 flex-shrink-0",
+                          plan.highlight ? "text-orange-500" : "text-yellow-500"
+                        )} />
+                        <span>
+                          {feature === 'Credits per month' 
+                            ? `${getCurrentCredits(plan).toLocaleString()} Credits${isYearly ? ' per year, available instantly' : ' per month, available instantly'}`
+                            : feature
+                          }
+                        </span>
+                      </li>
                       {feature.includes("Credits") && (
                         <TooltipProvider>
                           <Tooltip open={showMobileTip || undefined}>
@@ -265,19 +347,18 @@ const Plans: React.FC = () => {
                               />
                             </TooltipTrigger>
                             <TooltipContent side="top">
-                                <p>1 credit = 1 min video processing</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )
-                      }
+                              <p>1 credit = 1 min video processing</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                     </div>
                   ))}
                 </ul>
               </CardContent>
               <CardFooter>
                 <Button
-                  onClick={() => handleSubscribe(plan.planId)}
+                  onClick={() => handleSubscribe(plan)}
                   disabled={loading}
                   className={cn(
                     "w-full flex items-center justify-center gap-2",
@@ -313,7 +394,6 @@ const Plans: React.FC = () => {
                     plan.highlight ? "SUBSCRIBE NOW" : "SUBSCRIBE"
                   )}
                 </Button>
-
               </CardFooter>
             </Card>
           </motion.div>
@@ -348,13 +428,15 @@ const Plans: React.FC = () => {
           ))}
         </Accordion>
 
-        <div className=" p-6 rounded-lg text-center border">
+        <div className="p-6 rounded-lg text-center border">
           <h3 className="text-xl font-semibold mb-2">Please chat to our friendly team</h3>
           <p className="mb-4">We&apos;re here to help with any questions you might have.</p>
-          <a href="mailto:cravio.ai@gmail.com"><Button className="flex items-center">
-            <MessageSquare className="h-5 w-5 mr-2" />
-            Get in touch
-          </Button></a>
+          <a href="mailto:cravio.ai@gmail.com">
+            <Button className="flex items-center">
+              <MessageSquare className="h-5 w-5 mr-2" />
+              Get in touch
+            </Button>
+          </a>
         </div>
       </motion.div>
     </div>
