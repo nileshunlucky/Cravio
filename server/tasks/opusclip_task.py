@@ -252,7 +252,7 @@ class OpusClipProcessTask(Task):
         super().on_failure(exc, task_id, args, kwargs, einfo)
 
 @celery_app.task(bind=True, base=OpusClipProcessTask)
-def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, duration=None, aspect_ratio=None, include_moments=None, subtitle_color=None):
+def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, duration=None, aspect_ratio=None, include_moments=None, subtitle_color=None, clip_range=None):
     """
     Process a video to create short viral clips
     
@@ -292,10 +292,42 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, dura
         
         try:
             s3_client.download_file(bucket_name, video_key, temp_video_path)
+            
             logger.info(f"Downloaded video from S3 to {temp_video_path}")
         except ClientError as e:
             logger.error(f"S3 download error: {str(e)}")
             raise Exception(f"Failed to download video from S3: {str(e)}")
+        
+        # If clip_range is provided, trim the video
+        self.update_state(state='PROGRESS', meta={
+            'status': 'Trimming video', 
+            'percent_complete': 15
+        })
+        
+        if clip_range and isinstance(clip_range, (list, tuple)) and len(clip_range) == 2:
+         clip_start = float(clip_range[0])
+         clip_end = float(clip_range[1])
+         clip_duration = clip_end - clip_start
+
+         trimmed_video_path = os.path.join(TEMP_DIR, f"{unique_id}_trimmed.mp4")
+
+         ffmpeg_trim_cmd = [
+              'ffmpeg',
+              '-ss', str(clip_start),  # Start time
+               '-i', temp_video_path,   # Input original video
+               '-t', str(clip_duration),  # Duration to keep
+              '-c', 'copy',  # Copy codec (faster)
+               '-y',  # Overwrite output
+                trimmed_video_path
+          ]
+
+         try:
+                subprocess.run(ffmpeg_trim_cmd, check=True)
+                logger.info(f"Trimmed video from {clip_start}s to {clip_end}s.")
+                temp_video_path = trimmed_video_path  # Replace path for next steps
+         except Exception as e:
+                logger.error(f"Error trimming video: {str(e)}")
+                raise Exception("Failed to trim video.")
         
         # Extract audio from video
         self.update_state(state='PROGRESS', meta={

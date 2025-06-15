@@ -628,7 +628,8 @@ export default function OpusClip() {
           duration,
           aspectRatio,
           includeMoments,
-          subtitleColor
+          subtitleColor,
+          clipRange,
         }),
       })
 

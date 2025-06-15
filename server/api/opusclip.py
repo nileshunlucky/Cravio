@@ -1,6 +1,5 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
-from typing import Dict, Any
 from pydantic import BaseModel, validator
 import os
 import uuid
@@ -13,6 +12,7 @@ import urllib.parse
 from tasks.opusclip_task import process_video, process_opusclip
 from celery_config import celery_app
 from db import users_collection
+from typing import List, Optional
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -242,6 +242,8 @@ class OpusClipRequest(BaseModel):
     aspectRatio: str
     includeMoments: str
     subtitleColor: str
+    clipRange: Optional[List[float]] = None
+
 
 @router.post("/opusclip")
 async def opusclip(request: OpusClipRequest):
@@ -282,7 +284,8 @@ async def opusclip(request: OpusClipRequest):
             duration=request.duration,
             aspect_ratio=request.aspectRatio,
             include_moments=request.includeMoments,
-            subtitle_color=request.subtitleColor
+            subtitle_color=request.subtitleColor,
+            clip_range=request.clipRange
         )
         
         return JSONResponse(
