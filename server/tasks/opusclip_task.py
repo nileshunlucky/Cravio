@@ -252,7 +252,7 @@ class OpusClipProcessTask(Task):
         super().on_failure(exc, task_id, args, kwargs, einfo)
 
 @celery_app.task(bind=True, base=OpusClipProcessTask)
-def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, duration=None, aspect_ratio=None, include_moments=None, subtitle_color=None, clip_range=None):
+def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, clips_duration=None, aspect_ratio=None, include_moments=None, subtitle_color=None, clip_range=None):
     """
     Process a video to create short viral clips
     
@@ -303,7 +303,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, dura
             'status': 'Trimming video', 
             'percent_complete': 15
         })
-        
+
         if clip_range and isinstance(clip_range, (list, tuple)) and len(clip_range) == 2:
          clip_start = float(clip_range[0])
          clip_end = float(clip_range[1])
@@ -424,7 +424,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, dura
             # Prompt for GPT
             prompt = f"""
             You are an expert at finding viral moments in videos. Given the following transcript with timestamps, 
-            identify up to 10 potential viral clips that are approximately {duration} long. max 10 clips.
+            identify up to 10 potential viral clips that must be at least {clips_duration} longer, but not shorter than {clips_duration}. max 10 clips.
 
             Find specific moments by user input: {include_moments}.
             - starting hook that attracts viewers

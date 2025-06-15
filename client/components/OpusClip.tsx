@@ -61,8 +61,15 @@ export default function OpusClip() {
   const [includeMoments, setIncludeMoments] = useState<string>('valuable engaging moments');
   const [subtitleColor, setSubtitleColor] = useState<string>('yellow');
   const [creditUsage, setCreditUsage] = useState<number | null>(null);
-  const [clipRange, setClipRange] = useState<[number, number]>([10, 60])
+  const [clipRange, setClipRange] = useState<[number, number]>([0, 60])
   const [videoDuration, setVideoDuration] = useState<number>(0);
+
+  // Automatically set clipRange when video duration is loaded
+  useEffect(() => {
+    if (videoDuration > 0) {
+      setClipRange([0, videoDuration]);
+    }
+  }, [videoDuration]);
 
   useEffect(() => {
     if (clipRange) {
@@ -72,7 +79,6 @@ export default function OpusClip() {
       setCreditUsage(credits);
     }
   }, [clipRange]);
-
 
   const toggleMobileTip = () => {
     // Only show tooltip on small screens
@@ -926,6 +932,7 @@ export default function OpusClip() {
               </div>
               <div className="">
                 <ClipRangeSlider
+                  disabled={isLoading}
                   duration={videoDuration}
                   value={clipRange}
                   onChange={(val) => setClipRange(val)}

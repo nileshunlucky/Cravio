@@ -25,7 +25,7 @@ export function ClipRangeSlider({
         <p>Processing timeframe</p>
         <Button className="bg-green-900/50 hover:bg-green-900 text-green-400 font-semibold">Credit saver</Button>
       </div>
-      <SliderPrimitive.Root
+      <SliderPrimitive.Root 
         className="relative flex w-full touch-none select-none items-center"
         value={value}
         onValueChange={(val) => onChange([val[0], val[1]])}
@@ -41,8 +41,8 @@ export function ClipRangeSlider({
         <SliderPrimitive.Thumb className="block h-5 w-5 rounded-full bg-black border border-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
       </SliderPrimitive.Root>
       <div className="flex items-center justify-between text-sm">
-        <Button className="bg-black text-white">{formatTime(value[0])}</Button>
-        <Button className="bg-black text-white">{formatTime(value[1])}</Button>
+        <Button className="bg-black text-white hover:bg-zinc-900">{formatTime(value[0])}</Button>
+        <Button className="bg-black text-white hover:bg-zinc-900">{formatTime(value[1])}</Button>
       </div>
     </div>
   )

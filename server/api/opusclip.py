@@ -281,7 +281,7 @@ async def opusclip(request: OpusClipRequest):
             s3_video_url=request.videoUrl,
             s3_thumbnail_url=request.thumbnail,
             user_email=request.email,
-            duration=request.duration,
+            clips_duration=request.duration,
             aspect_ratio=request.aspectRatio,
             include_moments=request.includeMoments,
             subtitle_color=request.subtitleColor,
