@@ -10,7 +10,6 @@ import { Separator } from '@/components/ui/separator';
 import { CalendarDays, ArrowLeft, Clock } from 'lucide-react';
 import { Metadata } from 'next';
 
-
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   const files = fs.readdirSync('content/blog');
   return files.map(file => ({
@@ -19,9 +18,10 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
 }
 
 export async function generateMetadata(
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {
-  const filePath = path.join('content/blog', `${params.slug}.md`);
+  const { slug } = await params;
+  const filePath = path.join('content/blog', `${slug}.md`);
   const fileContent = fs.readFileSync(filePath, 'utf8');
   const { data } = matter(fileContent);
 
@@ -31,15 +31,15 @@ export async function generateMetadata(
   };
 }
 
-
 interface PageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export default async function Page({ params }: PageProps) {
-  const filePath = path.join('content/blog', `${params.slug}.md`);
+  const { slug } = await params;
+  const filePath = path.join('content/blog', `${slug}.md`);
   const fileContent = fs.readFileSync(filePath, 'utf8');
   const { data, content } = matter(fileContent);
   const processed = await remark().use(html).process(content);
