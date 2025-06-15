@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select"
 import { Card } from "@/components/ui/card"
 import { ClipRangeSlider } from "@/components/ClipRangeSlider"
-
+import { useRouter } from 'next/navigation';
 // Define TypeScript interfaces
 interface TaskResult {
   video_url: string;
@@ -63,6 +63,7 @@ export default function OpusClip() {
   const [creditUsage, setCreditUsage] = useState<number | null>(null);
   const [clipRange, setClipRange] = useState<[number, number]>([0, 60])
   const [videoDuration, setVideoDuration] = useState<number>(0);
+  const router = useRouter();
 
   // Automatically set clipRange when video duration is loaded
   useEffect(() => {
@@ -672,10 +673,11 @@ export default function OpusClip() {
       }
     } catch (error) {
       console.error(error)
-      toast.error("Failed to process request", {
+      toast.error("Not enough credits", {
         position: "top-center",
         duration: 4000,
       })
+      router.push('/admin/plan'); 
     } finally {
       setIsLoading(false)
       setThumbnail(null);
