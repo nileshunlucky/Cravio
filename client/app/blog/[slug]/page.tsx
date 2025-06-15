@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { CalendarDays, ArrowLeft, Clock } from 'lucide-react';
+import { Metadata } from 'next';
 
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
@@ -17,8 +18,9 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
   }));
 }
 
-
-export async function generateMetadata({ params }: { params: { slug: string } }) {
+export async function generateMetadata(
+  { params }: { params: { slug: string } }
+): Promise<Metadata> {
   const filePath = path.join('content/blog', `${params.slug}.md`);
   const fileContent = fs.readFileSync(filePath, 'utf8');
   const { data } = matter(fileContent);
@@ -28,6 +30,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     description: data.excerpt,
   };
 }
+
 
 interface PageProps {
   params: {
