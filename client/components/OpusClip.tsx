@@ -19,12 +19,13 @@ import {
   SelectItem,
 } from "@/components/ui/select"
 import { Card } from "@/components/ui/card"
+import { ClipRangeSlider } from "@/components/ClipRangeSlider"
 
 // Define TypeScript interfaces
 interface TaskResult {
   video_url: string;
   thumbnail_url: string;
-  credit_usage?: number;
+  video_duration: number;
 }
 
 interface TaskStatus {
@@ -46,7 +47,6 @@ export default function OpusClip() {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [thumbnail, setThumbnail] = useState<string | null>(null);
-  const [creditUsage, setCreditUsage] = useState<number | null>(null);
   const [isValidYoutubeLink, setIsValidYoutubeLink] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [videoProcessed, setVideoProcessed] = useState<boolean>(false);
@@ -60,6 +60,9 @@ export default function OpusClip() {
   const [aspectRatio, setAspectRatio] = useState<string>('9:16');
   const [includeMoments, setIncludeMoments] = useState<string>('valuable engaging moments');
   const [subtitleColor, setSubtitleColor] = useState<string>('yellow');
+  const [creditUsage, setCreditUsage] = useState<number | null>(null);
+  const [clipRange, setClipRange] = useState<[number, number]>([10, 60])
+  const [videoDuration, setVideoDuration] = useState<number>(0);
 
   const toggleMobileTip = () => {
     // Only show tooltip on small screens
@@ -484,7 +487,8 @@ export default function OpusClip() {
         // Update UI with completed task info
         setThumbnail(taskResult.thumbnail_url);
         setVideoUrl(taskResult.video_url);
-        setCreditUsage(taskResult.credit_usage || 1);
+        setVideoDuration(taskResult.video_duration);
+        setCreditUsage(Math.ceil(taskResult.video_duration / 60)); // Assuming 1 credit per minute
 
         // Show task completion toast
         toast.success("Processing completed successfully!", {
@@ -497,7 +501,7 @@ export default function OpusClip() {
       } else {
         // Handle direct response (non-task based)
         setThumbnail(result?.thumbnail_url);
-        setCreditUsage(result?.credit_usage || 1);
+        setVideoDuration(result?.video_duration || 0);
         setVideoProcessed(true);
         setVideoUrl(result?.video_url);
         setIsLoading(false);
@@ -572,6 +576,18 @@ export default function OpusClip() {
       }, 5000); // Poll every 5 seconds
     });
   };
+
+  useEffect(() => {
+    const [start, end] = clipRange
+    const clipLengthInSeconds = end - start
+
+    if (clipLengthInSeconds > 0) {
+      const credits = Math.ceil(clipLengthInSeconds / 60) // round up to nearest minute
+      setCreditUsage(credits)
+    } else {
+      setCreditUsage(0)
+    }
+  }, [clipRange])
 
   const handleSubmit = async () => {
 
@@ -905,6 +921,13 @@ export default function OpusClip() {
                 <div className="w-full">
                   <input disabled={isLoading} onChange={(e) => setIncludeMoments(e.target.value)} className={`w-full focus:outline-none p-2 rounded border border-zinc-500 ${isLoading ? 'text-zinc-600' : 'text-white'}`} type='text' placeholder='Example: find some hilarious moments' />
                 </div>
+              </div>
+              <div className="">
+                <ClipRangeSlider
+                  duration={videoDuration}
+                  value={clipRange}
+                  onChange={(val) => setClipRange(val)}
+                />
               </div>
             </div>
 
