@@ -7,13 +7,17 @@ import OpusVideos from '@/components/OpusVideos'
 
 const Page = () => {
   const [isOfferVisible, setIsOfferVisible] = useState(false)
+  const [hasChecked, setHasChecked] = useState(false)
 
   useEffect(() => {
     const claimed = localStorage.getItem('offerClaimed') === 'true'
     if (!claimed) {
       setIsOfferVisible(true)
     }
+    setHasChecked(true)
   }, [])
+
+  if (!hasChecked) return null // Avoid initial flicker
 
   return (
     <div>
