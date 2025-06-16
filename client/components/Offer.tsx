@@ -45,9 +45,13 @@ interface WindowWithRazorpay extends Window {
     Razorpay?: RazorpayConstructor;
 }
 
-const Offer = () => {
+interface OfferProps {
+  show: boolean
+  onClose: () => void
+}
+
+const Offer: React.FC<OfferProps> = ({ show, onClose }) => {
     const { user } = useUser()
-    const [show, setShow] = useState(true)
     const [loading, setLoading] = useState(false)
     const email = user?.primaryEmailAddress?.emailAddress
 
@@ -115,7 +119,7 @@ const Offer = () => {
                         })
 
                         // Hide the offer after successful purchase
-                        setShow(false)
+                        onClose()
                         localStorage.setItem('offerClaimed', 'true')
                     } catch (err) {
                         toast.error(`Something went wrong during payment verification ${err instanceof Error ? err.message : String(err)}`)
@@ -165,13 +169,12 @@ const Offer = () => {
     }
 
 
-    // Check if offer already claimed
-    useEffect(() => {
+     useEffect(() => {
         const claimed = localStorage.getItem('offerClaimed') === 'true'
         if (claimed) {
-            setShow(false)
+            onClose()
         }
-    }, [])
+    }, [onClose])
 
     if (!show) return null
 
@@ -217,7 +220,7 @@ const Offer = () => {
                     <CardContent className="relative p-6 pt-8 text-center flex flex-col gap-4 items-center">
                         {/* Close Button */}
                         <button
-                            onClick={() => setShow(false)}
+                            onClick={onClose}
                             className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 transition-colors"
                             aria-label="Close Offer"
                         >
