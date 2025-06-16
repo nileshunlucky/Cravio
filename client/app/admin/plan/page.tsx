@@ -254,7 +254,7 @@ const Plans: React.FC = () => {
                         >
                             Yearly
                             <span className="bg-gradient-to-r from-red-600 to-yellow-500 text-white rounded font-medium px-2 py-1">
-                                (Save 50% off)
+                                Save 50% off
                             </span>
                         </button>
                     </div>
