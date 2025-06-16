@@ -45,13 +45,9 @@ interface WindowWithRazorpay extends Window {
     Razorpay?: RazorpayConstructor;
 }
 
-interface OfferProps {
-  show: boolean
-  onClose: () => void
-}
-
-const Offer: React.FC<OfferProps> = ({ show, onClose }) => {
+const Offer = () => {
     const { user } = useUser()
+    const [show, setShow] = useState(true)
     const [loading, setLoading] = useState(false)
     const email = user?.primaryEmailAddress?.emailAddress
 
@@ -119,7 +115,7 @@ const Offer: React.FC<OfferProps> = ({ show, onClose }) => {
                         })
 
                         // Hide the offer after successful purchase
-                        onClose()
+                        setShow(false)
                         localStorage.setItem('offerClaimed', 'true')
                     } catch (err) {
                         toast.error(`Something went wrong during payment verification ${err instanceof Error ? err.message : String(err)}`)
@@ -169,12 +165,13 @@ const Offer: React.FC<OfferProps> = ({ show, onClose }) => {
     }
 
 
-     useEffect(() => {
+    // Check if offer already claimed
+    useEffect(() => {
         const claimed = localStorage.getItem('offerClaimed') === 'true'
         if (claimed) {
-            onClose()
+            setShow(false)
         }
-    }, [onClose])
+    }, [])
 
     if (!show) return null
 
@@ -220,7 +217,7 @@ const Offer: React.FC<OfferProps> = ({ show, onClose }) => {
                     <CardContent className="relative p-6 pt-8 text-center flex flex-col gap-4 items-center">
                         {/* Close Button */}
                         <button
-                            onClick={onClose}
+                            onClick={() => setShow(false)}
                             className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 transition-colors"
                             aria-label="Close Offer"
                         >
