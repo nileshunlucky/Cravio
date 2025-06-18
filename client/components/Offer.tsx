@@ -45,6 +45,12 @@ interface WindowWithRazorpay extends Window {
     Razorpay?: RazorpayConstructor;
 }
 
+declare global {
+    interface Window {
+        fbq: (action: string, event: string, parameters?: Record<string, any>) => void;
+    }
+}
+
 const Offer = () => {
     const { user } = useUser()
     const [show, setShow] = useState(true)
@@ -113,6 +119,16 @@ const Offer = () => {
                         toast.success("Payment Successful!", {
                             description: `You have been credited with ${result.credits} credits`
                         })
+
+                        if (typeof window !== 'undefined' && window.fbq) {
+                        window.fbq('track', 'Purchase', {
+                            value: 1.00,
+                            currency: 'USD',
+                            content_name: '60 Credits Trial',
+                            content_category: 'Subscription',
+                            content_type: 'product',
+                        });
+                    }
 
                         // Hide the offer after successful purchase
                         setShow(false)
@@ -226,7 +242,7 @@ const Offer = () => {
 
                         {/* Badge */}
                         <Badge className="bg-gradient-to-r from-red-500 to-red-700 text-white text-sm px-3 py-1 shadow-md">
-                           Exclusive $1 trial
+                            Exclusive $1 trial
                         </Badge>
 
                         {/* Headline */}

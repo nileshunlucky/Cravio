@@ -26,6 +26,12 @@ interface RazorpayOptions {
     };
 }
 
+declare global {
+    interface Window {
+        fbq: (action: string, event: string, parameters?: Record<string, any>) => void;
+    }
+}
+
 interface RazorpayResponse {
     razorpay_payment_id: string;
     razorpay_order_id: string;
@@ -117,7 +123,7 @@ const Plans: React.FC = () => {
         },
         {
             question: "Can I monetize videos created with Cravio?",
-            answer: "Yes. You fully own the rights to all videos. We use custom recorded gameplay to ensure originality."
+            answer: "Yes. You fully own the rights to all videos. "
         }
     ];
 
@@ -181,6 +187,17 @@ const Plans: React.FC = () => {
                     console.log("success", userData);
                     console.log("response", response);
                     toast.success("Thanks for Subscribing us");
+
+                    if (typeof window !== 'undefined' && window.fbq) {
+                        window.fbq('track', 'Purchase', {
+                            value: Math.round(price),
+                            currency: 'USD',
+                            content_name: `${plan.name} - ${isYearly ? 'Yearly' : 'Monthly'}`,
+                            content_category: 'Subscription',
+                            content_type: 'product',
+                        });
+                    }
+
                     setLoading(false);
                     // delay 3 sec then router.push("/admin/dashboard")
                     setTimeout(() => {

@@ -24,7 +24,7 @@ const HeroX = () => {
                         <Link href="/admin/dashboard"><div className="hero-cta relative inline-block">
                             <div className="pulse-ring absolute inset-0 border-2 border-red-500 rounded-md opacity-70"></div>
                             <Button className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white text-xl px-10 py-7 rounded-md font-medium transition-all duration-300 shadow-lg hover:shadow-red-500/30">
-                                Get Started
+                                Try for $1
                             </Button>
                         </div></Link>
                     </div>
