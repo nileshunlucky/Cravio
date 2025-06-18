@@ -26,9 +26,10 @@ interface RazorpayOptions {
     };
 }
 
+
 declare global {
     interface Window {
-        fbq: (action: string, event: string, parameters?: Record<string, any>) => void;
+        fbq: (action: string, event: string, parameters?: Record<string, string | number | boolean>) => void;
     }
 }
 
