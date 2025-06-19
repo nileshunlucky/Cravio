@@ -6,16 +6,14 @@ import Nav from '@/components/Nav'
 import Review from '@/components/Review'
 import HeroX from '@/components/HeroX'
 import React from 'react'
-// import dynamic from 'next/dynamic';
-// const Hero = dynamic(() => import('@/components/Hero'), {
-//   ssr: false,
-// });
+import Anything from '@/components/Anything';
 
 const page = () => {
   return (
     <div>
       <Nav/>
       <HeroX/>
+      <Anything/>
       <Monitize/>
       <Review/>
       <Footer/>
