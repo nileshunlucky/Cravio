@@ -24,10 +24,10 @@ const HeroX = () => {
                         </p>
                          
                         {/* Responsive Input Section */}
-                        <div className="flex items-center justify-center mt-5 w-full max-w-2xl mx-auto lg:mx-0">
-                            <div className="w-full flex flex-col sm:flex-row bg-zinc-800 items-stretch sm:items-center rounded-full gap-2 sm:gap-0 p-2">
+                        <div className="flex items-center justify-center mt-5 mx-auto lg:mx-0">
+                            <div className="w-full flex flex-col sm:flex-row bg-black md:bg-zinc-800 items-stretch sm:items-center rounded-full gap-2 sm:gap-0 p-2">
                                 {/* Input Section */}
-                                <div className="flex items-center flex-1 bg-zinc-800 sm:bg-transparent rounded-full py-3 px-4 sm:px-6 min-w-0">
+                                <div className="flex items-center flex-1 bg-zinc-800 md:bg-transparent sm:bg-transparent rounded-full py-3 px-4 sm:px-6 min-w-0">
                                     <LinkIcon className="text-zinc-500 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                                     <input 
                                         type="text" 
