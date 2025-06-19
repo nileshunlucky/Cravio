@@ -3,6 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button';
+import { LinkIcon } from 'lucide-react';
 
 const HeroX = () => {
     return (
@@ -21,12 +22,21 @@ const HeroX = () => {
                         <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-md mx-auto lg:mx-0 hero-subtext">
                             Cravio ai turns long videos into short viral clips in secounds ✨
                         </p>
-                        <Link href="/admin/dashboard"><div className="hero-cta relative inline-block">
-                            <div className="pulse-ring absolute inset-0 border-2 border-red-500 rounded-md opacity-70"></div>
-                            <Button className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white text-xl px-10 py-7 rounded-md font-medium transition-all duration-300 shadow-lg hover:shadow-red-500/30">
-                                Try for $1
-                            </Button>
-                        </div></Link>
+
+                        <div className="flex items-center mt-5">
+                            <div className="flex md:flex-row flex-col md:bg-zinc-800 bg-black items-center rounded-full gap-3 md:gap-0 md:p-2 p-0 pl-0 md:pl-6 ">
+                                <div className="flex items-center md:bg-transparent bg-zinc-800 rounded-full py-2 px-5">
+                                    <LinkIcon className="text-zinc-500 w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                                    <input type="text" className="focus:outline-none  placeholder:text-xl placeholder:font-semibold font-semibold text-xl  placeholder:text-zinc-500 rounded-md py-2 px-3 ml-2" placeholder="Drop a YouTube link" />
+                                </div>
+                                <div className="w-full">
+                                    <Link href="/admin/dashboard"><Button className="text-xl w-full px-10 py-7 rounded-full font-medium transition-all duration-300 shadow-lg hover:shadow-zinc-100/30">
+                                        Get Clips
+                                    </Button></Link>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                     <div className="w-full lg:w-1/2 flex justify-center relative ">
                         <video
