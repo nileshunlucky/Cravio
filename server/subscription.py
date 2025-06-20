@@ -168,179 +168,253 @@ async def razorpay_webhook(request: Request):
             raise HTTPException(status_code=400, detail="Invalid signature")
 
         # Parse the JSON payload from Razorpay
-        payload = await request.json()
+        import json
+        payload = json.loads(body.decode('utf-8'))  # Parse from raw body instead of request.json()
         event = payload.get("event")
         print("Webhook event received:", event)
-
+        print("Full payload:", json.dumps(payload, indent=2))  # Debug log
 
         if event == "subscription.charged":
-            payment_entity = payload["payload"]["payment"]["entity"]
-            subscription_id = payment_entity["subscription_id"]
-            email = payment_entity["email"]
-            amount = payment_entity["amount"] / 100  # ₹
+            try:
+                # Safe access to nested data with error handling
+                payment_entity = payload.get("payload", {}).get("payment", {}).get("entity", {})
+                subscription_entity = payload.get("payload", {}).get("subscription", {}).get("entity", {})
+                
+                subscription_id = payment_entity.get("subscription_id")
+                email = payment_entity.get("email")
+                amount = payment_entity.get("amount", 0) / 100  # Convert paise to rupees
 
-            # Get subscription details to determine billing cycle
-            subscription_entity = payload["payload"]["subscription"]["entity"]
-            billing_cycle = subscription_entity.get("notes", {}).get("billing_cycle", "monthly")
-            plan_name = subscription_entity.get("notes", {}).get("plan_name", "Unknown")
+                # Validate required fields
+                if not subscription_id or not email or not amount:
+                    print(f"Missing required fields: subscription_id={subscription_id}, email={email}, amount={amount}")
+                    return {"status": "missing_required_fields"}
 
-            # Updated credit map for both monthly and yearly plans
-            # Monthly credits
-            monthly_credit_map = {
-                19: 300,    # Basic monthly
-                49: 800,    # Pro monthly  
-                69: 1200    # Premium monthly
-            }
-            
-            # Yearly credits (12x monthly)
-            yearly_credit_map = {
-                114: 3600,   # Basic yearly (9.5 * 12)
-                294: 9600,   # Pro yearly (24.5 * 12)
-                414: 14400   # Premium yearly (34.5 * 12)
-            }
+                # Get subscription details to determine billing cycle
+                notes = subscription_entity.get("notes", {})
+                billing_cycle = notes.get("billing_cycle", "monthly")
+                plan_name = notes.get("plan_name", "Unknown")
 
-            # Determine credits based on billing cycle and amount
-            if billing_cycle == "yearly":
-                plan_credits = yearly_credit_map.get(int(amount), 0)
-            else:
-                plan_credits = monthly_credit_map.get(int(amount), 0)
+                print(f"Processing subscription: {subscription_id}, email: {email}, amount: {amount}")
+                print(f"Billing cycle: {billing_cycle}, Plan name: {plan_name}")
 
-            print(f"Billing cycle: {billing_cycle}, Amount: {amount}, Credits: {plan_credits}")
+                # Updated credit map for both monthly and yearly plans
+                monthly_credit_map = {
+                    19: 300,    # Basic monthly
+                    49: 800,    # Pro monthly  
+                    69: 1200    # Premium monthly
+                }
+                
+                yearly_credit_map = {
+                    114: 3600,   # Basic yearly (9.5 * 12)
+                    294: 9600,   # Pro yearly (24.5 * 12)
+                    414: 14400   # Premium yearly (34.5 * 12)
+                }
 
-            user = users_collection.find_one({"email": email})
-            if not user:
-                raise HTTPException(status_code=404, detail="User not found")
+                # Determine credits based on billing cycle and amount
+                if billing_cycle == "yearly":
+                    plan_credits = yearly_credit_map.get(int(amount), 0)
+                else:
+                    plan_credits = monthly_credit_map.get(int(amount), 0)
 
-            # Don't credit if the user has canceled the subscription
-            if user.get("subscription_status") == "cancelled":
-                print("⚠️ Subscription was cancelled — skipping crediting.")
-                return {"status": "cancelled_skipped"}
+                print(f"Credits to be added: {plan_credits}")
 
-            # Check last credited date based on billing cycle
-            last_credited_str = user.get("last_credited")
-            now = datetime.utcnow()
+                if plan_credits == 0:
+                    print(f"Warning: No credits found for amount {amount} and billing cycle {billing_cycle}")
+                    return {"status": "no_credits_found", "amount": amount, "billing_cycle": billing_cycle}
 
-            give_credits = False
-            if not last_credited_str:
-                give_credits = True
-            else:
-                last_credited = datetime.fromisoformat(last_credited_str)
-                # For yearly: check if 365 days passed, for monthly: 30 days
-                days_threshold = 365 if billing_cycle == "yearly" else 30
-                if now - last_credited >= timedelta(days=days_threshold):
+                # Find user by email
+                user = users_collection.find_one({"email": email})
+                if not user:
+                    print(f"User not found with email: {email}")
+                    raise HTTPException(status_code=404, detail="User not found")
+
+                # Don't credit if the user has canceled the subscription
+                if user.get("subscription_status") == "cancelled":
+                    print("⚠️ Subscription was cancelled — skipping crediting.")
+                    return {"status": "cancelled_skipped"}
+
+                # Check last credited date based on billing cycle
+                last_credited_str = user.get("last_credited")
+                now = datetime.utcnow()
+
+                give_credits = False
+                if not last_credited_str:
                     give_credits = True
+                    print("No previous credit record found - will give credits")
+                else:
+                    try:
+                        # Handle both ISO format and other formats
+                        if 'T' in last_credited_str:
+                            last_credited = datetime.fromisoformat(last_credited_str.replace('Z', '+00:00'))
+                        else:
+                            last_credited = datetime.fromisoformat(last_credited_str)
+                        
+                        # For yearly: check if 365 days passed, for monthly: 30 days
+                        days_threshold = 365 if billing_cycle == "yearly" else 30
+                        days_since_last = (now - last_credited).days
+                        print(f"Days since last credit: {days_since_last}, threshold: {days_threshold}")
+                        
+                        if days_since_last >= days_threshold:
+                            give_credits = True
+                        else:
+                            print(f"User was credited {days_since_last} days ago, threshold is {days_threshold} days")
+                    except ValueError as ve:
+                        print(f"Error parsing last_credited date: {ve}")
+                        give_credits = True  # Give credits if we can't parse the date
 
-            if give_credits:
-                # Update the user's credits and subscription status
-                users_collection.update_one(
-                    {"email": email},
-                    {
-                        "$inc": {"credits": plan_credits},
-                        "$set": {
-                            "last_credited": now.isoformat(),
-                            "active_subscription_id": subscription_id,
-                            "subscription_status": "active",
-                            "billing_cycle": billing_cycle,
-                            "plan_name": plan_name
-                        },
-                        "$push": {
-                            "purchases": {
-                                "subscription_id": subscription_id,
-                                "price": amount,
-                                "billing_cycle": billing_cycle,
-                                "plan_name": plan_name,
-                                "date": now
-                            }
-                        }
-                    }
-                )
-                print(f"✅ Credited {plan_credits} credits to {email} for {billing_cycle} plan")
-            else:
-                threshold_days = 365 if billing_cycle == "yearly" else 30
-                print(f"🕒 User {email} already credited in the last {threshold_days} days.")
-
-            # Handle referral reward if the user was referred by someone
-            referred_by_code = user.get("referredBy")
-            if referred_by_code:
-                commission_inr = round(0.2 * amount, 2)
-                usd_rate = 85
-                commission_usd = round(commission_inr / usd_rate, 2)
-
-                referrer = users_collection.find_one({"ref_code": referred_by_code})
-                if referrer:
-                    today = datetime.now().strftime("%Y-%m-%d")
-                    users_collection.update_one(
-                        {"ref_code": referred_by_code},
+                if give_credits:
+                    # Update the user's credits and subscription status
+                    update_result = users_collection.update_one(
+                        {"email": email},
                         {
-                            "$inc": {
-                                "balance": commission_usd,
-                                f"dailyRevenue.{today}": commission_usd
+                            "$inc": {"credits": plan_credits},
+                            "$set": {
+                                "last_credited": now.isoformat(),
+                                "active_subscription_id": subscription_id,
+                                "subscription_status": "active",
+                                "billing_cycle": billing_cycle,
+                                "plan_name": plan_name
+                            },
+                            "$push": {
+                                "purchases": {
+                                    "subscription_id": subscription_id,
+                                    "price": amount,
+                                    "billing_cycle": billing_cycle,
+                                    "plan_name": plan_name,
+                                    "date": now
+                                }
                             }
                         }
                     )
-                    print(f"🎁 Referrer credited ${commission_usd} (₹{commission_inr}) for {billing_cycle} plan")
+                    print(f"✅ Update result: {update_result.modified_count} documents modified")
+                    print(f"✅ Credited {plan_credits} credits to {email} for {billing_cycle} plan")
+
+                    # Handle referral reward if the user was referred by someone
+                    referred_by_code = user.get("referredBy")
+                    if referred_by_code:
+                        try:
+                            commission_inr = round(0.2 * amount, 2)
+                            usd_rate = 85
+                            commission_usd = round(commission_inr / usd_rate, 2)
+
+                            referrer = users_collection.find_one({"ref_code": referred_by_code})
+                            if referrer:
+                                today = datetime.now().strftime("%Y-%m-%d")
+                                referrer_update = users_collection.update_one(
+                                    {"ref_code": referred_by_code},
+                                    {
+                                        "$inc": {
+                                            "balance": commission_usd,
+                                            f"dailyRevenue.{today}": commission_usd
+                                        }
+                                    }
+                                )
+                                print(f"🎁 Referrer update result: {referrer_update.modified_count} documents modified")
+                                print(f"🎁 Referrer credited ${commission_usd} (₹{commission_inr}) for {billing_cycle} plan")
+                            else:
+                                print(f"Referrer not found for code: {referred_by_code}")
+                        except Exception as ref_error:
+                            print(f"Error processing referral: {ref_error}")
+                            # Don't fail the entire webhook for referral errors
+                else:
+                    threshold_days = 365 if billing_cycle == "yearly" else 30
+                    print(f"🕒 User {email} already credited in the last {threshold_days} days.")
+
+            except Exception as sub_error:
+                print(f"Error processing subscription.charged: {sub_error}")
+                traceback.print_exc()
+                raise
         
         elif event == "payment.captured":
-            payment_entity = payload["payload"]["payment"]["entity"]
-            email = payment_entity.get("email")
-            amount = payment_entity.get("amount", 0) / 100  # INR
+            try:
+                payment_entity = payload.get("payload", {}).get("payment", {}).get("entity", {})
+                email = payment_entity.get("email")
+                amount = payment_entity.get("amount", 0) / 100  # INR
 
-    # Check if it's the trial amount (₹86 = $1)
-            if int(amount) == 86:
-                print(f"🧪 Trial payment detected for {email} - Crediting 60 credits")
+                print(f"Payment captured: email={email}, amount={amount}")
 
-                user = users_collection.find_one({"email": email})
-                if not user:
-                   raise HTTPException(status_code=404, detail="User not found")
+                # Check if it's the trial amount (₹86 = $1)
+                if int(amount) == 86:
+                    print(f"🧪 Trial payment detected for {email} - Crediting 60 credits")
 
-                users_collection.update_one(
-                   {"email": email},
-                   {
-                       "$inc": {"credits": 60},
-                       "$set": {
-                           "trial_claimed": True,
-                           "trial_claimed_at": datetime.utcnow().isoformat(),
-                       },
-                       "$push": {
-                            "purchases": {
-                                "price": amount,
-                                "credits": 60,
-                                "type": "trial",
-                               "date": datetime.utcnow()
-                           }
-                       }
-                   }
-               )
-                print(f"✅ 60 trial credits added to {email}")
+                    user = users_collection.find_one({"email": email})
+                    if not user:
+                        print(f"User not found for trial payment: {email}")
+                        raise HTTPException(status_code=404, detail="User not found")
+
+                    trial_update = users_collection.update_one(
+                        {"email": email},
+                        {
+                            "$inc": {"credits": 60},
+                            "$set": {
+                                "trial_claimed": True,
+                                "trial_claimed_at": datetime.utcnow().isoformat(),
+                            },
+                            "$push": {
+                                "purchases": {
+                                    "price": amount,
+                                    "credits": 60,
+                                    "type": "trial",
+                                    "date": datetime.utcnow()
+                                }
+                            }
+                        }
+                    )
+                    print(f"✅ Trial update result: {trial_update.modified_count} documents modified")
+                    print(f"✅ 60 trial credits added to {email}")
+            except Exception as payment_error:
+                print(f"Error processing payment.captured: {payment_error}")
+                traceback.print_exc()
+                raise
 
         elif event == "subscription.cancelled":
-            # Subscription was canceled
-            subscription_id = payload["payload"]["subscription"]["entity"]["id"]
-            email = payload["payload"]["subscription"]["entity"]["email"]
+            try:
+                subscription_entity = payload.get("payload", {}).get("subscription", {}).get("entity", {})
+                subscription_id = subscription_entity.get("id")
+                
+                # Try to get email from subscription entity or find user by subscription_id
+                email = subscription_entity.get("email")
+                
+                if not email:
+                    # If email is not in subscription entity, find user by subscription_id
+                    user = users_collection.find_one({"active_subscription_id": subscription_id})
+                    if user:
+                        email = user.get("email")
 
-            user = users_collection.find_one({"email": email})
-            if user:
-                # Update subscription status to 'cancelled'
-                users_collection.update_one(
-                    {"email": email},
-                    {
-                        "$set": {
-                            "subscription_status": "cancelled",
-                            "active_subscription_id": subscription_id
+                print(f"Subscription cancelled: id={subscription_id}, email={email}")
+
+                if email:
+                    cancel_update = users_collection.update_one(
+                        {"email": email},
+                        {
+                            "$set": {
+                                "subscription_status": "cancelled",
+                                "active_subscription_id": subscription_id
+                            }
                         }
-                    }
-                )
-                print(f"⚠️ Subscription for {email} has been cancelled.")
-            else:
-                print(f"⚠️ User with email {email} not found during cancellation event.")
+                    )
+                    print(f"⚠️ Cancel update result: {cancel_update.modified_count} documents modified")
+                    print(f"⚠️ Subscription for {email} has been cancelled.")
+                else:
+                    print(f"⚠️ Could not find user for cancelled subscription: {subscription_id}")
+            except Exception as cancel_error:
+                print(f"Error processing subscription.cancelled: {cancel_error}")
+                traceback.print_exc()
+                raise
 
         elif event == "payment.failed":
-            # Handle failed payment event
-            print("❌ Payment failed:", payload["payload"]["payment"]["entity"])
+            try:
+                payment_entity = payload.get("payload", {}).get("payment", {}).get("entity", {})
+                print("❌ Payment failed:", payment_entity)
+            except Exception as failed_error:
+                print(f"Error processing payment.failed: {failed_error}")
 
-        return {"status": "ok"}
+        return {"status": "ok", "event": event}
 
+    except json.JSONDecodeError as je:
+        print(f"JSON decode error: {je}")
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
     except Exception as e:
         print("Webhook error:", str(e))
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail="Webhook error")
+        raise HTTPException(status_code=500, detail=f"Webhook error: {str(e)}")
