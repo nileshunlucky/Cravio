@@ -26,7 +26,7 @@ razorpay_client = razorpay.Client(
 
 
 def verify_signature(payload_body: bytes, received_signature: str) -> bool:
-    secret = os.getenv("RAZORPAY_KEY_SECRET")  # Set this in your dashboard & .env
+    secret = os.getenv("RAZORPAY_WEBHOOK_SECRET")  # Set this in your dashboard & .env
     expected_signature = hmac.new(
         key=bytes(secret, 'utf-8'),
         msg=payload_body,
