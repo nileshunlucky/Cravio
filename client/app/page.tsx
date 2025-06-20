@@ -10,7 +10,7 @@ import Anything from '@/components/Anything';
 
 const page = () => {
   return (
-    <div>
+    <div className='overflow-hidden'>
       <Nav/>
       <HeroX/>
       <Anything/>

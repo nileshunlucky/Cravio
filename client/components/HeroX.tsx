@@ -14,12 +14,13 @@ const HeroX = () => {
                 <div className="flex flex-col lg:flex-row items-center justify-between py-16 lg:py-28 min-h-[80vh] lg:min-h-screen">
                     {/* Text content section */}
                     <div className="w-full lg:w-1/2 z-10 mb-12 lg:mb-0 text-center lg:text-left">
+                        <p className=" text-zinc-500 font-semibold mb-8 md:mb-10 max-w-md mx-auto lg:mx-0 hero-pretext">#1 AI video clipping & editing tool</p>
                         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-6 md:mb-8 tracking-tight">
-                            <span className="block hero-text bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">1 long video,</span>
-                            <span className="block hero-text bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">10 viral clips.</span>
-                            <span className="block hero-text bg-gradient-to-r from-white via-white to-red-300 bg-clip-text text-transparent">Create 10x faster.</span>
+                            <span className="block hero-text bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent">1 long video,</span>
+                            <span className="block hero-text bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent">10 viral clips.</span>
+                            <span className="block hero-text bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">Create 10x faster.</span>
                         </h1>
-                        <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-8 md:mb-10 max-w-md mx-auto lg:mx-0 hero-subtext">
+                        <p className="text-lg sm:text-xl md:text-2xl text-zinc-300 mb-8 md:mb-10 max-w-md mx-auto lg:mx-0 hero-subtext">
                             Cravio ai turns long videos into short viral clips in secounds ✨
                         </p>
                          
@@ -27,7 +28,7 @@ const HeroX = () => {
                         <div className="flex items-center justify-center mt-5 mx-auto lg:mx-0">
                             <div className="w-full flex flex-col sm:flex-row bg-black md:bg-zinc-800 items-stretch sm:items-center rounded-full gap-2 sm:gap-0 p-2">
                                 {/* Input Section */}
-                                <div className="flex items-center flex-1 bg-zinc-800 md:bg-transparent sm:bg-transparent rounded-full py-3 px-4 sm:px-6 min-w-0">
+                                <div className="flex items-center flex-1 bg-zinc-800 md:bg-transparent sm:bg-transparent rounded-full py-[5px] md:py-3 px-4 sm:px-6 min-w-0">
                                     <LinkIcon className="text-zinc-500 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                                     <input 
                                         type="text" 

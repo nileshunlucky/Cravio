@@ -5,295 +5,86 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { motion } from 'framer-motion'
-import { X, Loader2 } from 'lucide-react'
-import { toast } from 'sonner' // Assuming you have a toast component
-import { useUser } from '@clerk/nextjs'
-
-// Define Razorpay types
-interface RazorpayConstructor {
-    new(options: RazorpayOptions): RazorpayInstance;
-}
-
-interface RazorpayInstance {
-    open(): void;
-}
-
-interface RazorpayOptions {
-    key: string;
-    amount: number;
-    currency: string;
-    name: string;
-    description: string;
-    order_id: string;
-    handler: (response: RazorpayResponse) => void;
-    prefill: {
-        email?: string;
-    };
-    theme: {
-        color: string;
-    };
-}
-
-interface RazorpayResponse {
-    razorpay_payment_id: string;
-    razorpay_order_id: string;
-    razorpay_signature: string;
-}
-
-
-interface WindowWithRazorpay extends Window {
-    Razorpay?: RazorpayConstructor;
-}
-
-declare global {
-    interface Window {
-        fbq: (action: string, event: string, parameters?: Record<string, string | number | boolean>) => void;
-    }
-}
+import { X } from 'lucide-react'
 
 const Offer = () => {
-    const { user } = useUser()
-    const [show, setShow] = useState(true)
-    const [loading, setLoading] = useState(false)
-    const email = user?.primaryEmailAddress?.emailAddress
+  const [show, setShow] = useState(true)
 
-    // Handle payment flow
-    const handleSubmit = async () => {
-        try {
-            // Validate email
-            if (!email) {
-                toast.error("Email required")
-                return
-            }
+  const razorpayTrialLink = "https://rzp.io/rzp/jyXt3Ix"
 
-            setLoading(true)
+  // Check if offer was already claimed
+  useEffect(() => {
+    const claimed = localStorage.getItem('offerClaimed') === 'true'
+    if (claimed) setShow(false)
+  }, [])
 
-            // Step 1: Create order
-            const createOrderResponse = await fetch("https://cravio-ai.onrender.com/create-order", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ email: email }),
-            })
+  if (!show) return null
 
-            if (!createOrderResponse.ok) {
-                const errorData = await createOrderResponse.json()
-                throw new Error(errorData.detail || "Failed to create order")
-            }
-
-            const orderData = await createOrderResponse.json()
-
-            // Step 2: Initialize Razorpay
-            const options = {
-                key: orderData.key_id,
-                amount: orderData.amount * 100, // Amount in paise
-                currency: orderData.currency,
-                name: "LIMITED TIME OFFER",
-                description: "60 Credits for $1",
-                order_id: orderData.order_id,
-                handler: async function (response: RazorpayResponse) {
-                    try {
-                        // Step 3: Verify payment
-                        const verifyResponse = await fetch("https://cravio-ai.onrender.com/verify-payment", {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify({
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_signature: response.razorpay_signature,
-                                email: email
-                            }),
-                        })
-
-                        if (!verifyResponse.ok) {
-                            const errorData = await verifyResponse.json()
-                            throw new Error(errorData.detail || "Payment verification failed")
-                        }
-
-                        const result = await verifyResponse.json()
-
-                        // Success message
-                        toast.success("Payment Successful!", {
-                            description: `You have been credited with ${result.credits} credits`
-                        })
-
-                        if (typeof window !== 'undefined' && window.fbq) {
-                        window.fbq('track', 'Purchase', {
-                            value: 1.00,
-                            currency: 'USD',
-                            content_name: '60 Credits Trial',
-                            content_category: 'Subscription',
-                            content_type: 'product',
-                        });
-                    }
-
-                        // Hide the offer after successful purchase
-                        setShow(false)
-                        localStorage.setItem('offerClaimed', 'true')
-                    } catch (err) {
-                        toast.error(`Something went wrong during payment verification ${err instanceof Error ? err.message : String(err)}`)
-                    }
-                },
-                prefill: {
-                    email: email
-                },
-                theme: {
-                    color: "#3B82F6"
-                }
-            }
-
-            // Load Razorpay script if not already loaded
-            // Use type assertion here
-            const customWindow = window as WindowWithRazorpay;
-
-            if (!customWindow.Razorpay) {
-                await loadRazorpay()
-            }
-
-            if (customWindow.Razorpay) {
-                const razorpayInstance = new customWindow.Razorpay(options)
-                razorpayInstance.open()
-            }
-
-        } catch (err) {
-            toast.error(`Something went wrong during payment: ${err instanceof Error ? err.message : String(err)}`)
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    // Helper to load Razorpay script
-    const loadRazorpay = () => {
-        return new Promise<void>((resolve, reject) => {
-            const script = document.createElement('script')
-            script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-            script.onload = () => {
-                // After the script loads, the Razorpay object should be on window.
-                // We resolve the promise.
-                resolve();
-            }
-            script.onerror = () => reject()
-            document.body.appendChild(script)
-        })
-    }
-
-
-    // Check if offer already claimed
-    useEffect(() => {
-        const claimed = localStorage.getItem('offerClaimed') === 'true'
-        if (claimed) {
-            setShow(false)
-        }
-    }, [])
-
-    if (!show) return null
-
-    return (
-        // Centering the component using fixed positioning and transform
-        <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 30, scale: 0.9 }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-            className="fixed inset-0 flex items-center justify-center z-50 p-4"
-            style={{ backdropFilter: 'blur(4px)', backgroundColor: 'rgba(0, 0, 0, 0.1)' }}
-            onClick={(e) => {
-                if (e.target === e.currentTarget) {
-                    // setShow(false); // Decide if clicking outside closes it
-                }
-            }}
-        >
-            {/* Card container with shiny background animation */}
-            <motion.div
-                onClick={(e) => e.stopPropagation()}
-                className="relative w-full max-w-sm border shadow-xl rounded-2xl overflow-hidden"
-                style={{
-                    backgroundImage: 'linear-gradient(120deg, rgba(0,0,0,0.6) 0%, rgba(20,20,20,0.4) 50%, rgba(0,0,0,0.6) 100%)',
-                    backdropFilter: 'blur(12px)',
-                    WebkitBackdropFilter: 'blur(12px)', // for Safari support
-                    backgroundColor: 'rgba(0, 0, 0, 0.4)', // fallback background
-                    borderRadius: '16px', // optional: rounded corners
-                    border: '1px solid rgba(255, 255, 255, 0.1)', // subtle border
-
-                    backgroundSize: '200% 200%',
-                }}
-                animate={{
-                    backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                }}
-                transition={{
-                    duration: 6,
-                    ease: 'linear',
-                    repeat: Infinity,
-                }}
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 30, scale: 0.9 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className="fixed inset-0 flex items-center justify-center z-50 p-4"
+      style={{ backdropFilter: 'blur(4px)', backgroundColor: 'rgba(0, 0, 0, 0.1)' }}
+    >
+      <motion.div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-sm border shadow-xl rounded-2xl overflow-hidden"
+        style={{
+          backgroundImage: 'linear-gradient(120deg, rgba(0,0,0,0.6), rgba(20,20,20,0.4), rgba(0,0,0,0.6))',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+        }}
+        animate={{
+          backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+        }}
+        transition={{
+          duration: 6,
+          ease: 'linear',
+          repeat: Infinity,
+        }}
+      >
+        <Card className="bg-transparent border-none shadow-none rounded-2xl">
+          <CardContent className="relative p-6 pt-8 text-center flex flex-col gap-4 items-center">
+            <button
+              onClick={() => setShow(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-700"
+              aria-label="Close Offer"
             >
-                <Card className="bg-transparent border-none shadow-none rounded-2xl">
-                    <CardContent className="relative p-6 pt-8 text-center flex flex-col gap-4 items-center">
-                        {/* Close Button */}
-                        <button
-                            onClick={() => setShow(false)}
-                            className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 transition-colors"
-                            aria-label="Close Offer"
-                        >
-                            <X className="h-5 w-5" />
-                        </button>
+              <X className="h-5 w-5" />
+            </button>
 
-                        {/* Badge */}
-                        <Badge className="bg-gradient-to-r from-red-500 to-red-700 text-white text-sm px-3 py-1 shadow-md">
-                            Exclusive $1 trial
-                        </Badge>
+            <Badge className="bg-gradient-to-r from-red-500 to-red-700 text-white text-sm px-3 py-1 shadow-md">
+              Exclusive $1 trial
+            </Badge>
 
-                        {/* Headline */}
-                        <h2 className="text-2xl font-semibold text-white flex whitespace-nowrap items-center gap-1">
-                            Get
-                            {/* Inline SVG with gradient - adjusted for better visual */}
-                            <svg width="20" height="20" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" className="inline text-yellow-500">
-                                <defs>
-                                    <linearGradient id="iconGradient" gradientTransform="rotate(90)">
-                                        <stop offset="0%" stopColor="#FFE629" />
-                                        <stop offset="100%" stopColor="#FFA057" />
-                                    </linearGradient>
-                                </defs>
-                                <path
-                                    d="M13.2319 2.28681C13.5409 2.38727 13.75 2.6752 13.75 3.00005V9.25005H19C19.2821 9.25005 19.5403 9.40834 19.6683 9.65972C19.7963 9.9111 19.7725 10.213 19.6066 10.4412L11.6066 21.4412C11.4155 21.7039 11.077 21.8137 10.7681 21.7133C10.4591 21.6128 10.25 21.3249 10.25 21.0001V14.7501H5C4.71791 14.7501 4.45967 14.5918 4.33167 14.3404C4.20366 14.089 4.22753 13.7871 4.39345 13.5589L12.3935 2.55892C12.5845 2.2962 12.923 2.18635 13.2319 2.28681Z"
-                                    fill="url(#iconGradient)"
-                                    stroke="currentColor"
-                                />
-                            </svg>
-                            60 Credits for $1 Only
-                        </h2>
+            <h2 className="text-2xl font-semibold text-white">
+              Get 60 Credits for $1 Only
+            </h2>
 
-                        {/* Description Text */}
-                        <p className="text-zinc-400 px-4">
-                            Perfect for creators to grow fast & scale with Cravio ai.
-                        </p>
+            <p className="text-zinc-400 px-4">
+              Perfect for creators to grow fast & scale with Cravio AI.
+            </p>
 
-                        {/* Claim Now Button with Gradient and Animation */}
-                        <motion.div
-                            className="w-full"
-                        >
-                            <Button
-                                className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-8 py-3 text-lg font-semibold rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
-                                onClick={handleSubmit}
-                                disabled={loading}
-                            >
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Claiming
-                                    </>
-                                ) : (
-                                    "Claim $1 Trial"
-                                )}
-                            </Button>
-                        </motion.div>
-                    </CardContent>
-                </Card>
+            <motion.div className="w-full">
+              <Button asChild>
+                <a
+                  href={razorpayTrialLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-8 py-3 text-lg font-semibold rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 text-center"
+                >
+                  Claim $1 Trial
+                </a>
+              </Button>
             </motion.div>
-        </motion.div>
-    )
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
+  )
 }
 
 export default Offer
