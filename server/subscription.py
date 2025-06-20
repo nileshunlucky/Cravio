@@ -172,6 +172,7 @@ async def razorpay_webhook(request: Request):
         event = payload.get("event")
         print("Webhook event received:", event)
 
+
         if event == "subscription.charged":
             payment_entity = payload["payload"]["payment"]["entity"]
             subscription_id = payment_entity["subscription_id"]
@@ -278,6 +279,39 @@ async def razorpay_webhook(request: Request):
                         }
                     )
                     print(f"🎁 Referrer credited ${commission_usd} (₹{commission_inr}) for {billing_cycle} plan")
+        
+        elif event == "payment.captured":
+            payment_entity = payload["payload"]["payment"]["entity"]
+            email = payment_entity.get("email")
+            amount = payment_entity.get("amount", 0) / 100  # INR
+
+    # Check if it's the trial amount (₹86 = $1)
+            if int(amount) == 86:
+                print(f"🧪 Trial payment detected for {email} - Crediting 60 credits")
+
+                user = users_collection.find_one({"email": email})
+                if not user:
+                   raise HTTPException(status_code=404, detail="User not found")
+
+                users_collection.update_one(
+                   {"email": email},
+                   {
+                       "$inc": {"credits": 60},
+                       "$set": {
+                           "trial_claimed": True,
+                           "trial_claimed_at": datetime.utcnow().isoformat(),
+                       },
+                       "$push": {
+                            "purchases": {
+                                "price": amount,
+                                "credits": 60,
+                                "type": "trial",
+                               "date": datetime.utcnow()
+                           }
+                       }
+                   }
+               )
+                print(f"✅ 60 trial credits added to {email}")
 
         elif event == "subscription.cancelled":
             # Subscription was canceled
