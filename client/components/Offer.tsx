@@ -11,10 +11,11 @@ import { X } from 'lucide-react'
 
 declare global {
   interface Window {
-    fbq: (...args: any[]) => void;
+    fbq: (...args: unknown[]) => void;
   }
 }
-declare const fbq: (...args: any[]) => void;
+declare const fbq: (...args: unknown[]) => void;
+
 
 const Offer = () => {
   const [show, setShow] = useState(false)

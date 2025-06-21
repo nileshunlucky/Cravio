@@ -27,11 +27,11 @@ interface RazorpayOptions {
 }
 
 declare global {
-    interface Window {
-        fbq: (...args: any[]) => void;
-    }
+  interface Window {
+    fbq: (...args: unknown[]) => void;
+  }
 }
-declare const fbq: (...args: any[]) => void;
+declare const fbq: (...args: unknown[]) => void;
 
 interface RazorpayResponse {
     razorpay_payment_id: string;

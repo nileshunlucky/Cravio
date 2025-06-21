@@ -9,10 +9,11 @@ import { useUser } from '@clerk/nextjs';
 
 declare global {
   interface Window {
-    fbq: (...args: any[]) => void;
+    fbq: (...args: unknown[]) => void;
   }
 }
-declare const fbq: (...args: any[]) => void;
+declare const fbq: (...args: unknown[]) => void;
+
 
 const Navbar = ({ credits = 0 }: { credits: number }) => {
   const { user } = useUser();
