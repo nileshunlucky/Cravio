@@ -9,9 +9,8 @@ import { motion } from 'framer-motion'
 import { X } from 'lucide-react'
 
 const Offer = () => {
-  const [show, setShow] = useState(true)
+  const [show, setShow] = useState(false)
   const { user } = useUser();
-  const [trialClaimed, setTrialClaimed] = useState(false);
 
   const razorpayTrialLink = "https://rzp.io/rzp/jyXt3Ix"
 
@@ -31,9 +30,9 @@ const Offer = () => {
           const data = await res.json();
           // Check if trial has been claimed
           if (data?.trial_claimed) {
-            setTrialClaimed(true);
+            setShow(false);
           } else {
-            setTrialClaimed(false);
+            setShow(true);
           }
   
   
@@ -46,7 +45,7 @@ const Offer = () => {
       }
     }, [user]);
 
-  if (!show || trialClaimed) return null
+  if (!show) return null
 
   return (
     <motion.div

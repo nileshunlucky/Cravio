@@ -21,3 +21,4 @@ yt-dlp
 aiofiles
 boto3
 opencv-python-headless
+apscheduler

@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from fastapi import APIRouter, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, validator
@@ -232,6 +233,9 @@ async def delete_video(request: DeleteVideoRequest):
     except Exception as e:
         logger.error(f"Error deleting video: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to delete video: {str(e)}")
+    
+
+
 
 class OpusClipRequest(BaseModel):
     videoUrl: str
@@ -340,3 +344,223 @@ async def get_task_status(task_id: str):
         return JSONResponse(content=response)
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
+    
+
+@router.get("/delete-clips-3days")
+async def delete_clips_3days():
+    """
+    Automatically delete all clips older than 3 days from S3 and database
+    """
+    try:
+        # Calculate the cutoff date (3 days ago)
+        cutoff_date = datetime.utcnow() - timedelta(days=3)
+        logger.info(f"Deleting clips created before: {cutoff_date}")
+        
+        # Query database for users who have clips older than 3 days
+        pipeline = [
+            {
+                "$match": {
+                    "opusclips": {
+                        "$elemMatch": {
+                            "createdAt": {"$lt": cutoff_date}
+                        }
+                    }
+                }
+            },
+            {
+                "$project": {
+                    "email": 1,
+                    "old_clips": {
+                        "$filter": {
+                            "input": "$opusclips",
+                            "cond": {"$lt": ["$$this.createdAt", cutoff_date]}
+                        }
+                    },
+                    "remaining_clips": {
+                        "$filter": {
+                            "input": "$opusclips", 
+                            "cond": {"$gte": ["$$this.createdAt", cutoff_date]}
+                        }
+                    }
+                }
+            }
+        ]
+
+        users_with_old_clips = list(users_collection.aggregate(pipeline))
+
+        # Count total old clips across all users
+        total_old_clips = sum(len(user.get('old_clips', [])) for user in users_with_old_clips)
+        
+        if not users_with_old_clips or total_old_clips == 0:
+            logger.info("No clips found older than 3 days")
+            return JSONResponse(
+                content={
+                    "message": "No clips found older than 3 days",
+                    "deleted_clips_count": 0,
+                    "deleted_files_count": 0,
+                    "processed_users": 0
+                }
+            )
+        
+        total_deleted_files = 0
+        total_deleted_clips = 0
+        processed_users = 0
+        deletion_errors = []
+        
+        # Process each user with old clips
+        for user in users_with_old_clips:
+            try:
+                user_email = user.get('email')
+                user_id = user.get('_id')
+                old_clips = user.get('old_clips', [])
+                remaining_clips = user.get('remaining_clips', [])
+                processed_users += 1
+                
+                logger.info(f"Processing user: {user_email} with {len(old_clips)} old clips")
+                
+                # Process each old clip for this user
+                for clip_doc in old_clips:
+                    try:
+                        unique_id = clip_doc.get('uniqueId')
+                        clips = clip_doc.get('clips', [])
+                        thumbnail = clip_doc.get('thumbnail', '')
+                        
+                        logger.info(f"Processing clip document with uniqueId: {unique_id}")
+                        
+                        # Collect all S3 objects to delete for this clip document
+                        objects_to_delete = []
+                        
+                        # 1. Add thumbnail to deletion list if exists
+                        if thumbnail:
+                            parsed_thumbnail = urllib.parse.urlparse(thumbnail)
+                            if 's3.' in parsed_thumbnail.netloc:
+                                thumbnail_key = parsed_thumbnail.path.lstrip('/')
+                                objects_to_delete.append({'Key': thumbnail_key})
+                                logger.info(f"Adding thumbnail to delete: {thumbnail_key}")
+                        
+                        # 2. Add all clip videos to deletion list
+                        for clip in clips:
+                            clip_url = clip.get('clipUrl', '')
+                            if clip_url:
+                                parsed_clip = urllib.parse.urlparse(clip_url)
+                                if 's3.' in parsed_clip.netloc:
+                                    clip_key = parsed_clip.path.lstrip('/')
+                                    objects_to_delete.append({'Key': clip_key})
+                                    logger.info(f"Adding clip to delete: {clip_key}")
+                        
+                        # 3. Delete the entire video directory for this unique_id
+                        if unique_id:
+                            # Delete processed video directory
+                            video_directory = f"videos/{unique_id}"
+                            logger.info(f"Checking video directory: {video_directory}")
+                            
+                            try:
+                                video_response = s3_client.list_objects_v2(Bucket=S3_BUCKET, Prefix=video_directory)
+                                if 'Contents' in video_response:
+                                    for obj in video_response['Contents']:
+                                        obj_key = {'Key': obj['Key']}
+                                        if obj_key not in objects_to_delete:
+                                            objects_to_delete.append(obj_key)
+                                            logger.info(f"Adding video file to delete: {obj['Key']}")
+                            except ClientError as e:
+                                logger.error(f"Error listing video directory {video_directory}: {str(e)}")
+                            
+                            # Delete original upload directory
+                            upload_directory = f"uploads/{unique_id}"
+                            logger.info(f"Checking upload directory: {upload_directory}")
+                            
+                            try:
+                                upload_response = s3_client.list_objects_v2(Bucket=S3_BUCKET, Prefix=upload_directory)
+                                if 'Contents' in upload_response:
+                                    for obj in upload_response['Contents']:
+                                        obj_key = {'Key': obj['Key']}
+                                        if obj_key not in objects_to_delete:
+                                            objects_to_delete.append(obj_key)
+                                            logger.info(f"Adding upload file to delete: {obj['Key']}")
+                            except ClientError as e:
+                                logger.error(f"Error listing upload directory {upload_directory}: {str(e)}")
+                        
+                        # Delete S3 objects if any found
+                        if objects_to_delete:
+                            try:
+                                s3_response = s3_client.delete_objects(
+                                    Bucket=S3_BUCKET,
+                                    Delete={
+                                        'Objects': objects_to_delete,
+                                        'Quiet': False
+                                    }
+                                )
+                                
+                                deleted_files = len(s3_response.get('Deleted', []))
+                                s3_errors = s3_response.get('Errors', [])
+                                
+                                total_deleted_files += deleted_files
+                                
+                                if s3_errors:
+                                    error_details = [f"{e.get('Key')}: {e.get('Message')}" for e in s3_errors]
+                                    deletion_errors.extend(error_details)
+                                    logger.error(f"S3 deletion errors for {unique_id}: {error_details}")
+                                
+                                logger.info(f"Deleted {deleted_files} S3 files for clip {unique_id}")
+                                
+                            except ClientError as e:
+                                error_msg = f"S3 error for clip {unique_id}: {str(e)}"
+                                deletion_errors.append(error_msg)
+                                logger.error(error_msg)
+                        
+                        total_deleted_clips += 1
+                        
+                    except Exception as clip_error:
+                        error_msg = f"Error processing clip {unique_id}: {str(clip_error)}"
+                        deletion_errors.append(error_msg)
+                        logger.error(error_msg)
+                        continue
+                
+                # Update user document to remove old clips (keep only remaining clips)
+                try:
+                    update_result = users_collection.update_one(
+                        {"_id": user_id},
+                        {"$set": {"opusclips": remaining_clips}}
+                    )
+                    
+                    if update_result.modified_count > 0:
+                        logger.info(f"Updated user {user_email} - removed {len(old_clips)} old clips")
+                    else:
+                        logger.warning(f"Failed to update user {user_email} clips in database")
+                        
+                except Exception as db_error:
+                    error_msg = f"Database update error for user {user_email}: {str(db_error)}"
+                    deletion_errors.append(error_msg)
+                    logger.error(error_msg)
+                        
+            except Exception as user_error:
+                error_msg = f"Error processing user {user_email}: {str(user_error)}"
+                deletion_errors.append(error_msg)
+                logger.error(error_msg)
+                continue
+        
+        # Prepare response
+        response_data = {
+            "message": f"Cleanup completed. Processed {processed_users} users with old clips",
+            "deleted_clips_count": total_deleted_clips,
+            "deleted_files_count": total_deleted_files,
+            "processed_users": processed_users,
+            "cutoff_date": cutoff_date.isoformat(),
+            "total_old_clips_found": total_old_clips
+        }
+        
+        if deletion_errors:
+            response_data["errors"] = deletion_errors
+            response_data["error_count"] = len(deletion_errors)
+            logger.warning(f"Completed with {len(deletion_errors)} errors")
+            return JSONResponse(
+                status_code=207,  # Partial success
+                content=response_data
+            )
+        
+        logger.info(f"Successfully completed cleanup: {total_deleted_clips} clips, {total_deleted_files} files")
+        return JSONResponse(content=response_data)
+        
+    except Exception as e:
+        logger.error(f"Error in delete_clips_3days: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete old clips: {str(e)}")

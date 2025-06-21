@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from db import users_collection
 from subscription import router as subscription_router
-from delete_videos import router as delete_router
 from limited_offer import router as limited_offer_router
 from api.opusclip import router as opusclip_router
 import smtplib
@@ -27,7 +26,6 @@ app.add_middleware(
 
 # add routers
 app.include_router(subscription_router)
-app.include_router(delete_router)
 app.include_router(limited_offer_router)
 app.include_router(opusclip_router)
 

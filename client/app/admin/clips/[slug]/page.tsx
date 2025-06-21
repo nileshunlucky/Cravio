@@ -306,7 +306,6 @@ const ClipPage = () => {
                   <video
                     ref={(el) => setVideoRef(el, index)}
                     src={clip.clipUrl}
-                    poster={opusClip.thumbnail}
                     className="absolute w-full h-full object-cover"
                     playsInline
                     onClick={() => togglePlay(index)}
