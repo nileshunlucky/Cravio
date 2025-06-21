@@ -190,7 +190,7 @@ const Plans: React.FC = () => {
                     toast.success("Thanks for Subscribing us");
 
                     if (typeof window !== 'undefined' && typeof fbq === 'function') {
-                        fbq('track', 'Subscribe', {
+                        fbq('track', 'Purchase', {
                             content_name: plan.name,
                             value: Math.round(price),
                         });

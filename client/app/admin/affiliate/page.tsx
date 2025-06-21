@@ -163,7 +163,7 @@ const AffiliateDashboard = () => {
         setUpdatingCode(false);
     };
 
-    const referralLink = `https://cravioai.vercel.app/?ref=${userData?.ref_code || ""}`;
+    const referralLink = `https://cravioai.in/?ref=${userData?.ref_code || ""}`;
 
     const handleCopy = () => {
         navigator.clipboard.writeText(referralLink);
@@ -208,7 +208,7 @@ const AffiliateDashboard = () => {
                         <CardContent className="p-6 flex items-center justify-between">
                             <div>
                                 <p className="text-sm  mb-1">Available Balance</p>
-                                <p className="text-2xl font-bold ">${userData?.balance.toLocaleString('en-US') || 0}</p>
+                                <p className="text-2xl font-bold "> ${typeof userData?.balance === "number" ? userData.balance.toLocaleString('en-US') : "0"}</p>
                                 <p className="text-xs  mt-1">Available for withdrawal</p>
                             </div>
                             <div className="bg-black p-3 rounded-full">
@@ -221,7 +221,8 @@ const AffiliateDashboard = () => {
                         <CardContent className="p-6 flex items-center justify-between">
                             <div>
                                 <p className="text-sm  mb-1">Total Revenue</p>
-                                <p className="text-2xl font-bold ">${totalRevenue.toLocaleString('en-US')}</p>
+                                <p className="text-2xl font-bold ">${(typeof totalRevenue === 'number' ? totalRevenue : 0).toLocaleString('en-US')}
+                                </p>
                                 <p className="text-xs  mt-1">Lifetime earnings</p>
                             </div>
                             <div className="bg-black p-3 rounded-full">
@@ -248,7 +249,7 @@ const AffiliateDashboard = () => {
                                     Daily Revenue
                                 </h2>
                                 <div className="text-xs sm:text-sm font-medium px-3 py-1 rounded-full">
-                                    ${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    ${(typeof totalRevenue === 'number' ? totalRevenue : 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
                             </div>
 
@@ -335,13 +336,19 @@ const AffiliateDashboard = () => {
                                     <div className="rounded-xl bg-black p-3 text-center">
                                         <p className="text-xs mb-1">Last Day</p>
                                         <p className="font-bold">
-                                            ${getLastDayRevenue().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            ${(typeof getLastDayRevenue() === 'number' ? getLastDayRevenue() : 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </p>
                                     </div>
                                     <div className="rounded-xl bg-black p-3 text-center">
                                         <p className="text-xs mb-1">Avg. Daily</p>
                                         <p className="font-bold">
-                                            ${(totalRevenue / (chartData.length || 1)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            ${(typeof totalRevenue === 'number' && chartData.length
+                                                ? totalRevenue / chartData.length
+                                                : 0
+                                            ).toLocaleString(undefined, {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2
+                                            })}
                                         </p>
                                     </div>
                                 </div>
