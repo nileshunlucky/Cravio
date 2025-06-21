@@ -26,12 +26,12 @@ interface RazorpayOptions {
     };
 }
 
-
 declare global {
     interface Window {
-        fbq: (action: string, event: string, parameters?: Record<string, string | number | boolean>) => void;
+        fbq: (...args: any[]) => void;
     }
 }
+declare const fbq: (...args: any[]) => void;
 
 interface RazorpayResponse {
     razorpay_payment_id: string;
@@ -189,13 +189,10 @@ const Plans: React.FC = () => {
                     console.log("response", response);
                     toast.success("Thanks for Subscribing us");
 
-                    if (typeof window !== 'undefined' && window.fbq) {
-                        window.fbq('track', 'Purchase', {
+                    if (typeof window !== 'undefined' && typeof fbq === 'function') {
+                        fbq('track', 'Subscribe', {
+                            content_name: plan.name,
                             value: Math.round(price),
-                            currency: 'USD',
-                            content_name: `${plan.name} - ${isYearly ? 'Yearly' : 'Monthly'}`,
-                            content_category: 'Subscription',
-                            content_type: 'product',
                         });
                     }
 
@@ -214,6 +211,13 @@ const Plans: React.FC = () => {
                 email: user?.primaryEmailAddress?.emailAddress || ''
             },
         };
+
+        if (typeof window !== 'undefined' && typeof fbq === 'function') {
+            fbq('track', 'InitiateCheckout', {
+                content_name: plan.name,
+                value: Math.round(price),
+            });
+        }
 
         const razor = new ((window as unknown) as RazorpayWindow).Razorpay(options);
         razor.open();

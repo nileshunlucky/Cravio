@@ -7,6 +7,13 @@ import Link from 'next/link'
 import { Button } from './ui/button'
 import { useUser } from '@clerk/nextjs';
 
+declare global {
+  interface Window {
+    fbq: (...args: any[]) => void;
+  }
+}
+declare const fbq: (...args: any[]) => void;
+
 const Navbar = ({ credits = 0 }: { credits: number }) => {
   const { user } = useUser();
   const [show, setShow] = useState(false);
@@ -42,6 +49,8 @@ const Navbar = ({ credits = 0 }: { credits: number }) => {
     }
   }, [user]);
 
+  
+
   return (
     <nav className="w-full  border-b shadow-sm py-2 px-4 flex items-center justify-between">
       {/* Left: Logo */}
@@ -55,6 +64,11 @@ const Navbar = ({ credits = 0 }: { credits: number }) => {
               <a
                 href="https://rzp.io/rzp/jyXt3Ix"
                 rel="noopener noreferrer"
+                onClick={() => {
+                if (typeof window !== 'undefined' && typeof fbq === 'function') {
+                  fbq('track', 'InitiateCheckout');
+                }
+              }}
               >
                 Exclusive $1 Trial
               </a>
