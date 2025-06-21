@@ -13,32 +13,20 @@ interface OpusClip {
 }
 
 // Helper function to format dates (e.g., "2 hours ago", "Mar 15, 2023")
-const formatDateAgo = (dateString: string): string => {
-    const date = new Date(dateString);
+const getDaysLeft = (createdAt: string): string => {
+    const createdDate = new Date(createdAt);
     const now = new Date();
-    const seconds = Math.round((now.getTime() - date.getTime()) / 1000);
-    const minutes = Math.round(seconds / 60);
-    const hours = Math.round(minutes / 60);
-    const days = Math.round(hours / 24);
-    const weeks = Math.round(days / 7);
-    const months = Math.round(days / 30.44); // Average days in month
 
-    if (seconds < 60) return "just now";
-    if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    if (days === 1) return "Yesterday";
-    if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
-    if (weeks < 5) return `${weeks} week${weeks > 1 ? 's' : ''} ago`; // Up to 4 weeks
-    if (months < 12) return `${months} month${months > 1 ? 's' : ''} ago`;
+    const expiryDate = new Date(createdDate.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days later
+    const timeDiff = expiryDate.getTime() - now.getTime();
 
-    return date.toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
+    const daysLeft = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+    if (daysLeft > 1) return `${daysLeft} days left`;
+    if (daysLeft === 1) return `1 day left`;
+    if (daysLeft === 0) return `Expires today`;
+    return `Expired`;
 };
-
-
 
 
 const OpusVideos = () => {
@@ -148,7 +136,7 @@ const OpusVideos = () => {
                                 </div>
                                 <div className="p-3 space-y-1">
                                     <p className="text-xs text-neutral-400">
-                                        {formatDateAgo(clip.createdAt)}
+                                        {getDaysLeft(clip.createdAt)}
                                     </p>
                                 </div>
                             </Link>
