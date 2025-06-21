@@ -9,7 +9,7 @@ import { useUser } from '@clerk/nextjs';
 
 const Navbar = ({ credits = 0 }: { credits: number }) => {
   const { user } = useUser();
-  const [trialClaimed, setTrialClaimed] = useState(false);
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -27,9 +27,9 @@ const Navbar = ({ credits = 0 }: { credits: number }) => {
         const data = await res.json();
         // Check if trial has been claimed
         if (data?.trial_claimed) {
-          setTrialClaimed(true);
+          setShow(false);
         } else {
-          setTrialClaimed(false);
+          setShow(true);
         }
 
 
@@ -50,7 +50,7 @@ const Navbar = ({ credits = 0 }: { credits: number }) => {
       {/* Right: Credits + Clerk User Button */}
       <div className="flex items-center gap-5">
         {
-          !trialClaimed && (
+          show && (
             <Button className="bg-gradient-to-r from-red-600 to-yellow-500 text-white text-sm px-3 py-1 shadow-md" asChild>
               <a
                 href="https://rzp.io/rzp/jyXt3Ix"

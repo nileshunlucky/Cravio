@@ -346,7 +346,7 @@ async def get_task_status(task_id: str):
         return JSONResponse(status_code=500, content={"error": str(e)})
     
 
-@router.get("/delete-clips-3days")
+@router.api_route("/delete-clips-3days", methods=["GET", "HEAD"])
 async def delete_clips_3days():
     """
     Automatically delete all clips older than 3 days from S3 and database
