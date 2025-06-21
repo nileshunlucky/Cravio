@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import {
   Link,
   //  CloudUpload, 
-  Loader2, AlertCircle, Info
+  Loader2, AlertCircle, Info,
+  CloudUpload
 } from 'lucide-react';
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -304,67 +305,30 @@ export default function OpusClip() {
     }
   };
 
-  // Updated handleFileChange function for better file validation
-  // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   // Skip if a video is already processed
-  //   if (videoProcessed) return;
+const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Skip if a video is already processed
+  if (videoProcessed) return;
 
-  //   if (e.target.files?.[0]) {
-  //     const newFile = e.target.files[0];
+  const selectedFile = e.target.files?.[0];
+  if (!selectedFile) return;
 
-  //     // Check file size (4000MB = 4000 * 1024 * 1024 bytes)
-  //     const maxSizeBytes = 4000 * 1024 * 1024;
-  //     if (newFile.size > maxSizeBytes) {
-  //       setErrorMessage("File size must be less than 4GB");
-  //       toast.error("File size must be less than 4GB", {
-  //         position: "top-right",
-  //         duration: 3000,
-  //       });
-  //       return;
-  //     }
+  // Reset any previous errors
+  setErrorMessage(null);
 
-  //     // For video duration check, we need to create a video element
-  //     const videoElement = document.createElement('video');
-  //     videoElement.preload = 'metadata';
+  // Set the file
+  setFile(selectedFile);
 
-  //     videoElement.onloadedmetadata = () => {
-  //       window.URL.revokeObjectURL(videoElement.src);
+  // Clear YouTube link if file is selected
+  setYoutubeLink('');
+  setIsValidYoutubeLink(false);
 
-  //       // Check duration (2 hours = 7200 seconds)
-  //       if (videoElement.duration > 7200) {
-  //         setErrorMessage("Video duration must be less than 2 hours");
-  //         toast.error("Video duration must be less than 2 hours", {
-  //           position: "top-right",
-  //           duration: 3000,
-  //         });
-  //         return;
-  //       }
-
-  //       // If all checks pass, set the file
-  //       setFile(newFile);
-
-  //       // Clear any previous errors
-  //       setErrorMessage(null);
-
-  //       // Process the file upload immediately
-  //       setTimeout(() => {
-  //         if (!processingRef.current) {
-  //           handleProcess(null, newFile);
-  //         }
-  //       }, 100);
-  //     };
-
-  //     videoElement.onerror = () => {
-  //       setErrorMessage("Cannot read video metadata. Please try another file.");
-  //       toast.error("Cannot read video metadata", {
-  //         position: "top-right",
-  //         duration: 3000,
-  //       });
-  //     };
-
-  //     videoElement.src = URL.createObjectURL(newFile);
-  //   }
-  // };
+  // Process the file upload immediately
+  setTimeout(() => {
+    if (!processingRef.current) {
+      handleProcess(null, selectedFile);
+    }
+  }, 100);
+};
 
   // Updated handleProcess function with improved task handling
   const handleProcess = async (ytLink: string | null = null, uploadedFile: File | null = null) => {
@@ -787,7 +751,7 @@ export default function OpusClip() {
             </motion.div>
           )}
 
-          {/* <div className={cn(
+          <div className={cn(
             "inline-block rounded-xl hover:bg-zinc-800 hover:text-white text-zinc-400 transition-colors duration-200",
             videoProcessed && "opacity-50 pointer-events-none"
           )}>
@@ -812,7 +776,7 @@ export default function OpusClip() {
               <CloudUpload className="w-4 h-4 md:w-5 md:h-5" />
               <span>{file ? file.name : 'Upload File'}</span>
             </motion.label>
-          </div> */}
+          </div>
 
           <motion.div
             whileHover={isSubmitEnabled && !isLoading ? { scale: 1.02 } : {}}

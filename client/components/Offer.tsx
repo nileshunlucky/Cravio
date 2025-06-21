@@ -4,21 +4,49 @@ import React, { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { useUser } from '@clerk/nextjs';
 import { motion } from 'framer-motion'
 import { X } from 'lucide-react'
 
 const Offer = () => {
   const [show, setShow] = useState(true)
+  const { user } = useUser();
+  const [trialClaimed, setTrialClaimed] = useState(false);
 
   const razorpayTrialLink = "https://rzp.io/rzp/jyXt3Ix"
 
-  // Check if offer was already claimed
-  useEffect(() => {
-    const claimed = localStorage.getItem('offerClaimed') === 'true'
-    if (claimed) setShow(false)
-  }, [])
+    useEffect(() => {
+      const fetchVideos = async () => {
+  
+        if (!user?.primaryEmailAddress?.emailAddress) {
+          return;
+        }
+        const email = user.primaryEmailAddress.emailAddress;
+  
+        try {
+          const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`);
+          if (!res.ok) {
+            throw new Error(`Failed to fetch videos: ${res.status} ${res.statusText}`);
+          }
+          const data = await res.json();
+          // Check if trial has been claimed
+          if (data?.trial_claimed) {
+            setTrialClaimed(true);
+          } else {
+            setTrialClaimed(false);
+          }
+  
+  
+        } catch (err) {
+          console.error('Error fetching videos:', err);
+        }
+      };
+      if (user) {
+        fetchVideos();
+      }
+    }, [user]);
 
-  if (!show) return null
+  if (!show || trialClaimed) return null
 
   return (
     <motion.div
@@ -72,7 +100,6 @@ const Offer = () => {
               <Button asChild>
                 <a
                   href={razorpayTrialLink}
-                  target="_blank"
                   rel="noopener noreferrer"
                   className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-8 py-3 text-lg font-semibold rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 text-center"
                 >
