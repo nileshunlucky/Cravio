@@ -22,9 +22,9 @@ const getDaysLeft = (createdAt: string): string => {
 
     const daysLeft = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
 
-    if (daysLeft > 1) return `${daysLeft} days left`;
-    if (daysLeft === 1) return `1 day left`;
-    if (daysLeft === 0) return `Expires today`;
+    if (daysLeft > 1) return `${daysLeft} days left before expiry`;
+    if (daysLeft === 1) return `1 day left before expiry`;
+    if (daysLeft === 0) return `Expires today before expiry`;
     return `Expired`;
 };
 
