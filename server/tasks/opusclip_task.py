@@ -748,7 +748,7 @@ def detect_faces_in_video(video_path, num_frames=5):
 def get_final_dimensions_and_filter(aspect_ratio, crop_params):
     """
     Get final output dimensions and create appropriate filter for aspect ratio
-    FIXED: Output native aspect ratio for 1:1 and 16:9, only use 9:16 container for 9:16 content
+    FIXED: Properly handle 1:1 and 16:9 content in 9:16 container with letterboxing
     
     Args:
         aspect_ratio (str): Target aspect ratio ("9:16", "1:1", "16:9")
@@ -757,6 +757,9 @@ def get_final_dimensions_and_filter(aspect_ratio, crop_params):
     Returns:
         dict: Contains final dimensions and filter string
     """
+    # Always output to 9:16 format (1080x1920) for social media
+    final_width, final_height = 1080, 1920
+    
     # First crop the video based on the content aspect ratio
     filter_parts = []
     filter_parts.append(f"crop={crop_params['crop_width']}:{crop_params['crop_height']}:{crop_params['crop_x']}:{crop_params['crop_y']}")
@@ -767,28 +770,43 @@ def get_final_dimensions_and_filter(aspect_ratio, crop_params):
     logger.info(f"Crop aspect: {crop_aspect:.4f}, Content aspect ratio: {aspect_ratio}")
     
     if aspect_ratio == "9:16":
-        # For 9:16 content, scale to 1080x1920 (9:16 format)
-        final_width, final_height = 1080, 1920
+        # For 9:16 content, scale to fill the entire 1080x1920 frame
         filter_parts.append(f"scale={final_width}:{final_height}:flags=lanczos")
         
     elif aspect_ratio == "1:1":
-        # For 1:1 (square) content, output as square - NO letterboxing
-        # Choose a standard square resolution
-        final_width = final_height = 1080  # 1080x1080 square
-        filter_parts.append(f"scale={final_width}:{final_height}:flags=lanczos")
+        # For 1:1 (square) content, maintain square aspect ratio in 9:16 container
+        # Scale to fit width while maintaining square proportions
+        square_size = final_width  # 1080x1080 square
+        
+        # Scale to square dimensions
+        filter_parts.append(f"scale={square_size}:{square_size}:flags=lanczos")
+        
+        # Add black letterboxing (top and bottom bars)
+        y_offset = (final_height - square_size) // 2  # Center vertically
+        filter_parts.append(f"pad={final_width}:{final_height}:0:{y_offset}:black")
         
     elif aspect_ratio == "16:9":
-        # For 16:9 content, output as 16:9 - NO letterboxing
-        # Choose a standard 16:9 resolution
-        final_width, final_height = 1920, 1080  # 1920x1080 landscape
-        filter_parts.append(f"scale={final_width}:{final_height}:flags=lanczos")
+        # For 16:9 content, maintain 16:9 aspect ratio in 9:16 container
+        # Scale to fit width while maintaining 16:9 proportions
+        landscape_width = final_width  # 1080
+        landscape_height = int(final_width * 9 / 16)  # 1080 * 9/16 = 607.5 ≈ 608
+        
+        # Ensure height is even
+        if landscape_height % 2 != 0:
+            landscape_height -= 1
+            
+        # Scale to 16:9 dimensions that fit within the container
+        filter_parts.append(f"scale={landscape_width}:{landscape_height}:flags=lanczos")
+        
+        # Add black letterboxing (top and bottom bars)
+        y_offset = (final_height - landscape_height) // 2  # Center vertically
+        filter_parts.append(f"pad={final_width}:{final_height}:0:{y_offset}:black")
         
     else:
-        # Default to 9:16 behavior for unknown aspect ratios
-        final_width, final_height = 1080, 1920
+        # Default to 9:16 behavior
         filter_parts.append(f"scale={final_width}:{final_height}:flags=lanczos")
     
-    logger.info(f"Final output: {final_width}x{final_height} - preserving {aspect_ratio} aspect ratio")
+    logger.info(f"Final output: {final_width}x{final_height} with aspect ratio preservation")
     
     return {
         'final_width': final_width,
@@ -800,7 +818,7 @@ def get_final_dimensions_and_filter(aspect_ratio, crop_params):
 def calculate_crop_parameters(video_width, video_height, face_data=None, aspect_ratio="9:16"):
     """
     Calculate optimal crop parameters for different aspect ratios
-    UPDATED: Precise cropping for each aspect ratio to preserve content
+    UPDATED: Minimal cropping for 1:1 and 16:9 to preserve content
     
     Args:
         video_width (int): Original video width
@@ -817,7 +835,7 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, aspect_
     logger.info(f"Target content aspect ratio: {aspect_ratio}")
     
     if aspect_ratio == "1:1":
-        # For square output, take the largest possible square
+        # For square output, take the largest possible square from the center
         min_dimension = min(video_width, video_height)
         target_width = min_dimension
         target_height = min_dimension
@@ -835,7 +853,7 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, aspect_
             crop_y = max(0, min(face_y - target_height // 2, video_height - target_height))
         
     elif aspect_ratio == "16:9":
-        # For 16:9 output, crop to exact 16:9 ratio
+        # For 16:9 output, minimal cropping to get closest to 16:9
         target_aspect_ratio = 16/9  # 1.7778
         
         if current_aspect_ratio > target_aspect_ratio:
@@ -863,11 +881,11 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, aspect_
                 crop_y = max(0, min(face_y - target_height // 2, video_height - target_height))
             
     else:  # 9:16 or default
-        # For vertical video (9:16)
+        # For vertical video, more aggressive cropping is acceptable
         target_aspect_ratio = 9/16  # 0.5625
         
         if current_aspect_ratio > target_aspect_ratio:
-            # Video is wider than 9:16 - need to crop width
+            # Video is wider than target - need to crop width
             target_width = int(video_height * target_aspect_ratio)
             target_height = video_height
             
@@ -882,7 +900,7 @@ def calculate_crop_parameters(video_width, video_height, face_data=None, aspect_
             crop_y = 0
             
         else:
-            # Video is taller than 9:16 - need to crop height
+            # Video is taller than target - need to crop height
             target_width = video_width
             target_height = int(video_width / target_aspect_ratio)
             
