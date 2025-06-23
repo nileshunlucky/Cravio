@@ -1060,14 +1060,14 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
                 y_position = "h*0.78"
             elif aspect_ratio == "1:1":
                 font_size = 56
-                y_position = "h*0.85"  # Lower position for square format
+                y_position = "(h-text_h)/2"
             elif aspect_ratio == "16:9":
                 font_size = 48
-                y_position = "h*0.88"  # Lower position for landscape
+                y_position = "(h-text_h)/2  + 20"
             else:
                 font_size = 64
-                y_position = "h*0.78"
-            
+                y_position = "(h-text_h)/2"
+
             from pathlib import Path
             font_path = Path("assets/Roboto-Bold.ttf").resolve()
 
@@ -1077,11 +1077,7 @@ def create_ultra_high_quality_clip_with_accurate_subtitles(temp_raw_clip, temp_c
             elif subtitle_color == "green":
                 font_color = "#00FF00"
             elif subtitle_color == "white":
-                font_color = "#FFFFFF"
-                if aspect_ratio == "1:1":
-                    y_position = "(h-text_h)/2"  # Centered vertically for white text in square
-                elif aspect_ratio == "16:9":
-                    y_position = "(h-text_h)/2"  # Centered vertically for white text in landscape
+                font_color = "#FFFFFF" 
             else:
                 font_color = "#FFFFFF"
             
