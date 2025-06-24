@@ -18,7 +18,7 @@ const RefundPolicyPage = () => {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-white px-6 py-20">
+    <main className="min-h-screen flex items-center justify-center  px-6 py-20">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
@@ -35,7 +35,7 @@ const RefundPolicyPage = () => {
             </button>
             <h1 className="text-3xl font-bold">Refund Policy</h1>
             <p className="text-muted-foreground text-lg">
-              At Cravio, we are committed to delivering high-performance AI tools for faceless content creation. Due to the nature of our digital SaaS offering and the immediate access granted upon purchase, <span className="font-semibold text-black">we do not offer refunds once a subscription or purchase is completed</span>.
+              At Cravio, we are committed to delivering high-performance AI tools for faceless content creation. Due to the nature of our digital SaaS offering and the immediate access granted upon purchase, <span className="font-semibold ">we do not offer refunds once a subscription or purchase is completed</span>.
             </p>
             <p className="text-muted-foreground text-lg">
               We encourage all users to review our features and ask questions prior to subscribing. If you experience any technical issues or need help using the platform, our support team is available to assist you promptly.
