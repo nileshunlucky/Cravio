@@ -50,6 +50,7 @@ def upload_to_s3_from_url(image_url: str) -> str:
     s3.upload_fileobj(BytesIO(response.content), S3_BUCKET, filename, ExtraArgs={'ACL': 'public-read'})
     return f"https://{S3_BUCKET}.s3.amazonaws.com/{filename}"
 
+
 def wait_for_comfyui_result(prompt_id: str, max_wait: int = 60) -> dict:
     """Wait for ComfyUI to complete processing and return the result."""
     start_time = time.time()
@@ -57,13 +58,23 @@ def wait_for_comfyui_result(prompt_id: str, max_wait: int = 60) -> dict:
     while time.time() - start_time < max_wait:
         try:
             history_response = requests.get(f"{COMFYUI_API_URL}/history/{prompt_id}")
-            if history_response.status_code == 200:
+            print("📦 Raw /history response content (first 500 chars):")
+            print(history_response.text[:500])  # log raw response for debugging
+
+            try:
                 history_data = history_response.json()
-                if prompt_id in history_data and history_data[prompt_id].get('status', {}).get('completed', False):
-                    return history_data[prompt_id]
+            except Exception as json_err:
+                print("❌ JSON decode error from ComfyUI:", str(json_err))
+                print("⚠️ Full response (truncated):", history_response.text[:500])
+                raise Exception(f"ComfyUI returned malformed JSON: {str(json_err)}")
+
+            if prompt_id in history_data and history_data[prompt_id].get('status', {}).get('completed', False):
+                return history_data[prompt_id]
+
             time.sleep(2)
+
         except Exception as e:
-            print(f"Error checking ComfyUI status: {e}")
+            print("🔥 Exception while polling ComfyUI history:", str(e))
             time.sleep(2)
     
     raise Exception("ComfyUI processing timeout")
