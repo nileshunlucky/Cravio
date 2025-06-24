@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Form
+from fastapi import APIRouter, Form, HTTPException
 from fastapi.responses import JSONResponse
 import uuid, boto3, os, requests, time
 from db import users_collection
 from PIL import Image
 from io import BytesIO
 import base64
+import json
 
 router = APIRouter()
 
@@ -29,99 +30,150 @@ def get_yt_thumbnail_url(video_url: str) -> str:
 
 def download_and_encode_image(image_url: str) -> str:
     """Download image from URL and return base64 encoded string."""
-    response = requests.get(image_url)
-    if response.status_code != 200:
-        raise Exception(f"Unable to download image from {image_url}")
-    
-    # Convert to base64
-    image_bytes = response.content
-    image_b64 = base64.b64encode(image_bytes).decode('utf-8')
-    return image_b64
+    try:
+        response = requests.get(image_url, timeout=30)
+        response.raise_for_status()
+        
+        # Convert to base64
+        image_bytes = response.content
+        image_b64 = base64.b64encode(image_bytes).decode('utf-8')
+        return image_b64
+    except Exception as e:
+        raise Exception(f"Unable to download image from {image_url}: {str(e)}")
 
 def upload_to_s3_from_url(image_url: str) -> str:
     """Download image from a URL and upload to S3 bucket."""
-    response = requests.get(image_url)
-    if response.status_code != 200:
-        raise Exception("Unable to download thumbnail")
+    try:
+        response = requests.get(image_url, timeout=30)
+        response.raise_for_status()
 
-    ext = image_url.split('.')[-1].split("?")[0]
-    filename = f"yt-thumbnails/{uuid.uuid4()}.{ext}"
+        ext = image_url.split('.')[-1].split("?")[0]
+        filename = f"yt-thumbnails/{uuid.uuid4()}.{ext}"
 
-    s3.upload_fileobj(BytesIO(response.content), S3_BUCKET, filename, ExtraArgs={'ACL': 'public-read'})
-    return f"https://{S3_BUCKET}.s3.amazonaws.com/{filename}"
+        s3.upload_fileobj(BytesIO(response.content), S3_BUCKET, filename, ExtraArgs={'ACL': 'public-read'})
+        return f"https://{S3_BUCKET}.s3.amazonaws.com/{filename}"
+    except Exception as e:
+        raise Exception(f"Unable to upload to S3: {str(e)}")
 
+def safe_json_parse(response):
+    """Safely parse JSON response with better error handling."""
+    try:
+        return response.json()
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON decode error: {str(e)}")
+        print(f"⚠️ Response content: {response.text[:500]}")
+        print(f"⚠️ Response status: {response.status_code}")
+        print(f"⚠️ Response headers: {dict(response.headers)}")
+        raise Exception(f"Invalid JSON response from API: {str(e)}")
 
-def wait_for_comfyui_result(prompt_id: str, max_wait: int = 60) -> dict:
+def wait_for_comfyui_result(prompt_id: str, max_wait: int = 120) -> dict:
     """Wait for ComfyUI to complete processing and return the result."""
     start_time = time.time()
     
     while time.time() - start_time < max_wait:
         try:
-            history_response = requests.get(f"{COMFYUI_API_URL}/history/{prompt_id}")
-            print("📦 Raw /history response content (first 500 chars):")
-            print(history_response.text[:500])  # log raw response for debugging
+            print(f"🔍 Checking ComfyUI status for prompt_id: {prompt_id}")
+            history_response = requests.get(f"{COMFYUI_API_URL}/history/{prompt_id}", timeout=10)
+            
+            if history_response.status_code != 200:
+                print(f"❌ ComfyUI history API returned status {history_response.status_code}")
+                print(f"Response: {history_response.text[:200]}")
+                time.sleep(3)
+                continue
 
-            try:
-                history_data = history_response.json()
-            except Exception as json_err:
-                print("❌ JSON decode error from ComfyUI:", str(json_err))
-                print("⚠️ Full response (truncated):", history_response.text[:500])
-                raise Exception(f"ComfyUI returned malformed JSON: {str(json_err)}")
+            history_data = safe_json_parse(history_response)
 
-            if prompt_id in history_data and history_data[prompt_id].get('status', {}).get('completed', False):
-                return history_data[prompt_id]
+            if prompt_id in history_data:
+                status = history_data[prompt_id].get('status', {})
+                if status.get('completed', False):
+                    print("✅ ComfyUI processing completed")
+                    return history_data[prompt_id]
+                elif 'status_str' in status:
+                    print(f"🔄 ComfyUI status: {status['status_str']}")
+            else:
+                print(f"⏳ Prompt {prompt_id} not found in history yet")
 
-            time.sleep(2)
+            time.sleep(3)
 
         except Exception as e:
-            print("🔥 Exception while polling ComfyUI history:", str(e))
-            time.sleep(2)
+            print(f"🔥 Exception while polling ComfyUI history: {str(e)}")
+            time.sleep(3)
     
-    raise Exception("ComfyUI processing timeout")
-
+    raise Exception(f"ComfyUI processing timeout after {max_wait} seconds")
 
 def start_pod():
     """Start your RunPod instance if not already running."""
-    status = requests.get(
-        f"https://api.runpod.ai/v1/pod/{RUNPOD_POD_ID}",
-        headers={"Authorization": f"Bearer {RUNPOD_API_KEY}"}
-    ).json()
-
-    if status['data']['runtime']['uptimeInSeconds'] == 0:
-        # Pod is off — start it
-        print("🔁 Starting RunPod...")
-        res = requests.post(
-            f"https://api.runpod.ai/v1/pod/{RUNPOD_POD_ID}/start",
-            headers={"Authorization": f"Bearer {RUNPOD_API_KEY}"}
+    try:
+        print("🔍 Checking RunPod status...")
+        status_response = requests.get(
+            f"https://api.runpod.ai/v1/pod/{RUNPOD_POD_ID}",
+            headers={"Authorization": f"Bearer {RUNPOD_API_KEY}"},
+            timeout=10
         )
-        if res.status_code != 200:
-            raise Exception("Failed to start RunPod")
         
-        # Wait until pod becomes ready
-        for _ in range(30):  # wait max 2–3 minutes
-            time.sleep(6)
-            status = requests.get(
-                f"https://api.runpod.ai/v1/pod/{RUNPOD_POD_ID}",
-                headers={"Authorization": f"Bearer {RUNPOD_API_KEY}"}
-            ).json()
-            if status['data']['runtime']['uptimeInSeconds'] > 0:
-                print("✅ RunPod is running.")
-                return
-        raise Exception("RunPod took too long to start")
-    else:
-        print("✅ RunPod already running.")
+        if status_response.status_code != 200:
+            raise Exception(f"Failed to get RunPod status: {status_response.status_code}")
+        
+        status = safe_json_parse(status_response)
+
+        if status.get('data', {}).get('runtime', {}).get('uptimeInSeconds', 0) == 0:
+            print("🔁 Starting RunPod...")
+            start_response = requests.post(
+                f"https://api.runpod.ai/v1/pod/{RUNPOD_POD_ID}/start",
+                headers={"Authorization": f"Bearer {RUNPOD_API_KEY}"},
+                timeout=10
+            )
+            
+            if start_response.status_code not in [200, 202]:
+                raise Exception(f"Failed to start RunPod: {start_response.status_code} - {start_response.text}")
+            
+            # Wait until pod becomes ready
+            for attempt in range(30):  # wait max 3 minutes
+                time.sleep(6)
+                try:
+                    status_response = requests.get(
+                        f"https://api.runpod.ai/v1/pod/{RUNPOD_POD_ID}",
+                        headers={"Authorization": f"Bearer {RUNPOD_API_KEY}"},
+                        timeout=10
+                    )
+                    
+                    if status_response.status_code == 200:
+                        status = safe_json_parse(status_response)
+                        uptime = status.get('data', {}).get('runtime', {}).get('uptimeInSeconds', 0)
+                        if uptime > 0:
+                            print("✅ RunPod is running.")
+                            return
+                        print(f"⏳ RunPod starting... (attempt {attempt + 1}/30)")
+                    else:
+                        print(f"⚠️ Status check failed: {status_response.status_code}")
+                except Exception as e:
+                    print(f"⚠️ Status check error: {str(e)}")
+                    
+            raise Exception("RunPod took too long to start")
+        else:
+            print("✅ RunPod already running.")
+            
+    except Exception as e:
+        print(f"❌ RunPod start error: {str(e)}")
+        raise Exception(f"Failed to start RunPod: {str(e)}")
 
 def stop_pod():
     """Stops the RunPod instance to save GPU cost."""
-    res = requests.post(
-        f"https://api.runpod.ai/v1/pod/{RUNPOD_POD_ID}/stop",
-        headers={"Authorization": f"Bearer {RUNPOD_API_KEY}"}
-    )
-    if res.status_code != 200:
-        print("⚠️ Failed to stop RunPod pod")
-    else:
-        print("🛑 RunPod pod stopped")
-
+    try:
+        print("🛑 Stopping RunPod...")
+        response = requests.post(
+            f"https://api.runpod.ai/v1/pod/{RUNPOD_POD_ID}/stop",
+            headers={"Authorization": f"Bearer {RUNPOD_API_KEY}"},
+            timeout=10
+        )
+        
+        if response.status_code not in [200, 202]:
+            print(f"⚠️ Failed to stop RunPod: {response.status_code} - {response.text}")
+        else:
+            print("✅ RunPod stop request sent")
+            
+    except Exception as e:
+        print(f"⚠️ Error stopping RunPod: {str(e)}")
 
 @router.post("/api/generate-thumbnail")
 async def generate_thumbnail(
@@ -131,23 +183,34 @@ async def generate_thumbnail(
     email: str = Form(...),
 ):
     try:
+        print(f"🎬 Starting thumbnail generation for: {email}")
+        
+        # Validate required environment variables
+        required_vars = [COMFYUI_API_URL, RUNPOD_API_KEY, RUNPOD_POD_ID]
+        if not all(required_vars):
+            raise Exception("Missing required environment variables")
+
         # Step 1: Get YouTube thumbnail URL
         yt_thumb_url = get_yt_thumbnail_url(youtube_url)
         if not yt_thumb_url:
-            return JSONResponse(status_code=400, content={"error": "Invalid YouTube URL"})
+            raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+
+        print(f"📸 YouTube thumbnail URL: {yt_thumb_url}")
 
         # Step 2: Download and encode images
         try:
+            print("⬇️ Downloading persona image...")
             persona_b64 = download_and_encode_image(persona)
+            print("⬇️ Downloading YouTube thumbnail...")
             yt_thumb_b64 = download_and_encode_image(yt_thumb_url)
+            print("✅ Images downloaded and encoded")
         except Exception as e:
-            return JSONResponse(status_code=400, content={"error": f"Failed to download images: {str(e)}"})
+            raise HTTPException(status_code=400, detail=f"Failed to download images: {str(e)}")
 
         # Step 3: Compose prompt
         final_prompt = prompt or "Create an engaging YouTube thumbnail with the person's face, professional lighting, vibrant colors"
 
         # Step 4: Create ComfyUI workflow payload
-        # This is a simplified workflow - adjust based on your actual ComfyUI setup
         workflow_payload = {
             "prompt": {
                 "1": {
@@ -163,9 +226,9 @@ async def generate_thumbnail(
                     }
                 },
                 "3": {
-                    "class_type": "LoadCheckpoint",
+                    "class_type": "CheckpointLoaderSimple",
                     "inputs": {
-                        "ckpt_name": "sd_xl_base_1.0.safetensors"  # Adjust to your model
+                        "ckpt_name": "sd_xl_base_1.0.safetensors"
                     }
                 },
                 "4": {
@@ -222,23 +285,42 @@ async def generate_thumbnail(
             }
         }
 
-        # BEFORE calling ComfyUI
+        # Step 5: Start RunPod before ComfyUI call
         start_pod()
 
-        # Step 5: Send to ComfyUI
-        response = requests.post(f"{COMFYUI_API_URL}/prompt", json=workflow_payload, timeout=30)
-        if response.status_code != 200:
-            return JSONResponse(status_code=500, content={"error": f"ComfyUI API error: {response.text}"})
+        # Step 6: Send to ComfyUI
+        print("🎨 Sending request to ComfyUI...")
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        comfyui_response = requests.post(
+            f"{COMFYUI_API_URL}/prompt", 
+            json=workflow_payload, 
+            headers=headers,
+            timeout=30
+        )
+        
+        print(f"📡 ComfyUI response status: {comfyui_response.status_code}")
+        print(f"📡 ComfyUI response content: {comfyui_response.text[:200]}")
+        
+        if comfyui_response.status_code != 200:
+            stop_pod()  # Stop pod on error
+            raise Exception(f"ComfyUI API error {comfyui_response.status_code}: {comfyui_response.text}")
 
-        result = response.json()
+        result = safe_json_parse(comfyui_response)
         prompt_id = result.get("prompt_id")
         
         if not prompt_id:
-            return JSONResponse(status_code=500, content={"error": "No prompt ID returned from ComfyUI"})
+            stop_pod()  # Stop pod on error
+            raise Exception("No prompt ID returned from ComfyUI")
 
-        # Step 6: Wait for completion and get result
+        print(f"🆔 Prompt ID: {prompt_id}")
+
+        # Step 7: Wait for completion and get result
         try:
-            completion_result = wait_for_comfyui_result(prompt_id)
+            completion_result = wait_for_comfyui_result(prompt_id, max_wait=180)
             
             # Extract output image info
             if 'outputs' in completion_result and '9' in completion_result['outputs']:
@@ -247,27 +329,51 @@ async def generate_thumbnail(
                     image_filename = output_images[0]['filename']
                     output_url = f"{COMFYUI_API_URL}/view?filename={image_filename}"
                     
-                    # Step 7: Save thumbnail link to DB
-                    users_collection.update_one(
-                        {"email": email}, 
-                        {"$push": {"thumbnail_urls": output_url}},
-                        upsert=True
-                    )
-                    # AFTER processing, stop the pod to save costs
+                    print(f"🖼️ Generated image: {output_url}")
+                    
+                    # Step 8: Save thumbnail link to DB
+                    try:
+                        users_collection.update_one(
+                            {"email": email}, 
+                            {"$push": {"thumbnail_urls": output_url}},
+                            upsert=True
+                        )
+                        print("💾 Saved to database")
+                    except Exception as db_error:
+                        print(f"⚠️ Database save error: {str(db_error)}")
+                    
+                    # Stop the pod to save costs
                     stop_pod()
 
-                    return {
-                        "status": "success",
-                        "generated_thumbnail": output_url,
-                        "prompt_id": prompt_id
-                    }
-
+                    return JSONResponse(
+                        status_code=200,
+                        content={
+                            "status": "success",
+                            "generated_thumbnail": output_url,
+                            "prompt_id": prompt_id
+                        }
+                    )
             
-            return JSONResponse(status_code=500, content={"error": "No output image generated"})
+            stop_pod()  # Stop pod on error
+            raise Exception("No output image generated by ComfyUI")
             
         except Exception as e:
-            return JSONResponse(status_code=500, content={"error": f"ComfyUI processing failed: {str(e)}"})
+            stop_pod()  # Stop pod on error
+            raise Exception(f"ComfyUI processing failed: {str(e)}")
 
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions as-is
     except Exception as e:
-        print(f"Thumbnail generation error: {str(e)}")
-        return JSONResponse(status_code=500, content={"error": f"Internal error: {str(e)}"})
+        error_msg = f"Thumbnail generation error: {str(e)}"
+        print(f"❌ {error_msg}")
+        
+        # Ensure pod is stopped on any error
+        try:
+            stop_pod()
+        except:
+            pass
+            
+        return JSONResponse(
+            status_code=500, 
+            content={"error": error_msg}
+        )
