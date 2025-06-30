@@ -1,117 +1,211 @@
-'use client';
+"use client"
 
-import React, { useState } from 'react';
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectItem, SelectContent, SelectValue } from "@/components/ui/select";
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { useUser } from '@clerk/nextjs';
-import { toast } from 'sonner';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Upload, Link, Sparkles } from 'lucide-react';
+import { toast } from "sonner";
 
 const Page = () => {
+    const [activeTab, setActiveTab] = useState('link');
     const [youtubeUrl, setYoutubeUrl] = useState('');
-    const [persona, setPersona] = useState('');
-    const [prompt, setPrompt] = useState('');
-    const [thumbnailUrl, setThumbnailUrl] = useState('');
+
+    type ImageWithPreview = { file: File; preview: string };
+
+    const [thumbnailImage, setThumbnailImage] = useState<ImageWithPreview | null>(null);
+    const [faceImage, setFaceImage] = useState<ImageWithPreview | null>(null);
     const [loading, setLoading] = useState(false);
-    const { user } = useUser();
 
-    const handleSubmit = async () => {
-        setLoading(true);
-        if (!user) return toast.error("Please login to continue.");
-        const email = user.emailAddresses[0]?.emailAddress;
+    const thumbnailRef = useRef<HTMLInputElement>(null);
+    const faceRef = useRef<HTMLInputElement>(null);
 
-        if (!youtubeUrl) return toast.error("YouTube link is required.");
-
-        try {
-            const formData = new FormData();
-            formData.append("youtube_url", youtubeUrl);
-            formData.append("persona", persona);
-            formData.append("prompt", prompt);
-            formData.append("email", email);
-
-            const response = await fetch("https://cravio-ai.onrender.com/api/generate-thumbnail", {
-                method: "POST",
-                body: formData,
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                toast.success("Thumbnail generated successfully!");
-                console.log("Thumbnail URL:", data.generated_thumbnail);
-                setThumbnailUrl(data.generated_thumbnail);
-            } else {
-                console.error("Error:", data.error);
-                toast.error("Failed to generate thumbnail");
-            }
-            setLoading(false);
-        } catch (err) {
-            console.error("Request failed", err);
-            toast.error("An error occurred.");
-            setLoading(false);
+    const handleFileUpload = (file: File, type: 'thumbnail' | 'face') => {
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const result = e.target && typeof e.target.result === 'string' ? e.target.result : '';
+                if (type === 'thumbnail') {
+                    setThumbnailImage({ file, preview: result });
+                } else if (type === 'face') {
+                    setFaceImage({ file, preview: result });
+                }
+            };
+            reader.readAsDataURL(file);
         }
     };
 
+    const handleSubmit = async () => {
+        if (!youtubeUrl || !thumbnailImage && !faceImage) {
+            toast.error('Please fill out all the fields!');
+            return;
+        }
+
+        if (activeTab === 'link') {
+            console.log('youtubeUrl', youtubeUrl);
+        } else {
+            console.log('thumbnail', thumbnailImage);
+        }
+
+        setLoading(true);
+        setTimeout(() => {
+            setLoading(false);
+        }, 2000);
+    };
+
+    const canSubmit = () => {
+        const hasSource = activeTab === 'link' ? youtubeUrl.trim() : thumbnailImage;
+        return hasSource && faceImage;
+    };
 
     return (
-        <motion.div
-            className="max-w-xl mx-auto p-6 space-y-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-        >
+        <div className="min-h-screen my-5 flex items-center justify-center p-4">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="w-full max-w-2xl  rounded-lg p-6 space-y-7 border-2"
+                style={{
+                    boxShadow: canSubmit() ? '0 0 20px rgba(71, 255, 231, 0.3)' : 'none'
+                }}
+            >
 
-            <div className="space-y-2">
-                <Label>YouTube Link</Label>
-                <Input
-                    placeholder="Paste YouTube video link"
-                    value={youtubeUrl}
-                    onChange={(e) => setYoutubeUrl(e.target.value)}
-                />
-            </div>
-
-            <div className="space-y-2">
-                <Label>Select Persona</Label>
-                <Select onValueChange={setPersona}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Choose a persona" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/USAFA_Hosts_Elon_Musk_%28Image_1_of_17%29_%28cropped%29.jpg/640px-USAFA_Hosts_Elon_Musk_%28Image_1_of_17%29_%28cropped%29.jpg">Elon Musk</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-
-            <div className="space-y-2">
-                <Label>Optional Prompt</Label>
-                <Input
-                    placeholder="e.g. Bugatti parked near a mansion"
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                />
-            </div>
-
-            {
-                loading ? (
-                    <Button disabled className="w-full" variant="secondary">
-                        Generating...
-                    </Button>
-                ) : (
-                    <Button onClick={handleSubmit} className="w-full">
-                        Generate Thumbnail
-                    </Button>
-                )
-            }
-
-            {thumbnailUrl && (
-                <div className="mt-6">
-                    <Label>Generated Thumbnail</Label>
-                    <img src={thumbnailUrl} alt="Generated Thumbnail" className="rounded-xl mt-2" />
+                {/* Tab Buttons */}
+                <div className="flex rounded-lg gap-3 p-1 bg-zinc-900">
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setActiveTab('link')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-colors ${activeTab === 'link'
+                            ? 'text-black'
+                            : 'text-gray-300 hover:text-white hover:border hover:border-[#47FFE7]'
+                            }`}
+                        style={{
+                            backgroundColor: activeTab === 'link' ? '#47FFE7' : 'transparent',
+                            boxShadow: activeTab === 'link' ? '0 0 10px rgba(71, 255, 231, 0.5)' : 'none'
+                        }}
+                    >
+                        <Link className="w-4 h-4" />
+                        Link
+                    </motion.button>
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setActiveTab('upload')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-colors ${activeTab === 'upload'
+                            ? 'text-black'
+                            : 'text-gray-300 hover:text-white hover:border hover:border-[#47FFE7]'
+                            }`}
+                        style={{
+                            backgroundColor: activeTab === 'upload' ? '#47FFE7' : 'transparent',
+                            boxShadow: activeTab === 'upload' ? '0 0 10px rgba(71, 255, 231, 0.5)' : 'none'
+                        }}
+                    >
+                        <Upload className="w-4 h-4" />
+                        Upload
+                    </motion.button>
                 </div>
-            )}
 
-        </motion.div>
+                {/* Input Section */}
+                <div className="space-y-4">
+                    {activeTab === 'link' ? (
+                        <Input
+                            placeholder="Drop a YouTube link"
+                            value={youtubeUrl}
+                            onChange={(e) => setYoutubeUrl(e.target.value)}
+                            className="bg-gray-700 border-2 border-[#47FFE7] text-[#47FFE7] placeholder-gray-400 focus:outline-none px-5"
+                        />
+                    ) : (
+                        <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            className="border-2 border-[#47FFE7] rounded-lg p-3 text-center cursor-pointer transition-colors "
+                            onClick={() => thumbnailRef.current?.click()}
+                        >
+                            <input
+                                ref={thumbnailRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                    if (e.target.files && e.target.files[0]) {
+                                        handleFileUpload(e.target.files[0], 'thumbnail');
+                                    }
+                                }}
+                            />
+                            {thumbnailImage ? (
+                                <div className="space-y-2">
+                                    <img
+                                        src={thumbnailImage.preview}
+                                        alt="Thumbnail"
+                                        className=" mx-auto rounded object-contain"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    <Upload className="w-8 h-8 mx-auto text-gray-500" />
+                                    <p className="text-gray-400 text-sm">Click to upload thumbnail</p>
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+                </div>
+
+                {/* Face Image Upload */}
+                <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    className="border-2 border-[#47FFE7]  rounded-lg p-3 text-center cursor-pointer transition-colors"
+                    onClick={() => faceRef.current?.click()}
+                >
+                    <input
+                        ref={faceRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        required
+                        onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                                handleFileUpload(e.target.files[0], 'face');
+                            }
+                        }}
+                    />
+                    {faceImage ? (
+                        <div className="space-y-2">
+                            <img
+                                src={faceImage.preview}
+                                alt="Face"
+                                className="md:w-72 md:h-72 w-24 h-24 mx-auto rounded-full object-contain"
+                            />
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            <Upload className="w-8 h-8 mx-auto text-gray-500" />
+                            <p className="text-gray-400 text-sm">Upload face image</p>
+                        </div>
+                    )}
+                </motion.div>
+
+                {/* Submit Button */}
+                <motion.div
+                    whileHover={{ scale: canSubmit() && !loading ? 1.02 : 1 }}
+                    whileTap={{ scale: canSubmit() && !loading ? 0.98 : 1 }}
+                >
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={!canSubmit() || loading}
+                        className={`w-full py-3 text-sm font-bold rounded-lg transition-all ${canSubmit() && !loading
+                            ? 'text-black hover:brightness-110'
+                            : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                            }`}
+                        style={{
+                            backgroundColor: canSubmit() && !loading ? '#47FFE7' : undefined,
+                            boxShadow: canSubmit() && !loading ? '0 0 15px rgba(71, 255, 231, 0.4)' : 'none'
+                        }}
+                    >
+                        <Sparkles />  {loading ? 'Generating...' : 'Generate'}
+                    </Button>
+                </motion.div>
+            </motion.div>
+        </div>
     );
 };
 

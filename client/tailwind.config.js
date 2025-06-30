@@ -7,7 +7,11 @@ module.exports = {
     './content/**/*.{md,mdx}', // if you're using Markdown content
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['Poppins', 'sans-serif'],
+      },
+    },
   },
   plugins: [
     require('@tailwindcss/typography'), // ✅ Add this line
