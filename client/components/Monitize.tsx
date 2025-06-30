@@ -36,18 +36,25 @@ const Monitize = () => {
     fetchUserCount()
   }, [])
 
-  const VideoClip: React.FC<{ src: string; index: number }> = ({ src, index }) => {
-    const [views] = useState(Math.floor(Math.random() * 950000) + 50000)
-    const videoRef = useRef<HTMLVideoElement>(null)
+ const VideoClip: React.FC<{ src: string; index: number }> = ({ src, index }) => {
+  const [views, setViews] = useState<number | null>(null) // initially null
+  const videoRef = useRef<HTMLVideoElement>(null)
 
-    const formatViews = (num : number) => {
-      if (num >= 1000000) {
-        return (num / 1000000).toFixed(1) + 'M'
-      } else if (num >= 1000) {
-        return (num / 1000).toFixed(1) + 'K'
-      }
-      return num.toString()
+  const formatViews = (num: number) => {
+    if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M'
+    if (num >= 1_000) return (num / 1_000).toFixed(1) + 'K'
+    return num.toString()
+  }
+
+  useEffect(() => {
+    setViews(Math.floor(Math.random() * 950000) + 50000)
+
+    if (videoRef.current) {
+      videoRef.current.play().catch((error: unknown) => {
+        console.log('Auto-play failed:', error)
+      })
     }
+  }, [])
 
     useEffect(() => {
       if (videoRef.current) {
@@ -81,7 +88,7 @@ const Monitize = () => {
             <div className="flex items-center justify-between text-white text-sm">
               <div className="flex items-center space-x-2">
                 <Eye className="w-4 h-4" />
-                <span>{formatViews(views)}</span>
+                 <span>{views !== null ? formatViews(views) : '...'}</span>
               </div>
             </div>
           </div>
