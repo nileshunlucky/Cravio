@@ -71,7 +71,7 @@ const Page = () => {
                 setLoading(false);
                 console.log(data);
             }
-
+            
         } catch (error) {
             setLoading(false);
             console.error('Error submitting form:', error);

@@ -58,7 +58,7 @@ def add_watermark(image_path: str, output_path: str) -> str:
         try:
             # Try to find a bold font (adjust path as needed for your system)
             font_size = (
-                max(width, height) // 15
+                max(width, height) // 8
             )  # Dynamic font size based on image size
             font = ImageFont.truetype(
                 "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size
@@ -66,7 +66,7 @@ def add_watermark(image_path: str, output_path: str) -> str:
         except:
             try:
                 # Fallback to other common font paths
-                font_size = max(width, height) // 15
+                font_size = max(width, height) // 8
                 font = ImageFont.truetype("arial.ttf", font_size)
             except:
                 # Final fallback to default font
@@ -212,8 +212,8 @@ async def faceswap_endpoint(
                         f.write(os.environ["COOKIES_TXT"])
 
                 ydl_opts = {
+                    "writethumbnail": True,  # Correct spelling
                     "skip_download": True,
-                    "write_thumbnail": True,
                     "cookiefile": (
                         cookies_path if os.path.exists(cookies_path) else None
                     ),
