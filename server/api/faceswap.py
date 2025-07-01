@@ -445,7 +445,6 @@ async def faceswap_endpoint(
                                     "model": "faceswap",
                                     "original_url": s3_urls["original"],
                                     "job_id": job_id,
-                                    "watermarked": False,
                                     "created_at": datetime.datetime.utcnow(),
                                 }
                             }
@@ -523,7 +522,6 @@ async def faceswap_endpoint(
                                         "original"
                                     ],  # Keep original for potential upgrade
                                     "job_id": job_id,
-                                    "watermarked": True,
                                     "created_at": datetime.datetime.utcnow(),
                                 }
                             }

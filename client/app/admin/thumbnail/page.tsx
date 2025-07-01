@@ -293,7 +293,7 @@ const Page = () => {
                                     ) : (
                                         <motion.div
                                             whileHover={{ scale: 1.02 }}
-                                            className="border-2 border-dashed border-[#47FFE7]/50 rounded-lg p-3 text-center cursor-pointer transition-colors hover:bg-zinc-800/50"
+                                            className="border-2 border-[#47FFE7] rounded-lg p-3 text-center cursor-pointer transition-colors hover:bg-zinc-800/50"
                                             onClick={() => thumbnailRef.current?.click()}
                                         >
                                             <input
@@ -326,7 +326,7 @@ const Page = () => {
                                 {/* Face Image Upload */}
                                 <motion.div
                                     whileHover={{ scale: 1.02 }}
-                                    className="border-2 border-dashed border-[#47FFE7]/50 rounded-lg p-3 text-center cursor-pointer transition-colors hover:bg-zinc-800/50"
+                                    className="border-2 border-[#47FFE7] rounded-lg p-3 text-center cursor-pointer transition-colors hover:bg-zinc-800/50"
                                     onClick={() => faceRef.current?.click()}
                                 >
                                     <input
