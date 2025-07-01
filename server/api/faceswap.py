@@ -553,9 +553,6 @@ async def faceswap_endpoint(
                     "success": True,
                     "msg": "Face swap completed successfully",
                     "thumbnailUrl": main_url,
-                    "user_paid": user_paid,
-                    "watermarked": not user_paid,
-                    "job_id": job_id,
                 }
             )
 

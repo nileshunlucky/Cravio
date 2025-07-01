@@ -63,7 +63,11 @@ def save_referral(data: UserReferral = Body(...)):  # Expect referral data in th
     if existing:
         return {"message": "User already exists"}
 
-    user_data = {"email": data.email}
+    # 2. Start building user data
+    user_data = {
+        "email": data.email,
+        "user_paid": False  # 🔥 Add this line
+    }
 
     # 2. Validate referredBy if provided
     if data.referredBy:
@@ -77,6 +81,14 @@ def save_referral(data: UserReferral = Body(...)):  # Expect referral data in th
     # 3. Insert the user
     users_collection.insert_one(user_data)
     return {"message": "User added successfully"}
+
+@app.get("/migrate/user_paid")
+def add_user_paid_to_existing_users():
+    result = users_collection.update_many(
+        {"user_paid": {"$exists": False}},
+        {"$set": {"user_paid": False}}
+    )
+    return {"updated_users": result.modified_count}
 
 class RefCodeRequest(BaseModel):
     ref_code: str
