@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog'
-import { Crown, Download, Eye, Calendar, Sparkles } from 'lucide-react'
+import { Download, Eye, Calendar, Sparkles } from 'lucide-react'
 
 interface Thumbnail {
   model: string
@@ -75,7 +75,7 @@ const PortfolioPage = () => {
     return thumbnail.watermarked_url || thumbnail.original_url
   }
 
-const formatDate = (rawDate: any) => {
+const formatDate = (rawDate: string | { $date: string }) => {
   try {
     const dateString =
       typeof rawDate === 'string' ? rawDate :
@@ -93,7 +93,7 @@ const formatDate = (rawDate: any) => {
       year: 'numeric'
     });
   } catch (error) {
-    return 'Invalid Date';
+    return 'Invalid Date: ' + error;
   }
 };
 
@@ -204,7 +204,7 @@ const handleDirectDownload = (url: string, filename: string) => {
               animate="visible"
               className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"
             >
-              {userData.thumbnail.map((thumbnail, index) => {
+              {userData.thumbnail.map((thumbnail) => {
                 const thumbnailUrl = getThumbnailUrl(thumbnail, userData.user_paid)
                 const isLoading = imageLoading[thumbnail.job_id] !== false
                 const isHovered = hoveredCard === thumbnail.job_id
