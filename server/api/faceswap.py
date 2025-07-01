@@ -218,7 +218,7 @@ async def faceswap_endpoint(
                         cookies_path if os.path.exists(cookies_path) else None
                     ),
                     "outtmpl": f"{TEMP_DIR}/%(id)s",
-                    "quiet": True,
+                    "quiet": False,
                 }
 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -428,7 +428,7 @@ async def faceswap_endpoint(
                         local_result_path,
                         S3_BUCKET,
                         s3_key,
-                        ExtraArgs={"ACL": "public-read", "ContentType": "image/jpeg"},
+                        ExtraArgs={'ContentType': 'image/jpeg'}
                     )
                     s3_urls["original"] = (
                         f"https://{S3_BUCKET}.s3.amazonaws.com/{s3_key}"
@@ -466,7 +466,7 @@ async def faceswap_endpoint(
                         local_result_path,
                         S3_BUCKET,
                         original_s3_key,
-                        ExtraArgs={"ACL": "public-read", "ContentType": "image/jpeg"},
+                        ExtraArgs={'ContentType': 'image/jpeg'}
                     )
                     s3_urls["original"] = (
                         f"https://{S3_BUCKET}.s3.amazonaws.com/{original_s3_key}"
@@ -499,7 +499,7 @@ async def faceswap_endpoint(
                         watermarked_path,
                         S3_BUCKET,
                         watermarked_s3_key,
-                        ExtraArgs={"ACL": "public-read", "ContentType": "image/jpeg"},
+                        ExtraArgs={'ContentType': 'image/jpeg'}
                     )
                     s3_urls["watermarked"] = (
                         f"https://{S3_BUCKET}.s3.amazonaws.com/{watermarked_s3_key}"
