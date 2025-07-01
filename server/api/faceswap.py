@@ -120,7 +120,7 @@ async def poll_job_status(client: httpx.AsyncClient, job_id: str, max_attempts: 
             
             code = job_data.get("code")
             
-            # Check if request was successful
+            # Check if job is completed successfully
             if code == 100000:
                 result = job_data.get("result", {})
                 output_image_url = result.get("output_image_url")
@@ -130,11 +130,18 @@ async def poll_job_status(client: httpx.AsyncClient, job_id: str, max_attempts: 
                     return job_data, None
                 else:
                     # Job is still processing, continue polling
-                    print(f"Job {job_id} still processing, waiting {delay} seconds...")
+                    print(f"Job {job_id} still processing (no output URL yet), waiting {delay} seconds...")
                     await asyncio.sleep(delay)
                     continue
+            
+            # Check if job is still in progress (these are the "in progress" codes)
+            elif code in [300102, 300101, 300100]:  # Add other "in progress" codes as needed
+                print(f"Job {job_id} still processing (code: {code}), waiting {delay} seconds...")
+                await asyncio.sleep(delay)
+                continue
+            
             else:
-                # Job failed or error occurred
+                # Job failed or error occurred (any other code)
                 message = job_data.get("message", {})
                 error_msg = message.get("en", "Unknown error")
                 return None, f"Job failed with code {code}: {error_msg}"
@@ -183,7 +190,7 @@ async def faceswap_endpoint(
                 ydl_opts = {
                     'skip_download': True,
                     'write_thumbnail': True,
-                    'cookiefile': cookies_path,
+                    'cookiefile': cookies_path if os.path.exists(cookies_path) else None,
                     'outtmpl': f'{TEMP_DIR}/%(id)s',
                     'quiet': True,
                 }
