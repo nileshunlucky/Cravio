@@ -22,3 +22,4 @@ aiofiles
 boto3
 opencv-python-headless
 apscheduler
+httpx

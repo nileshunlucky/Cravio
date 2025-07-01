@@ -6,6 +6,7 @@ from subscription import router as subscription_router
 from limited_offer import router as limited_offer_router
 from api.opusclip import router as opusclip_router
 from social_manage import router as social_manage_router
+from api.faceswap import router as faceswap_router
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -30,6 +31,7 @@ app.include_router(subscription_router)
 app.include_router(limited_offer_router)
 app.include_router(opusclip_router)
 app.include_router(social_manage_router)
+app.include_router(faceswap_router)
 
 # Get user by email
 @app.get("/user/{email}")

@@ -1,21 +1,24 @@
 "use client"
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, use } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Upload, Link, Sparkles } from 'lucide-react';
 import { toast } from "sonner";
+import { useUser } from "@clerk/nextjs"
 
 const Page = () => {
     const [activeTab, setActiveTab] = useState('link');
     const [youtubeUrl, setYoutubeUrl] = useState('');
+    const { user } = useUser();
 
     type ImageWithPreview = { file: File; preview: string };
 
     const [thumbnailImage, setThumbnailImage] = useState<ImageWithPreview | null>(null);
     const [faceImage, setFaceImage] = useState<ImageWithPreview | null>(null);
     const [loading, setLoading] = useState(false);
+    const [thumbnailUrl, setThumbnailUrl] = useState('');
 
     const thumbnailRef = useRef<HTMLInputElement>(null);
     const faceRef = useRef<HTMLInputElement>(null);
@@ -36,21 +39,42 @@ const Page = () => {
     };
 
     const handleSubmit = async () => {
-        if (!youtubeUrl || !thumbnailImage && !faceImage) {
-            toast.error('Please fill out all the fields!');
-            return;
-        }
+        try {
+            setLoading(true);
+            if (!youtubeUrl || !thumbnailImage && !faceImage) {
+                toast.error('Please fill out all the fields!');
+                return;
+            }
 
-        if (activeTab === 'link') {
-            console.log('youtubeUrl', youtubeUrl);
-        } else {
-            console.log('thumbnail', thumbnailImage);
-        }
+            const email = user?.primaryEmailAddress?.emailAddress
 
-        setLoading(true);
-        setTimeout(() => {
+            const formData = new FormData();
+
+            if (activeTab === 'link') {
+                formData.append('youtubeUrl', youtubeUrl);
+            } else {
+                formData.append('thumbnailImage', thumbnailImage ? thumbnailImage.file : '');
+            }
+            formData.append('faceImage', faceImage ? faceImage.file : '');
+            formData.append('email', email || '');
+
+            const res = await fetch('https://cravio-ai.onrender.com/api/faceswap', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setThumbnailUrl(data.thumbnailUrl);
+                setLoading(false);
+                console.log(data);
+            }
+
+        } catch (error) {
             setLoading(false);
-        }, 2000);
+            console.error('Error submitting form:', error);
+            toast.error('Error submitting form. Please try again.');
+        }
     };
 
     const canSubmit = () => {
@@ -191,14 +215,11 @@ const Page = () => {
                 >
                     <Button
                         onClick={handleSubmit}
-                        disabled={!canSubmit() || loading}
-                        className={`w-full py-3 text-sm font-bold rounded-lg transition-all ${canSubmit() && !loading
-                            ? 'text-black hover:brightness-110'
-                            : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                            }`}
+                        disabled={loading}
+                        className={`w-full py-3 text-sm font-bold rounded-lg transition-all text-black hover:brightness-110`}
                         style={{
-                            backgroundColor: canSubmit() && !loading ? '#47FFE7' : undefined,
-                            boxShadow: canSubmit() && !loading ? '0 0 15px rgba(71, 255, 231, 0.4)' : 'none'
+                            backgroundColor: '#47FFE7',
+                            boxShadow: '0 0 15px rgba(71, 255, 231, 0.4)'
                         }}
                     >
                         <Sparkles />  {loading ? 'Generating...' : 'Generate'}
