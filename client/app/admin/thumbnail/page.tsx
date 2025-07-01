@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef, use } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -224,6 +224,21 @@ const Page = () => {
                     >
                         <Sparkles />  {loading ? 'Generating...' : 'Generate'}
                     </Button>
+                </motion.div>
+                <motion.div>
+                    {
+                        thumbnailUrl &&
+                        <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            className="border-2 border-[#47FFE7] rounded-lg p-3 text-center cursor-pointer transition-colors"
+                        >
+                            <img
+                                src={thumbnailUrl}
+                                alt="Thumbnail"
+                                className="object-contain"
+                            />
+                        </motion.div>
+                    }
                 </motion.div>
             </motion.div>
         </div>
