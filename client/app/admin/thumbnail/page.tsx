@@ -41,8 +41,9 @@ const Page = () => {
     const handleSubmit = async () => {
         try {
             setLoading(true);
-            if (!youtubeUrl || !thumbnailImage && !faceImage) {
-                toast.error('Please fill out all the fields!');
+            if ((!youtubeUrl && !thumbnailImage) || !faceImage) {
+                toast.error('Please provide either a YouTube link or a thumbnail image, and a face image.');
+                setLoading(false);
                 return;
             }
 
@@ -62,6 +63,7 @@ const Page = () => {
                 method: 'POST',
                 body: formData
             });
+
 
             if (res.ok) {
                 const data = await res.json();

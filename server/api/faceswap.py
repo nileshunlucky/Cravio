@@ -111,9 +111,13 @@ async def poll_job_status(client: httpx.AsyncClient, job_id: str, max_attempts: 
             response = await client.get(f"{REMAKER_FETCH_JOB_URL}/{job_id}", headers=headers)
             
             if response.status_code != 200:
-                return None, f"Failed to get job status: {response.text}"
+                print(f"Polling attempt {attempt + 1}: Status {response.status_code}, Response: {response.text}")
+                await asyncio.sleep(delay)
+                continue
             
             job_data = response.json()
+            print(f"Polling attempt {attempt + 1}: {job_data}")
+            
             code = job_data.get("code")
             
             # Check if request was successful
@@ -121,11 +125,12 @@ async def poll_job_status(client: httpx.AsyncClient, job_id: str, max_attempts: 
                 result = job_data.get("result", {})
                 output_image_url = result.get("output_image_url")
                 
-                # If output_image_url exists, job is completed
+                # If output_image_url exists and is not empty, job is completed
                 if output_image_url and len(output_image_url) > 0:
                     return job_data, None
                 else:
-                    # Job is still processing
+                    # Job is still processing, continue polling
+                    print(f"Job {job_id} still processing, waiting {delay} seconds...")
                     await asyncio.sleep(delay)
                     continue
             else:
@@ -135,7 +140,9 @@ async def poll_job_status(client: httpx.AsyncClient, job_id: str, max_attempts: 
                 return None, f"Job failed with code {code}: {error_msg}"
                 
         except Exception as e:
-            return None, f"Error polling job status: {str(e)}"
+            print(f"Polling error on attempt {attempt + 1}: {str(e)}")
+            await asyncio.sleep(delay)
+            continue
     
     return None, "Job timeout - processing took too long"
 
@@ -147,6 +154,9 @@ async def faceswap_endpoint(
     email: str = Form(...)
 ):
     thumbnail_path = None
+    face_path = None
+    local_result_path = None
+    watermarked_path = None
 
     # ✅ Validate user
     user = users_collection.find_one({"email": email})
@@ -158,6 +168,7 @@ async def faceswap_endpoint(
     # Get user payment status
     user_paid = user.get("user_paid", False)
 
+    # Deduct credits
     users_collection.update_one({"email": email}, {"$inc": {"credits": -10}})
 
     try:
@@ -165,8 +176,9 @@ async def faceswap_endpoint(
         if youtubeUrl:
             try:
                 cookies_path = "/tmp/cookies.txt"
-                with open(cookies_path, "w") as f:
-                    f.write(os.environ["COOKIES_TXT"])
+                if os.environ.get("COOKIES_TXT"):
+                    with open(cookies_path, "w") as f:
+                        f.write(os.environ["COOKIES_TXT"])
 
                 ydl_opts = {
                     'skip_download': True,
@@ -184,87 +196,123 @@ async def faceswap_endpoint(
                         if os.path.exists(candidate):
                             thumbnail_path = candidate
                             break
-                if not thumbnail_path:
-                    return JSONResponse(status_code=500, content={"error": "Thumbnail download failed."})
+                            
+                if not thumbnail_path or not os.path.exists(thumbnail_path):
+                    raise Exception("Thumbnail file not found after download")
+                    
             except Exception as e:
+                # Refund credits on error
+                users_collection.update_one({"email": email}, {"$inc": {"credits": 10}})
                 return JSONResponse(status_code=500, content={"error": f"YouTube thumbnail error: {str(e)}"})
+                
         elif thumbnailImage:
             filename = f"{uuid.uuid4().hex}_{thumbnailImage.filename}"
             thumbnail_path = os.path.join(TEMP_DIR, filename)
+            content = await thumbnailImage.read()
             with open(thumbnail_path, "wb") as f:
-                f.write(await thumbnailImage.read())
+                f.write(content)
         else:
+            # Refund credits on error
+            users_collection.update_one({"email": email}, {"$inc": {"credits": 10}})
             return JSONResponse(status_code=400, content={"error": "Provide either YouTube URL or thumbnail image."})
 
         # ✅ Save face image
-        face_path = os.path.join(TEMP_DIR, f"{uuid.uuid4().hex}_{faceImage.filename}")
+        face_filename = f"{uuid.uuid4().hex}_{faceImage.filename}"
+        face_path = os.path.join(TEMP_DIR, face_filename)
+        face_content = await faceImage.read()
         with open(face_path, "wb") as f:
-            f.write(await faceImage.read())
+            f.write(face_content)
 
-        # ✅ Call Remaker API with correct parameters
+        # Verify files exist and are readable
+        if not os.path.exists(thumbnail_path) or not os.path.exists(face_path):
+            raise Exception("Input files not properly saved")
+
+        # ✅ Call Remaker API
         async with httpx.AsyncClient(timeout=300.0) as client:
-            # Step 1: Submit the face swap job with correct field names
-            with open(thumbnail_path, "rb") as thumb_file, open(face_path, "rb") as face_file:
-                files = {
-                    "target_image": ("target.jpg", thumb_file),  # Face to be replaced
-                    "swap_image": ("swap.jpg", face_file)       # Your face
-                }
-                headers = {
-                    "accept": "application/json",
-                    "Authorization": REMAKER_API_KEY
-                }
-                
-                # Submit job to create-job endpoint
-                response = await client.post(REMAKER_CREATE_JOB_URL, headers=headers, files=files)
+            # Step 1: Submit the face swap job
+            try:
+                with open(thumbnail_path, "rb") as thumb_file, open(face_path, "rb") as face_file:
+                    files = {
+                        "target_image": ("target.jpg", thumb_file, "image/jpeg"),  # Face to be replaced
+                        "swap_image": ("swap.jpg", face_file, "image/jpeg")       # Your face
+                    }
+                    headers = {
+                        "accept": "application/json",
+                        "Authorization": REMAKER_API_KEY
+                    }
+                    
+                    print(f"Submitting job to Remaker API...")
+                    response = await client.post(REMAKER_CREATE_JOB_URL, headers=headers, files=files)
+                    print(f"Remaker API response status: {response.status_code}")
+                    print(f"Remaker API response: {response.text}")
 
-                if response.status_code != 200:
-                    return JSONResponse(
-                        status_code=500, 
-                        content={
-                            "error": "Failed to submit face swap job", 
-                            "details": response.text,
-                            "status_code": response.status_code
-                        }
-                    )
+                    if response.status_code != 200:
+                        # Refund credits on API error
+                        users_collection.update_one({"email": email}, {"$inc": {"credits": 10}})
+                        return JSONResponse(
+                            status_code=500, 
+                            content={
+                                "error": "Failed to submit face swap job", 
+                                "details": response.text,
+                                "status_code": response.status_code
+                            }
+                        )
 
-                job_response = response.json()
-                
-                # Check if job creation was successful
-                if job_response.get("code") != 100000:
-                    message = job_response.get("message", {})
-                    error_msg = message.get("en", "Unknown error")
-                    return JSONResponse(
-                        status_code=500, 
-                        content={
-                            "error": f"Job creation failed: {error_msg}",
-                            "code": job_response.get("code"),
-                            "response": job_response
-                        }
-                    )
-                
-                # Extract job_id from result
-                result = job_response.get("result", {})
-                job_id = result.get("job_id")
-                
-                if not job_id:
-                    return JSONResponse(
-                        status_code=500, 
-                        content={
-                            "error": "No job ID returned from Remaker", 
-                            "response": job_response
-                        }
-                    )
+                    job_response = response.json()
+                    
+                    # Check if job creation was successful
+                    if job_response.get("code") != 100000:
+                        message = job_response.get("message", {})
+                        error_msg = message.get("en", "Unknown error")
+                        # Refund credits on job creation failure
+                        users_collection.update_one({"email": email}, {"$inc": {"credits": 10}})
+                        return JSONResponse(
+                            status_code=500, 
+                            content={
+                                "error": f"Job creation failed: {error_msg}",
+                                "code": job_response.get("code"),
+                                "response": job_response
+                            }
+                        )
+                    
+                    # Extract job_id from result
+                    result = job_response.get("result", {})
+                    job_id = result.get("job_id")
+                    
+                    if not job_id:
+                        # Refund credits if no job ID
+                        users_collection.update_one({"email": email}, {"$inc": {"credits": 10}})
+                        return JSONResponse(
+                            status_code=500, 
+                            content={
+                                "error": "No job ID returned from Remaker", 
+                                "response": job_response
+                            }
+                        )
+                    
+                    print(f"Job created successfully with ID: {job_id}")
+
+            except Exception as e:
+                # Refund credits on exception
+                users_collection.update_one({"email": email}, {"$inc": {"credits": 10}})
+                return JSONResponse(
+                    status_code=500, 
+                    content={"error": f"Failed to submit job: {str(e)}"}
+                )
 
             # Step 2: Poll for job completion
+            print(f"Starting to poll job status for job_id: {job_id}")
             job_result, error = await poll_job_status(client, job_id)
             
             if error:
+                # Note: Don't refund credits here as the job was successfully submitted
+                # The user should still be charged for API usage even if polling fails
                 return JSONResponse(status_code=500, content={"error": error})
             
             if not job_result:
                 return JSONResponse(status_code=500, content={"error": "Failed to get job result"})
 
-            # Step 3: Get the output URL from the correct response structure
+            # Step 3: Get the output URL from the response
             result = job_result.get("result", {})
             output_image_urls = result.get("output_image_url", [])
             
@@ -279,133 +327,132 @@ async def faceswap_endpoint(
             
             # Get the first output image URL
             output_url = output_image_urls[0]
+            print(f"Got output URL: {output_url}")
 
             # ✅ Download result image
-            result_filename = f"{uuid.uuid4().hex}_faceswap_output.jpg"
-            local_result_path = os.path.join(TEMP_DIR, result_filename)
+            try:
+                result_filename = f"{uuid.uuid4().hex}_faceswap_output.jpg"
+                local_result_path = os.path.join(TEMP_DIR, result_filename)
 
-            result_response = await client.get(output_url)
-            if result_response.status_code != 200:
+                result_response = await client.get(output_url)
+                if result_response.status_code != 200:
+                    return JSONResponse(
+                        status_code=500, 
+                        content={"error": f"Failed to download result image: {result_response.status_code}"}
+                    )
+                
+                with open(local_result_path, "wb") as f:
+                    f.write(result_response.content)
+                    
+                print(f"Downloaded result image to: {local_result_path}")
+                
+            except Exception as e:
                 return JSONResponse(
                     status_code=500, 
-                    content={"error": f"Failed to download result image: {result_response.status_code}"}
+                    content={"error": f"Failed to download result: {str(e)}"}
                 )
-            
-            with open(local_result_path, "wb") as f:
-                f.write(result_response.content)
 
-            # ✅ Handle watermarking based on user payment status
+            # ✅ Handle watermarking and S3 upload based on user payment status
             s3_urls = {}
             
-            if user_paid:
-                # User is paid - no watermark, upload original
-                s3_key = f"faceswap_results/{result_filename}"
-                s3_client.upload_file(
-                    local_result_path, 
-                    S3_BUCKET, 
-                    s3_key, 
-                    ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'}
-                )
-                s3_urls['original'] = f"https://{S3_BUCKET}.s3.amazonaws.com/{s3_key}"
-                
-                # Save in DB
-                users_collection.update_one(
-                    {"email": email},
-                    {"$push": {"thumbnail": {
-                        "model": "faceswap",
-                        "original_url": s3_urls['original'],
-                        "job_id": job_id,
-                        "watermarked": False,
-                        "created_at": datetime.datetime.utcnow()
-                    }}}
-                )
-                
-                main_url = s3_urls['original']
-                
-            else:
-                # User is not paid - create and upload both versions
-                
-                # 1. Upload original (without watermark)
-                original_s3_key = f"faceswap_results/original_{result_filename}"
-                s3_client.upload_file(
-                    local_result_path, 
-                    S3_BUCKET, 
-                    original_s3_key, 
-                    ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'}
-                )
-                s3_urls['original'] = f"https://{S3_BUCKET}.s3.amazonaws.com/{original_s3_key}"
-                
-                # 2. Create watermarked version
-                watermarked_filename = f"{uuid.uuid4().hex}_watermarked_faceswap_output.jpg"
-                watermarked_path = os.path.join(TEMP_DIR, watermarked_filename)
-                add_watermark(local_result_path, watermarked_path)
-                
-                # 3. Upload watermarked version
-                watermarked_s3_key = f"faceswap_results/watermarked_{watermarked_filename}"
-                s3_client.upload_file(
-                    watermarked_path, 
-                    S3_BUCKET, 
-                    watermarked_s3_key, 
-                    ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'}
-                )
-                s3_urls['watermarked'] = f"https://{S3_BUCKET}.s3.amazonaws.com/{watermarked_s3_key}"
-                
-                # Save both versions in DB
-                users_collection.update_one(
-                    {"email": email},
-                    {"$push": {"thumbnail": {
-                        "model": "faceswap",
-                        "watermarked_url": s3_urls['watermarked'],  # Return watermarked version to free user
-                        "original_url": s3_urls['original'],  # Keep original for potential upgrade
-                        "job_id": job_id,
-                        "watermarked": True,
-                        "created_at": datetime.datetime.utcnow()
-                    }}}
-                )
-                
-                main_url = s3_urls['watermarked']  # Return watermarked version to free user
-                
-                # Clean up watermarked file
-                try:
-                    if os.path.exists(watermarked_path):
-                        os.remove(watermarked_path)
-                except Exception as cleanup_error:
-                    print(f"Watermarked file cleanup error: {cleanup_error}")
-
-            # ✅ Clean up temporary files
             try:
-                if thumbnail_path and os.path.exists(thumbnail_path):
-                    os.remove(thumbnail_path)
-                if face_path and os.path.exists(face_path):
-                    os.remove(face_path)
-                if local_result_path and os.path.exists(local_result_path):
-                    os.remove(local_result_path)
-            except Exception as cleanup_error:
-                print(f"Cleanup error: {cleanup_error}")
+                if user_paid:
+                    # User is paid - no watermark, upload original
+                    s3_key = f"faceswap_results/{result_filename}"
+                    s3_client.upload_file(
+                        local_result_path, 
+                        S3_BUCKET, 
+                        s3_key, 
+                        ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'}
+                    )
+                    s3_urls['original'] = f"https://{S3_BUCKET}.s3.amazonaws.com/{s3_key}"
+                    
+                    # Save in DB
+                    users_collection.update_one(
+                        {"email": email},
+                        {"$push": {"thumbnail": {
+                            "model": "faceswap",
+                            "original_url": s3_urls['original'],
+                            "job_id": job_id,
+                            "watermarked": False,
+                            "created_at": datetime.datetime.utcnow()
+                        }}}
+                    )
+                    
+                    main_url = s3_urls['original']
+                    
+                else:
+                    # User is not paid - create and upload both versions
+                    
+                    # 1. Upload original (without watermark)
+                    original_s3_key = f"faceswap_results/original_{result_filename}"
+                    s3_client.upload_file(
+                        local_result_path, 
+                        S3_BUCKET, 
+                        original_s3_key, 
+                        ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'}
+                    )
+                    s3_urls['original'] = f"https://{S3_BUCKET}.s3.amazonaws.com/{original_s3_key}"
+                    
+                    # 2. Create watermarked version
+                    watermarked_filename = f"{uuid.uuid4().hex}_watermarked_faceswap_output.jpg"
+                    watermarked_path = os.path.join(TEMP_DIR, watermarked_filename)
+                    add_watermark(local_result_path, watermarked_path)
+                    
+                    # 3. Upload watermarked version
+                    watermarked_s3_key = f"faceswap_results/watermarked_{watermarked_filename}"
+                    s3_client.upload_file(
+                        watermarked_path, 
+                        S3_BUCKET, 
+                        watermarked_s3_key, 
+                        ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'}
+                    )
+                    s3_urls['watermarked'] = f"https://{S3_BUCKET}.s3.amazonaws.com/{watermarked_s3_key}"
+                    
+                    # Save both versions in DB
+                    users_collection.update_one(
+                        {"email": email},
+                        {"$push": {"thumbnail": {
+                            "model": "faceswap",
+                            "watermarked_url": s3_urls['watermarked'],  # Return watermarked version to free user
+                            "original_url": s3_urls['original'],  # Keep original for potential upgrade
+                            "job_id": job_id,
+                            "watermarked": True,
+                            "created_at": datetime.datetime.utcnow()
+                        }}}
+                    )
+                    
+                    main_url = s3_urls['watermarked']  # Return watermarked version to free user
+                    
+            except Exception as e:
+                return JSONResponse(
+                    status_code=500, 
+                    content={"error": f"Failed to upload to S3: {str(e)}"}
+                )
+
+            print(f"Successfully processed face swap. Main URL: {main_url}")
 
             return JSONResponse(content={
                 "success": True,
                 "msg": "Face swap completed successfully",
                 "thumbnailUrl": main_url,
                 "user_paid": user_paid,
-                "watermarked": not user_paid
+                "watermarked": not user_paid,
+                "job_id": job_id
             })
 
     except Exception as e:
-        # Refund credits on error (refund 2 credits as per API docs)
-        users_collection.update_one({"email": email}, {"$inc": {"credits": 2}})
         
-        # Cleanup on error
-        try:
-            if thumbnail_path and os.path.exists(thumbnail_path):
-                os.remove(thumbnail_path)
-            if 'face_path' in locals() and os.path.exists(face_path):
-                os.remove(face_path)
-            if 'local_result_path' in locals() and os.path.exists(local_result_path):
-                os.remove(local_result_path)
-            if 'watermarked_path' in locals() and os.path.exists(watermarked_path):
-                os.remove(watermarked_path)
-        except:
-            pass
-            
+        print(f"Face swap process failed: {str(e)}")
         return JSONResponse(status_code=500, content={"error": f"Face swap process failed: {str(e)}"})
+    
+    finally:
+        # ✅ Clean up temporary files
+        cleanup_files = [thumbnail_path, face_path, local_result_path, watermarked_path]
+        for file_path in cleanup_files:
+            try:
+                if file_path and os.path.exists(file_path):
+                    os.remove(file_path)
+                    print(f"Cleaned up: {file_path}")
+            except Exception as cleanup_error:
+                print(f"Cleanup error for {file_path}: {cleanup_error}")
