@@ -157,17 +157,23 @@ const Page = () => {
                 const data = await res.json();
                 setThumbnailUrl(data.thumbnailUrl);
             }
+            if (!res.ok) {
+                const data = await res.json();
+                if (res.status === 402 && data.error === "Not enough credits") {
+                    toast.error("Not enough credits");
+                    router.push("/admin/plan");
+                    return;
+                }
+            }
 
         } catch (error) {
-            setAnimation(false);
             console.error('Error submitting form:', error);
-            toast.error("Not enough credits", {
+            toast.error("Error sumbmitting form", {
                 position: "top-center",
                 duration: 4000,
             })
-            router.push('/admin/plan');
-            
         } finally {
+            setAnimation(false);
             setLoading(false);
         }
     };
