@@ -66,7 +66,7 @@ const Hero = () => {
         image: string;
     }
 
-    const ThumbnailCard = ({ thumbnail, index }: { thumbnail: Thumbnail, index: number }) => (
+    const ThumbnailCard = ({ thumbnail }: { thumbnail: Thumbnail, index: number }) => (
         <motion.div
             className="relative group cursor-pointer flex-shrink-0"
             style={{
