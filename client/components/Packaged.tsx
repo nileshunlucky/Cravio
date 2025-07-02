@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react'
 
 const Packaged = () => {
-  const [userCount, setUserCount] = useState(0)
   const [thumbnailCount, setThumbnailCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
@@ -27,7 +26,7 @@ const Packaged = () => {
     credits?: number
     balance?: number
     thumbnail?: Thumbnail[]
-    [key: string]: any
+    [key: string]: unknown
   }
 
   useEffect(() => {
@@ -43,10 +42,6 @@ const Packaged = () => {
         const data: User[] = await res.json()
         console.log('Fetched data:', data)
         console.log('Total users found:', data.length)
-        
-        // Count total users
-        const totalUsers = data.length
-        setUserCount(totalUsers)
         
         // Count total thumbnails - counting each thumbnail once, but considering both URLs
         let totalThumbnails = 0
@@ -82,7 +77,6 @@ const Packaged = () => {
         })
         
         console.log('Final counts:', {
-          totalUsers,
           totalThumbnails,
           totalUrls
         })
@@ -93,8 +87,6 @@ const Packaged = () => {
       } catch (error) {
         console.error('Error fetching user count:', error)
         setLoading(false)
-        // Set fallback values to avoid showing 0
-        setUserCount(1)
         setThumbnailCount(1)
       }
     }
@@ -111,45 +103,41 @@ const Packaged = () => {
     return num.toString()
   }
 
+const textGlowStyle = {
+  filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.5))',
+};
+
+const whiteTextGlowStyle = {
+  filter: 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.6))',
+  color: '#ffffff'
+};
+
+
   return (
     <div className="relative py-20 px-6 overflow-hidden">
       <div className="relative max-w-6xl mx-auto text-center space-y-16">
         {/* Header */}
         <div className="space-y-6">
           <h2 
-            className="text-2xl font-medium tracking-wide"
-            style={{ color: '#47FFE7' }}
+            className="md:text-2xl font-medium tracking-wide whitespace-nowrap"
+            style={{ color: '#47FFE7', ...textGlowStyle }}
           >
-            Thumbnails Generated with Cravio:
+            Thumbnails Packaged with Cravio:
           </h2>
           
           {/* Main Counter */}
-          <div className="relative">
+          <div className="relative" style={whiteTextGlowStyle}>
             {loading ? (
-              <div className="text-8xl md:text-9xl font-bold animate-pulse">
-                Loading...
+              <div className="text-7xl md:text-9xl font-bold animate-pulse">
+                757+
               </div>
             ) : (
-              <div className="text-8xl md:text-9xl font-bold tracking-tight">
+              <div className="text-7xl md:text-9xl font-bold tracking-tight " >
                 {thumbnailCount > 0 ? formatNumber(thumbnailCount) : '0'}+
               </div>
             )}
           </div>
           
-          {/* Debug info - remove in production */}
-          {!loading && (
-            <div className="text-sm text-gray-500 space-y-1">
-              <p>Debug: {thumbnailCount} total URLs found</p>
-              <p>Debug: {userCount} users found</p>
-            </div>
-          )}
-        </div>
-
-        {/* User Stats */}
-        <div className="space-y-8">
-          <h3 className="text-xl text-gray-300">
-            Trusted by {loading ? '...' : userCount > 0 ? formatNumber(userCount) : '0'} creators worldwide
-          </h3>
         </div>
       </div>
     </div>

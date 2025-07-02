@@ -60,7 +60,13 @@ const Hero = () => {
     const topRowDuplicated = [...topRowThumbnails, ...topRowThumbnails, ...topRowThumbnails];
     const bottomRowDuplicated = [...bottomRowThumbnails, ...bottomRowThumbnails, ...bottomRowThumbnails];
 
-    const ThumbnailCard = ({ thumbnail, index }: { thumbnail: any, index: number }) => (
+    interface Thumbnail {
+        id: number;
+        views: string;
+        image: string;
+    }
+
+    const ThumbnailCard = ({ thumbnail, index }: { thumbnail: Thumbnail, index: number }) => (
         <motion.div
             className="relative group cursor-pointer flex-shrink-0"
             style={{
