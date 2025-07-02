@@ -48,6 +48,21 @@ def get_users():
     users = list(users_collection.find({}, {"_id": 0, "email": 1}))
     return users
 
+@app.get("/users-full")
+def get_users_full():
+    """Get all user data including thumbnails"""
+    try:
+        # Fetch all users with all fields
+        users = list(users_collection.find({}))
+        
+        # Convert ObjectId to string for JSON serialization
+        for user in users:
+            if '_id' in user and hasattr(user['_id'], '__str__'):
+                user['_id'] = str(user['_id'])
+        return users
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Error fetching user data")
+
 @app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check():
     return {"status": "OK"}
