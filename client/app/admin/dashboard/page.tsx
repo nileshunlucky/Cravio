@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Upload, Link, Sparkles, Download, Plus } from 'lucide-react';
 import { toast } from "sonner";
 import { useUser } from "@clerk/nextjs";
+import { useRouter } from 'next/navigation';
 
 const LoadingState = () => {
     const [percentage, setPercentage] = useState(0);
+
 
     // Simulate a realistic, non-linear progress animation
     useEffect(() => {
@@ -86,6 +88,7 @@ const Page = () => {
     const [loading, setLoading] = useState(false);
     const [thumbnailUrl, setThumbnailUrl] = useState('');
 
+    const router = useRouter()
 
     const thumbnailRef = useRef<HTMLInputElement>(null);
     const faceRef = useRef<HTMLInputElement>(null);
@@ -153,19 +156,18 @@ const Page = () => {
             if (res.ok) {
                 const data = await res.json();
                 setThumbnailUrl(data.thumbnailUrl);
-            } else {
-                // If API fails, go back to the form so the user can try again
-                toast.error('Something went wrong. Please try again.');
-                setAnimation(false);
-                setLoading(false);
             }
 
         } catch (error) {
             setAnimation(false);
             console.error('Error submitting form:', error);
-            toast.error('Error submitting form. Please try again.');
+            toast.error("Not enough credits", {
+                position: "top-center",
+                duration: 4000,
+            })
+            router.push('/admin/plan');
+            
         } finally {
-            // This ensures loading is turned off whether the API call succeeds or fails
             setLoading(false);
         }
     };
@@ -216,7 +218,7 @@ const Page = () => {
                                             </motion.div>
 
                                             <motion.div whileHover={{ scale: 1.1 }}>
-                                                <Button onClick={()=> setAnimation(false)}
+                                                <Button onClick={() => setAnimation(false)}
                                                     size="icon"
                                                     variant="secondary"
                                                     className="bg-zinc-900 border border-[#47FFE7] text-[#47FFE7] hover:bg-zinc-800 w-8 h-8 sm:w-10 sm:h-10"
