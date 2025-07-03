@@ -33,15 +33,15 @@ def verify_signature(payload: bytes, signature: str) -> bool:
     
     return hmac.compare_digest(expected, signature)
 
-async def grant_free_credits(email: str, device_id: str = None):
+def grant_free_credits(email: str, device_id: str = None):
     """Grant free trial credits to user if they haven't used trial yet"""
     # Find user by email and optionally device_id
-    user = await users_collection.find_one({"email": email})
+    user = users_collection.find_one({"email": email})
     if not user:
      return {"status": "error", "message": "User not found"}
 
     if device_id:
-        duplicate_device = await users_collection.find_one({
+        duplicate_device = users_collection.find_one({
             "deviceId": device_id,
             "email": {"$ne": email}
         })
@@ -53,7 +53,7 @@ async def grant_free_credits(email: str, device_id: str = None):
         return {"status": "error", "message": "Trial already used"}
     
     # Grant free trial credits
-    await users_collection.update_one(
+    users_collection.update_one(
         {"email": email},
         {
             "$inc": {"credits": FREE_TRIAL_CREDITS},
@@ -87,17 +87,17 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
     
     # Handle subscription events
     if event == "subscription_created":
-        user = await users_collection.find_one({"email": email})
+        user = users_collection.find_one({"email": email})
         device_id = user.get("deviceId") if user else None
         
         if not user:
             # If user doesn't exist, try to grant free credits first
-            free_credits_result = await grant_free_credits(email, device_id)
+            free_credits_result = grant_free_credits(email, device_id)
             if free_credits_result["status"] == "error":
                 return free_credits_result
             
             # Try to find user again after granting credits
-            user = await users_collection.find_one({"email": email})
+            user = users_collection.find_one({"email": email})
             if not user:
                 return {"status": "error", "message": "User not found after granting credits"}
         
@@ -107,14 +107,14 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
         
         # Grant free trial credits if not already used
         if not user.get("trial_used", False):
-            await grant_free_credits(email, device_id)
+            grant_free_credits(email, device_id)
         
         # Add plan credits
         if variant_id in PLANS:
             credits_to_add = PLANS[variant_id]
             
             # Update user with subscription and credits
-            await users_collection.update_one(
+            users_collection.update_one(
                 {"email": email},
                 {
                     "$inc": {"credits": credits_to_add},
@@ -129,13 +129,13 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
             return {"status": "success", "message": f"Added {credits_to_add} credits"}
     
     elif event == "subscription_cancelled":
-        user = await users_collection.find_one({"email": email})
+        user = users_collection.find_one({"email": email})
         
         if not user:
             return {"status": "error", "message": "User not found"}
         
         # Update subscription status to cancelled
-        await users_collection.update_one(
+        users_collection.update_one(
             {"email": email},
             {
                 "$set": {
@@ -151,13 +151,13 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
         return {"status": "success", "message": "Subscription cancelled"}
     
     elif event == "subscription_expired":
-        user = await users_collection.find_one({"email": email})
+        user = users_collection.find_one({"email": email})
         
         if not user:
             return {"status": "error", "message": "User not found"}
         
         # Update subscription status to expired
-        await users_collection.update_one(
+        users_collection.update_one(
             {"email": email},
             {
                 "$set": {
@@ -175,7 +175,7 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
     elif event == "user_registered":
         # Handle new user registration - grant free trial credits
         if email:
-            free_credits_result = await grant_free_credits(email, device_id)
+            free_credits_result = grant_free_credits(email, device_id)
             return free_credits_result
     
     return {"status": "success"}
