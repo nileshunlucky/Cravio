@@ -7,6 +7,7 @@ from limited_offer import router as limited_offer_router
 from api.opusclip import router as opusclip_router
 from social_manage import router as social_manage_router
 from api.faceswap import router as faceswap_router
+from api.lemon_webhook import router as lemon_webhook_router
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -32,6 +33,7 @@ app.include_router(limited_offer_router)
 app.include_router(opusclip_router)
 app.include_router(social_manage_router)
 app.include_router(faceswap_router)
+app.include_router(lemon_webhook_router)
 
 # Get user by email
 @app.get("/user/{email}")
@@ -68,40 +70,46 @@ async def health_check():
     return {"status": "OK"}
 
 class UserReferral(BaseModel):
-    email: EmailStr
-    referredBy: Optional[str] = None   
+    email: EmailStr   
+    deviceId: str
 
 @app.post("/add-user")
-def save_referral(data: UserReferral = Body(...)):  # Expect referral data in the body
-    # 1. Check if the user already exists
-    existing = users_collection.find_one({"email": data.email})
-    if existing:
-        return {"message": "User already exists"}
+def save_referral(data: UserReferral = Body(...)):
+    # 1. Check if user exists with the same deviceId
+    device_exists = users_collection.find_one({"deviceId": data.deviceId})
+    if device_exists:
+        return {"message": "Device already used"}
 
-    # 2. Start building user data
+    # 2. Check if user exists with email
+    user = users_collection.find_one({"email": data.email})
+
+    if user:
+        # If user has no deviceId, update it
+        if "deviceId" not in user or not user["deviceId"]:
+            users_collection.update_one(
+                {"email": data.email},
+                {"$set": {"deviceId": data.deviceId}}
+            )
+            return {"message": "Device ID added to existing user"}
+        else:
+            return {"message": "User already exists"}
+
+    # 3. If user doesn't exist, insert as new user
     user_data = {
         "email": data.email,
-        "user_paid": False  # 🔥 Add this line
+        "deviceId": data.deviceId,
+        "user_paid": False,
+        "trial_used": False,
     }
-
-    # 2. Validate referredBy if provided
-    if data.referredBy:
-        # Check if referredBy is a valid ref_code in another user
-        ref_user = users_collection.find_one({"ref_code": data.referredBy})
-        if not ref_user:
-            return {"message": "Invalid referral code"}
-
-        user_data["referredBy"] = data.referredBy
-
-    # 3. Insert the user
     users_collection.insert_one(user_data)
     return {"message": "User added successfully"}
 
-@app.get("/migrate/user_paid")
+
+@app.get("/migrate/trial_used")
 def add_user_paid_to_existing_users():
     result = users_collection.update_many(
-        {"user_paid": {"$exists": False}},
-        {"$set": {"user_paid": False}}
+        {"trial_used": {"$exists": False}},
+        {"$set": {"trial_used": False}}
     )
     return {"updated_users": result.modified_count}
 

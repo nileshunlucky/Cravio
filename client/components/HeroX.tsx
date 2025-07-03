@@ -142,7 +142,7 @@ const Hero = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.5 }}
-                            className="text-lg md:text-xl text-zinc-300"
+                            className="md:text-xl text-zinc-300"
                         >
                             Ideate & package your videos faster & cheaper.
                         </motion.p>
