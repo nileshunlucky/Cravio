@@ -14,11 +14,11 @@ export default function SendEmailToBackend() {
       const email = user.emailAddresses[0].emailAddress
 
       // Get or generate deviceId
-      let deviceId = localStorage.getItem("deviceId") || uuidv4()
+      const deviceId = localStorage.getItem("deviceId") || uuidv4()
       localStorage.setItem("deviceId", deviceId)
 
       // Build payload with deviceId
-      const payload: Record<string, any> = {
+      const payload: { email: string; deviceId: string } = {
         email,
         deviceId
       }
