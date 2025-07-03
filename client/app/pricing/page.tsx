@@ -289,7 +289,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
     );
 };
 
-const page = () => {
+const Page = () => {
     const [isClient, setIsClient] = useState(false);
 
     // Ensure particles only render on client
@@ -486,4 +486,4 @@ const page = () => {
     );
 };
 
-export default page;
+export default Page;
