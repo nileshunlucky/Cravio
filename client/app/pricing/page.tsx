@@ -147,8 +147,13 @@ const PricingCard: React.FC<PricingCardProps> = ({
                         transition={{ delay: delay + 0.3, duration: 0.6 }}
                         className={`text-2xl font-bold mb-2 ${isPopular ? 'text-[#47FFE7]' : 'text-white'
                             }`}
-                        style={{ pointerEvents: 'auto' }}
-                        style={isPopular ? { filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.3))' } : { filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.3))' }}
+                        style={{
+                            filter: isPopular
+                                ? 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.3))'
+                                : 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.3))',
+                            pointerEvents: 'auto'
+                        }}
+
                     >
                         {plan}
                     </motion.h3>
@@ -182,7 +187,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                         )}
                         <span className={`text-4xl sm:text-5xl font-bold ${isPopular ? 'text-[#47FFE7]' : 'text-white'
                             }`}
-                            style={isPopular ? { filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.3))' } : { filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.3))' }}>
+                            style={isPopular ? { filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.3))' } : { filter: 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.3))' }}>
                             ${price}
                         </span>
                         <span className=" text-base select-text">/mo</span>
@@ -217,7 +222,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             whileTap={{ scale: 0.98 }}
                             className={`relative z-20 w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-center transition-all duration-300 cursor-pointer ${isPopular
                                 ? 'bg-[#47FFE7] text-black hover:bg-[#3ee5d1] shadow-lg'
-                                : 'bg-zinc-800 text-white hover:text-[#47FFE7] select-text drop-shadow-[0_0_1px_#47FFE7] hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600'
+                                : 'bg-zinc-800 text-white hover:text-[#47FFE7] select-text drop-shadow-[0_0_1px_#47FFE7] hover:bg-zinc-800 border border-zinc-700 hover:border-zinc-600'
                                 }`}
                             type="button"
                             role="button"
