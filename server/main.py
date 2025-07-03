@@ -75,12 +75,8 @@ class UserReferral(BaseModel):
 
 @app.post("/add-user")
 def save_referral(data: UserReferral = Body(...)):
-    # 1. Check if user exists with the same deviceId
-    device_exists = users_collection.find_one({"deviceId": data.deviceId})
-    if device_exists:
-        return {"message": "Device already used"}
 
-    # 2. Check if user exists with email
+    # 1. Check if user exists with email
     user = users_collection.find_one({"email": data.email})
 
     if user:

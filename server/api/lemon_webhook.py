@@ -14,7 +14,8 @@ LEMON_SQUEEZING_WEBHOOK_SECRET = os.getenv("LEMON_SQUEEZING_WEBHOOK_SECRET")
 PLANS = {
     883365: 80,   # starter
     883368: 200,  # pro  
-    883371: 500   # premium
+    883371: 500,  # premium
+    883809: 80    # test
 }
 
 # Free trial credits
@@ -87,7 +88,7 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
     # Handle subscription events
     if event == "subscription_created":
         user = await users_collection.find_one({"email": email})
-        device_id = user.get("deviceId")
+        device_id = user.get("deviceId") if user else None
         
         if not user:
             # If user doesn't exist, try to grant free credits first
