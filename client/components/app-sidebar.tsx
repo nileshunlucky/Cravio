@@ -1,4 +1,8 @@
-import { LayoutDashboard, CircleFadingArrowUp, Handshake} from "lucide-react"
+"use client"
+
+import { usePathname } from "next/navigation"
+import Link from "next/link"
+import { LayoutDashboard, CircleFadingArrowUp, Handshake } from "lucide-react"
 
 import {
   Sidebar,
@@ -10,28 +14,28 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import Link from "next/link"
 
-// Menu items.
 const items = [
   {
     title: "Dashboard",
     url: "/admin/dashboard",
-    icon: LayoutDashboard ,
+    icon: LayoutDashboard,
   },
   {
-    title: "Plan",
-    url: "/admin/plan",
-    icon: CircleFadingArrowUp ,
+    title: "Pricing",
+    url: "/admin/pricing",
+    icon: CircleFadingArrowUp,
   },
   {
-    title: "Affiliate",
-    url: "/admin/affiliate",
-    icon: Handshake ,
+    title: "Portfolio",
+    url: "/admin/portfolio",
+    icon: Handshake,
   },
 ]
 
 export function AppSidebar() {
+  const pathname = usePathname()
+
   return (
     <Sidebar>
       <SidebarContent>
@@ -39,19 +43,29 @@ export function AppSidebar() {
           <SidebarGroupLabel className="text-xl font-medium">Cravio Ai</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {items.map((item) => {
+                const isActive = pathname === item.url
+
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition ${
+                        isActive
+                          ? "bg-[#47FFE7] text-black shadow-md"
+                          : "text-white hover:bg-white/10"
+                      }`}
+                    >
+                      <Link href={item.url}>
+                        <item.icon className="w-5 h-5" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
-
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
