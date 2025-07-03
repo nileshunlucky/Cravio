@@ -132,7 +132,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                 style={{ pointerEvents: 'auto' }} // Ensure card content is interactive
             >
                 {/* Background Pattern - Fixed pointer events */}
-                <div 
+                <div
                     className="absolute inset-0 opacity-5"
                     style={{ pointerEvents: 'none' }} // Background shouldn't block interactions
                 >
@@ -145,9 +145,10 @@ const PricingCard: React.FC<PricingCardProps> = ({
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: delay + 0.3, duration: 0.6 }}
-                        className={`text-2xl font-bold mb-2 select-text ${isPopular ? 'text-[#47FFE7] select-text drop-shadow-[0_0_1px_#47FFE7]' : 'text-white select-text drop-shadow-[0_0_1px_white]'
+                        className={`text-2xl font-bold mb-2 ${isPopular ? 'text-[#47FFE7]' : 'text-white'
                             }`}
-                        style={{ pointerEvents: 'auto' }} // Allow text selection
+                        style={{ pointerEvents: 'auto' }}
+                        style={isPopular ? { filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.3))' } : { filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.3))' }}
                     >
                         {plan}
                     </motion.h3>
@@ -179,22 +180,13 @@ const PricingCard: React.FC<PricingCardProps> = ({
                                 ${originalPrice}
                             </span>
                         )}
-                        <span className={`text-4xl sm:text-5xl font-bold ${isPopular ? 'text-[#47FFE7] select-text drop-shadow-[0_0_1px_#47FFE7]' : 'text-white select-text drop-shadow-[0_0_1px_white]'
-                            }`}>
+                        <span className={`text-4xl sm:text-5xl font-bold ${isPopular ? 'text-[#47FFE7]' : 'text-white'
+                            }`}
+                            style={isPopular ? { filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.3))' } : { filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.3))' }}>
                             ${price}
                         </span>
-                        <span className="text-zinc-400 text-base select-text">/mo</span>
+                        <span className=" text-base select-text">/mo</span>
                     </motion.div>
-
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: delay + 0.6, duration: 0.6 }}
-                        className="text-zinc-400 text-sm select-text"
-                        style={{ pointerEvents: 'auto' }} // Allow text selection
-                    >
-                        Billed Monthly
-                    </motion.p>
                 </div>
 
                 {/* Thumbnail Generation Info */}
@@ -211,29 +203,29 @@ const PricingCard: React.FC<PricingCardProps> = ({
                         </span>{' '}
                         per month.
                     </p>
-                    
+
                     {/* Fixed Button */}
                     <a href={href}>
-                    <motion.button
-                        whileHover={{
-                            scale: 1.02,
-                            y: -2,
-                            boxShadow: isPopular
-                                ? "0 10px 25px rgba(71, 255, 231, 0.3)"
-                                : "0 10px 25px rgba(0, 0, 0, 0.2)"
-                        }}
-                        whileTap={{ scale: 0.98 }}
-                        className={`relative z-20 w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-center transition-all duration-300 cursor-pointer ${isPopular
+                        <motion.button
+                            whileHover={{
+                                scale: 1.02,
+                                y: -2,
+                                boxShadow: isPopular
+                                    ? "0 10px 25px rgba(71, 255, 231, 0.3)"
+                                    : "0 10px 25px rgba(0, 0, 0, 0.2)"
+                            }}
+                            whileTap={{ scale: 0.98 }}
+                            className={`relative z-20 w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-center transition-all duration-300 cursor-pointer ${isPopular
                                 ? 'bg-[#47FFE7] text-black hover:bg-[#3ee5d1] shadow-lg'
                                 : 'bg-zinc-800 text-white hover:text-[#47FFE7] select-text drop-shadow-[0_0_1px_#47FFE7] hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600'
-                            }`}
-                        type="button"
-                        role="button"
-                        aria-label={`${buttonText} for ${plan} plan`}
-                        style={{ pointerEvents: 'auto' }} // Ensure button is clickable
-                    >
-                        {buttonText}
-                    </motion.button></a>
+                                }`}
+                            type="button"
+                            role="button"
+                            aria-label={`${buttonText} for ${plan} plan`}
+                            style={{ pointerEvents: 'auto' }} // Ensure button is clickable
+                        >
+                            {buttonText}
+                        </motion.button></a>
                 </motion.div>
 
                 {/* Features List */}
@@ -405,7 +397,7 @@ const Page = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black relative overflow-hidden">
             {/* Background Pattern - Fixed pointer events */}
-            <div 
+            <div
                 className="absolute inset-0 opacity-30"
                 style={{ pointerEvents: 'none' }} // Background shouldn't block interactions
             >
@@ -456,7 +448,7 @@ const Page = () => {
 
             {/* Floating Particles Effect - Fixed pointer events */}
             {isClient && (
-                <div 
+                <div
                     className="absolute inset-0"
                     style={{ pointerEvents: 'none' }} // Particles shouldn't block interactions
                 >
