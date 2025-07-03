@@ -1,77 +1,52 @@
 import hashlib
 import hmac
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Request, HTTPException, Header
 from db import users_collection
 import os
 
 router = APIRouter()
 
+# Ensure you have your webhook secret in your environment variables
 LEMON_SQUEEZING_WEBHOOK_SECRET = os.getenv("LEMON_SQUEEZING_WEBHOOK_SECRET")
 
-# Plan configs
+# --- Configuration ---
+
+# Map your Lemon Squeezy plan variant IDs to the number of credits
 PLANS = {
     883365: 80,   # starter
-    883368: 200,  # pro  
+    883368: 200,  # pro
     883371: 500,  # premium
-    883809: 80    # test
+    883809: 80    # test plan
 }
 
-# Free trial credits
+# Credits to grant for a free trial
 FREE_TRIAL_CREDITS = 10
 
+# --- Helper Functions ---
+
 def verify_signature(payload: bytes, signature: str) -> bool:
-    expected = hmac.new(
-        LEMON_SQUEEZING_WEBHOOK_SECRET.encode(),
-        payload,
-        hashlib.sha256
-    ).hexdigest()
+    """Verify the webhook signature from Lemon Squeezy."""
+    if not signature:
+        return False
     
-    if signature.startswith('sha256='):
-        signature = signature[7:]
+    secret = LEMON_SQUEEZING_WEBHOOK_SECRET.encode()
+    computed_hash = hmac.new(secret, payload, hashlib.sha256).hexdigest()
     
-    return hmac.compare_digest(expected, signature)
+    return hmac.compare_digest(computed_hash, signature)
 
-def grant_free_credits(email: str, device_id: str = None):
-    """Grant free trial credits to user if they haven't used trial yet"""
-    # Find user by email and optionally device_id
-    user = users_collection.find_one({"email": email})
-    if not user:
-     return {"status": "error", "message": "User not found"}
-
-    if device_id:
-        duplicate_device = users_collection.find_one({
-            "deviceId": device_id,
-            "email": {"$ne": email}
-        })
-        if duplicate_device:
-            return {"status": "error", "message": "Device already used for trial"}
-    
-    # Check if trial already used
-    if user.get("trial_used", False):
-        return {"status": "error", "message": "Trial already used"}
-    
-    # Grant free trial credits
-    users_collection.update_one(
-        {"email": email},
-        {
-            "$inc": {"credits": FREE_TRIAL_CREDITS},
-            "$set": {
-                "trial_used": True,
-                "trial_granted_at": datetime.utcnow(),
-            }
-        }
-    )
-    
-    return {"status": "success", "message": f"Granted {FREE_TRIAL_CREDITS} free trial credits"}
+# --- Webhook Endpoint ---
 
 @router.post("/api/lemon-webhook")
 async def lemon_webhook(request: Request, x_signature: str = Header(None)):
+    """
+    Handles webhooks from Lemon Squeezy for subscription management.
+    """
     body = await request.body()
     
-    # Verify signature
-    if not verify_signature(body, x_signature or ""):
+    # 1. Verify the request signature
+    if not verify_signature(body, x_signature):
         raise HTTPException(status_code=401, detail="Invalid signature")
     
     payload = json.loads(body)
@@ -83,99 +58,118 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
     variant_id = attributes.get("variant_id")
     
     if not email:
-        return {"status": "error", "message": "No email"}
-    
-    # Handle subscription events
+        return {"status": "error", "message": "User email not found in webhook payload."}
+
+    user = users_collection.find_one({"email": email})
+    if not user:
+        # A user should be registered in your system before they can subscribe.
+        return {"status": "error", "message": f"User with email {email} not found."}
+
+    # --- Event Handling ---
+
+    # Event: A new subscription is created (could be a trial or direct payment)
     if event == "subscription_created":
-        user = users_collection.find_one({"email": email})
-        device_id = user.get("deviceId") if user else None
+        is_trial = attributes.get("trial_ends_at") is not None
         
-        if not user:
-            # If user doesn't exist, try to grant free credits first
-            free_credits_result = grant_free_credits(email, device_id)
-            if free_credits_result["status"] == "error":
-                return free_credits_result
+        if is_trial:
+            # ---> Scenario: User starts a 1-day free trial.
             
-            # Try to find user again after granting credits
-            user = users_collection.find_one({"email": email})
-            if not user:
-                return {"status": "error", "message": "User not found after granting credits"}
-        
-        # Check if user already has a paid subscription
-        if user.get("subscription_status") == "active":
-            return {"status": "error", "message": "User already has active subscription"}
-        
-        # Grant free trial credits if not already used
-        if not user.get("trial_used", False):
-            grant_free_credits(email, device_id)
-        
-        # Add plan credits
-        if variant_id in PLANS:
-            credits_to_add = PLANS[variant_id]
+            # Anti-abuse: Check if email or device has already used a trial
+            if user.get("trial_used"):
+                return {"status": "info", "message": "Trial already used for this email."}
             
-            # Update user with subscription and credits
+            device_id = user.get("deviceId")
+            if device_id:
+                device_in_use = users_collection.find_one({"deviceId": device_id, "trial_used": True})
+                if device_in_use:
+                    return {"status": "error", "message": "Device has already been used for a free trial."}
+
+            # Grant 10 free trial credits and set status to "trialing"
             users_collection.update_one(
                 {"email": email},
                 {
-                    "$inc": {"credits": credits_to_add},
+                    "$set": {
+                        "trial_used": True,
+                        "subscription_status": "trialing",
+                        "plan_variant_id": variant_id,
+                        "subscription_id": data.get("id"),
+                        "trial_granted_at": datetime.now(timezone.utc)
+                    },
+                    "$inc": {"credits": FREE_TRIAL_CREDITS}
+                }
+            )
+            return {"status": "success", "message": f"Granted {FREE_TRIAL_CREDITS} free trial credits."}
+            
+        else:
+            # ---> Scenario: User pays for a plan directly without a trial.
+            credits_to_add = PLANS.get(variant_id)
+            if not credits_to_add:
+                return {"status": "error", "message": f"Invalid plan variant ID: {variant_id}"}
+            
+            users_collection.update_one(
+                {"email": email},
+                {
                     "$set": {
                         "subscription_status": "active",
                         "plan_variant_id": variant_id,
-                        "subscription_started_at": datetime.utcnow(),
-                    }
+                        "subscription_id": data.get("id"),
+                        "subscription_started_at": datetime.now(timezone.utc)
+                    },
+                    "$inc": {"credits": credits_to_add}
                 }
             )
+            return {"status": "success", "message": f"Granted {credits_to_add} credits for new subscription."}
+
+    # Event: A subscription is updated (e.g., trial converts to paid)
+    elif event == "subscription_updated":
+        # ---> Scenario: Trial ends and user is successfully charged.
+        is_trialing_in_db = user.get("subscription_status") == "trialing"
+        is_now_active = attributes.get("status") == "active"
+
+        if is_trialing_in_db and is_now_active:
+            credits_to_add = PLANS.get(variant_id)
+            if not credits_to_add:
+                return {"status": "error", "message": f"Invalid plan ID on trial conversion: {variant_id}"}
             
-            return {"status": "success", "message": f"Added {credits_to_add} credits"}
-    
+            users_collection.update_one(
+                {"email": email},
+                {
+                    "$set": {
+                        "subscription_status": "active",
+                        "subscription_started_at": datetime.now(timezone.utc)
+                    },
+                    "$inc": {"credits": credits_to_add}
+                }
+            )
+            return {"status": "success", "message": f"Trial converted. Granted {credits_to_add} credits."}
+
+    # Event: Subscription is cancelled by the user or admin
     elif event == "subscription_cancelled":
-        user = users_collection.find_one({"email": email})
-        
-        if not user:
-            return {"status": "error", "message": "User not found"}
-        
-        # Update subscription status to cancelled
+        # ---> Scenario: User cancels their subscription.
         users_collection.update_one(
             {"email": email},
             {
                 "$set": {
                     "subscription_status": "cancelled",
-                    "subscription_cancelled_at": datetime.utcnow(),
+                    "subscription_cancelled_at": datetime.now(timezone.utc),
                 },
-                "$unset": {
-                    "plan_variant_id": "",  # Remove plan variant
-                }
+                "$unset": {"plan_variant_id": ""}
             }
         )
-        
-        return {"status": "success", "message": "Subscription cancelled"}
-    
+        return {"status": "success", "message": "Subscription successfully cancelled."}
+
+    # Event: Subscription expires (e.g., payment fails)
     elif event == "subscription_expired":
-        user = users_collection.find_one({"email": email})
-        
-        if not user:
-            return {"status": "error", "message": "User not found"}
-        
-        # Update subscription status to expired
         users_collection.update_one(
             {"email": email},
             {
                 "$set": {
                     "subscription_status": "expired",
-                    "subscription_expired_at": datetime.utcnow(),
+                    "subscription_expired_at": datetime.now(timezone.utc),
                 },
-                "$unset": {
-                    "plan_variant_id": "",  # Remove plan variant
-                }
+                "$unset": {"plan_variant_id": ""}
             }
         )
-        
-        return {"status": "success", "message": "Subscription expired"}
-    
-    elif event == "user_registered":
-        # Handle new user registration - grant free trial credits
-        if email:
-            free_credits_result = grant_free_credits(email, device_id)
-            return free_credits_result
-    
-    return {"status": "success"}
+        return {"status": "success", "message": "Subscription has expired."}
+
+    return {"status": "info", "message": f"Webhook event '{event}' received but not handled."}
