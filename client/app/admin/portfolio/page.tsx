@@ -188,7 +188,7 @@ const handleDirectDownload = (url: string, filename: string) => {
 
         {/* Gallery */}
         <AnimatePresence>
-          {userData.thumbnail.length === 0 ? (
+          {userData?.thumbnail?.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -204,7 +204,7 @@ const handleDirectDownload = (url: string, filename: string) => {
               animate="visible"
               className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"
             >
-              {userData.thumbnail.map((thumbnail) => {
+              {userData?.thumbnail?.map((thumbnail) => {
                 const thumbnailUrl = getThumbnailUrl(thumbnail, userData.user_paid)
                 const isLoading = imageLoading[thumbnail.job_id] !== false
                 const isHovered = hoveredCard === thumbnail.job_id
