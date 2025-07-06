@@ -1,12 +1,11 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { motion, AnimatePresence } from "framer-motion"
 import { Sparkles, UploadCloud, Check, Copy, Wand2, Undo2 } from "lucide-react"
 import { useUser } from '@clerk/nextjs'
-import Link from 'next/link'
 
 // PremiumProgress component with bigger and slower bars
 const PremiumProgress = () => (
