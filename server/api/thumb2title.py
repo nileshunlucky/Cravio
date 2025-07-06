@@ -3,14 +3,25 @@ from fastapi.responses import JSONResponse
 import base64, os
 import openai
 import re  # Import the regular expression module
+from db import users_collection
 
 router = APIRouter()
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-
 @router.post("/api/thumb2title")
-async def thumb_to_title(file: UploadFile = File(...)):
+async def thumb_to_title(file: UploadFile = File(...), email: str = None):
     try:
+        # check user exists and has enough 10 credits
+        user = users_collection.find_one({"email": email})
+        if not user:
+            return JSONResponse(content={"error": "User not found"}, status_code=400)
+        if user.get("credits", 0) < 10:
+            return JSONResponse(content={"error": "Not enough credits"}, status_code=402)
+
+        # Deduct credits
+        users_collection.update_one({"email": email}, {"$inc": {"credits": -10}})
+
+        # --- ORIGINAL CODE ---
         image_bytes = await file.read()
         base64_image = base64.b64encode(image_bytes).decode("utf-8")
         image_url = f"data:image/png;base64,{base64_image}"
