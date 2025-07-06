@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { LayoutDashboard, CircleFadingArrowUp, Handshake } from "lucide-react"
+import { LayoutDashboard, CircleFadingArrowUp, Handshake , TextSearch} from "lucide-react"
 
 import {
   Sidebar,
@@ -20,6 +20,11 @@ const items = [
     title: "Dashboard",
     url: "/admin/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Title",
+    url: "/admin/title",
+    icon: TextSearch ,
   },
   {
     title: "Pricing",

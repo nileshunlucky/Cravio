@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { motion, AnimatePresence } from "framer-motion"
 import { Sparkles, UploadCloud, Check, Copy, Wand2, Undo2 } from "lucide-react"
 import { useUser } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
+import { toast } from "sonner"
 
 // PremiumProgress component with bigger and slower bars
 const PremiumProgress = () => (
@@ -75,6 +77,8 @@ const Page = () => {
     const { user } = useUser();
     const email = user?.emailAddresses?.[0]?.emailAddress;
 
+    const router = useRouter()
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.[0]) {
             const selectedFile = e.target.files[0];
@@ -109,6 +113,14 @@ const Page = () => {
                 method: "POST",
                 body: formData,
             });
+            if (!response.ok) {
+                const data = await response.json();
+                if (response.status === 402 && data.error === "Not enough credits") {
+                    toast.error("Not enough credits");
+                    router.push("/admin/plan");
+                    return;
+                }
+            }
 
             const data = await response.json();
             const generatedTitles = data.titles;
@@ -255,9 +267,9 @@ const Page = () => {
                                 htmlFor="file-upload"
                                 className="relative block w-full cursor-pointer group"
                             >
-                                <div className="w-full aspect-w-16 aspect-h-9 flex items-center justify-center border-3 border-slate-700 rounded-2xl p-8 text-center transition-all duration-300 group-hover:border-[#47FEE7]/50 group-hover:bg-slate-800/20 relative overflow-hidden">
+                                <div className="w-full aspect-w-16 aspect-h-9 flex items-center justify-center border-3 border-[#47FFE7] rounded-2xl p-8 text-center transition-all duration-300 group-hover:border-[#47FEE7]/50 group-hover:bg-slate-800/20 relative overflow-hidden">
                                     <div className="absolute inset-0 bg-gradient-to-r from-[#47FFE7]/0 via-[#47FFE7]/5 to-[#47FFE7]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                    <div className="relative z-10 text-slate-400 group-hover:text-[#47FFE7] transition-colors duration-300">
+                                    <div className="relative z-10 text-[#47FFE7] group-hover:text-[#47FFE7] transition-colors duration-300">
                                         <UploadCloud className="w-16 h-16 mx-auto mb-4" />
                                         <p className="text-xl font-semibold mb-2">Upload Your Thumbnail</p>
                                         <p className="text-sm opacity-80">Drag & drop or click to browse</p>
