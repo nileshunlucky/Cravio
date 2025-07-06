@@ -2,9 +2,11 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 import base64, os
 import openai
+import re  # Import the regular expression module
 
 router = APIRouter()
-client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))  # Or hardcode it
+client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 
 @router.post("/api/thumb2title")
 async def thumb_to_title(file: UploadFile = File(...)):
@@ -19,11 +21,25 @@ async def thumb_to_title(file: UploadFile = File(...)):
                 {
                     "role": "user",
                     "content": [
-                        { "type": "text", "text":
-                            "You're a YouTube strategist. Look at this thumbnail and write 3 viral YouTube titles. Keep them short, emotional, and curiosity-driven."
+                        {
+                            "type": "text",
+                            "text": (
+                                "You are a professional YouTube strategist for viral creators. "
+                                "Look at this thumbnail and generate exactly 3 potential video titles. "
+                                "Each title must: "
+                                "- Be emotional, curiosity-driven, and clickable; "
+                                "- Stay under 100 characters; "
+                                "- Match the visual context of the thumbnail; "
+                                "- Avoid generic or vague wording. "
+                                "Output only the titles as a numbered list:\n"
+                                "1. Example Title\n"
+                                "2. Example Title\n"
+                                "3. Example Title\n"
+                                "Do not include any extra explanations, greetings, or commentary."
+                            ),
                         },
-                        { "type": "image_url", "image_url": { "url": image_url } }
-                    ]
+                        {"type": "image_url", "image_url": {"url": image_url}},
+                    ],
                 }
             ],
             max_tokens=150,
@@ -31,9 +47,35 @@ async def thumb_to_title(file: UploadFile = File(...)):
         )
 
         content = response.choices[0].message.content
-        titles = [line.strip("-•.123) ") for line in content.strip().split('\n') if line.strip()]
 
-        return JSONResponse(content={"titles": titles[:3]})
+        # --- MODIFIED PARSING LOGIC ---
+        # Regex to find lines starting with a number, a period, and a space,
+        # then capture the rest of the line.
+        # This is more robust against extra conversational text from the model.
+        title_pattern = re.compile(r"^\s*[\d\.\-\•]+\s*(.*)$", re.MULTILINE)
+        extracted_titles = []
+        for line in content.strip().split("\n"):
+            match = title_pattern.match(line)
+            if match:
+                title = match.group(1).strip()
+                if title:  # Ensure the extracted title is not empty
+                    extracted_titles.append(title)
+
+        # Ensure we only take the first 3 titles, as requested.
+        titles = extracted_titles[:3]
+        # If the model didn't return 3, we might want to handle that,
+        # but for now, just return what we got.
+        # --- END MODIFIED PARSING LOGIC ---
+
+        if not titles:  # Handle case where no titles were extracted
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to extract titles from OpenAI response. Please try again.",
+            )
+
+        return JSONResponse(content={"titles": titles})
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # It's good to log the full exception for debugging, not just convert to string
+        print(f"An error occurred: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
