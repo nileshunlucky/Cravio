@@ -178,7 +178,6 @@ const Page = () => {
                 duration: 4000,
             })
         } finally {
-            setAnimation(false);
             setLoading(false);
         }
     };
