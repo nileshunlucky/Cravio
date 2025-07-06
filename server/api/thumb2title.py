@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, Form, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 import base64, os
 import openai
@@ -9,17 +9,17 @@ router = APIRouter()
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @router.post("/api/thumb2title")
-async def thumb_to_title(file: UploadFile = File(...), email: str = None):
+async def thumb_to_title(file: UploadFile = File(...), email: str = Form(...)):
     try:
-        # check user exists and has enough 10 credits
+        # check user exists and has enough 5 credits
         user = users_collection.find_one({"email": email})
         if not user:
             return JSONResponse(content={"error": "User not found"}, status_code=400)
-        if user.get("credits", 0) < 10:
+        if user.get("credits", 0) < 5:
             return JSONResponse(content={"error": "Not enough credits"}, status_code=402)
 
         # Deduct credits
-        users_collection.update_one({"email": email}, {"$inc": {"credits": -10}})
+        users_collection.update_one({"email": email}, {"$inc": {"credits": -5}})
 
         # --- ORIGINAL CODE ---
         image_bytes = await file.read()
