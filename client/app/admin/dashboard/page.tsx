@@ -152,17 +152,22 @@ const Page = () => {
                 body: formData
             });
 
+            const data = await res.json(); // Parse response once
 
             if (res.ok) {
-                const data = await res.json();
+                // Success case
                 setThumbnailUrl(data.thumbnailUrl);
-            }
-            if (!res.ok) {
-                const data = await res.json();
+            } else {
+                // Error case
                 if (res.status === 402 && data.error === "Not enough credits") {
                     toast.error("Not enough credits");
                     router.push("/admin/plan");
                     return;
+                } else {
+                    // Handle other errors
+                    toast.error(data.message || "An error occurred");
+                    setAnimation(false);
+                    setLoading(false);
                 }
             }
 
