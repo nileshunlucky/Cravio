@@ -171,7 +171,7 @@ const Page = () => {
                             </div>
                             {/* -- Generate Again Button -- */}
                             <div className="mt-8 text-center">
-                                <div className="flex items-center justify-center gap-3">
+                                <div className="flex md:flex-row flex-col items-center justify-center gap-3">
                                     <Button
                                         onClick={handleGenerate}
                                         className="w-full max-w-sm h-14 bg-[#47FEE7] text-black font-bold text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 border-2 border-slate-700  hover:bg-[#47FEE7]/80"
