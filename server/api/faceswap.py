@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 import boto3
 import datetime
 from PIL import Image, ImageDraw, ImageFont
-from server.instagram_utils import download_instagram_post_image
+from instagram_utils import download_instagram_post_image
 
 load_dotenv()
 router = APIRouter()
