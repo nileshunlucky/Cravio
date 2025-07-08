@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog'
-import { Download, Eye, Calendar, Sparkles, Grid, Heart, Share2, MoreHorizontal } from 'lucide-react'
+import { Download, Eye, Sparkles, Grid, Heart, Share2, MoreHorizontal } from 'lucide-react'
 
 interface Thumbnail {
   model: string
@@ -280,7 +280,7 @@ const PortfolioPage = () => {
               animate="visible"
               className="grid grid-cols-3 gap-1"
             >
-              {userData?.thumbnail?.map((thumbnail, index) => {
+              {userData?.thumbnail?.map((thumbnail) => {
                 const thumbnailUrl = getThumbnailUrl(thumbnail, userData.user_paid)
                 const isLoading = imageLoading[thumbnail.job_id] !== false
                 const isHovered = hoveredCard === thumbnail.job_id
