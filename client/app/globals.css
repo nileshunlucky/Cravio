@@ -131,8 +131,8 @@
   font-family: 'Poppins', sans-serif;
 }
 
-/* when selected add #47FFE7 color */
+/* when selected add #B08D57 color */
 ::selection {
-  background-color: #47FFE7;
+  background-color: #B08D57;
   color: black;
 }

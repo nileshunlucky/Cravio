@@ -1,6 +1,6 @@
 "use client"
 
-import React,{useEffect} from 'react';
+import React,{useEffect, useState} from 'react';
 import { motion } from 'framer-motion';
 import { Users, Star } from 'lucide-react';
 import Link from 'next/link';
@@ -10,6 +10,16 @@ const Hero = () => {
     // State to hold the screen width. Initialized to 0 to ensure window is only accessed client-side.
     const [screenWidth, setScreenWidth] = React.useState(0);
     const [userCount, setUserCount] = React.useState(100);
+     const [count, setCount] = useState(500);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCount(prev => prev + 1);
+    }, 5000); // 5 seconds
+
+    // Cleanup on unmount
+    return () => clearInterval(interval);
+  }, []);
 
       useEffect(() => {
         const fetchUserCount = async () => { 
@@ -111,9 +121,9 @@ const Hero = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="inline-flex items-center px-4 py-2 rounded-full border border-gray-700 bg-gray-800/50 backdrop-blur-sm w-fit"
+                            className="inline-flex items-center px-4 py-2 rounded-full border border-[#B08D57] bg-[#B08D57]/20 backdrop-blur-sm w-fit"
                         >
-                            <span className="w-2 h-2 bg-[#47FFE7] rounded-full mr-2.5"></span>
+                            <span className="w-2 h-2 bg-[#B08D57] rounded-full mr-2.5"></span>
                             <span className="text-sm font-medium">Cravio.ai v3</span>
                         </motion.div>
 
@@ -125,7 +135,7 @@ const Hero = () => {
                                 transition={{ delay: 0.3 }}
                                 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight"
                             >
-                                Viral <span className="text-[#47FFE7]" style={{ filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.3))' }}>Thumbnails</span>
+                                Viral <span className="text-[#B08D57]" style={{ filter: 'drop-shadow(0 0 15px rgba(255, 215, 100, 0.5))'}}>Posts</span>
                             </motion.h1>
                             <motion.h1
                                 initial={{ opacity: 0, y: 30 }}
@@ -133,7 +143,7 @@ const Hero = () => {
                                 transition={{ delay: 0.4 }}
                                 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight"
                             >
-                                & <span className="text-[#47FFE7]" style={{ filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.3))' }}>Titles</span> in Seconds
+                                & <span className="text-[#B08D57]" style={{ filter: 'drop-shadow(0 0 15px rgba(255, 215, 100, 0.5))' }}>Captions</span> in Seconds
                             </motion.h1>
                         </div>
                         
@@ -156,8 +166,8 @@ const Hero = () => {
                            <Link href="/admin/dashboard"> <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="px-8 py-4 bg-[#47FFE7] text-black font-semibold rounded-full text-base"
-                                style={{ boxShadow: '0 4px 30px rgba(71, 255, 231, 0.3)' }}
+                                className="px-8 py-4 bg-[#B08D57] text-black font-semibold rounded-full text-base"
+                                style={{ boxShadow: '0 0 15px rgba(255, 215, 100, 0.5)' }}
                             >
                                 Try for Free
                             </motion.button></Link>
@@ -178,7 +188,7 @@ const Hero = () => {
                             <div className="flex items-center gap-2">
                                 <div className="flex items-center gap-1">
                                     {[...Array(5)].map((_, i) => (
-                                        <Star key={i} className="w-4 h-4 fill-[#47FFE7] text-[#47FFE7]" />
+                                        <Star key={i} className="w-4 h-4 fill-[#B08D57] text-[#B08D57]" />
                                     ))}
                                 </div>
                                 <span className="text-base text-gray-400">from 75+ Reviews</span>

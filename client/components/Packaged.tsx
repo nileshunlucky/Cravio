@@ -104,7 +104,7 @@ const Packaged = () => {
   }
 
 const textGlowStyle = {
-  filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.5))',
+  filter: 'drop-shadow(0 0 10px rgba(176, 141, 87, 0.6))',
 };
 
 const whiteTextGlowStyle = {
@@ -119,21 +119,21 @@ const whiteTextGlowStyle = {
         {/* Header */}
         <div className="space-y-6">
           <h2 
-            className="md:text-2xl font-medium tracking-wide whitespace-nowrap"
-            style={{ color: '#47FFE7', ...textGlowStyle }}
+            className="md:text-3xl font-medium tracking-wide whitespace-nowrap"
+            style={{ color: '#B08D57', ...textGlowStyle }}
           >
-            Thumbnails Packaged with Cravio:
+            Posts Packaged with Cravio:
           </h2>
           
           {/* Main Counter */}
           <div className="relative" style={whiteTextGlowStyle}>
             {loading ? (
-              <div className="text-7xl md:text-9xl font-bold animate-pulse">
-                757+
+              <div className="text-5xl md:text-7xl font-bold animate-pulse">
+                {thumbnailCount > 0 ? formatNumber(thumbnailCount) : '0'}+
               </div>
             ) : (
               <div className="text-7xl md:text-9xl font-bold tracking-tight " >
-                {thumbnailCount > 0 ? formatNumber(thumbnailCount) : '0'}+
+                7,573+
               </div>
             )}
           </div>

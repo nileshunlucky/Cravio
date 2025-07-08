@@ -59,8 +59,8 @@ const LoadingState = () => {
             <motion.div
                 className="absolute top-0 left-0 h-full"
                 style={{
-                    background: 'linear-gradient(to right, #18181b, #47FFE7)', // zinc-900 to neon teal
-                    boxShadow: '0 0 20px #47FFE7, 0 0 30px #47FFE7'
+                    background: 'linear-gradient(to right, #18181b, #B08D57)',
+                    boxShadow: '0 0 20px #B08D57, 0 0 30px #B08D57'
                 }}
                 initial={{ width: '0%' }}
                 animate={{ width: `${percentage}%` }}
@@ -206,8 +206,8 @@ const Page = () => {
                                 ) : thumbnailUrl ? (
                                     <motion.div
                                         whileHover={{ scale: 1.02 }}
-                                        className="border-2 border-[#47FFE7] rounded-lg p-2 text-center cursor-pointer transition-colors relative"
-                                        style={{ boxShadow: '0 0 20px rgba(71, 255, 231, 0.3)' }}
+                                        className="border-2 border-[#B08D57] rounded-lg p-2 text-center cursor-pointer transition-colors relative"
+                                        style={{ boxShadow: '0 0 15px rgba(255, 215, 100, 0.5)' }}
                                     >
                                         <img
                                             src={thumbnailUrl}
@@ -221,7 +221,7 @@ const Page = () => {
                                                 <Button onClick={handleDownload}
                                                     size="icon"
                                                     variant="secondary"
-                                                    className="bg-zinc-900 border border-[#47FFE7] text-[#47FFE7] hover:bg-zinc-800 w-8 h-8 sm:w-10 sm:h-10"
+                                                    className="bg-zinc-900 border border-[#B08D57] text-[#B08D57] hover:bg-zinc-800 w-8 h-8 sm:w-10 sm:h-10"
                                                 >
                                                     <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                                                 </Button>
@@ -231,7 +231,7 @@ const Page = () => {
                                                 <Button onClick={() => setAnimation(false)}
                                                     size="icon"
                                                     variant="secondary"
-                                                    className="bg-zinc-900 border border-[#47FFE7] text-[#47FFE7] hover:bg-zinc-800 w-8 h-8 sm:w-10 sm:h-10"
+                                                    className="bg-zinc-900 border border-[#B08D57] text-[#B08D57] hover:bg-zinc-800 w-8 h-8 sm:w-10 sm:h-10"
                                                 >
                                                     <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                                                 </Button>
@@ -252,8 +252,8 @@ const Page = () => {
                                 transition={{ duration: 0.5 }}
                                 className="w-full max-w-2xl rounded-lg p-6 space-y-7 border-2"
                                 style={{
-                                    borderColor: canSubmit() ? '#47FFE7' : 'rgba(255, 255, 255, 0.2)',
-                                    boxShadow: canSubmit() ? '0 0 20px rgba(71, 255, 231, 0.3)' : 'none'
+                                    borderColor: canSubmit() ? '#B08D57' : 'rgba(176, 141, 87, 0.5)',
+                                    boxShadow: canSubmit() ? '0 0 15px rgba(255, 215, 100, 0.5)' : 'none'
                                 }}
                             >
 
@@ -265,11 +265,11 @@ const Page = () => {
                                         onClick={() => setActiveTab('link')}
                                         className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-colors ${activeTab === 'link'
                                             ? 'text-black'
-                                            : 'text-gray-300 hover:text-white hover:border hover:border-[#47FFE7]'
+                                            : 'text-gray-300 hover:text-white hover:border hover:border-[#B08D57]'
                                             }`}
                                         style={{
-                                            backgroundColor: activeTab === 'link' ? '#47FFE7' : 'transparent',
-                                            boxShadow: activeTab === 'link' ? '0 0 10px rgba(71, 255, 231, 0.5)' : 'none'
+                                            backgroundColor: activeTab === 'link' ? '#B08D57' : 'transparent',
+                                            boxShadow: activeTab === 'link' ? '0 0 15px rgba(255, 215, 100, 0.5)' : 'none'
                                         }}
                                     >
                                         <Link className="w-4 h-4" />
@@ -281,11 +281,11 @@ const Page = () => {
                                         onClick={() => setActiveTab('upload')}
                                         className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-colors ${activeTab === 'upload'
                                             ? 'text-black'
-                                            : 'text-gray-300 hover:text-white hover:border hover:border-[#47FFE7]'
+                                            : 'text-gray-300 hover:text-white hover:border hover:border-[#B08D57]'
                                             }`}
                                         style={{
-                                            backgroundColor: activeTab === 'upload' ? '#47FFE7' : 'transparent',
-                                            boxShadow: activeTab === 'upload' ? '0 0 10px rgba(71, 255, 231, 0.5)' : 'none'
+                                            backgroundColor: activeTab === 'upload' ? '#B08D57' : 'transparent',
+                                            boxShadow: activeTab === 'upload' ? '0 0 15px rgba(255, 215, 100, 0.5)' : 'none'
                                         }}
                                     >
                                         <Upload className="w-4 h-4" />
@@ -297,15 +297,15 @@ const Page = () => {
                                 <div className="space-y-4">
                                     {activeTab === 'link' ? (
                                         <Input
-                                            placeholder="Drop a YouTube link"
+                                            placeholder="Drop a Instagram link"
                                             value={youtubeUrl}
                                             onChange={(e) => setYoutubeUrl(e.target.value)}
-                                            className="bg-gray-700 border-2 border-[#47FFE7] text-[#47FFE7] placeholder-gray-400 focus:outline-none px-5"
+                                            className="bg-[#B08D57] border-2 border-[#B08D57] text-[#B08D57] focus:outline-none px-5 placeholder:text-[#B08D57] focus:ring-0 focus:border-[#B08D57] transition-colors"
                                         />
                                     ) : (
                                         <motion.div
                                             whileHover={{ scale: 1.02 }}
-                                            className="border-2 border-[#47FFE7] rounded-lg p-3 text-center cursor-pointer transition-colors hover:bg-zinc-800/50"
+                                            className="border-2 border-[#B08D57] rounded-lg p-3 text-center cursor-pointer transition-colors hover:bg-zinc-800/50"
                                             onClick={() => thumbnailRef.current?.click()}
                                         >
                                             <input
@@ -328,7 +328,7 @@ const Page = () => {
                                             ) : (
                                                 <div className="space-y-2 py-8">
                                                     <Upload className="w-8 h-8 mx-auto text-gray-500" />
-                                                    <p className="text-gray-400 text-sm">Click to upload thumbnail</p>
+                                                    <p className="text-gray-400 text-sm">Click to upload post</p>
                                                 </div>
                                             )}
                                         </motion.div>
@@ -338,7 +338,7 @@ const Page = () => {
                                 {/* Face Image Upload */}
                                 <motion.div
                                     whileHover={{ scale: 1.02 }}
-                                    className="border-2 border-[#47FFE7] rounded-lg p-3 text-center cursor-pointer transition-colors hover:bg-zinc-800/50"
+                                    className="border-2 border-[#B08D57] rounded-lg p-3 text-center cursor-pointer transition-colors hover:bg-zinc-800/50"
                                     onClick={() => faceRef.current?.click()}
                                 >
                                     <input
@@ -377,8 +377,8 @@ const Page = () => {
                                         disabled={loading}
                                         className="w-full flex items-center gap-2 py-3 text-base font-bold rounded-lg transition-all text-black disabled:opacity-50 disabled:cursor-not-allowed"
                                         style={{
-                                            backgroundColor: '#47FFE7',
-                                            boxShadow: '0 0 15px rgba(71, 255, 231, 0.4)'
+                                            backgroundColor: '#B08D57',
+                                            boxShadow: '0 0 15px rgba(255, 215, 100, 0.5)',
                                         }}
                                     >
                                         <Sparkles className='w-5 h-5' />

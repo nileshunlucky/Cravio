@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 import boto3
 import datetime
 from PIL import Image, ImageDraw, ImageFont
+from instaloader import download_instagram_post_image
 
 load_dotenv()
 router = APIRouter()
@@ -206,32 +207,34 @@ async def faceswap_endpoint(
         # ✅ Handle thumbnail input
         if youtubeUrl:
             try:
-                cookies_path = "/tmp/cookies.txt"
-                if os.environ.get("COOKIES_TXT"):
-                    with open(cookies_path, "w") as f:
-                        f.write(os.environ["COOKIES_TXT"])
+                # cookies_path = "/tmp/cookies.txt"
+                # if os.environ.get("COOKIES_TXT"):
+                #     with open(cookies_path, "w") as f:
+                #         f.write(os.environ["COOKIES_TXT"])
 
-                ydl_opts = {
-                    "writethumbnail": True,  # Correct spelling
-                    "skip_download": True,
-                    "cookiefile": (
-                        cookies_path if os.path.exists(cookies_path) else None
-                    ),
-                    "outtmpl": f"{TEMP_DIR}/%(id)s",
-                    "quiet": False,
-                }
+                # ydl_opts = {
+                #     "writethumbnail": True,  # Correct spelling
+                #     "skip_download": True,
+                #     "cookiefile": (
+                #         cookies_path if os.path.exists(cookies_path) else None
+                #     ),
+                #     "outtmpl": f"{TEMP_DIR}/%(id)s",
+                #     "quiet": False,
+                # }
 
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(youtubeUrl, download=True)
-                    video_id = info.get("id")
-                    for ext in ["jpg", "webp", "png"]:
-                        candidate = os.path.join(TEMP_DIR, f"{video_id}.{ext}")
-                        if os.path.exists(candidate):
-                            thumbnail_path = candidate
-                            break
+                # with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                #     info = ydl.extract_info(youtubeUrl, download=True)
+                #     video_id = info.get("id")
+                #     for ext in ["jpg", "webp", "png"]:
+                #         candidate = os.path.join(TEMP_DIR, f"{video_id}.{ext}")
+                #         if os.path.exists(candidate):
+                #             thumbnail_path = candidate
+                #             break
 
-                if not thumbnail_path or not os.path.exists(thumbnail_path):
-                    raise Exception("Thumbnail file not found after download")
+                # if not thumbnail_path or not os.path.exists(thumbnail_path):
+                #     raise Exception("Thumbnail file not found after download")
+                
+                thumbnail_path = download_instagram_post_image(youtubeUrl)
 
             except Exception as e:
                 # Refund credits on error

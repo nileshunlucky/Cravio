@@ -22,8 +22,8 @@ const items = [
     icon: LayoutDashboard,
   },
   {
-    title: "Title",
-    url: "/admin/title",
+    title: "Caption",
+    url: "/admin/caption",
     icon: TextSearch ,
   },
   {
@@ -57,9 +57,10 @@ export function AppSidebar() {
                       asChild
                       className={`flex items-center gap-2 px-3 py-2 rounded-lg transition ${
                         isActive
-                          ? "bg-[#47FFE7] text-black shadow-md"
+                          ? "bg-[#B08D57] text-black shadow-md hover:bg-[#B08D57]/90 hover:text-black"
                           : "text-white hover:bg-white/10"
                       }`}
+                      style={{ filter: isActive ? "drop-shadow(0 0 15px rgba(255, 215, 100, 0.5))" : "none" }}
                     >
                       <Link href={item.url}>
                         <item.icon className="w-5 h-5" />

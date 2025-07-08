@@ -8,7 +8,8 @@ from db import users_collection
 router = APIRouter()
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-@router.post("/api/thumb2title")
+
+@router.post("/api/post2caption")
 async def thumb_to_title(file: UploadFile = File(...), email: str = Form(...)):
     try:
         # check user exists and has enough 5 credits
@@ -16,7 +17,9 @@ async def thumb_to_title(file: UploadFile = File(...), email: str = Form(...)):
         if not user:
             return JSONResponse(content={"error": "User not found"}, status_code=400)
         if user.get("credits", 0) < 5:
-            return JSONResponse(content={"error": "Not enough credits"}, status_code=402)
+            return JSONResponse(
+                content={"error": "Not enough credits"}, status_code=402
+            )
 
         # Deduct credits
         users_collection.update_one({"email": email}, {"$inc": {"credits": -5}})
@@ -35,18 +38,20 @@ async def thumb_to_title(file: UploadFile = File(...), email: str = Form(...)):
                         {
                             "type": "text",
                             "text": (
-                                "You are a professional YouTube strategist for viral creators. "
-                                "Look at this thumbnail and generate exactly 3 potential video titles. "
-                                "Each title must: "
-                                "- Be emotional, curiosity-driven, and clickable; "
-                                "- Stay under 100 characters; "
-                                "- Match the visual context of the thumbnail; "
-                                "- Avoid generic or vague wording. "
-                                "Output only the titles as a numbered list:\n"
-                                "1. Example Title\n"
-                                "2. Example Title\n"
-                                "3. Example Title\n"
-                                "Do not include any extra explanations, greetings, or commentary."
+                                "You are a professional Instagram strategist for viral content creators. "
+                                "Analyze this post and generate exactly 3 high-performing caption ideas with 3 relevant hashtags each. "
+                                "Each caption must:\n"
+                                "- Be scroll-stopping and attention-grabbing;\n"
+                                "- Be unique, creative, and trending;\n"
+                                "- Be under 100 characters total (including hashtags);\n"
+                                "- Match the visual and emotional context of the post;\n"
+                                "- Avoid generic, vague, or overused phrases.\n"
+                                "Use hashtags that are relevant, trending, and help boost reach. Examples: #fyp #explore.\n"
+                                "Output format:\n"
+                                "1. Caption text #hashtag1 #hashtag2 #hashtag3\n"
+                                "2. Caption text #hashtag1 #hashtag2 #hashtag3\n"
+                                "3. Caption text #hashtag1 #hashtag2 #hashtag3\n"
+                                "Return only the numbered captions — no greetings, no explanation, no commentary."
                             ),
                         },
                         {"type": "image_url", "image_url": {"url": image_url}},
@@ -84,7 +89,7 @@ async def thumb_to_title(file: UploadFile = File(...), email: str = Form(...)):
                 detail="Failed to extract titles from OpenAI response. Please try again.",
             )
 
-        return JSONResponse(content={"titles": titles})
+        return JSONResponse(content={"Captions": titles})
 
     except Exception as e:
         # It's good to log the full exception for debugging, not just convert to string

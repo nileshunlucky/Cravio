@@ -14,8 +14,8 @@ const DemoModal = () => {
         onClick={() => setIsOpen(true)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="w-auto inline-flex px-8 py-4 border-2 border-[#47FFE7] text-[#47FFE7] font-semibold rounded-full text-base items-center gap-3 flex-shrink-0 max-w-max"
-        style={{ boxShadow: '0 4px 20px rgba(71, 255, 231, 0.2)' }}
+        className="w-auto inline-flex px-8 py-4 border-2 border-[#B08D57] text-[#B08D57] font-semibold rounded-full text-base items-center gap-3 flex-shrink-0 max-w-max"
+        style={{  boxShadow: '0 0 15px rgba(255, 215, 100, 0.5)' }}
       >
         <PlayCircle className="w-5 h-5" />
         Watch Demo
@@ -32,7 +32,7 @@ const DemoModal = () => {
           >
             {/* Modal Content */}
             <motion.div
-              className="relative w-full max-w-4xl bg-black rounded-xl overflow-hidden border border-[#47FFE7]"
+              className="relative w-full max-w-4xl bg-black rounded-xl overflow-hidden border border-[#B08D57]"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}

@@ -28,11 +28,11 @@ const Features = () => {
   };
 
   const glowStyle = {
-    boxShadow: '0 0 30px rgba(71, 255, 231, 0.4), 0 0 15px rgba(71, 255, 231, 0.3)',
+    boxShadow: '0 0 15px rgba(255, 215, 100, 0.5)',
   };
 
   const textGlowStyle = {
-    filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.5))',
+    filter: 'drop-shadow(0 0 15px rgba(255, 215, 100, 0.5))',
   };
 
   // For the animated dot along the path
@@ -75,8 +75,8 @@ const Features = () => {
               className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight"
               variants={itemVariants}
             >
-              Enhance Your Thumbnails With{' '}
-              <span className="text-[#47FFE7]" style={textGlowStyle}>
+              Enhance Your posts With{' '}
+              <span className="text-[#B08D57]" style={textGlowStyle}>
                 FaceSwap
               </span>
             </motion.h2>
@@ -84,14 +84,14 @@ const Features = () => {
               className="text-lg md:text-xl text-gray-300 max-w-lg mx-auto lg:mx-0"
               variants={itemVariants}
             >
-              Select your persona & watch our AI thumbnail maker
+              Select your persona & watch our AI post maker
               smoothly swap out the original face with yours, ensuring
               your audience instantly recognizes you.
             </motion.p>
             <motion.div variants={itemVariants} className="pt-4">
               <Link href="/admin/dashboard">
                 <motion.button
-                  className="px-10 py-5 bg-[#47FFE7] text-black font-bold rounded-full text-lg"
+                  className="px-10 py-5 bg-[#B08D57] text-black font-bold rounded-full text-lg"
                   style={glowStyle}
                   whileHover={{ scale: 1.05, ...glowStyle }}
                   whileTap={{ scale: 0.95 }}
@@ -127,17 +127,17 @@ const Features = () => {
                 cx={x}
                 cy={y}
                 r="6"
-                fill="#47FFE7"
+                fill="#B08D57"
                 style={{
                   filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 1))'
                 }}
               />
               <defs>
                 <linearGradient id="line-gradient" x1="50%" y1="0%" x2="50%" y2="100%">
-                  <stop offset="0%" stopColor="#47FFE7" stopOpacity="0" />
-                  <stop offset="20%" stopColor="#47FFE7" stopOpacity="0.7" />
-                  <stop offset="80%" stopColor="#47FFE7" stopOpacity="0.7" />
-                  <stop offset="100%" stopColor="#47FFE7" stopOpacity="0" />
+                  <stop offset="0%" stopColor="#B08D57" stopOpacity="0" />
+                  <stop offset="20%" stopColor="#B08D57" stopOpacity="0.7" />
+                  <stop offset="80%" stopColor="#B08D57" stopOpacity="0.7" />
+                  <stop offset="100%" stopColor="#B08D57" stopOpacity="0" />
                 </linearGradient>
               </defs>
             </svg>
@@ -145,7 +145,7 @@ const Features = () => {
             {/* Top Image (Original) */}
             <motion.div
               className="w-56 sm:w-80 rounded-2xl p-1.5 z-10"
-              style={{ background: 'rgba(71, 255, 231, 0.1)' }}
+              style={{ background: 'rgba(176, 141, 87, 0.1)' }}
               initial={{ opacity: 0, y: -30 }}
               whileInView={{ opacity: 1, y: 0, transition: { delay: 0.4, duration: 0.8 } }}
               viewport={{ once: true }}
@@ -153,7 +153,7 @@ const Features = () => {
               <div className="rounded-xl" style={glowStyle}>
                 <img
                   src="https://res.cloudinary.com/db17zxsjc/image/upload/v1751448348/maxresdefault_l2ccby.jpg"
-                  alt="Original Thumbnail"
+                  alt="Original post"
                   className="w-full h-full object-cover rounded-xl"
                 />
               </div>
@@ -167,19 +167,19 @@ const Features = () => {
               viewport={{ once: true }}
             >
               <motion.div
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#47FFE7] border-2 border-[#47FFE7]/50 flex items-center justify-center z-20"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#B08D57] border-2 border-[#B08D57]/50 flex items-center justify-center z-20"
                 style={glowStyle}
                 animate={{
                   boxShadow: [
-                    '0 0 30px rgba(71, 255, 231, 0.4)',
-                    '0 0 50px rgba(71, 255, 231, 0.7)',
-                    '0 0 30px rgba(71, 255, 231, 0.4)',
+                    '0 0 15px rgba(255, 215, 100, 0.5)',
+                    '0 0 50px rgba(255, 215, 100, 0.7)',
+                    '0 0 30px rgba(255, 215, 100, 0.4)',
                   ]
                 }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
               >
                 <SmilePlus className="w-10 h-10 sm:w-12 sm:h-12 text-black" />
-                <motion.div className="absolute -right-10 top-1/2 -translate-y-1/2 w-20 h-20 rounded-full border-2 border-[#47FFE7] overflow-hidden bg-white z-10">
+                <motion.div className="absolute -right-10 top-1/2 -translate-y-1/2 w-20 h-20 rounded-full border-2 border-[#B08D57] overflow-hidden bg-white z-10">
                   <img
                     src="https://res.cloudinary.com/db17zxsjc/image/upload/v1751448711/mesii_airmbm.png"
                     alt="User Face"
@@ -192,7 +192,7 @@ const Features = () => {
             {/* Bottom Image (Swapped) */}
             <motion.div
               className="w-56 sm:w-80 rounded-2xl p-1.5 z-10"
-              style={{ background: 'rgba(71, 255, 231, 0.1)' }}
+              style={{ background: 'rgba(176, 141, 87, 0.1)' }}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0, transition: { delay: 0.6, duration: 0.8 } }}
               viewport={{ once: true }}
@@ -200,7 +200,7 @@ const Features = () => {
               <div className="rounded-xl" style={glowStyle}>
                 <img
                   src="https://res.cloudinary.com/db17zxsjc/image/upload/v1751443919/718b53fb4b884bafa139275c46a88841_faceswap_output_hiyqeu.webp"
-                  alt="Faceswapped Thumbnail"
+                  alt="Faceswapped post"
                   className="w-full h-full object-cover rounded-xl"
                 />
               </div>
