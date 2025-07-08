@@ -10,16 +10,6 @@ const Hero = () => {
     // State to hold the screen width. Initialized to 0 to ensure window is only accessed client-side.
     const [screenWidth, setScreenWidth] = React.useState(0);
     const [userCount, setUserCount] = React.useState(100);
-     const [count, setCount] = useState(500);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCount(prev => prev + 1);
-    }, 5000); // 5 seconds
-
-    // Cleanup on unmount
-    return () => clearInterval(interval);
-  }, []);
 
       useEffect(() => {
         const fetchUserCount = async () => { 

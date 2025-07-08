@@ -4,7 +4,7 @@ import React, { useState, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { motion, AnimatePresence } from "framer-motion"
-import { Sparkles, UploadCloud, Check, Copy, Undo2, Type, Quote, Zap } from "lucide-react"
+import { Sparkles, UploadCloud, Check, Copy, Undo2, Quote, Zap } from "lucide-react"
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { toast } from "sonner"
