@@ -1,6 +1,6 @@
 "use client"
 
-import React,{useEffect, useState} from 'react';
+import React,{useEffect} from 'react';
 import { motion } from 'framer-motion';
 import { Users, Star } from 'lucide-react';
 import Link from 'next/link';
