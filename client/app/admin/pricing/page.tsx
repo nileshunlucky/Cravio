@@ -54,15 +54,15 @@ const PricingCard: React.FC<PricingCardProps> = ({
 
     const glowVariants = {
         initial: {
-            boxShadow: "0 0 0 rgba(71, 255, 231, 0)",
+            boxShadow:"0 0 0 rgba(176, 141, 87, 0)",
             backgroundColor: "rgba(30, 30, 30, 0.8)"
         },
         animate: {
             boxShadow: isPopular
                 ? [
-                    "0 0 20px rgba(71, 255, 231, 0.3)",
-                    "0 0 40px rgba(71, 255, 231, 0.5)",
-                    "0 0 20px rgba(71, 255, 231, 0.3)"
+                    "0 10px 30px rgba(176, 141, 87, 0.3)" ,
+                    "0 0 0 rgba(176, 141, 87, 0)",
+                    "0 10px 30px rgba(176, 141, 87, 0.3)"
                 ]
                 : "0 0 0 rgba(71, 255, 231, 0)",
             backgroundColor: isPopular
@@ -112,9 +112,9 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             variants={popularDotVariants}
                             initial="initial"
                             animate="animate"
-                            className="absolute -left-2 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-[#47FFE7] rounded-full"
+                            className="absolute -left-2 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-[#B08D57] rounded-full"
                         />
-                        <div className="bg-[#47FFE7] text-black px-6 py-2 rounded-full  font-bold flex items-center gap-2 shadow-lg whitespace-nowrap">
+                        <div className="bg-[#B08D57] text-black px-6 py-2 rounded-full  font-bold flex items-center gap-2 shadow-lg whitespace-nowrap">
                             <Sparkles />
                             MOST POPULAR
                         </div>
@@ -127,7 +127,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                 initial="initial"
                 animate="animate"
                 className={`relative rounded-2xl p-6 sm:p-8 h-full backdrop-blur-sm border-2 overflow-hidden ${isPopular
-                    ? 'border-[#47FFE7] bg-black/80'
+                    ? 'border-[#B08D57] bg-black/80'
                     : 'border-zinc-700 bg-zinc-900/80'
                     }`}
                 style={{ pointerEvents: 'auto' }} // Ensure card content is interactive
@@ -137,7 +137,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                     className="absolute inset-0 opacity-5"
                     style={{ pointerEvents: 'none' }} // Background shouldn't block interactions
                 >
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#47FFE7] via-transparent to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#B08D57] via-transparent to-transparent"></div>
                 </div>
 
                 {/* Plan Name and Discount */}
@@ -146,12 +146,12 @@ const PricingCard: React.FC<PricingCardProps> = ({
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: delay + 0.3, duration: 0.6 }}
-                        className={`text-2xl font-bold mb-2 ${isPopular ? 'text-[#47FFE7]' : 'text-white'
+                        className={`text-2xl font-bold mb-2 ${isPopular ? 'text-[#B08D57]' : 'text-white'
                             }`}
                         style={{
                             filter: isPopular
-                                ? 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.3))'
-                                : 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.3))',
+                                ? '0 0 30px rgba(71, 255, 231, 0.1)'
+                                : '0 0 30px rgba(255, 255, 255, 0.1)',
                             pointerEvents: 'auto'
                         }}
 
@@ -186,16 +186,16 @@ const PricingCard: React.FC<PricingCardProps> = ({
                                 ${originalPrice}
                             </span>
                         )}
-                        <span className={`text-4xl sm:text-5xl font-bold ${isPopular ? 'text-[#47FFE7]' : 'text-white'
+                        <span className={`text-4xl sm:text-5xl font-bold ${isPopular ? 'text-[#B08D57]' : 'text-white'
                             }`}
-                            style={isPopular ? { filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.3))' } : { filter: 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.3))' }}>
+                            style={isPopular ? { filter: '0 0 30px rgba(71, 255, 231, 0.1)' } : { filter: '0 0 30px rgba(255, 255, 255, 0.1)' }}>
                             ${price}
                         </span>
                         <span className=" text-base select-text">/mo</span>
                     </motion.div>
                 </div>
 
-                {/* Thumbnail Generation Info */}
+                {/* Post Generation Info */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -204,8 +204,8 @@ const PricingCard: React.FC<PricingCardProps> = ({
                 >
                     <p className="text-zinc-300 text-sm mb-4 select-text" style={{ pointerEvents: 'auto' }}>
                         Generate up to{' '}
-                        <span className="text-[#47FFE7] font-bold">
-                            {features.thumbnails} thumbnails
+                        <span className="text-[#B08D57] font-bold">
+                            {features.thumbnails} Posts
                         </span>{' '}
                         per month.
                     </p>
@@ -217,13 +217,13 @@ const PricingCard: React.FC<PricingCardProps> = ({
                                 scale: 1.02,
                                 y: -2,
                                 boxShadow: isPopular
-                                    ? "0 10px 25px rgba(71, 255, 231, 0.3)"
-                                    : "0 10px 25px rgba(0, 0, 0, 0.2)"
+                                    ? "0 10px 30px rgba(176, 141, 87, 0.3)"
+                                    : "0 10px 30px rgba(176, 141, 87, 0.3)"
                             }}
                             whileTap={{ scale: 0.98 }}
                             className={`relative z-20 w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-center transition-all duration-300 cursor-pointer ${isPopular
-                                ? 'bg-[#47FFE7] text-black hover:bg-[#3ee5d1] shadow-lg'
-                                : 'bg-zinc-800 text-white hover:text-[#47FFE7] select-text drop-shadow-[0_0_1px_#47FFE7] hover:bg-zinc-800 border border-zinc-700 hover:border-zinc-600'
+                                ? 'bg-[#B08D57] text-black hover:bg-[#B08D57]/80 shadow-lg'
+                                : 'bg-zinc-800 text-white hover:text-[#B08D57]  hover:bg-zinc-800 '
                                 }`}
                             type="button"
                             role="button"
@@ -251,7 +251,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                         >
                             <div className="flex-shrink-0">
                                 {feature.included ? (
-                                    <div className="w-5 h-5 rounded-full bg-[#47FFE7] flex items-center justify-center">
+                                    <div className="w-5 h-5 rounded-full bg-[#B08D57] flex items-center justify-center">
                                         <Check className="w-3 h-3 text-black" />
                                     </div>
                                 ) : (
@@ -278,7 +278,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             repeat: Infinity,
                             ease: "easeInOut"
                         }}
-                        className="absolute inset-0 bg-gradient-to-r from-[#47FFE7]/10 via-transparent to-[#47FFE7]/10 rounded-2xl"
+                        className="absolute inset-0 bg-gradient-to-r from-[#B08D57]/10 via-transparent to-[#B08D57]/10 rounded-2xl"
                         style={{ pointerEvents: 'none' }} // Glow shouldn't block interactions
                     />
                 )}
@@ -311,7 +311,7 @@ const Page = () => {
                 credits: 80,
                 list: [
                     { name: "80 credits", included: true },
-                    { name: "AI Thumbnail Generator", included: true },
+                    { name: "AI Post Generator", included: true },
                     { name: "Persona Feature", included: true },
                     { name: "HD Export", included: true },
                     { name: "Advanced Styles", included: false },
@@ -334,7 +334,7 @@ const Page = () => {
                 credits: 200,
                 list: [
                     { name: "200 credits", included: true },
-                    { name: "AI Thumbnail Generator", included: true },
+                    { name: "AI Post Generator", included: true },
                     { name: "Persona Feature", included: true },
                     { name: "HD Export", included: true },
                     { name: "Advanced Styles", included: true },
@@ -357,7 +357,7 @@ const Page = () => {
                 credits: 500,
                 list: [
                     { name: "500 credits", included: true },
-                    { name: "AI Thumbnail Generator", included: true },
+                    { name: "AI Post Generator", included: true },
                     { name: "Persona Feature", included: true },
                     { name: "HD Export", included: true },
                     { name: "Advanced Styles", included: true },
@@ -409,8 +409,8 @@ const Page = () => {
                 className="absolute inset-0 opacity-30"
                 style={{ pointerEvents: 'none' }} // Background shouldn't block interactions
             >
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(71,255,231,0.15),transparent_50%)]" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(71,255,231,0.1),transparent_50%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(176,141,87,0.15),transparent_50%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(176,141,87,0.15),transparent_50%)]" />
             </div>
 
             <motion.div
@@ -424,11 +424,11 @@ const Page = () => {
                     variants={titleVariants}
                     className="text-center mb-12 sm:mb-16"
                 >
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-[#47FFE7] drop-shadow-lg select-text">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-[#B08D57] drop-shadow-lg select-text">
                         Choose Your Plan
                     </h1>
                     <p className="text-base sm:text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed select-text">
-                        Unlock the power of AI-generated thumbnails with our flexible pricing plans
+                        Unlock the power of AI-generated Posts with our flexible pricing plans
                     </p>
                 </motion.div>
 
@@ -463,7 +463,7 @@ const Page = () => {
                     {particlePositions.map((position, i) => (
                         <motion.div
                             key={i}
-                            className="absolute w-1 h-1 bg-[#47FFE7] rounded-full opacity-60"
+                            className="absolute w-1 h-1 bg-[#B08D57] rounded-full opacity-60"
                             style={{
                                 left: `${position.left}%`,
                                 top: `${position.top}%`,
