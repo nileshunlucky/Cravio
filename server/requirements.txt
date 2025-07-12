@@ -2,7 +2,6 @@ pymongo
 gunicorn
 fastapi
 python-dotenv
-razorpay
 pydantic
 boto3
 Pillow
