@@ -18,6 +18,3 @@ aiofiles
 opencv-python-headless
 apscheduler
 httpx
-instaloader
-transformers
-torch
