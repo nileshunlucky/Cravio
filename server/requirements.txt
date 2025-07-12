@@ -17,3 +17,4 @@ aiofiles
 opencv-python-headless
 apscheduler
 httpx
+pydantic[email]
