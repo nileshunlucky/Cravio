@@ -305,30 +305,30 @@ export default function OpusClip() {
     }
   };
 
-const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  // Skip if a video is already processed
-  if (videoProcessed) return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Skip if a video is already processed
+    if (videoProcessed) return;
 
-  const selectedFile = e.target.files?.[0];
-  if (!selectedFile) return;
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
 
-  // Reset any previous errors
-  setErrorMessage(null);
+    // Reset any previous errors
+    setErrorMessage(null);
 
-  // Set the file
-  setFile(selectedFile);
+    // Set the file
+    setFile(selectedFile);
 
-  // Clear YouTube link if file is selected
-  setYoutubeLink('');
-  setIsValidYoutubeLink(false);
+    // Clear YouTube link if file is selected
+    setYoutubeLink('');
+    setIsValidYoutubeLink(false);
 
-  // Process the file upload immediately
-  setTimeout(() => {
-    if (!processingRef.current) {
-      handleProcess(null, selectedFile);
-    }
-  }, 100);
-};
+    // Process the file upload immediately
+    setTimeout(() => {
+      if (!processingRef.current) {
+        handleProcess(null, selectedFile);
+      }
+    }, 100);
+  };
 
   // Updated handleProcess function with improved task handling
   const handleProcess = async (ytLink: string | null = null, uploadedFile: File | null = null) => {
@@ -641,7 +641,7 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         position: "top-center",
         duration: 4000,
       })
-      router.push('/admin/plan'); 
+      router.push('/admin/plan');
     } finally {
       setIsLoading(false)
       setThumbnail(null);
