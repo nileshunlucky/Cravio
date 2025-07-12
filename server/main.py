@@ -1,16 +1,10 @@
-from fastapi import FastAPI, HTTPException, Request, Body, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from db import users_collection
-from subscription import router as subscription_router
 from api.lemon_webhook import router as lemon_webhook_router
 from api.thumb2title import router as thumb2title_router
 from api.persona import router as persona_router
-import smtplib
-from datetime import datetime
-import pytz
-import os
-from typing import Optional
 
 app = FastAPI()
 
@@ -24,7 +18,6 @@ app.add_middleware(
 )
 
 # add routers
-app.include_router(subscription_router)
 app.include_router(lemon_webhook_router)
 app.include_router(thumb2title_router)
 app.include_router(persona_router)
