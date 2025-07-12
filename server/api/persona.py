@@ -4,13 +4,8 @@ from celery_config import celery_app
 import os
 import boto3
 import uuid
-import json
 from db import users_collection
 from tasks.persona_task import train_lora_runpod_automated
-from PIL import Image
-import io
-from transformers import BlipProcessor, BlipForConditionalGeneration
-import torch
 
 router = APIRouter()
 
@@ -22,33 +17,6 @@ s3_client = boto3.client(
     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     region_name=os.getenv("AWS_REGION", "us-east-1")
 )
-
-# Initialize BLIP model (load once at startup)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
-blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base").to(device)
-
-def generate_caption(image_content: bytes) -> str:
-    """Generate caption for image using BLIP model"""
-    try:
-        # Convert bytes to PIL Image
-        image = Image.open(io.BytesIO(image_content))
-        
-        # Convert to RGB if necessary
-        if image.mode != 'RGB':
-            image = image.convert('RGB')
-        
-        # Process image and generate caption
-        inputs = blip_processor(image, return_tensors="pt").to(device)
-        
-        with torch.no_grad():
-            out = blip_model.generate(**inputs, max_length=50, num_beams=5)
-        
-        caption = blip_processor.decode(out[0], skip_special_tokens=True)
-        return caption
-    except Exception as e:
-        print(f"Error generating caption: {str(e)}")
-        return "No caption available"
 
 @router.post("/api/train-persona")
 async def upload_persona(
@@ -73,14 +41,10 @@ async def upload_persona(
     unique_id = uuid.uuid4().hex[:8]
     folder = f"personas/{persona_name}_{unique_id}"
     uploaded_urls = []
-    image_captions = []
     
     for image in images:
         try:
             content = await image.read()
-            
-            # Generate caption using BLIP
-            caption = generate_caption(content)
             
             # Upload image to S3
             s3_key = f"{folder}/{image.filename}"
@@ -94,50 +58,16 @@ async def upload_persona(
             s3_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{s3_key}"
             uploaded_urls.append(s3_url)
             
-            # Store caption with image info
-            image_captions.append({
-                "filename": image.filename,
-                "url": s3_url,
-                "caption": caption
-            })
-            
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to process {image.filename}: {str(e)}")
     
-    # Save captions to S3 as JSON file
-    captions_data = {
-        "persona_name": persona_name,
-        "email": email,
-        "unique_id": unique_id,
-        "images": image_captions
-    }
-    
-    try:
-        captions_json = json.dumps(captions_data, indent=2)
-        captions_key = f"{folder}/captions.json"
-        
-        s3_client.put_object(
-            Bucket=S3_BUCKET,
-            Key=captions_key,
-            Body=captions_json,
-            ContentType="application/json"
-        )
-        
-        captions_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{captions_key}"
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save captions: {str(e)}")
-    
-    # Send task with both image URLs and captions
-    task = train_lora_runpod_automated.delay(persona_name, uploaded_urls, email, image_captions)
+    # Send task with both image URLs 
+    task = train_lora_runpod_automated.delay(persona_name, uploaded_urls, email)
     
     return {
         "status": "success",
         "message": "Persona training queued successfully",
         "task_id": task.id,
-        "s3_folder": folder,
-        "captions_url": captions_url,
-        "total_images": len(uploaded_urls)
     }
 
 @router.get("/api/task-status/{task_id}")

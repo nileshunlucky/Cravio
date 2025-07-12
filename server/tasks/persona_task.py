@@ -146,21 +146,16 @@ class RunPodManager:
             logging.error(f"Error getting pod status: {str(e)}")
             return None
 
-def create_caption_files_for_fluxgym(image_captions, trigger_word):
+def create_caption_files_for_fluxgym(image_urls, persona_name):
     """Create individual caption .txt files for each image and upload to S3"""
     caption_urls = []
     
-    for item in image_captions:
+    # Simple caption for all images
+    caption_content = f"photo of {persona_name}"
+    
+    for image_url in image_urls:
         try:
-            # Extract filename without extension
-            filename = item['filename']
-            name_without_ext = os.path.splitext(filename)[0]
-            
-            # Create caption content with trigger word
-            caption_content = f"{trigger_word}, {item['caption']}"
-            
-            # Create S3 key for caption file (same path as image but .txt extension)
-            image_url = item['url']
+            # Extract the S3 key from the image URL
             image_key = image_url.split(f"{S3_BUCKET}.s3.amazonaws.com/")[-1]
             caption_key = os.path.splitext(image_key)[0] + '.txt'
             
@@ -178,17 +173,17 @@ def create_caption_files_for_fluxgym(image_captions, trigger_word):
             logging.info(f"Created caption file: {caption_key}")
             
         except Exception as e:
-            logging.error(f"Error creating caption file for {filename}: {str(e)}")
+            logging.error(f"Error creating caption file for {image_url}: {str(e)}")
             continue
     
     return caption_urls
 
-def start_runpod_training(api_url, persona_name, image_urls, image_captions, trigger_word):
+def start_runpod_training(api_url, persona_name, image_urls, trigger_word):
     """Start training on RunPod using the dynamic API URL"""
     
     # Create caption files for FluxGym
-    caption_urls = create_caption_files_for_fluxgym(image_captions, trigger_word)
-    
+    caption_urls = create_caption_files_for_fluxgym(image_urls, persona_name)
+
     # Prepare input for FluxGym
     input_data = {
         "input": {
@@ -330,34 +325,17 @@ def delete_training_files_from_s3(uploaded_urls, caption_urls, keep_first_image=
             logging.info(f"Deleted S3 caption file: {key}")
         except Exception as e:
             logging.error(f"Error deleting S3 caption file {caption_url}: {str(e)}")
-    
-    # Delete the main captions.json file
-    try:
-        # Extract folder from first image URL
-        first_image_url = uploaded_urls[0] if uploaded_urls else ""
-        if first_image_url:
-            image_key = first_image_url.split(f"{S3_BUCKET}.s3.amazonaws.com/")[-1]
-            folder = os.path.dirname(image_key)
-            captions_json_key = f"{folder}/captions.json"
-            
-            s3_client.delete_object(Bucket=S3_BUCKET, Key=captions_json_key)
-            logging.info(f"Deleted captions.json file: {captions_json_key}")
-    except Exception as e:
-        logging.error(f"Error deleting captions.json file: {str(e)}")
 
 @celery_app.task(bind=True)
-def train_lora_runpod_automated(self, persona_name, uploaded_urls, email, image_captions):
+def train_lora_runpod_automated(self, persona_name, uploaded_urls, email):
     """Main task to train LoRA model with automated RunPod pod management"""
     
     # Validate inputs
-    if not persona_name or not uploaded_urls or not email or not image_captions:
-        raise ValueError("persona_name, uploaded_urls, email, and image_captions are required")
+    if not persona_name or not uploaded_urls or not email:
+        raise ValueError("persona_name, uploaded_urls, and email are required")
     
     if len(uploaded_urls) < 10 or len(uploaded_urls) > 20:
         raise ValueError("Number of uploaded URLs must be between 10 and 20")
-    
-    if len(image_captions) != len(uploaded_urls):
-        raise ValueError("Number of image captions must match number of uploaded URLs")
     
     persona_id = None
     pod_id = None
@@ -422,7 +400,7 @@ def train_lora_runpod_automated(self, persona_name, uploaded_urls, email, image_
         )
         
         job_id, caption_urls = start_runpod_training(
-            api_url, persona_name, uploaded_urls, image_captions, trigger_word
+            api_url, persona_name, uploaded_urls, trigger_word
         )
         
         update_training_status(persona_id, "training_started", job_id=job_id)
@@ -502,7 +480,7 @@ def train_lora_runpod_automated(self, persona_name, uploaded_urls, email, image_
                     "model_s3_url": model_s3_url,
                     "job_id": job_id,
                     "pod_id": pod_id,
-                    "images_processed": len(image_captions),
+                    "images_processed": len(uploaded_urls),
                     "first_image_url": uploaded_urls[0] if uploaded_urls else None,
                     "message": "LoRA model training completed successfully with automated pod management"
                 }
@@ -556,21 +534,18 @@ def train_lora_runpod_automated(self, persona_name, uploaded_urls, email, image_
         raise self.retry(exc=e, countdown=60, max_retries=3)
 
 # Helper function to start training from API endpoint
-def start_automated_lora_training(persona_name, uploaded_urls, email, image_captions):
+def start_automated_lora_training(persona_name, uploaded_urls, email):
     """Helper function to start the automated training task"""
     
     # Validate inputs
-    if not persona_name or not uploaded_urls or not email or not image_captions:
-        return {"error": "persona_name, uploaded_urls, email, and image_captions are required"}
+    if not persona_name or not uploaded_urls or not email:
+        return {"error": "persona_name, uploaded_urls, and email are required"}
     
     if len(uploaded_urls) < 10 or len(uploaded_urls) > 20:
         return {"error": "Number of uploaded URLs must be between 10 and 20"}
     
-    if len(image_captions) != len(uploaded_urls):
-        return {"error": "Number of image captions must match number of uploaded URLs"}
-    
     # Start the Celery task
-    task = train_lora_runpod_automated.delay(persona_name, uploaded_urls, email, image_captions)
+    task = train_lora_runpod_automated.delay(persona_name, uploaded_urls, email)
     
     return {
         "task_id": task.id,
