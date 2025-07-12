@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, X, CheckCircle, AlertCircle, Clock, Loader2, Crown, Sparkles, User, Calendar, Trash2 } from 'lucide-react'
+import { Upload, X, CheckCircle, AlertCircle, Clock, Loader2, Crown, Sparkles, User, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { useUser } from '@clerk/nextjs'
 
@@ -15,6 +15,10 @@ interface ImageFile {
     file: File
     preview: string
 }
+interface TaskResult {
+    message: string
+}
+
 
 interface TaskStatus {
     state: string
@@ -22,7 +26,7 @@ interface TaskStatus {
     current?: number
     total?: number
     progress?: number
-    result?: any
+    result?: TaskResult
     error?: string
 }
 
@@ -34,6 +38,12 @@ interface Persona {
     model_s3_url?: string
     trigger_word?: string
 }
+interface UserData {
+  _id: string
+  email: string
+  credits: number
+  personas: Persona[]
+}
 
 const MAX_IMAGES = 20
 
@@ -44,7 +54,7 @@ const Page = () => {
     const [taskId, setTaskId] = useState<string | null>(null)
     const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null)
     const { user } = useUser()
-    const [userData, setUserData] = useState<any>(null)
+    const [userData, setUserData] = useState<UserData | null>(null)
     const [existingPersonas, setExistingPersonas] = useState<Persona[]>([])
     const [showExisting, setShowExisting] = useState(false)
     const email = user?.emailAddresses?.[0]?.emailAddress || ''
