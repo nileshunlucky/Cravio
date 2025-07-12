@@ -314,6 +314,9 @@ const Page = () => {
                             <CardTitle className="text-[#B08D57] flex items-center gap-2">
                                 <Sparkles className="w-5 h-5" />
                                 Create New Persona
+                                {userData && userData.credits >= 200 && (
+                                    <span className="ml-2 text-xs text-green-400">(Sufficient credits)</span>
+                                )}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-6">
