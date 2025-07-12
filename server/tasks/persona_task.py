@@ -1,16 +1,16 @@
 import logging
-from celery_config import celery_app
-from db import users_collection
 import requests
 import time
 import os
 import boto3
 from datetime import datetime
 from bson import ObjectId
+from celery_config import celery_app
+from db import users_collection
 
+# RunPod Configuration
 RUNPOD_API_KEY = os.getenv("RUNPOD_API_KEY")
-RUNPOD_ENDPOINT_ID = os.getenv("RUNPOD_ENDPOINT_ID")
-RUNPOD_API_URL = f"https://api.runpod.ai/v2/{RUNPOD_ENDPOINT_ID}/run"
+RUNPOD_BASE_URL = "https://api.runpod.io/v1"
 
 # S3 Configuration
 S3_BUCKET = os.getenv("S3_BUCKET_NAME", "my-video-bucket")
@@ -26,8 +26,168 @@ HEADERS = {
     "Content-Type": "application/json"
 }
 
-def start_runpod_training(persona_name, image_urls):
-    """Start training on RunPod using FluxGym template"""
+class RunPodManager:
+    """Manages RunPod pod lifecycle for training"""
+    
+    def __init__(self):
+        self.base_url = RUNPOD_BASE_URL
+        self.headers = HEADERS
+    
+    def create_pod(self, pod_name="fluxgym-training-pod"):
+        """Create a new RunPod pod for training"""
+        pod_config = {
+            "name": pod_name,
+            "imageName": "thelocallab/fluxgym-flux-lora-training",  # Replace with your actual FluxGym image
+            "gpuTypeId": "NVIDIA RTX A4500",  # Or your preferred GPU type
+            "gpuCount": 1,
+            "containerDiskInGb": 50,
+            "volumeInGb": 100,
+            "ports": "7860/http",  # Expose port 7860 for HTTP
+            "env": [
+                {"key": "GRADIO_SERVER_NAME", "value": "0.0.0.0"},
+                {"key": "GRADIO_SERVER_PORT", "value": "7860"}
+            ]
+        }
+        
+        try:
+            response = requests.post(
+                f"{self.base_url}/pod",
+                headers=self.headers,
+                json=pod_config,
+                timeout=30
+            )
+            
+            if response.status_code != 201:
+                raise Exception(f"Failed to create pod: {response.status_code} - {response.text}")
+            
+            result = response.json()
+            pod_id = result["id"]
+            
+            logging.info(f"Created pod: {pod_id}")
+            return pod_id
+            
+        except Exception as e:
+            raise Exception(f"Failed to create RunPod pod: {str(e)}")
+    
+    def wait_for_pod_ready(self, pod_id, max_wait_time=600):
+        """Wait for pod to become ready and return connection info"""
+        start_time = time.time()
+        
+        while time.time() - start_time < max_wait_time:
+            try:
+                response = requests.get(
+                    f"{self.base_url}/pod/{pod_id}",
+                    headers=self.headers,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    pod_info = response.json()
+                    status = pod_info.get("status")
+                    
+                    if status == "RUNNING":
+                        # Get the proxy URL
+                        proxy_url = pod_info.get("proxyUrl")
+                        if proxy_url:
+                            # Build the training API URL
+                            api_url = f"{proxy_url}/run"
+                            logging.info(f"Pod {pod_id} is ready. API URL: {api_url}")
+                            return api_url
+                    
+                    elif status == "FAILED":
+                        raise Exception(f"Pod {pod_id} failed to start")
+                    
+                    logging.info(f"Pod {pod_id} status: {status}. Waiting...")
+                
+                time.sleep(15)  # Check every 15 seconds
+                
+            except Exception as e:
+                logging.error(f"Error checking pod status: {str(e)}")
+                time.sleep(15)
+        
+        raise Exception(f"Pod {pod_id} failed to become ready within {max_wait_time} seconds")
+    
+    def terminate_pod(self, pod_id):
+        """Terminate a RunPod pod"""
+        try:
+            response = requests.post(
+                f"{self.base_url}/pod/terminate",
+                headers=self.headers,
+                json={"podId": pod_id},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                logging.info(f"Pod {pod_id} terminated successfully")
+                return True
+            else:
+                logging.error(f"Failed to terminate pod {pod_id}: {response.text}")
+                return False
+                
+        except Exception as e:
+            logging.error(f"Error terminating pod {pod_id}: {str(e)}")
+            return False
+    
+    def get_pod_status(self, pod_id):
+        """Get current status of a pod"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/pod/{pod_id}",
+                headers=self.headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return None
+                
+        except Exception as e:
+            logging.error(f"Error getting pod status: {str(e)}")
+            return None
+
+def create_caption_files_for_fluxgym(image_captions, trigger_word):
+    """Create individual caption .txt files for each image and upload to S3"""
+    caption_urls = []
+    
+    for item in image_captions:
+        try:
+            # Extract filename without extension
+            filename = item['filename']
+            name_without_ext = os.path.splitext(filename)[0]
+            
+            # Create caption content with trigger word
+            caption_content = f"{trigger_word}, {item['caption']}"
+            
+            # Create S3 key for caption file (same path as image but .txt extension)
+            image_url = item['url']
+            image_key = image_url.split(f"{S3_BUCKET}.s3.amazonaws.com/")[-1]
+            caption_key = os.path.splitext(image_key)[0] + '.txt'
+            
+            # Upload caption file to S3
+            s3_client.put_object(
+                Bucket=S3_BUCKET,
+                Key=caption_key,
+                Body=caption_content.encode('utf-8'),
+                ContentType="text/plain"
+            )
+            
+            caption_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{caption_key}"
+            caption_urls.append(caption_url)
+            
+            logging.info(f"Created caption file: {caption_key}")
+            
+        except Exception as e:
+            logging.error(f"Error creating caption file for {filename}: {str(e)}")
+            continue
+    
+    return caption_urls
+
+def start_runpod_training(api_url, persona_name, image_urls, image_captions, trigger_word):
+    """Start training on RunPod using the dynamic API URL"""
+    
+    # Create caption files for FluxGym
+    caption_urls = create_caption_files_for_fluxgym(image_captions, trigger_word)
     
     # Prepare input for FluxGym
     input_data = {
@@ -38,10 +198,12 @@ def start_runpod_training(persona_name, image_urls):
             "batch_size": 1,
             "learning_rate": 1e-4,
             "resolution": "512,768,1024",
-            "trigger_word": persona_name.lower().replace(" ", "_"),
+            "trigger_word": trigger_word,
             "input_images": image_urls,
+            "caption_files": caption_urls,
             "model_name": f"lora_{persona_name.lower().replace(' ', '_')}",
             "training_comment": f"LoRA training for {persona_name}",
+            "pretrained_model_name_or_path": "frankjoshua/realvisxlV50_v50LightningBakedvae",
             "max_train_epochs": 20,
             "save_every_n_epochs": 5,
             "mixed_precision": "fp16",
@@ -54,38 +216,47 @@ def start_runpod_training(persona_name, image_urls):
             "min_bucket_reso": 256,
             "max_bucket_reso": 2048,
             "bucket_reso_steps": 64,
-            "bucket_no_upscale": True
+            "bucket_no_upscale": True,
+            "use_blip_captions": True,
+            "caption_dropout_rate": 0.1,
+            "caption_tag_dropout_rate": 0.1
         }
     }
     
     try:
         response = requests.post(
-            RUNPOD_API_URL,
-            headers=HEADERS,
+            api_url,
+            headers={"Content-Type": "application/json"},
             json=input_data,
-            timeout=30
+            timeout=60
         )
         
         if response.status_code != 200:
-            raise Exception(f"RunPod API error: {response.status_code} - {response.text}")
+            raise Exception(f"Training API error: {response.status_code} - {response.text}")
         
         result = response.json()
         job_id = result.get("id")
         
         if not job_id:
-            raise Exception(f"No job ID returned from RunPod: {result}")
+            raise Exception(f"No job ID returned from training API: {result}")
         
-        return job_id
+        return job_id, caption_urls
         
     except Exception as e:
-        raise Exception(f"Failed to start RunPod training: {str(e)}")
+        raise Exception(f"Failed to start training: {str(e)}")
 
-def check_runpod_status(job_id):
-    """Check the status of a RunPod job"""
-    status_url = f"https://api.runpod.ai/v2/{RUNPOD_ENDPOINT_ID}/status/{job_id}"
+def check_runpod_training_status(api_url, job_id):
+    """Check the status of a training job"""
+    # Remove '/run' and add '/status/{job_id}'
+    base_url = api_url.replace('/run', '')
+    status_url = f"{base_url}/status/{job_id}"
     
     try:
-        response = requests.get(status_url, headers=HEADERS, timeout=30)
+        response = requests.get(
+            status_url,
+            headers={"Content-Type": "application/json"},
+            timeout=30
+        )
         
         if response.status_code != 200:
             return None
@@ -93,32 +264,14 @@ def check_runpod_status(job_id):
         return response.json()
         
     except Exception as e:
-        print(f"Error checking RunPod status: {str(e)}")
+        logging.error(f"Error checking training status: {str(e)}")
         return None
-
-def terminate_runpod_pod(job_id):
-    """Terminate the RunPod pod after completion"""
-    terminate_url = f"https://api.runpod.ai/v2/{RUNPOD_ENDPOINT_ID}/cancel/{job_id}"
-    
-    try:
-        response = requests.post(terminate_url, headers=HEADERS, timeout=30)
-        
-        if response.status_code == 200:
-            print(f"Successfully terminated RunPod job: {job_id}")
-            return True
-        else:
-            print(f"Failed to terminate RunPod job: {response.status_code} - {response.text}")
-            return False
-            
-    except Exception as e:
-        print(f"Error terminating RunPod job: {str(e)}")
-        return False
 
 def download_and_save_model(output_url, persona_name, persona_id):
     """Download the trained model and save to S3"""
     try:
         # Download the model file
-        response = requests.get(output_url, timeout=300)  # 5 minute timeout
+        response = requests.get(output_url, timeout=600)  # 10 minute timeout
         response.raise_for_status()
         
         # Save to S3
@@ -139,9 +292,7 @@ def download_and_save_model(output_url, persona_name, persona_id):
 def update_training_status(persona_id, status, **kwargs):
     """Update training status in database"""
     try:
-        update_data = {
-            "training_status": status
-        }
+        update_data = {"training_status": status}
         
         # Add any additional fields
         for key, value in kwargs.items():
@@ -152,68 +303,74 @@ def update_training_status(persona_id, status, **kwargs):
             {"$set": {f"personas.$.{k}": v for k, v in update_data.items()}}
         )
         
-        print(f"Updated training status for persona {persona_id}: {status}")
+        logging.info(f"Updated training status for persona {persona_id}: {status}")
         
     except Exception as e:
-        print(f"Error updating training status: {str(e)}")
+        logging.error(f"Error updating training status: {str(e)}")
 
-def save_persona_to_db(persona_name, email, uploaded_urls, model_s3_url):
-    """Save persona information to database"""
+def delete_training_files_from_s3(uploaded_urls, caption_urls, keep_first_image=True):
+    """Delete all S3 uploaded images and caption files, keeping only the first image"""
+    
+    # Delete images (keep first one if specified)
+    images_to_delete = uploaded_urls[1:] if keep_first_image else uploaded_urls
+    
+    for url in images_to_delete:
+        try:
+            key = url.split(f"{S3_BUCKET}.s3.amazonaws.com/")[-1]
+            s3_client.delete_object(Bucket=S3_BUCKET, Key=key)
+            logging.info(f"Deleted S3 image: {key}")
+        except Exception as e:
+            logging.error(f"Error deleting S3 image {url}: {str(e)}")
+    
+    # Delete all caption files
+    for caption_url in caption_urls:
+        try:
+            key = caption_url.split(f"{S3_BUCKET}.s3.amazonaws.com/")[-1]
+            s3_client.delete_object(Bucket=S3_BUCKET, Key=key)
+            logging.info(f"Deleted S3 caption file: {key}")
+        except Exception as e:
+            logging.error(f"Error deleting S3 caption file {caption_url}: {str(e)}")
+    
+    # Delete the main captions.json file
     try:
-        # Find or create user document
-        user_doc = users_collection.find_one({"email": email})
-        
-        persona_id = str(ObjectId())
-        persona_data = {
-            "_id": ObjectId(persona_id),
-            "persona_name": persona_name,
-            "trigger_word": persona_name.lower().replace(" ", "_"),
-            "uploaded_urls": uploaded_urls[0] if uploaded_urls else None,
-            "model_s3_url": model_s3_url,
-            "training_status": "completed",
-            "created_at": datetime.utcnow(),
-        }
-        
-        if user_doc:
-            # Add persona to existing user
-            users_collection.update_one(
-                {"email": email},
-                {"$push": {"personas": persona_data}}
-            )
-        else:
-            # Create new user with persona
-            new_user = {
-                "email": email,
-                "personas": [persona_data],
-                "created_at": datetime.utcnow(),
-            }
-            users_collection.insert_one(new_user)
-        
-        return persona_id
-        
+        # Extract folder from first image URL
+        first_image_url = uploaded_urls[0] if uploaded_urls else ""
+        if first_image_url:
+            image_key = first_image_url.split(f"{S3_BUCKET}.s3.amazonaws.com/")[-1]
+            folder = os.path.dirname(image_key)
+            captions_json_key = f"{folder}/captions.json"
+            
+            s3_client.delete_object(Bucket=S3_BUCKET, Key=captions_json_key)
+            logging.info(f"Deleted captions.json file: {captions_json_key}")
     except Exception as e:
-        raise Exception(f"Failed to save persona to database: {str(e)}")
+        logging.error(f"Error deleting captions.json file: {str(e)}")
 
 @celery_app.task(bind=True)
-def train_lora_runpod(self, persona_name, uploaded_urls, email):
-    """Main task to train LoRA model on RunPod"""
+def train_lora_runpod_automated(self, persona_name, uploaded_urls, email, image_captions):
+    """Main task to train LoRA model with automated RunPod pod management"""
     
     # Validate inputs
-    if not persona_name or not uploaded_urls or not email:
-        raise ValueError("persona_name, uploaded_urls, and email are required")
+    if not persona_name or not uploaded_urls or not email or not image_captions:
+        raise ValueError("persona_name, uploaded_urls, email, and image_captions are required")
     
     if len(uploaded_urls) < 10 or len(uploaded_urls) > 20:
         raise ValueError("Number of uploaded URLs must be between 10 and 20")
     
+    if len(image_captions) != len(uploaded_urls):
+        raise ValueError("Number of image captions must match number of uploaded URLs")
+    
     persona_id = None
+    pod_id = None
     job_id = None
+    caption_urls = []
+    runpod_manager = RunPodManager()
     
     try:
         # Create initial persona record in database
         persona_id = str(ObjectId())
         user_doc = users_collection.find_one({"email": email})
-
-        # unique trigger word for each persona db id + persona name
+        
+        # Unique trigger word for each persona
         trigger_word = f"{persona_id}_{persona_name.lower().replace(' ', '_')}"
         
         initial_persona_data = {
@@ -242,28 +399,46 @@ def train_lora_runpod(self, persona_name, uploaded_urls, email):
         # Update task progress
         self.update_state(
             state='PROGRESS',
-            meta={'current': 1, 'total': 5, 'status': 'Starting RunPod training...'}
+            meta={'current': 1, 'total': 8, 'status': 'Creating RunPod pod...'}
         )
         
-        # Start training on RunPod
-        job_id = start_runpod_training(persona_name, uploaded_urls)
+        # Step 1: Create RunPod pod
+        pod_id = runpod_manager.create_pod(f"training-{persona_id}")
+        update_training_status(persona_id, "creating_pod", pod_id=pod_id)
         
-        # Update database with job ID
-        update_training_status(persona_id, "training_started", job_id=job_id)
-        
-        # Update task progress
+        # Step 2: Wait for pod to be ready
         self.update_state(
             state='PROGRESS',
-            meta={'current': 2, 'total': 5, 'status': f'Training started. Job ID: {job_id}'}
+            meta={'current': 2, 'total': 8, 'status': 'Waiting for pod to be ready...'}
         )
         
-        # Poll for completion
+        api_url = runpod_manager.wait_for_pod_ready(pod_id)
+        update_training_status(persona_id, "pod_ready", api_url=api_url)
+        
+        # Step 3: Create caption files and start training
+        self.update_state(
+            state='PROGRESS',
+            meta={'current': 3, 'total': 8, 'status': 'Creating caption files and starting training...'}
+        )
+        
+        job_id, caption_urls = start_runpod_training(
+            api_url, persona_name, uploaded_urls, image_captions, trigger_word
+        )
+        
+        update_training_status(persona_id, "training_started", job_id=job_id)
+        
+        # Step 4: Poll for training completion
+        self.update_state(
+            state='PROGRESS',
+            meta={'current': 4, 'total': 8, 'status': f'Training started. Job ID: {job_id}'}
+        )
+        
         max_wait_time = 3600  # 1 hour max wait time
         poll_interval = 30  # Check every 30 seconds
         elapsed_time = 0
         
         while elapsed_time < max_wait_time:
-            status_result = check_runpod_status(job_id)
+            status_result = check_runpod_training_status(api_url, job_id)
             
             if status_result is None:
                 time.sleep(poll_interval)
@@ -278,26 +453,24 @@ def train_lora_runpod(self, persona_name, uploaded_urls, email):
                 if not output:
                     raise Exception("No output received from completed job")
                 
-                # Update task progress
+                # Step 5: Download and save model
                 self.update_state(
                     state='PROGRESS',
-                    meta={'current': 3, 'total': 5, 'status': 'Training completed. Downloading model...'}
+                    meta={'current': 5, 'total': 8, 'status': 'Training completed. Downloading model...'}
                 )
                 
-                # Download and save model
                 model_url = output.get("model_url") or output.get("output_url")
                 if not model_url:
                     raise Exception("No model URL in job output")
                 
                 model_s3_url = download_and_save_model(model_url, persona_name, persona_id)
                 
-                # Update task progress
+                # Step 6: Update database
                 self.update_state(
                     state='PROGRESS',
-                    meta={'current': 4, 'total': 5, 'status': 'Model saved. Updating database...'}
+                    meta={'current': 6, 'total': 8, 'status': 'Model saved. Updating database...'}
                 )
                 
-                # Update database with final results
                 update_training_status(
                     persona_id, 
                     "completed", 
@@ -305,52 +478,57 @@ def train_lora_runpod(self, persona_name, uploaded_urls, email):
                     completed_at=datetime.utcnow()
                 )
                 
-                # Update task progress
+                # Step 7: Clean up training files
                 self.update_state(
                     state='PROGRESS',
-                    meta={'current': 5, 'total': 5, 'status': 'Terminating pod...'}
+                    meta={'current': 7, 'total': 8, 'status': 'Cleaning up training files...'}
                 )
                 
-                # Terminate the pod
-                terminate_runpod_pod(job_id)
+                delete_training_files_from_s3(uploaded_urls, caption_urls, keep_first_image=True)
+                
+                # Step 8: Terminate pod
+                self.update_state(
+                    state='PROGRESS',
+                    meta={'current': 8, 'total': 8, 'status': 'Terminating pod...'}
+                )
+                
+                runpod_manager.terminate_pod(pod_id)
                 
                 return {
                     "status": "success",
                     "persona_id": persona_id,
                     "persona_name": persona_name,
+                    "trigger_word": trigger_word,
                     "model_s3_url": model_s3_url,
                     "job_id": job_id,
-                    "message": "LoRA model training completed successfully"
+                    "pod_id": pod_id,
+                    "images_processed": len(image_captions),
+                    "first_image_url": uploaded_urls[0] if uploaded_urls else None,
+                    "message": "LoRA model training completed successfully with automated pod management"
                 }
             
             elif job_status == "FAILED":
                 error_msg = status_result.get("error", "Unknown error")
                 update_training_status(persona_id, "failed", error_message=error_msg)
-                terminate_runpod_pod(job_id)
-                raise Exception(f"RunPod job failed: {error_msg}")
+                raise Exception(f"Training job failed: {error_msg}")
             
             elif job_status in ["IN_PROGRESS", "IN_QUEUE"]:
-                # Update progress based on job status
                 progress_msg = f"Training in progress... Status: {job_status}"
                 self.update_state(
                     state='PROGRESS',
-                    meta={'current': 2, 'total': 5, 'status': progress_msg}
+                    meta={'current': 4, 'total': 8, 'status': progress_msg}
                 )
                 
-                # Update database status
                 update_training_status(persona_id, "training_in_progress")
-                
                 time.sleep(poll_interval)
                 elapsed_time += poll_interval
             
             else:
-                # Unknown status, continue polling
                 time.sleep(poll_interval)
                 elapsed_time += poll_interval
         
-        # If we exit the loop, it means timeout
+        # Training timed out
         update_training_status(persona_id, "timeout")
-        terminate_runpod_pod(job_id)
         raise Exception("Training timed out after 1 hour")
     
     except Exception as e:
@@ -358,42 +536,46 @@ def train_lora_runpod(self, persona_name, uploaded_urls, email):
         if persona_id:
             update_training_status(persona_id, "failed", error_message=str(e))
         
-        # Terminate pod if it was started
-        if job_id:
-            terminate_runpod_pod(job_id)
+        # Terminate pod if it was created
+        if pod_id:
+            runpod_manager.terminate_pod(pod_id)
         
-        # update the user's 200 credits if the task fails
+        # Clean up any created caption files on failure
+        if caption_urls:
+            delete_training_files_from_s3(uploaded_urls, caption_urls, keep_first_image=True)
+        
+        # Refund the user's 200 credits if the task fails
         user_doc = users_collection.find_one({"email": email})
         if user_doc:
             users_collection.update_one(
                 {"email": email},
-                {"$inc": {"credits": 200}}  # Refund the 200 credits
+                {"$inc": {"credits": 200}}
             )
-        # Log the error
+        
         logging.error(f"Error occurred for user {email}: {e}")
-
-        # Re-raise the exception
         raise self.retry(exc=e, countdown=60, max_retries=3)
-    
 
 # Helper function to start training from API endpoint
-def start_lora_training(persona_name, uploaded_urls, email):
-    """Helper function to start the training task"""
+def start_automated_lora_training(persona_name, uploaded_urls, email, image_captions):
+    """Helper function to start the automated training task"""
     
     # Validate inputs
-    if not persona_name or not uploaded_urls or not email:
-        return {"error": "persona_name, uploaded_urls, and email are required"}
+    if not persona_name or not uploaded_urls or not email or not image_captions:
+        return {"error": "persona_name, uploaded_urls, email, and image_captions are required"}
     
     if len(uploaded_urls) < 10 or len(uploaded_urls) > 20:
         return {"error": "Number of uploaded URLs must be between 10 and 20"}
     
+    if len(image_captions) != len(uploaded_urls):
+        return {"error": "Number of image captions must match number of uploaded URLs"}
+    
     # Start the Celery task
-    task = train_lora_runpod.delay(persona_name, uploaded_urls, email)
+    task = train_lora_runpod_automated.delay(persona_name, uploaded_urls, email, image_captions)
     
     return {
         "task_id": task.id,
         "status": "started",
-        "message": "LoRA training task started successfully"
+        "message": "LoRA training task started with automated pod management"
     }
 
 # Helper function to check training status

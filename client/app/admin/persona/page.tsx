@@ -237,59 +237,7 @@ const Page = () => {
 
     return (
         <div className="min-h-screen">
-            {/* Animated Background Elements */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#B08D57]/5 rounded-full blur-3xl animate-pulse"></div>
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-[#B08D57]/5 rounded-full blur-3xl animate-pulse delay-700"></div>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-[#B08D57]/3 rounded-full blur-3xl animate-pulse delay-1000"></div>
-            </div>
-
             <div className="relative z-10 max-w-6xl mx-auto p-6 space-y-8">
-                {/* Header */}
-                <motion.div
-                    className="text-center space-y-4"
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
-                >
-                    <div className="flex items-center justify-center gap-3">
-                        <Crown className="w-8 h-8 text-[#B08D57]" />
-                        <h1 className="text-4xl font-bold bg-gradient-to-r from-[#B08D57] to-[#B08D57]/80 bg-clip-text text-transparent">
-                            AI Persona Studio
-                        </h1>
-                        <Sparkles className="w-8 h-8 text-[#B08D57]" />
-                    </div>
-                    <p className="text-gray-400 text-lg">Create your personalized AI model with premium quality</p>
-                </motion.div>
-
-                {/* User Stats */}
-                {userData && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
-                    >
-                        <Card className="bg-gray-900/50 border-[#B08D57]/20 backdrop-blur-sm">
-                            <CardContent className="p-4 text-center">
-                                <div className="text-2xl font-bold text-[#B08D57]">{userData.credits || 0}</div>
-                                <div className="text-sm text-gray-400">Credits Available</div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-gray-900/50 border-[#B08D57]/20 backdrop-blur-sm">
-                            <CardContent className="p-4 text-center">
-                                <div className="text-2xl font-bold text-[#B08D57]">{existingPersonas.length}</div>
-                                <div className="text-sm text-gray-400">Personas Created</div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-gray-900/50 border-[#B08D57]/20 backdrop-blur-sm">
-                            <CardContent className="p-4 text-center">
-                                <div className="text-2xl font-bold text-[#B08D57]">200</div>
-                                <div className="text-sm text-gray-400">Credits per Training</div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                )}
 
                 {/* Existing Personas */}
                 <AnimatePresence>
@@ -321,7 +269,7 @@ const Page = () => {
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: index * 0.1 }}
                                     >
-                                        <Card className="bg-gray-900/50 border-[#B08D57]/20 backdrop-blur-sm hover:border-[#B08D57]/40 transition-all duration-300 group">
+                                        <Card className=" border-[#B08D57]/20 backdrop-blur-sm hover:border-[#B08D57]/40 transition-all duration-300 group">
                                             <CardHeader className="pb-3">
                                                 <div className="flex items-start justify-between">
                                                     <div className="flex items-center gap-2">
@@ -361,7 +309,7 @@ const Page = () => {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3, duration: 0.8 }}
                 >
-                    <Card className="bg-gray-900/50 border-[#B08D57]/20 backdrop-blur-sm">
+                    <Card className=" border-[#B08D57]/20 backdrop-blur-sm">
                         <CardHeader>
                             <CardTitle className="text-[#B08D57] flex items-center gap-2">
                                 <Sparkles className="w-5 h-5" />
