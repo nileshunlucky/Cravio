@@ -3,8 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from db import users_collection
 from subscription import router as subscription_router
-from social_manage import router as social_manage_router
-from api.faceswap import router as faceswap_router
 from api.lemon_webhook import router as lemon_webhook_router
 from api.thumb2title import router as thumb2title_router
 from api.persona import router as persona_router
@@ -29,8 +27,6 @@ app.add_middleware(
 
 # add routers
 app.include_router(subscription_router)
-app.include_router(social_manage_router)
-app.include_router(faceswap_router)
 app.include_router(lemon_webhook_router)
 app.include_router(thumb2title_router)
 app.include_router(persona_router)
