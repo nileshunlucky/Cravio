@@ -2,7 +2,6 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
 
 const Page = () => {
     return (
@@ -19,7 +18,7 @@ const Page = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3, duration: 0.6 }}
             >
-                We're Currently Upgrading
+                We are Currently Upgrading
             </motion.h1>
 
             <motion.p
