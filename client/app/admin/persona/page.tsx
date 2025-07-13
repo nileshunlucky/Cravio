@@ -176,7 +176,6 @@ const Page = () => {
                 toast.success('Training started! You can track progress below.')
             } else {
                 throw new Error(data.detail || 'Failed to start training')
-                console.error('Error from server:', data)
             }
 
         } catch (error) {
@@ -361,7 +360,7 @@ const Page = () => {
                                     >
                                         {images.map((img, index) => (
                                             <motion.div
-                                                key={index}
+                                                key={img.preview}
                                                 initial={{ opacity: 0, scale: 0.8 }}
                                                 animate={{ opacity: 1, scale: 1 }}
                                                 transition={{ delay: index * 0.05 }}

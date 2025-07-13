@@ -24,8 +24,8 @@ celery_app.conf.update(
     redis_backend_use_ssl=ssl_context,
     task_track_started=True,
     worker_prefetch_multiplier=1,
-    task_time_limit=300,
-    task_soft_time_limit=240,
+    task_time_limit=7200,  # 2 hours
+    task_soft_time_limit=7100,
     result_expires=3600,
     task_serializer="json",
     accept_content=["json"],
