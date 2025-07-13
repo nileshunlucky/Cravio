@@ -43,8 +43,8 @@ class RunPodManager:
             "gpuCount": 1,
             "gpuTypeIds": ["NVIDIA RTX A4500"],  # Multiple options
             "gpuTypePriority": "availability",
-            "containerDiskInGb": 50,
-            "volumeInGb": 30,
+            "containerDiskInGb": 100,
+            "volumeInGb": 100,
             "volumeMountPath": "/workspace",
             "ports": ["7860/http"],
             "env": {
