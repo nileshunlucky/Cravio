@@ -176,6 +176,7 @@ const Page = () => {
                 toast.success('Training started! You can track progress below.')
             } else {
                 throw new Error(data.detail || 'Failed to start training')
+                console.error('Error from server:', data)
             }
 
         } catch (error) {
