@@ -11,7 +11,7 @@ from db import users_collection
 
 # RunPod Configuration
 RUNPOD_API_KEY = os.getenv("RUNPOD_API_KEY")
-RUNPOD_BASE_URL = "https://rest.runpod.io/v1"  # Updated to correct API endpoint
+RUNPOD_BASE_URL = "https://rest.runpod.io/v1"
 
 # S3 Configuration
 S3_BUCKET = os.getenv("S3_BUCKET_NAME", "my-video-bucket")
@@ -42,19 +42,24 @@ class RunPodManager:
             "name": pod_name,
             "imageName": "thelocallab/fluxgym-flux-lora-training",
             "gpuCount": 1,
-            "gpuTypeIds": ["NVIDIA GeForce RTX 4090"],  # Updated format
+            "gpuTypeIds": ["NVIDIA GeForce RTX A4500"],
+            "gpuTypePriority": "availability",
             "containerDiskInGb": 50,
             "volumeInGb": 30,
             "volumeMountPath": "/workspace",
-            "ports": ["7860/http"],  # Updated format
+            "ports": ["7860/http"],
             "env": {
                 "GRADIO_SERVER_NAME": "0.0.0.0",
                 "GRADIO_SERVER_PORT": "7860",
             },
             "cloudType": "SECURE",
+            "dataCenterIds": ["EU-RO-1", "CA-MTL-1"],
             "supportPublicIp": True,
-            "dataCenterIds": [],  # Let RunPod choose automatically
-            "gpuTypePriority": "availability",
+            "dataCenterPriority": "availability",
+            "computeType": "GPU",
+            "interruptible": False,
+            "locked": False,
+            "templateId": None,
         }
 
         try:
@@ -65,8 +70,13 @@ class RunPodManager:
                 timeout=30,
             )
 
+            logging.info(f"Pod creation response status: {response.status_code}")
+            logging.info(f"Pod creation response body: {response.text}")
+
             if response.status_code != 201:
-                logging.error(f"Pod creation failed: {response.status_code} - {response.text}")
+                logging.error(
+                    f"Pod creation failed: {response.status_code} - {response.text}"
+                )
                 raise Exception(
                     f"Failed to create pod: {response.status_code} - {response.text}"
                 )
@@ -91,32 +101,57 @@ class RunPodManager:
         while time.time() - start_time < max_wait_time:
             try:
                 response = requests.get(
-                    f"{self.base_url}/pods/{pod_id}",  # Updated endpoint format
-                    headers=self.headers, 
-                    timeout=30
+                    f"{self.base_url}/pods/{pod_id}", headers=self.headers, timeout=30
                 )
 
                 if response.status_code == 200:
                     pod_info = response.json()
                     desired_status = pod_info.get("desiredStatus")
-                    
+
+                    logging.info(f"Pod {pod_id} status: {desired_status}")
+
                     # Check if pod is running
                     if desired_status == "RUNNING":
                         # Get port mappings for API access
                         port_mappings = pod_info.get("portMappings", {})
                         public_ip = pod_info.get("publicIp")
-                        
-                        if public_ip and "7860" in port_mappings:
-                            # Build the training API URL using public IP and mapped port
-                            mapped_port = port_mappings["7860"]
-                            api_url = f"http://{public_ip}:{mapped_port}/run"
-                            logging.info(f"Pod {pod_id} is ready. API URL: {api_url}")
-                            return api_url
+
+                        logging.info(f"Pod {pod_id} port mappings: {port_mappings}")
+                        logging.info(f"Pod {pod_id} public IP: {public_ip}")
+
+                        if public_ip and port_mappings:
+                            # Look for port 7860 mapping
+                            mapped_port = None
+                            for port_key, mapped_value in port_mappings.items():
+                                if "7860" in port_key or port_key == "7860":
+                                    mapped_port = mapped_value
+                                    break
+
+                            if mapped_port:
+                                # Build the training API URL using public IP and mapped port
+                                api_url = f"http://{public_ip}:{mapped_port}/run"
+                                logging.info(
+                                    f"Pod {pod_id} is ready. API URL: {api_url}"
+                                )
+                                return api_url
+                            else:
+                                logging.info(
+                                    f"Pod {pod_id} is running but port 7860 mapping not found yet..."
+                                )
                         else:
-                            logging.info(f"Pod {pod_id} is running but port mapping not ready yet...")
-                    
+                            logging.info(
+                                f"Pod {pod_id} is running but no public IP or port mappings yet..."
+                            )
+
                     else:
-                        logging.info(f"Pod {pod_id} status: {desired_status}. Waiting...")
+                        logging.info(
+                            f"Pod {pod_id} status: {desired_status}. Waiting..."
+                        )
+
+                else:
+                    logging.error(
+                        f"Failed to get pod status: {response.status_code} - {response.text}"
+                    )
 
                 time.sleep(15)  # Check every 15 seconds
 
@@ -132,16 +167,20 @@ class RunPodManager:
         """Terminate a RunPod pod"""
         try:
             response = requests.delete(
-                f"{self.base_url}/pods/{pod_id}", 
-                headers=self.headers, 
-                timeout=30
+                f"{self.base_url}/pods/{pod_id}", headers=self.headers, timeout=30
+            )
+
+            logging.info(
+                f"Terminate pod response: {response.status_code} - {response.text}"
             )
 
             if response.status_code in [200, 204]:  # Accept both 200 and 204
                 logging.info(f"Pod {pod_id} terminated successfully")
                 return True
             else:
-                logging.error(f"Failed to terminate pod {pod_id}: {response.status_code} - {response.text}")
+                logging.error(
+                    f"Failed to terminate pod {pod_id}: {response.status_code} - {response.text}"
+                )
                 return False
 
         except Exception as e:
@@ -152,15 +191,15 @@ class RunPodManager:
         """Get current status of a pod"""
         try:
             response = requests.get(
-                f"{self.base_url}/pods/{pod_id}",  # Updated endpoint format
-                headers=self.headers, 
-                timeout=30
+                f"{self.base_url}/pods/{pod_id}", headers=self.headers, timeout=30
             )
 
             if response.status_code == 200:
                 return response.json()
             else:
-                logging.error(f"Failed to get pod status: {response.status_code} - {response.text}")
+                logging.error(
+                    f"Failed to get pod status: {response.status_code} - {response.text}"
+                )
                 return None
 
         except Exception as e:
@@ -171,17 +210,17 @@ class RunPodManager:
         """Get available GPU types for debugging"""
         try:
             response = requests.get(
-                f"{self.base_url}/gpus", 
-                headers=self.headers, 
-                timeout=30
+                f"{self.base_url}/gpus", headers=self.headers, timeout=30
             )
-            
+
             if response.status_code == 200:
                 return response.json()
             else:
-                logging.error(f"Failed to get GPU types: {response.status_code} - {response.text}")
+                logging.error(
+                    f"Failed to get GPU types: {response.status_code} - {response.text}"
+                )
                 return None
-                
+
         except Exception as e:
             logging.error(f"Error getting GPU types: {str(e)}")
             return None
@@ -261,6 +300,9 @@ def start_runpod_training(api_url, persona_name, image_urls, trigger_word):
     }
 
     try:
+        logging.info(f"Starting training at URL: {api_url}")
+        logging.info(f"Training input data: {input_data}")
+
         response = requests.post(
             api_url,
             headers={"Content-Type": "application/json"},
@@ -268,8 +310,14 @@ def start_runpod_training(api_url, persona_name, image_urls, trigger_word):
             timeout=60,
         )
 
+        logging.info(
+            f"Training start response: {response.status_code} - {response.text}"
+        )
+
         if response.status_code != 200:
-            logging.error(f"Training API error: {response.status_code} - {response.text}")
+            logging.error(
+                f"Training API error: {response.status_code} - {response.text}"
+            )
             raise Exception(
                 f"Training API error: {response.status_code} - {response.text}"
             )
@@ -298,14 +346,18 @@ def check_runpod_training_status(api_url, job_id):
     status_url = f"{base_url}/status/{job_id}"
 
     try:
+        logging.info(f"Checking training status at: {status_url}")
+
         response = requests.get(
-            status_url, 
-            headers={"Content-Type": "application/json"}, 
-            timeout=30
+            status_url, headers={"Content-Type": "application/json"}, timeout=30
         )
 
+        logging.info(f"Status check response: {response.status_code} - {response.text}")
+
         if response.status_code != 200:
-            logging.error(f"Status check failed: {response.status_code} - {response.text}")
+            logging.error(
+                f"Status check failed: {response.status_code} - {response.text}"
+            )
             return None
 
         return response.json()
@@ -318,6 +370,8 @@ def check_runpod_training_status(api_url, job_id):
 def download_and_save_model(output_url, persona_name, persona_id):
     """Download the trained model and save to S3"""
     try:
+        logging.info(f"Downloading model from: {output_url}")
+
         # Download the model file
         response = requests.get(output_url, timeout=600)  # 10 minute timeout
         response.raise_for_status()
@@ -438,6 +492,9 @@ def train_lora_runpod_automated(self, persona_name, uploaded_urls, email):
             meta={"current": 1, "total": 8, "status": "Creating RunPod pod..."},
         )
 
+        # Debug - test RunPod connection
+        debug_runpod_connection(email)
+
         # Step 1: Create RunPod pod
         pod_id = runpod_manager.create_pod(f"training-{persona_id}")
         update_training_status(persona_id, "creating_pod", pod_id=pod_id)
@@ -490,6 +547,7 @@ def train_lora_runpod_automated(self, persona_name, uploaded_urls, email):
                 continue
 
             job_status = status_result.get("status")
+            logging.info(f"Training job {job_id} status: {job_status}")
 
             if job_status == "COMPLETED":
                 # Get the output
@@ -606,11 +664,6 @@ def train_lora_runpod_automated(self, persona_name, uploaded_urls, email):
                 uploaded_urls, caption_urls, keep_first_image=True
             )
 
-        # Refund the user's 200 credits if the task fails
-        user_doc = users_collection.find_one({"email": email})
-        if user_doc:
-            users_collection.update_one({"email": email}, {"$inc": {"credits": 200}})
-
         logging.error(f"Error occurred for user {email}: {e}")
         raise self.retry(exc=e, countdown=60, max_retries=3)
 
@@ -660,22 +713,31 @@ def check_training_status(task_id):
 
 
 # Debug function to test RunPod connection
-def debug_runpod_connection():
+def debug_runpod_connection(email):
     """Debug function to test RunPod API connection and available resources"""
     runpod_manager = RunPodManager()
-    
+
     try:
         # Test API connection by getting GPU types
         gpu_types = runpod_manager.get_available_gpu_types()
-        
+
         if gpu_types:
             logging.info("Successfully connected to RunPod API")
             logging.info(f"Available GPU types: {gpu_types}")
+            # add to user's persona
+            users_collection.update_one(
+                {"email": email},
+                {"$set": {"runpod_gpu_types": gpu_types}},
+            )
             return {"status": "success", "gpu_types": gpu_types}
         else:
             logging.error("Failed to get GPU types from RunPod API")
+            users_collection.update_one(
+                {"email": email},
+                {"$set": {"runpod_gpu_types": []}},
+            )
             return {"status": "error", "message": "Failed to connect to RunPod API"}
-            
+
     except Exception as e:
         logging.error(f"RunPod connection test failed: {str(e)}")
         return {"status": "error", "message": str(e)}
