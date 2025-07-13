@@ -1,4 +1,5 @@
 import logging
+import uuid
 import requests
 import time
 import os
@@ -297,7 +298,7 @@ def update_training_status(persona_id, status, **kwargs):
             update_data[key] = value
 
         users_collection.update_one(
-            {"personas._id": ObjectId(persona_id)},
+            {"personas._id":  str(uuid.uuid4())},
             {"$set": {f"personas.$.{k}": v for k, v in update_data.items()}},
         )
 
