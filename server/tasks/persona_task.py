@@ -42,7 +42,7 @@ class RunPodManager:
             "name": pod_name,
             "imageName": "thelocallab/fluxgym-flux-lora-training",
             "gpuCount": 1,
-            "gpuTypeIds": ["NVIDIA GeForce RTX A4500"],
+            "gpuTypeIds": ["NVIDIA RTX A4500"],
             "gpuTypePriority": "availability",
             "containerDiskInGb": 50,
             "volumeInGb": 30,
@@ -59,7 +59,6 @@ class RunPodManager:
             "computeType": "GPU",
             "interruptible": False,
             "locked": False,
-            "templateId": None,
         }
 
         try:
