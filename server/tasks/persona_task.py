@@ -38,10 +38,10 @@ class RunPodManager:
         pod_config = {
             "name": pod_name,
             "imageName": "thelocallab/fluxgym-flux-lora-training",  # Replace with your actual FluxGym image
-            "gpuTypeId": "NVIDIA RTX A4500",  # Or your preferred GPU type
+            "gpuTypeId": "nvidia-rtx-a4500",  # Or your preferred GPU type
             "gpuCount": 1,
             "containerDiskInGb": 50,
-            "volumeInGb": 100,
+            "volumeInGb": 30,
             "ports": "7860/http",  # Expose port 7860 for HTTP
             "env": [
                 {"key": "GRADIO_SERVER_NAME", "value": "0.0.0.0"},
@@ -51,7 +51,7 @@ class RunPodManager:
         
         try:
             response = requests.post(
-                f"{self.base_url}/pod",
+                f"{self.base_url}/pods",
                 headers=self.headers,
                 json=pod_config,
                 timeout=30

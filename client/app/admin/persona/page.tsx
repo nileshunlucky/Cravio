@@ -76,7 +76,6 @@ const Page = () => {
                     if (data.personas && data.personas.length > 0) {
                         setShowExisting(true)
                     }
-                    console.log("User data loaded:", data)
                 } else {
                     console.error("Error from server:", data)
                     toast.error("Failed to load user data")
@@ -95,7 +94,7 @@ const Page = () => {
 
         const pollStatus = async () => {
             try {
-                const response = await fetch(`/api/task-status/${taskId}`)
+                const response = await fetch(`https://cravio-ai.onrender.com/api/task-status/${taskId}`)
                 const status = await response.json()
 
                 setTaskStatus(status)
@@ -165,7 +164,7 @@ const Page = () => {
         })
 
         try {
-            const res = await fetch('/api/train-persona', {
+            const res = await fetch('https://cravio-ai.onrender.com/api/train-persona', {
                 method: 'POST',
                 body: formData,
             })
