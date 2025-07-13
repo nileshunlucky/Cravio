@@ -34,41 +34,31 @@ class RunPodManager:
         self.base_url = RUNPOD_BASE_URL
         self.headers = HEADERS
 
-    def create_pod(self, pod_name="fluxgym-training-pod", is_headless=True):
-        """Create a new RunPod pod for training
-        
-        Args:
-            pod_name: Name for the pod
-            is_headless: If True, creates a headless pod without port mappings
-        """
-        # Base pod configuration
+    def create_pod(self, pod_name="fluxgym-training-pod"):
+        """Create a new RunPod pod for training"""
+        # Updated pod configuration with better GPU selection
         pod_config = {
             "name": pod_name,
             "imageName": "thelocallab/fluxgym-flux-lora-training",
             "gpuCount": 1,
-            "gpuTypeIds": ["NVIDIA RTX A4500"],
+            "gpuTypeIds": ["NVIDIA RTX A4500"],  # Multiple options
             "gpuTypePriority": "availability",
             "containerDiskInGb": 100,
             "volumeInGb": 100,
             "volumeMountPath": "/workspace",
+            "ports": ["7860/http"],
+            "env": {
+                "GRADIO_SERVER_NAME": "0.0.0.0",
+                "GRADIO_SERVER_PORT": "7860",
+            },
             "cloudType": "SECURE",
-            "dataCenterIds": ["EU-RO-1", "CA-MTL-1", "US-TX-1"],
+            "dataCenterIds": ["EU-RO-1", "CA-MTL-1", "US-TX-1"],  # More datacenter options
+            "supportPublicIp": True,
             "dataCenterPriority": "availability",
             "computeType": "GPU",
             "interruptible": False,
             "locked": False,
         }
-
-        # Only add port mappings and public IP for non-headless containers
-        if not is_headless:
-            pod_config.update({
-                "ports": ["7860/http"],
-                "env": {
-                    "GRADIO_SERVER_NAME": "0.0.0.0",
-                    "GRADIO_SERVER_PORT": "7860",
-                },
-                "supportPublicIp": True,
-            })
 
         try:
             response = requests.post(
@@ -92,7 +82,7 @@ class RunPodManager:
             result = response.json()
             pod_id = result["id"]
 
-            logging.info(f"Created pod: {pod_id} (headless: {is_headless})")
+            logging.info(f"Created pod: {pod_id}")
             return pod_id
 
         except requests.exceptions.RequestException as e:
@@ -102,19 +92,8 @@ class RunPodManager:
             logging.error(f"Error creating pod: {str(e)}")
             raise Exception(f"Failed to create RunPod pod: {str(e)}")
 
-    def wait_for_pod_ready(self, pod_id, is_headless=True, max_wait_time=900):
-        """Wait for pod to become ready
-        
-        Args:
-            pod_id: ID of the pod to wait for
-            is_headless: If True, only waits for RUNNING status (no IP/port check)
-                        If False, waits for public IP and port mappings
-            max_wait_time: Maximum time to wait in seconds
-            
-        Returns:
-            For headless pods: pod_id when ready
-            For web pods: API URL when ready
-        """
+    def wait_for_pod_ready(self, pod_id, max_wait_time=900):  # Increased to 15 minutes
+        """Wait for pod to become ready and return connection info"""
         start_time = time.time()
         last_status = None
         consecutive_failures = 0
@@ -142,12 +121,7 @@ class RunPodManager:
 
                     # Check if pod is running
                     if desired_status == "RUNNING":
-                        # FIXED: For headless pods, just return pod_id when RUNNING
-                        if is_headless:
-                            logging.info(f"Headless pod {pod_id} is ready and running")
-                            return pod_id
-                        
-                        # For web-based pods, check for public IP and port mappings
+                        # Get port mappings and public IP
                         port_mappings = pod_info.get("portMappings", {})
                         public_ip = pod_info.get("publicIp")
                         
@@ -169,7 +143,7 @@ class RunPodManager:
                                 
                                 # Test if the API is actually responding
                                 if self._test_api_endpoint(api_url):
-                                    logging.info(f"Web pod {pod_id} is ready. API URL: {api_url}")
+                                    logging.info(f"Pod {pod_id} is ready. API URL: {api_url}")
                                     return api_url
                                 else:
                                     logging.info(f"Pod {pod_id} API not responding yet, continuing to wait...")
@@ -195,7 +169,7 @@ class RunPodManager:
                         raise Exception(f"Failed to get pod status after {max_consecutive_failures} attempts")
 
                 # Wait before next check
-                time.sleep(20)
+                time.sleep(20)  # Increased interval
 
             except requests.exceptions.RequestException as e:
                 consecutive_failures += 1
@@ -217,11 +191,10 @@ class RunPodManager:
                 
                 time.sleep(20)
 
-        pod_type = "headless" if is_headless else "web"
-        raise Exception(f"{pod_type.title()} pod {pod_id} failed to become ready within {max_wait_time} seconds")
+        raise Exception(f"Pod {pod_id} failed to become ready within {max_wait_time} seconds")
 
     def _test_api_endpoint(self, api_url):
-        """Test if the API endpoint is responding (only used for web pods)"""
+        """Test if the API endpoint is responding"""
         try:
             # Test with a simple GET request to check if the service is up
             test_url = api_url.replace("/run", "/health")  # Try health endpoint first
@@ -237,76 +210,6 @@ class RunPodManager:
         except Exception as e:
             logging.debug(f"API endpoint test failed: {str(e)}")
             return False
-
-    def submit_headless_job(self, pod_id, job_data):
-        """Submit a job to a headless pod via RunPod's job API
-        
-        Args:
-            pod_id: ID of the running pod
-            job_data: Dictionary containing job parameters
-            
-        Returns:
-            job_id: ID of the submitted job
-        """
-        try:
-            # Submit job via RunPod's job API
-            response = requests.post(
-                f"{self.base_url}/pods/{pod_id}/jobs",
-                headers=self.headers,
-                json={"input": job_data},
-                timeout=60,
-            )
-
-            logging.info(f"Job submission response: {response.status_code} - {response.text}")
-
-            if response.status_code != 200:
-                logging.error(f"Job submission failed: {response.status_code} - {response.text}")
-                raise Exception(f"Failed to submit job: {response.status_code} - {response.text}")
-
-            result = response.json()
-            job_id = result.get("id")
-
-            if not job_id:
-                raise Exception(f"No job ID returned from job submission: {result}")
-
-            logging.info(f"Job submitted successfully with ID: {job_id}")
-            return job_id
-
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Network error submitting job: {str(e)}")
-            raise Exception(f"Network error submitting job: {str(e)}")
-        except Exception as e:
-            logging.error(f"Error submitting job: {str(e)}")
-            raise Exception(f"Failed to submit job: {str(e)}")
-
-    def check_job_status(self, pod_id, job_id):
-        """Check the status of a headless job
-        
-        Args:
-            pod_id: ID of the pod running the job
-            job_id: ID of the job to check
-            
-        Returns:
-            Dictionary containing job status and output
-        """
-        try:
-            response = requests.get(
-                f"{self.base_url}/pods/{pod_id}/jobs/{job_id}",
-                headers=self.headers,
-                timeout=30,
-            )
-
-            logging.info(f"Job status check response: {response.status_code} - {response.text}")
-
-            if response.status_code != 200:
-                logging.error(f"Job status check failed: {response.status_code} - {response.text}")
-                return None
-
-            return response.json()
-
-        except Exception as e:
-            logging.error(f"Error checking job status: {str(e)}")
-            return None
 
     def terminate_pod(self, pod_id):
         """Terminate a RunPod pod"""
@@ -369,10 +272,10 @@ class RunPodManager:
             return None
 
 
-# FIXED: Updated Celery task to work with headless containers
+# Update the Celery task with better error handling and increased time limits
 @celery_app.task(bind=True, time_limit=7200, soft_time_limit=7100)  # 2 hours total
 def train_lora_runpod_automated(self, persona_name, uploaded_urls, email):
-    """Main task to train LoRA model with automated RunPod pod management (headless mode)"""
+    """Main task to train LoRA model with automated RunPod pod management"""
 
     # Validate inputs
     if not persona_name or not uploaded_urls or not email:
@@ -420,69 +323,36 @@ def train_lora_runpod_automated(self, persona_name, uploaded_urls, email):
         # Update task progress
         self.update_state(
             state="PROGRESS",
-            meta={"current": 1, "total": 8, "status": "Creating headless RunPod pod..."},
+            meta={"current": 1, "total": 8, "status": "Creating RunPod pod..."},
         )
 
-        # Step 1: Create headless RunPod pod
-        pod_id = runpod_manager.create_pod(f"training-{persona_id}", is_headless=True)
+        # Step 1: Create RunPod pod
+        pod_id = runpod_manager.create_pod(f"training-{persona_id}")
         update_training_status(persona_id, "creating_pod", pod_id=pod_id)
 
-        # Step 2: Wait for pod to be ready (FIXED: headless mode)
+        # Step 2: Wait for pod to be ready (this is the critical step)
         self.update_state(
             state="PROGRESS",
-            meta={"current": 2, "total": 8, "status": "Waiting for headless pod to be ready..."},
+            meta={"current": 2, "total": 8, "status": "Waiting for pod to be ready (this may take 5-15 minutes)..."},
         )
 
-        # FIXED: Wait for headless pod (no IP/port required)
-        pod_ready = runpod_manager.wait_for_pod_ready(pod_id, is_headless=True)
-        update_training_status(persona_id, "pod_ready", pod_id=pod_ready)
+        api_url = runpod_manager.wait_for_pod_ready(pod_id)
+        update_training_status(persona_id, "pod_ready", api_url=api_url)
 
-        # Step 3: Create caption files and submit job
+        # Step 3: Create caption files and start training
         self.update_state(
             state="PROGRESS",
             meta={
                 "current": 3,
                 "total": 8,
-                "status": "Pod ready! Creating caption files and submitting training job...",
+                "status": "Pod ready! Creating caption files and starting training...",
             },
         )
 
-        # Create caption files
-        caption_urls = create_caption_files_for_fluxgym(uploaded_urls, persona_name)
+        job_id, caption_urls = start_runpod_training(
+            api_url, persona_name, uploaded_urls, trigger_word
+        )
 
-        # FIXED: Submit job to headless pod instead of calling web API
-        job_data = {
-            "steps": 1000,
-            "lora_rank": 16,
-            "optimizer": "adamw8bit",
-            "batch_size": 1,
-            "learning_rate": 1e-4,
-            "resolution": "512,768,1024",
-            "trigger_word": trigger_word,
-            "input_images": uploaded_urls,
-            "caption_files": caption_urls,
-            "model_name": f"lora_{persona_name.lower().replace(' ', '_')}",
-            "training_comment": f"LoRA training for {persona_name}",
-            "pretrained_model_name_or_path": "frankjoshua/realvisxlV50_v50LightningBakedvae",
-            "max_train_epochs": 20,
-            "save_every_n_epochs": 5,
-            "mixed_precision": "fp16",
-            "save_precision": "fp16",
-            "caption_extension": ".txt",
-            "shuffle_caption": True,
-            "cache_latents": True,
-            "cache_latents_to_disk": True,
-            "enable_bucket": True,
-            "min_bucket_reso": 256,
-            "max_bucket_reso": 2048,
-            "bucket_reso_steps": 64,
-            "bucket_no_upscale": True,
-            "use_blip_captions": True,
-            "caption_dropout_rate": 0.1,
-            "caption_tag_dropout_rate": 0.1,
-        }
-
-        job_id = runpod_manager.submit_headless_job(pod_id, job_data)
         update_training_status(persona_id, "training_started", job_id=job_id)
 
         # Step 4: Poll for training completion
@@ -491,7 +361,7 @@ def train_lora_runpod_automated(self, persona_name, uploaded_urls, email):
             meta={
                 "current": 4,
                 "total": 8,
-                "status": f"Training job submitted successfully! Job ID: {job_id}",
+                "status": f"Training started successfully! Job ID: {job_id}",
             },
         )
 
@@ -501,8 +371,7 @@ def train_lora_runpod_automated(self, persona_name, uploaded_urls, email):
 
         while elapsed_time < max_wait_time:
             try:
-                # FIXED: Check job status using headless API
-                status_result = runpod_manager.check_job_status(pod_id, job_id)
+                status_result = check_runpod_training_status(api_url, job_id)
 
                 if status_result is None:
                     logging.warning(f"Could not get training status for job {job_id}")
@@ -648,6 +517,9 @@ def train_lora_runpod_automated(self, persona_name, uploaded_urls, email):
         raise self.retry(exc=e, countdown=min(60 * (2 ** self.request.retries), 300), max_retries=2)
 
 
+# Keep the rest of your existing functions (create_caption_files_for_fluxgym, start_runpod_training, etc.)
+# They remain the same...
+
 def create_caption_files_for_fluxgym(image_urls, persona_name):
     """Create individual caption .txt files for each image and upload to S3"""
     caption_urls = []
@@ -681,8 +553,112 @@ def create_caption_files_for_fluxgym(image_urls, persona_name):
     return caption_urls
 
 
-# REMOVED: start_runpod_training and check_runpod_training_status functions
-# These were for web-based training and are replaced by headless job submission
+def start_runpod_training(api_url, persona_name, image_urls, trigger_word):
+    """Start training on RunPod using the dynamic API URL"""
+
+    # Create caption files for FluxGym
+    caption_urls = create_caption_files_for_fluxgym(image_urls, persona_name)
+
+    # Prepare input for FluxGym
+    input_data = {
+        "input": {
+            "steps": 1000,
+            "lora_rank": 16,
+            "optimizer": "adamw8bit",
+            "batch_size": 1,
+            "learning_rate": 1e-4,
+            "resolution": "512,768,1024",
+            "trigger_word": trigger_word,
+            "input_images": image_urls,
+            "caption_files": caption_urls,
+            "model_name": f"lora_{persona_name.lower().replace(' ', '_')}",
+            "training_comment": f"LoRA training for {persona_name}",
+            "pretrained_model_name_or_path": "frankjoshua/realvisxlV50_v50LightningBakedvae",
+            "max_train_epochs": 20,
+            "save_every_n_epochs": 5,
+            "mixed_precision": "fp16",
+            "save_precision": "fp16",
+            "caption_extension": ".txt",
+            "shuffle_caption": True,
+            "cache_latents": True,
+            "cache_latents_to_disk": True,
+            "enable_bucket": True,
+            "min_bucket_reso": 256,
+            "max_bucket_reso": 2048,
+            "bucket_reso_steps": 64,
+            "bucket_no_upscale": True,
+            "use_blip_captions": True,
+            "caption_dropout_rate": 0.1,
+            "caption_tag_dropout_rate": 0.1,
+        }
+    }
+
+    try:
+        logging.info(f"Starting training at URL: {api_url}")
+        logging.info(f"Training input data: {input_data}")
+
+        response = requests.post(
+            api_url,
+            headers={"Content-Type": "application/json"},
+            json=input_data,
+            timeout=60,
+        )
+
+        logging.info(
+            f"Training start response: {response.status_code} - {response.text}"
+        )
+
+        if response.status_code != 200:
+            logging.error(
+                f"Training API error: {response.status_code} - {response.text}"
+            )
+            raise Exception(
+                f"Training API error: {response.status_code} - {response.text}"
+            )
+
+        result = response.json()
+        job_id = result.get("id")
+
+        if not job_id:
+            raise Exception(f"No job ID returned from training API: {result}")
+
+        logging.info(f"Training job started with ID: {job_id}")
+        return job_id, caption_urls
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Network error starting training: {str(e)}")
+        raise Exception(f"Network error starting training: {str(e)}")
+    except Exception as e:
+        logging.error(f"Error starting training: {str(e)}")
+        raise Exception(f"Failed to start training: {str(e)}")
+
+
+def check_runpod_training_status(api_url, job_id):
+    """Check the status of a training job"""
+    # Remove '/run' and add '/status/{job_id}'
+    base_url = api_url.replace("/run", "")
+    status_url = f"{base_url}/status/{job_id}"
+
+    try:
+        logging.info(f"Checking training status at: {status_url}")
+
+        response = requests.get(
+            status_url, headers={"Content-Type": "application/json"}, timeout=30
+        )
+
+        logging.info(f"Status check response: {response.status_code} - {response.text}")
+
+        if response.status_code != 200:
+            logging.error(
+                f"Status check failed: {response.status_code} - {response.text}"
+            )
+            return None
+
+        return response.json()
+
+    except Exception as e:
+        logging.error(f"Error checking training status: {str(e)}")
+        return None
 
 
 def download_and_save_model(output_url, persona_name, persona_id):
@@ -758,7 +734,6 @@ def delete_training_files_from_s3(uploaded_urls, caption_urls, keep_first_image=
 
 
 # Helper function to start training from API endpoint
-# Helper function to start training from API endpoint
 def start_automated_lora_training(persona_name, uploaded_urls, email):
     """Helper function to start the automated training task"""
 
@@ -775,7 +750,7 @@ def start_automated_lora_training(persona_name, uploaded_urls, email):
     return {
         "task_id": task.id,
         "status": "started",
-        "message": "LoRA training task started with automated pod management (headless mode)",
+        "message": "LoRA training task started with automated pod management",
     }
 
 
@@ -783,269 +758,51 @@ def start_automated_lora_training(persona_name, uploaded_urls, email):
 def check_training_status(task_id):
     """Check the status of a training task"""
     try:
-        # Get task result from Celery
         result = celery_app.AsyncResult(task_id)
-        
-        if result.state == 'PENDING':
+
+        if result.state == "PENDING":
+            return {"state": result.state, "status": "Task is waiting to be processed"}
+        elif result.state == "PROGRESS":
             return {
-                "task_id": task_id,
-                "status": "pending",
-                "message": "Task is waiting to be processed"
+                "state": result.state,
+                "current": result.info.get("current", 0),
+                "total": result.info.get("total", 1),
+                "status": result.info.get("status", ""),
             }
-        elif result.state == 'PROGRESS':
-            return {
-                "task_id": task_id,
-                "status": "progress",
-                "current": result.info.get('current', 0),
-                "total": result.info.get('total', 8),
-                "message": result.info.get('status', 'Processing...')
-            }
-        elif result.state == 'SUCCESS':
-            return {
-                "task_id": task_id,
-                "status": "success",
-                "result": result.result
-            }
-        elif result.state == 'FAILURE':
-            return {
-                "task_id": task_id,
-                "status": "failed",
-                "error": str(result.info)
-            }
-        elif result.state == 'RETRY':
-            return {
-                "task_id": task_id,
-                "status": "retry",
-                "message": "Task is being retried after failure"
-            }
+        elif result.state == "SUCCESS":
+            return {"state": result.state, "result": result.result}
         else:
-            return {
-                "task_id": task_id,
-                "status": result.state.lower(),
-                "message": f"Task state: {result.state}"
-            }
-            
+            return {"state": result.state, "error": str(result.info)}
     except Exception as e:
-        logging.error(f"Error checking training status: {str(e)}")
-        return {
-            "task_id": task_id,
-            "status": "error",
-            "error": f"Failed to check task status: {str(e)}"
-        }
+        return {"state": "ERROR", "error": str(e)}
 
 
-def get_persona_training_status(persona_id):
-    """Get training status for a specific persona from database"""
+# Debug function to test RunPod connection
+def debug_runpod_connection(email):
+    """Debug function to test RunPod API connection and available resources"""
+    runpod_manager = RunPodManager()
+
     try:
-        user_doc = users_collection.find_one({"personas.id": persona_id})
-        
-        if not user_doc:
-            return {"error": "Persona not found"}
-        
-        # Find the specific persona
-        persona = None
-        for p in user_doc.get("personas", []):
-            if p.get("id") == persona_id:
-                persona = p
-                break
-        
-        if not persona:
-            return {"error": "Persona not found"}
-        
-        return {
-            "persona_id": persona_id,
-            "persona_name": persona.get("persona_name"),
-            "training_status": persona.get("training_status"),
-            "model_s3_url": persona.get("model_s3_url"),
-            "trigger_word": persona.get("trigger_word"),
-            "created_at": persona.get("created_at"),
-            "completed_at": persona.get("completed_at"),
-            "error_message": persona.get("error_message"),
-            "job_id": persona.get("job_id"),
-            "pod_id": persona.get("pod_id")
-        }
-        
-    except Exception as e:
-        logging.error(f"Error getting persona training status: {str(e)}")
-        return {"error": f"Failed to get training status: {str(e)}"}
+        # Test API connection by getting GPU types
+        gpu_types = runpod_manager.get_available_gpu_types()
 
-
-def cancel_training_task(task_id):
-    """Cancel a running training task"""
-    try:
-        # Revoke the task
-        celery_app.control.revoke(task_id, terminate=True)
-        
-        # Get task result to check if it was successfully cancelled
-        result = celery_app.AsyncResult(task_id)
-        
-        return {
-            "task_id": task_id,
-            "status": "cancelled",
-            "message": "Training task has been cancelled"
-        }
-        
-    except Exception as e:
-        logging.error(f"Error cancelling training task: {str(e)}")
-        return {
-            "task_id": task_id,
-            "status": "error",
-            "error": f"Failed to cancel task: {str(e)}"
-        }
-
-
-def get_user_personas(email):
-    """Get all personas for a user"""
-    try:
-        user_doc = users_collection.find_one({"email": email})
-        
-        if not user_doc:
-            return {"personas": []}
-        
-        personas = user_doc.get("personas", [])
-        
-        # Return only essential fields for listing
-        persona_list = []
-        for persona in personas:
-            persona_info = {
-                "id": persona.get("id"),
-                "persona_name": persona.get("persona_name"),
-                "trigger_word": persona.get("trigger_word"),
-                "training_status": persona.get("training_status"),
-                "model_s3_url": persona.get("model_s3_url"),
-                "created_at": persona.get("created_at"),
-                "completed_at": persona.get("completed_at"),
-                "uploaded_urls": persona.get("uploaded_urls")  # First image URL
-            }
-            persona_list.append(persona_info)
-        
-        return {"personas": persona_list}
-        
-    except Exception as e:
-        logging.error(f"Error getting user personas: {str(e)}")
-        return {"error": f"Failed to get personas: {str(e)}"}
-
-
-def cleanup_failed_training(persona_id):
-    """Clean up resources from a failed training session"""
-    try:
-        # Get persona details
-        user_doc = users_collection.find_one({"personas.id": persona_id})
-        if not user_doc:
-            return {"error": "Persona not found"}
-        
-        persona = None
-        for p in user_doc.get("personas", []):
-            if p.get("id") == persona_id:
-                persona = p
-                break
-        
-        if not persona:
-            return {"error": "Persona not found"}
-        
-        # Terminate pod if it exists
-        pod_id = persona.get("pod_id")
-        if pod_id:
-            runpod_manager = RunPodManager()
-            runpod_manager.terminate_pod(pod_id)
-            logging.info(f"Terminated pod {pod_id} for failed training {persona_id}")
-        
-        # Clean up any uploaded training files
-        uploaded_urls = persona.get("uploaded_urls", [])
-        if uploaded_urls:
-            # Create caption URLs based on uploaded URLs
-            caption_urls = []
-            for image_url in uploaded_urls:
-                try:
-                    image_key = image_url.split(f"{S3_BUCKET}.s3.amazonaws.com/")[-1]
-                    caption_key = os.path.splitext(image_key)[0] + ".txt"
-                    caption_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{caption_key}"
-                    caption_urls.append(caption_url)
-                except:
-                    continue
-            
-            delete_training_files_from_s3(uploaded_urls, caption_urls, keep_first_image=True)
-            logging.info(f"Cleaned up training files for persona {persona_id}")
-        
-        # Update status to cleaned up
-        update_training_status(persona_id, "cleaned_up")
-        
-        return {
-            "persona_id": persona_id,
-            "status": "cleaned_up",
-            "message": "Training resources cleaned up successfully"
-        }
-        
-    except Exception as e:
-        logging.error(f"Error cleaning up failed training: {str(e)}")
-        return {"error": f"Failed to cleanup training: {str(e)}"}
-
-
-def get_runpod_gpu_availability():
-    """Get available GPU types and their availability"""
-    try:
-        runpod_manager = RunPodManager()
-        gpu_info = runpod_manager.get_available_gpu_types()
-        
-        if gpu_info:
-            return {
-                "status": "success",
-                "gpu_types": gpu_info
-            }
+        if gpu_types:
+            logging.info("Successfully connected to RunPod API")
+            logging.info(f"Available GPU types: {gpu_types}")
+            # add to user's persona
+            users_collection.update_one(
+                {"email": email},
+                {"$set": {"runpod_gpu_types": gpu_types}},
+            )
+            return {"status": "success", "gpu_types": gpu_types}
         else:
-            return {
-                "status": "error",
-                "message": "Failed to get GPU availability"
-            }
-            
+            logging.error("Failed to get GPU types from RunPod API")
+            users_collection.update_one(
+                {"email": email},
+                {"$set": {"runpod_gpu_types": []}},
+            )
+            return {"status": "error", "message": "Failed to connect to RunPod API"}
+
     except Exception as e:
-        logging.error(f"Error getting GPU availability: {str(e)}")
-        return {
-            "status": "error",
-            "error": f"Failed to get GPU availability: {str(e)}"
-        }
-
-
-# Health check function
-def health_check():
-    """Basic health check for the training service"""
-    try:
-        # Check database connection
-        users_collection.find_one({}, {"_id": 1})
-        
-        # Check S3 connection
-        s3_client.head_bucket(Bucket=S3_BUCKET)
-        
-        # Check RunPod API (get GPU types)
-        runpod_manager = RunPodManager()
-        gpu_info = runpod_manager.get_available_gpu_types()
-        
-        return {
-            "status": "healthy",
-            "database": "connected",
-            "s3": "connected",
-            "runpod_api": "connected" if gpu_info else "error",
-            "timestamp": datetime.utcnow().isoformat()
-        }
-        
-    except Exception as e:
-        logging.error(f"Health check failed: {str(e)}")
-        return {
-            "status": "unhealthy",
-            "error": str(e),
-            "timestamp": datetime.utcnow().isoformat()
-        }
-
-
-# Export main functions for use in API
-__all__ = [
-    'start_automated_lora_training',
-    'check_training_status',
-    'get_persona_training_status',
-    'cancel_training_task',
-    'get_user_personas',
-    'cleanup_failed_training',
-    'get_runpod_gpu_availability',
-    'health_check',
-    'RunPodManager'
-]
+        logging.error(f"RunPod connection test failed: {str(e)}")
+        return {"status": "error", "message": str(e)}
