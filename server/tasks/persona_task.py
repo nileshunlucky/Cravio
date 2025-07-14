@@ -28,7 +28,7 @@ HEADERS = {
     "Content-Type": "application/json",
 }
 
-def wait_for_dns(hostname, timeout=300, interval=5):
+def wait_for_dns(hostname, timeout=600, interval=10):
         start = time.time()
         while time.time() - start < timeout:
             try:
@@ -37,6 +37,25 @@ def wait_for_dns(hostname, timeout=300, interval=5):
             except Exception:
                 time.sleep(interval)
         raise Exception(f"DNS for {hostname} not available after {timeout} seconds")
+
+def wait_for_http_response(url, timeout=300, interval=15):
+    """Wait for HTTP endpoint to respond"""
+    start = time.time()
+    while time.time() - start < timeout:
+        try:
+            response = requests.get(url, timeout=10, verify=False)
+            if response.status_code < 500:  # Any non-server-error response
+                logging.info(f"HTTP endpoint responding: {url} (status: {response.status_code})")
+                return True
+        except requests.exceptions.RequestException as e:
+            logging.debug(f"HTTP request failed for {url}: {e}")
+        except Exception as e:
+            logging.warning(f"Unexpected error testing HTTP endpoint {url}: {e}")
+        
+        time.sleep(interval)
+    
+    raise Exception(f"HTTP endpoint {url} not responding after {timeout} seconds")
+
 
 
 class RunPodManager:
@@ -109,11 +128,11 @@ class RunPodManager:
             raise Exception(f"Failed to create RunPod pod: {str(e)}")
 
         
-    def wait_for_pod_ready(self, pod_id, max_wait_time=900):
+def wait_for_pod_ready(self, pod_id, max_wait_time=1200):
         """
-        Wait for pod to be RUNNING, then return the API URL using the standard RunPod DNS/port.
+        Wait for pod to be RUNNING, then return the API URL.
+        Fixed to use correct port mapping and better error handling.
         """
-        import time
         start_time = time.time()
         last_status = None
         consecutive_failures = 0
@@ -126,39 +145,70 @@ class RunPodManager:
                     headers=self.headers,
                     timeout=30
                 )
+                
                 if response.status_code == 200:
+                    consecutive_failures = 0  # Reset failure count on success
                     pod_info = response.json()
                     desired_status = pod_info.get("desiredStatus")
+                    
                     if desired_status != last_status:
                         logging.info(f"Pod {pod_id} status changed: {last_status} -> {desired_status}")
                         last_status = desired_status
 
                     if desired_status == "RUNNING":
-                        # Build the API URL using RunPod DNS and standard port 10000
-                        api_url = f"https://{pod_id}.runpod.run:10000/run"
-                        hostname = f"{pod_id}.runpod.run"
-                        logging.info(f"Pod {pod_id} is RUNNING. Waiting for DNS to be available for {hostname}...")
-                        try:
-                            wait_for_dns(hostname, timeout=300, interval=5)
-                            logging.info(f"DNS for {hostname} is now available.")
-                        except Exception as e:
-                            logging.warning(f"DNS wait failed: {e} — proceeding to try API anyway.")
-                            # You can choose to raise here, or just proceed and let the next step fail if DNS is still not ready
-                        # Optionally, check if the API is up
-                        for _ in range(30):  # Try for up to 5 minutes
+                        # Get the correct URL from pod info
+                        pod_info = response.json()
+                        
+                        # Try to get public IP first
+                        public_ip = pod_info.get("publicIp")
+                        if public_ip:
+                            # Use direct IP access
+                            api_url = f"http://{public_ip}:7860/run"
+                            logging.info(f"Pod {pod_id} is RUNNING. Using direct IP: {api_url}")
+                            
+                            # Test the endpoint
                             try:
-                                health_url = api_url.replace("/run", "/health")
-                                resp = requests.get(health_url, timeout=5, verify=False)
-                                if resp.status_code == 200:
+                                wait_for_http_response(f"http://{public_ip}:7860", timeout=300)
+                                return api_url
+                            except Exception as e:
+                                logging.warning(f"Direct IP access failed: {e}")
+                        
+                        # Fallback to RunPod DNS
+                        hostname = f"{pod_id}.runpod.run"
+                        logging.info(f"Pod {pod_id} is RUNNING. Trying DNS hostname: {hostname}")
+                        
+                        try:
+                            # Wait for DNS resolution
+                            wait_for_dns(hostname, timeout=600, interval=10)
+                            
+                            # Try different port configurations
+                            possible_urls = [
+                                f"https://{hostname}:7860/run",  # Direct port
+                                f"https://{hostname}/run",      # Proxied
+                                f"http://{hostname}:7860/run",  # HTTP fallback
+                            ]
+                            
+                            for api_url in possible_urls:
+                                try:
+                                    logging.info(f"Testing API endpoint: {api_url}")
+                                    wait_for_http_response(api_url, timeout=120)
                                     logging.info(f"Pod {pod_id} is ready. API URL: {api_url}")
                                     return api_url
-                            except Exception:
-                                pass
-                            time.sleep(10)
-                        # If /health never returns 200, just return the URL anyway
-                        logging.warning(f"Pod {pod_id} RUNNING, but API not responding on /health. Returning URL anyway.")
-                        return api_url
-
+                                except Exception as e:
+                                    logging.warning(f"API endpoint {api_url} failed: {e}")
+                                    continue
+                            
+                            # If all endpoints fail, return the most likely one
+                            api_url = f"https://{hostname}:7860/run"
+                            logging.warning(f"All endpoint tests failed. Returning default URL: {api_url}")
+                            return api_url
+                            
+                        except Exception as e:
+                            logging.error(f"DNS resolution failed: {e}")
+                            # Return a URL anyway and let the caller handle it
+                            api_url = f"https://{pod_id}.runpod.run:7860/run"
+                            logging.warning(f"DNS failed, returning URL anyway: {api_url}")
+                            return api_url
 
                     elif desired_status == "FAILED":
                         raise Exception(f"Pod {pod_id} failed to start")
@@ -170,14 +220,12 @@ class RunPodManager:
                     logging.error(f"Failed to get pod status (attempt {consecutive_failures}): {response.status_code} - {response.text}")
                     if consecutive_failures >= max_consecutive_failures:
                         raise Exception(f"Failed to get pod status after {max_consecutive_failures} attempts")
-                time.sleep(10)
 
             except requests.exceptions.RequestException as e:
                 consecutive_failures += 1
                 logging.error(f"Network error checking pod status (attempt {consecutive_failures}): {str(e)}")
                 if consecutive_failures >= max_consecutive_failures:
                     raise Exception(f"Network errors after {max_consecutive_failures} attempts: {str(e)}")
-                time.sleep(10)
             except Exception as e:
                 if "Pod" in str(e) and "failed to start" in str(e):
                     raise  # Re-raise pod failure exceptions
@@ -185,32 +233,13 @@ class RunPodManager:
                 logging.error(f"Error checking pod status (attempt {consecutive_failures}): {str(e)}")
                 if consecutive_failures >= max_consecutive_failures:
                     raise Exception(f"Errors after {max_consecutive_failures} attempts: {str(e)}")
-                time.sleep(10)
+
+            time.sleep(15)  # Wait 15 seconds between checks
 
         raise Exception(f"Pod {pod_id} failed to become ready within {max_wait_time} seconds")
 
-    def _test_api_endpoint(self, api_url):
-        """Test if the API endpoint is responding"""
-        try:
-            # Test with a simple GET request to check if the service is up
-            test_url = api_url.replace("/run", "/health")  # Try health endpoint first
-            response = requests.get(test_url, timeout=10)
 
-            if response.status_code == 200:
-                return True
-
-            # If health endpoint doesn't exist, try the main URL
-            response = requests.get(api_url.replace("/run", ""), timeout=10)
-            return response.status_code in [
-                200,
-                404,
-            ]  # 404 is fine, means service is up
-
-        except Exception as e:
-            logging.debug(f"API endpoint test failed: {str(e)}")
-            return False
-
-    def terminate_pod(self, pod_id):
+def terminate_pod(self, pod_id):
         """Terminate a RunPod pod"""
         try:
             response = requests.delete(
@@ -234,7 +263,7 @@ class RunPodManager:
             logging.error(f"Error terminating pod {pod_id}: {str(e)}")
             return False
 
-    def get_pod_status(self, pod_id):
+def get_pod_status(self, pod_id):
         """Get current status of a pod"""
         try:
             response = requests.get(
@@ -253,7 +282,7 @@ class RunPodManager:
             logging.error(f"Error getting pod status: {str(e)}")
             return None
 
-    def get_available_gpu_types(self):
+def get_available_gpu_types(self):
         """Get available GPU types for debugging"""
         try:
             response = requests.get(
