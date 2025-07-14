@@ -7,6 +7,8 @@ import boto3
 from datetime import datetime
 from celery_config import celery_app
 from db import users_collection
+import socket
+import time
 
 # RunPod Configuration
 RUNPOD_API_KEY = os.getenv("RUNPOD_API_KEY")
@@ -25,6 +27,16 @@ HEADERS = {
     "Authorization": f"Bearer {RUNPOD_API_KEY}",
     "Content-Type": "application/json",
 }
+
+def wait_for_dns(hostname, timeout=120, interval=5):
+        start = time.time()
+        while time.time() - start < timeout:
+            try:
+                socket.gethostbyname(hostname)
+                return True
+            except Exception:
+                time.sleep(interval)
+        raise Exception(f"DNS for {hostname} not available after {timeout} seconds")
 
 
 class RunPodManager:
@@ -95,6 +107,7 @@ class RunPodManager:
         except Exception as e:
             logging.error(f"Error creating pod: {str(e)}")
             raise Exception(f"Failed to create RunPod pod: {str(e)}")
+
         
     def wait_for_pod_ready(self, pod_id, max_wait_time=900):
         """
@@ -123,6 +136,14 @@ class RunPodManager:
                     if desired_status == "RUNNING":
                         # Build the API URL using RunPod DNS and standard port 10000
                         api_url = f"https://{pod_id}.runpod.run:10000/run"
+                        hostname = f"{pod_id}.runpod.run"
+                        logging.info(f"Pod {pod_id} is RUNNING. Waiting for DNS to be available for {hostname}...")
+                        try:
+                            wait_for_dns(hostname, timeout=120, interval=5)
+                            logging.info(f"DNS for {hostname} is now available.")
+                        except Exception as e:
+                            logging.warning(str(e))
+                            # You can choose to raise here, or just proceed and let the next step fail if DNS is still not ready
                         # Optionally, check if the API is up
                         for _ in range(30):  # Try for up to 5 minutes
                             try:
@@ -137,6 +158,7 @@ class RunPodManager:
                         # If /health never returns 200, just return the URL anyway
                         logging.warning(f"Pod {pod_id} RUNNING, but API not responding on /health. Returning URL anyway.")
                         return api_url
+
 
                     elif desired_status == "FAILED":
                         raise Exception(f"Pod {pod_id} failed to start")
