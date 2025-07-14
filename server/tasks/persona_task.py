@@ -28,7 +28,7 @@ HEADERS = {
     "Content-Type": "application/json",
 }
 
-def wait_for_dns(hostname, timeout=120, interval=5):
+def wait_for_dns(hostname, timeout=300, interval=5):
         start = time.time()
         while time.time() - start < timeout:
             try:
@@ -142,7 +142,7 @@ class RunPodManager:
                             wait_for_dns(hostname, timeout=120, interval=5)
                             logging.info(f"DNS for {hostname} is now available.")
                         except Exception as e:
-                            logging.warning(str(e))
+                            logging.warning(f"DNS wait failed: {e} — proceeding to try API anyway.")
                             # You can choose to raise here, or just proceed and let the next step fail if DNS is still not ready
                         # Optionally, check if the API is up
                         for _ in range(30):  # Try for up to 5 minutes
