@@ -128,7 +128,7 @@ class RunPodManager:
             raise Exception(f"Failed to create RunPod pod: {str(e)}")
 
         
-def wait_for_pod_ready(self, pod_id, max_wait_time=1200):
+    def wait_for_pod_ready(self, pod_id, max_wait_time=1200):
         """
         Wait for pod to be RUNNING, then return the API URL.
         Fixed to use correct port mapping and better error handling.
@@ -182,12 +182,8 @@ def wait_for_pod_ready(self, pod_id, max_wait_time=1200):
                             wait_for_dns(hostname, timeout=600, interval=10)
                             
                             # Try different port configurations
-                            possible_urls = [
-                                f"https://{hostname}:7860/run",  # Direct port
-                                f"https://{hostname}/run",      # Proxied
-                                f"http://{hostname}:7860/run",  # HTTP fallback
-                            ]
-                            
+                            possible_urls = [f"https://{hostname}:7860/run"]
+
                             for api_url in possible_urls:
                                 try:
                                     logging.info(f"Testing API endpoint: {api_url}")
@@ -239,7 +235,7 @@ def wait_for_pod_ready(self, pod_id, max_wait_time=1200):
         raise Exception(f"Pod {pod_id} failed to become ready within {max_wait_time} seconds")
 
 
-def terminate_pod(self, pod_id):
+    def terminate_pod(self, pod_id):
         """Terminate a RunPod pod"""
         try:
             response = requests.delete(
@@ -263,7 +259,7 @@ def terminate_pod(self, pod_id):
             logging.error(f"Error terminating pod {pod_id}: {str(e)}")
             return False
 
-def get_pod_status(self, pod_id):
+    def get_pod_status(self, pod_id):
         """Get current status of a pod"""
         try:
             response = requests.get(
@@ -282,7 +278,7 @@ def get_pod_status(self, pod_id):
             logging.error(f"Error getting pod status: {str(e)}")
             return None
 
-def get_available_gpu_types(self):
+    def get_available_gpu_types(self):
         """Get available GPU types for debugging"""
         try:
             response = requests.get(
