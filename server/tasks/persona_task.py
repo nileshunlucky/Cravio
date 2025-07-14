@@ -137,6 +137,7 @@ class RunPodManager:
         last_status = None
         consecutive_failures = 0
         max_consecutive_failures = 5
+        port = 7860
 
         while time.time() - start_time < max_wait_time:
             try:
@@ -156,19 +157,27 @@ class RunPodManager:
                         last_status = desired_status
 
                     if desired_status == "RUNNING":
-                        # Get the correct URL from pod info
-                        pod_info = response.json()
+                        # 1. Try RunPod proxy endpoint first
+                        proxy_url = f"https://{pod_id}-{port}.proxy.runpod.net/run"
+                        try:
+                            wait_for_http_response(proxy_url, timeout=120)
+                            logging.info(f"Pod {pod_id} is ready via proxy. API URL: {proxy_url}")
+                            return proxy_url
+                        except Exception as e:
+                            logging.warning(f"Proxy endpoint {proxy_url} failed: {e}")
+                            # Get the correct URL from pod info
+                            pod_info = response.json()
                         
-                        # Try to get public IP first
+                        # 2. Try to get public IP Second
                         public_ip = pod_info.get("publicIp")
                         if public_ip:
                             # Use direct IP access
-                            api_url = f"http://{public_ip}:7860/run"
+                            api_url = f"http://{public_ip}:{port}/run"
                             logging.info(f"Pod {pod_id} is RUNNING. Using direct IP: {api_url}")
                             
                             # Test the endpoint
                             try:
-                                wait_for_http_response(f"http://{public_ip}:7860", timeout=300)
+                                wait_for_http_response(f"http://{public_ip}:{port}/run", timeout=300)
                                 return api_url
                             except Exception as e:
                                 logging.warning(f"Direct IP access failed: {e}")
@@ -182,7 +191,7 @@ class RunPodManager:
                             wait_for_dns(hostname, timeout=600, interval=10)
                             
                             # Try different port configurations
-                            possible_urls = [f"https://{hostname}:7860/run"]
+                            possible_urls = [f"https://{hostname}:{port}/run"]
 
                             for api_url in possible_urls:
                                 try:
@@ -195,14 +204,14 @@ class RunPodManager:
                                     continue
                             
                             # If all endpoints fail, return the most likely one
-                            api_url = f"https://{hostname}:7860/run"
+                            api_url = f"https://{hostname}:{port}/run"
                             logging.warning(f"All endpoint tests failed. Returning default URL: {api_url}")
                             return api_url
                             
                         except Exception as e:
                             logging.error(f"DNS resolution failed: {e}")
                             # Return a URL anyway and let the caller handle it
-                            api_url = f"https://{pod_id}.runpod.run:7860/run"
+                            api_url = f"https://{pod_id}.runpod.run:{port}/run"
                             logging.warning(f"DNS failed, returning URL anyway: {api_url}")
                             return api_url
 
