@@ -139,7 +139,7 @@ class RunPodManager:
                         hostname = f"{pod_id}.runpod.run"
                         logging.info(f"Pod {pod_id} is RUNNING. Waiting for DNS to be available for {hostname}...")
                         try:
-                            wait_for_dns(hostname, timeout=120, interval=5)
+                            wait_for_dns(hostname, timeout=300, interval=5)
                             logging.info(f"DNS for {hostname} is now available.")
                         except Exception as e:
                             logging.warning(f"DNS wait failed: {e} — proceeding to try API anyway.")
