@@ -1,0 +1,7 @@
+torch==2.1.0
+transformers
+diffusers[torch]
+accelerate
+loralib
+boto3
+fastapi

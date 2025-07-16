@@ -5,7 +5,7 @@ import os
 import boto3
 import uuid
 from db import users_collection
-from tasks.persona_task import train_lora_runpod_automated
+from tasks.persona_task import train_persona_lora
 
 router = APIRouter()
 
@@ -62,7 +62,7 @@ async def upload_persona(
             raise HTTPException(status_code=500, detail=f"Failed to process {image.filename}: {str(e)}")
     
     # Send task with both image URLs 
-    task = train_lora_runpod_automated.delay(persona_name, uploaded_urls, email)
+    task = train_persona_lora.delay(persona_name, uploaded_urls, email)
     
     return {
         "status": "success",

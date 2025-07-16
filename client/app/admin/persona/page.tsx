@@ -39,10 +39,10 @@ interface Persona {
     trigger_word?: string
 }
 interface UserData {
-  _id: string
-  email: string
-  credits: number
-  personas: Persona[]
+    _id: string
+    email: string
+    credits: number
+    personas: Persona[]
 }
 
 const MAX_IMAGES = 20
@@ -90,39 +90,36 @@ const Page = () => {
 
     // Poll task status when we have a task ID
     useEffect(() => {
-        if (!taskId) return
+        if (!taskId) return;
 
         const pollStatus = async () => {
             try {
-                const response = await fetch(`https://cravio-ai.onrender.com/api/task-status/${taskId}`)
-                const status = await response.json()
+                const response = await fetch(`https://cravio-ai.onrender.com/api/task-status/${taskId}`);
+                const status = await response.json();
+                setTaskStatus(status);
 
-                setTaskStatus(status)
-
-                // Stop polling if task is completed or failed
+                // Stop polling if task finished
                 if (status.state === 'SUCCESS' || status.state === 'FAILURE') {
-                    setIsSubmitting(false)
+                    setIsSubmitting(false);
                     if (status.state === 'SUCCESS') {
-                        toast.success('Persona training completed successfully!')
-                        // Refresh user data to show new persona
-                        setTimeout(() => {
-                            window.location.reload()
-                        }, 2000)
+                        toast.success('Persona training completed successfully!');
+                        setTimeout(() => window.location.reload(), 2000);
                     } else {
-                        toast.error(`Training failed: ${status.error}`)
+                        toast.error(`Training failed: ${status.error}`);
                     }
                 }
             } catch (error) {
-                console.error('Error polling task status:', error)
-                toast.error('Error checking task status')
+                console.error('Error polling:', error);
+                toast.error('Error checking task status');
             }
-        }
+        };
 
-        const interval = setInterval(pollStatus, 5000)
-        pollStatus()
+        const interval = setInterval(pollStatus, 5000);
+        pollStatus();
 
-        return () => clearInterval(interval)
-    }, [taskId])
+        return () => clearInterval(interval);
+    }, [taskId]);
+
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files
@@ -259,7 +256,7 @@ const Page = () => {
                                     {showExisting ? 'Hide' : 'Show'} ({existingPersonas.length})
                                 </Button>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {existingPersonas.map((persona, index) => (
                                     <motion.div
@@ -345,7 +342,7 @@ const Page = () => {
                                     <Input
                                         type="file"
                                         multiple
-                                        accept="image/*"
+                                        accept="image/png, image/jpg"
                                         className="hidden"
                                         onChange={handleImageUpload}
                                         disabled={isSubmitting}
@@ -437,7 +434,7 @@ const Page = () => {
                                 <Card className="bg-gradient-to-br from-gray-900/80 to-gray-900/60 border-[#B08D57]/30 backdrop-blur-sm overflow-hidden">
                                     {/* Animated Background */}
                                     <div className="absolute inset-0 bg-gradient-to-r from-[#B08D57]/5 via-transparent to-[#B08D57]/5 animate-pulse"></div>
-                                    
+
                                     <CardHeader className="relative z-10">
                                         <CardTitle className="flex items-center gap-3">
                                             <motion.div
@@ -472,15 +469,15 @@ const Page = () => {
                                                 </span>
                                             </div>
                                             <div className="relative">
-                                                <Progress 
-                                                    value={taskStatus.progress || 0} 
+                                                <Progress
+                                                    value={taskStatus.progress || 0}
                                                     className="h-3 bg-gray-800 border border-[#B08D57]/20"
                                                 />
                                                 <motion.div
                                                     className="absolute inset-0 bg-gradient-to-r from-transparent via-[#B08D57]/30 to-transparent h-full rounded-full"
                                                     animate={{ x: [-100, 200] }}
-                                                    transition={{ 
-                                                        duration: 2, 
+                                                    transition={{
+                                                        duration: 2,
                                                         repeat: taskStatus.state === 'PROGRESS' ? Infinity : 0,
                                                         ease: "linear"
                                                     }}
@@ -496,7 +493,7 @@ const Page = () => {
                                                     {taskStatus.status || taskStatus.state}
                                                 </div>
                                             </div>
-                                            
+
                                             {taskStatus.current && taskStatus.total && (
                                                 <div className="space-y-2">
                                                     <div className="text-sm text-gray-400">Training Step</div>
