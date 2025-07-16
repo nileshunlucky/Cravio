@@ -10,7 +10,7 @@ from db import users_collection
 # Configs (assumes your .env or system environments)
 RUNPOD_API_KEY = os.getenv("RUNPOD_API_KEY")
 RUNPOD_ENDPOINT_ID = os.getenv("RUNPOD_ENDPOINT_ID")
-RUNPOD_API_URL = f"https://api.runpod.io/v2/{RUNPOD_ENDPOINT_ID}/run"
+RUNPOD_API_URL = f"https://api.runpod.ai/v2/{RUNPOD_ENDPOINT_ID}/run"
 HEADERS = {"Authorization": f"Bearer {RUNPOD_API_KEY}"}
 
 @celery_app.task(bind=True, time_limit=3600, soft_time_limit=3500)
