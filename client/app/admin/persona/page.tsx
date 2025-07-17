@@ -31,6 +31,8 @@ interface TaskStatus {
 }
 
 interface Persona {
+    uploaded_urls: string | undefined
+    progress: number
     _id: string
     persona_name: string
     training_status: string
@@ -269,7 +271,11 @@ const Page = () => {
                                             <CardHeader className="pb-3">
                                                 <div className="flex items-start justify-between">
                                                     <div className="flex items-center gap-2">
-                                                        <User className="w-5 h-5 text-[#B08D57]" />
+                                                        <img
+                                                            src={persona.uploaded_urls}
+                                                            alt={persona.persona_name}
+                                                            className="w-10 h-10 rounded-full object-cover"
+                                                        />
                                                         <CardTitle className="text-white truncate">
                                                             {persona.persona_name}
                                                         </CardTitle>
@@ -279,15 +285,20 @@ const Page = () => {
                                             </CardHeader>
                                             <CardContent className="pt-0">
                                                 <div className="space-y-2 text-sm">
+                                                    {/* progress */}
+                                                    <div className="flex items-center gap-2">
+                                                        <Progress
+                                                            value={persona.progress || 100}
+                                                            className="w-full h-3 bg-[#B08D57] border border-[#B08D57]/20"
+                                                        />
+                                                        <span className="text-xs text-gray-400">
+                                                            {Math.round(persona.progress || 100)}%
+                                                        </span>
+                                                    </div>
                                                     <div className="flex items-center gap-2 text-gray-400">
                                                         <Calendar className="w-4 h-4" />
                                                         <span>{formatDate(persona.created_at)}</span>
                                                     </div>
-                                                    {persona.trigger_word && (
-                                                        <div className="text-[#B08D57] font-mono text-xs">
-                                                            Trigger: {persona.trigger_word}
-                                                        </div>
-                                                    )}
                                                 </div>
                                             </CardContent>
                                         </Card>

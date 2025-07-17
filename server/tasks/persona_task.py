@@ -102,6 +102,11 @@ def train_persona_lora(self, persona_name, s3_image_urls, email):
                     "progress": round(progress, 2)
                 }
             )
+            # save progress in DB
+            users_collection.update_one(
+                {"personas.id": persona_id},
+                {"$set": {"personas.$.training_status": phase, "personas.$.progress": round(progress, 2)}}
+            )
             if phase == "COMPLETED":
                 output = job_status.get("output", {})
                 model_s3_url = output.get("model_s3_url")

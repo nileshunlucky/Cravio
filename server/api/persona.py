@@ -88,7 +88,7 @@ async def get_task_status(task_id: str):
                 "current": result.info.get('current', 0),
                 "total": result.info.get('total', 1),
                 "status": result.info.get('status', ''),
-                "progress": (result.info.get('current', 0) / result.info.get('total', 1)) * 100
+                "progress": result.info.get('progress', 0)
             }
         elif result.state == 'SUCCESS':
             return {
