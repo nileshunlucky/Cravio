@@ -33,7 +33,7 @@ def train_persona_lora(self, persona_name, s3_image_urls, email):
         "id": persona_id,
         "persona_name": persona_name,
         "trigger_word": trigger_word,
-        "uploaded_urls": s3_image_urls,
+        "uploaded_urls": s3_image_urls[0], 
         "training_status": "pending",
         "created_at": datetime.utcnow(),
     }
@@ -81,12 +81,27 @@ def train_persona_lora(self, persona_name, s3_image_urls, email):
     poll_interval = 30  # seconds
     timeout = 60 * 60  # 1 hour
     waited = 0
+    max_checks = timeout // poll_interval
+    checks_done = 0
+
     while waited < timeout:
         try:
+            checks_done += 1
+            progress = min((checks_done / max_checks) * 100, 99)  # never report 100% until actually done
             status_res = requests.get(status_url, headers=HEADERS, timeout=15)
             job_status = status_res.json()
             phase = job_status.get("status", "--")
-            self.update_state(state="PROGRESS", meta={"stage": "training", "status": phase})
+
+            self.update_state(
+                state="PROGRESS",
+                meta={
+                    "stage": "training",
+                    "status": phase,
+                    "current": checks_done,
+                    "total": max_checks,
+                    "progress": round(progress, 2)
+                }
+            )
             if phase == "COMPLETED":
                 output = job_status.get("output", {})
                 model_s3_url = output.get("model_s3_url")
@@ -98,7 +113,7 @@ def train_persona_lora(self, persona_name, s3_image_urls, email):
                         "personas.$.completed_at": datetime.utcnow(),
                         }}
                 )
-                return {"persona_id": persona_id, "status": "completed", "model_s3_url": model_s3_url}
+                return {"persona_id": persona_id, "status": "completed", "model_s3_url": model_s3_url, "progress": 100}
             elif phase == "FAILED":
                 users_collection.update_one(
                     {"personas.id": persona_id},

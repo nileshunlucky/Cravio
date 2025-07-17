@@ -5,3 +5,4 @@ accelerate
 loralib
 boto3
 fastapi
+requests
