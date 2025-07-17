@@ -285,7 +285,7 @@ const Page = () => {
                                             </CardHeader>
                                             <CardContent className="pt-0">
                                                 <div className="space-y-2 text-sm">
-                                                    {/* progress */}
+                                                    {/* show progress only when  */}
                                                     <div className="flex items-center gap-2">
                                                         <Progress
                                                             value={persona.progress || 100}

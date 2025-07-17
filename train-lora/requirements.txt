@@ -6,3 +6,4 @@ loralib
 boto3
 fastapi
 requests
+runpod
