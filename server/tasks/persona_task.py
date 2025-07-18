@@ -48,27 +48,32 @@ def train_persona_lora(self, persona_name, s3_image_urls, email):
             {"email": email, "personas": [persona_summary], "created_at": datetime.utcnow()}
         )
 
-    # Payload for RunPod
-    training_job = {
-        "s3_image_urls": s3_image_urls,
-        "email": email,
-        "persona_name": persona_name,
-        "trigger_word": trigger_word,
-        # Add other config params if needed...
-    }
-
     # Step 1: Submit job to RunPod serverless
     self.update_state(state="PROGRESS", meta={"stage": "posting", "status": "Submitting job to RunPod"})
     try:
+        # ✅ Payload must wrap in "input"
+        payload = {
+            "input": {
+                "s3_image_urls": s3_image_urls,
+                "email": email,
+                "persona_name": persona_name,
+                "trigger_word": trigger_word,
+            }
+        }
+
         response = requests.post(
             RUNPOD_API_URL,
             headers={**HEADERS, "Content-Type": "application/json"},
-            json=training_job,
+            json=payload,
             timeout=30,
         )
         response.raise_for_status()
         job = response.json()
         job_id = job["id"]
+        users_collection.update_one(
+    {"personas.id": persona_id},
+    {"$set": {"personas.$.runpod_job_id": job_id}}
+)
     except Exception as exc:
         users_collection.update_one(
             {"personas.id": persona_id},
@@ -110,6 +115,9 @@ def train_persona_lora(self, persona_name, s3_image_urls, email):
             if phase == "COMPLETED":
                 output = job_status.get("output", {})
                 model_s3_url = output.get("model_s3_url")
+                if not model_s3_url:
+                    raise ValueError("Job completed, but model_s3_url is missing in the output.")
+
                 users_collection.update_one(
                     {"personas.id": persona_id},
                     {"$set": {
@@ -126,7 +134,7 @@ def train_persona_lora(self, persona_name, s3_image_urls, email):
                 )
                 return {"persona_id": persona_id, "status": "failed"}
         except Exception as e:
-            pass  # Logging can be added here
+             logging.warning(f"Polling failed on check #{checks_done} for job {job_id}: {e}")
 
         time.sleep(poll_interval)
         waited += poll_interval
