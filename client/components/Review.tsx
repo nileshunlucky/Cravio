@@ -8,53 +8,54 @@ import Image from 'next/image'
 const testimonials = [
   {
     name: 'Sarah Chen',
-    role: 'YouTube Creator & Designer',
+    role: 'Fashion Muse & Digital Tastemaker',
     quote:
-      "Cravio AI completely transformed my post game. I went from spending hours in Photoshop to generating stunning posts in seconds.",
+      "Cravio.AI became my secret to visual consistency. Every post feels editorial — my Instagram feed has never looked more polished.",
     avatar: '/review/ash-allen.jpeg',
     subscribers: '2.3M',
   },
   {
     name: 'Marcus Rodriguez',
-    role: 'Content Strategy Consultant',
+    role: 'Luxury Lifestyle Influencer',
     quote:
-      'As someone who manages 15+ YouTube channels, Cravio AI is a lifesaver. The AI understands what makes posts click-worthy.',
+      "From concept to curation — Cravio understands the nuance of high-end visuals. It elevated my personal brand instantly.",
     avatar: '/review/alex-george.webp',
     subscribers: '1.8M',
   },
   {
     name: 'Emma Thompson',
-    role: 'post Design Specialist',
+    role: 'Runway Model & Content Aesthete',
     quote:
-      "The AI generates posts that actually convert. My clients' CTR improved by 40% on average after switching to Cravio.",
+      "Consistency is everything. Cravio crafts flawless, on-brand images that mirror the elegance I demand from every shoot.",
     avatar: '/review/Laurence Vincent.jpg',
     subscribers: '950K',
   },
   {
     name: 'David Park',
-    role: 'YouTube Growth Expert',
+    role: 'Visual Curator & Creator',
     quote:
-      "I was skeptical about AI posts, but Cravio's results speak for themselves. It's like having a design team in your pocket.",
+      "Cravio feels like having an elite creative director on demand. Every image aligns with my vision — seamlessly and fast.",
     avatar: '/review/Ishan Sharma.jpg',
     subscribers: '1.4M',
   },
   {
     name: 'Jessica Williams',
-    role: 'Digital Marketing Coach',
+    role: 'High Fashion Content Creator',
     quote:
-      "Cravio AI doesn't just make posts—it creates attention-grabbing visuals that stop the scroll. My engagement is through the roof!",
+      "Scroll-stopping visuals with couture-level quality. Cravio turned my content into a luxury experience.",
     avatar: '/review/Louis Dershal.png',
     subscribers: '3.2M',
   },
   {
     name: 'Taylor Brooks',
-    role: 'Brand Visual Strategist',
+    role: 'Beauty Model & Aesthetic Strategist',
     quote:
-      'The quality is incredible and the speed is unmatched. Cravio AI helped me scale my post creation process 10x faster.',
+      "Cravio makes my content feel intentional, elevated, and visually iconic — without needing a production team.",
     avatar: '/review/Rose Delvard..png',
     subscribers: '680K',
   },
 ]
+
 
 const Review = () => {
   const ref = useRef(null)
@@ -69,19 +70,20 @@ const Review = () => {
         className="max-w-6xl mx-auto space-y-12"
       >
         <div className="text-center space-y-4">
-          <h2 className="text-4xl font-bold">
-            See why creators love{' '}
-            <span
-              className="underline decoration-2 underline-offset-4"
-              style={{ textDecorationColor: '#B08D57' }}
-            >
-              Cravio AI
-            </span>
-          </h2>
-          <p className=" text-lg text-[#47FFE&]">
-            Revolutionizing post creation with AI. Real stories from real creators.
-          </p>
-        </div>
+  <h2 className="text-4xl font-bold">
+    Experience the Artistry of{' '}
+    <span
+      className="underline decoration-2 underline-offset-4"
+      style={{ textDecorationColor: '#B08D57' }}
+    >
+      Cravio.AI
+    </span>
+  </h2>
+  <p className="text-lg text-[#B08D57]">
+    Where refined expression meets curated intelligence. Designed for the aesthetically astute.
+  </p>
+</div>
+
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {testimonials.map((t, idx) => (

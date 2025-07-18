@@ -109,15 +109,11 @@ def handler(job):
         logging.exception(err)
         return {"status": "error", "message": err}
 
-    # [OPTIONAL] Write output to /output/output.json for debug/legacy compatibility
-    try:
-        os.makedirs("/output", exist_ok=True)
-        with open("/output/output.json", "w") as f:
-            json.dump(result, f, indent=2)
-        logging.info("Output also written to /output/output.json.")
-    except Exception as e:
-        logging.error(f"Failed to write output.json: {e}")
+    # Removed writing to /output/output.json to avoid file system errors
 
     return result
 
+
 runpod.serverless.start({"handler": handler})
+print("RunPod Serverless handler initialized successfully.")
+logging.info("RunPod Serverless handler initialized successfully.")

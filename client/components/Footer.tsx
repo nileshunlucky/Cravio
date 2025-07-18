@@ -41,15 +41,6 @@ const Footer = () => {
                 className="hover:opacity-80 transition"
               />
             </Link>
-            <Link href="https://discord.gg/ZxC6svsH" target="_blank">
-              <Image
-                src="/icons/discord.png"
-                alt="Discord"
-                width={34}
-                height={34}
-                className="hover:opacity-80 transition"
-              />
-            </Link>
           </div>
         </div>
 
@@ -60,7 +51,6 @@ const Footer = () => {
             <li><Link href="/refund-policy" className=" transition">Refund Policy</Link></li>
             <li><Link href="/terms" className=" transition">Terms of Service</Link></li>
             <li><Link href="/privacy" className=" transition">Privacy Policy</Link></li>
-            <li><Link href="/admin/affiliate" className=" transition">Affiliate</Link></li>
           </ul>
         </div>
 
