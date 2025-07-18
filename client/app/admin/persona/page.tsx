@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, X, CheckCircle, AlertCircle, Clock, Loader2, Crown, Sparkles, User, Calendar } from 'lucide-react'
+import { Upload, X, CheckCircle, AlertCircle, Clock, Loader2, Crown, Sparkles, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { useUser } from '@clerk/nextjs'
 

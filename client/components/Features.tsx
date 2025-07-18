@@ -132,7 +132,7 @@ const Features = () => {
                 transition={{ duration: 1.2, ease: 'easeInOut' }}
                 className="text-lg font-light text-white leading-relaxed"
               >
-                "{prompts[currentPrompt]}"
+                &quot;{prompts[currentPrompt]}&quot;
               </motion.p>
 
               <div className="flex gap-2 mt-4">
