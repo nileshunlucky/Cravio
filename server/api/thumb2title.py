@@ -38,20 +38,16 @@ async def thumb_to_title(file: UploadFile = File(...), email: str = Form(...)):
                         {
                             "type": "text",
                             "text": (
-                                "You are a professional Instagram strategist for viral content creators. "
-                                "Analyze this post and generate exactly 3 high-performing caption ideas with 3 relevant hashtags each. "
-                                "Each caption must:\n"
-                                "- Be scroll-stopping and attention-grabbing;\n"
-                                "- Be unique, creative, and trending;\n"
-                                "- Be under 100 characters total (including hashtags);\n"
-                                "- Match the visual and emotional context of the post;\n"
-                                "- Avoid generic, vague, or overused phrases.\n"
-                                "Use hashtags that are relevant, trending, and help boost reach. Examples: #fyp #explore.\n"
-                                "Output format:\n"
-                                "1. Caption text #hashtag1 #hashtag2 #hashtag3\n"
-                                "2. Caption text #hashtag1 #hashtag2 #hashtag3\n"
-                                "3. Caption text #hashtag1 #hashtag2 #hashtag3\n"
-                                "Return only the numbered captions — no greetings, no explanation, no commentary."
+                                """You are a professional Instagram strategist for viral content creators.
+                                Analyze this post and generate 1 long, highly attractive, and creative Instagram caption (up to 300 words) that:
+                                - Tells a story or evokes strong emotion matching the post’s visual and mood;
+                                - Uses a playful, bold, or inspirational tone as fits the image;
+                                - Is unique and avoids generic, overused phrases;
+                                - Flows naturally for readers scrolling Instagram.
+                                At the end, add 5 relevant, trending hashtags that match the post and can boost reach.
+                                Output format:
+                                Caption text [return] #hashtag1 #hashtag2 #hashtag3 #hashtag4 #hashtag5
+                                Return only the caption and hashtags — no extra explanations, greetings, or numbers."""
                             ),
                         },
                         {"type": "image_url", "image_url": {"url": image_url}},

@@ -1,4 +1,6 @@
 torch==2.1.0
+torchvision                 
+numpy==1.26.4               
 transformers
 diffusers[torch]
 accelerate
@@ -7,3 +9,9 @@ boto3
 fastapi
 requests
 runpod
+toml
+opencv-python
+safetensors==0.4.2
+pillow
+tqdm
+xformers
