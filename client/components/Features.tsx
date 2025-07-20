@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
-import { ArrowRight, Palette } from 'lucide-react';
+import { Palette } from 'lucide-react';
 import Link from 'next/link';
 
 const Features = () => {
