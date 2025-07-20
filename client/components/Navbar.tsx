@@ -4,12 +4,8 @@ import React from 'react'
 import { UserButton } from '@clerk/nextjs'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Button } from './ui/button'
-import { useUser } from '@clerk/nextjs'
 
 const Navbar = ({ credits = 0 }: { credits: number }) => {
-  const { user } = useUser()
-  const email = user?.primaryEmailAddress?.emailAddress
 
   return (
     <nav className="w-full  border-b shadow-sm py-2 px-4 flex items-center justify-between">
