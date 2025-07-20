@@ -37,26 +37,9 @@ const HeroX = () => {
             <div className="relative z-10">
                 <div className="container mx-auto px-6 lg:px-16 xl:px-24 py-12 lg:py-20">
                     
-                    {/* Header with brand badge */}
-                    <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, ease: "easeOut" }}
-                        className="text-center mb-16 lg:mb-24"
-                    >
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.3, duration: 0.6 }}
-                            className="inline-flex items-center px-6 py-3 rounded-full border border-[#B08D57]/20 bg-[#B08D57]/5 backdrop-blur-sm mb-8"
-                        >
-                            <span className="w-1.5 h-1.5 bg-[#B08D57] rounded-full mr-3"></span>
-                            <span className="text-xs font-light tracking-[0.2em] text-[#B08D57] uppercase">Cravio.ai Atelier</span>
-                        </motion.div>
-                    </motion.div>
-
+        
                     {/* Main content grid */}
-                    <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 xl:gap-24 items-center min-h-[70vh]">
+                    <div className="flex md:flex-row flex-col-reverse gap-12 lg:gap-16 xl:gap-24 items-center min-h-[70vh]">
                         
                         {/* Left side - Content */}
                         <div className="lg:col-span-7 xl:col-span-6 order-2 lg:order-1">
@@ -72,7 +55,7 @@ const HeroX = () => {
                                         initial={{ opacity: 0, y: 30 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: 0.4, duration: 0.8 }}
-                                        className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-thin leading-[0.9] tracking-tight text-white"
+                                        className="text-5xl md:text-7xl font-thin leading-[0.9] tracking-tight text-white"
                                     >
                                         Curated
                                     </motion.h1>
@@ -80,7 +63,7 @@ const HeroX = () => {
                                         initial={{ opacity: 0, y: 30 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: 0.5, duration: 0.8 }}
-                                        className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-thin leading-[0.9] tracking-tight"
+                                        className="text-5xl md:text-7xl font-thin leading-[0.9] tracking-tight"
                                     >
                                         <span className="text-[#B08D57]">Excellence</span>
                                     </motion.h1>
@@ -88,7 +71,7 @@ const HeroX = () => {
                                         initial={{ opacity: 0, y: 30 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: 0.6, duration: 0.8 }}
-                                        className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-thin leading-[0.9] tracking-tight text-white"
+                                        className="text-5xl md:text-7xl font-thin leading-[0.9] tracking-tight text-white"
                                     >
                                         in Every Detail
                                     </motion.h1>

@@ -15,14 +15,17 @@ LEMON_SQUEEZING_WEBHOOK_SECRET = os.getenv("LEMON_SQUEEZING_WEBHOOK_SECRET")
 
 # Map your Lemon Squeezy plan variant IDs to the number of credits
 PLANS = {
-    883365: 80,   # starter
-    883368: 200,  # pro
-    883371: 500,  # premium
-    883809: 80    # test plan
+    908443: 1000, # Classic /m
+    908458: 2400, # Premium /m
+    908445: 5000, # Platinum /m
+
+    908463: 12000, # Classic /y
+    908475: 28800, # Premium /y
+    908476: 60000, # Platinum /y
 }
 
 # Credits to grant for a free trial
-FREE_TRIAL_CREDITS = 10
+FREE_TRIAL_CREDITS = 230
 
 # --- Helper Functions ---
 
@@ -72,7 +75,7 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
         is_trial = attributes.get("trial_ends_at") is not None
         
         if is_trial:
-            # ---> Scenario: User starts a 1-day free trial.
+            # ---> Scenario: User starts a 7-day free trial.
             
             # Anti-abuse: Check if email or device has already used a trial
             if user.get("trial_used"):

@@ -8,53 +8,54 @@ import Image from 'next/image'
 const testimonials = [
   {
     name: 'Sarah Chen',
-    role: 'Fashion Muse & Digital Tastemaker',
+    role: 'Editorial Muse & Creative Visionary',
     quote:
-      "Cravio.AI became my secret to visual consistency. Every post feels editorial — my Instagram feed has never looked more polished.",
+      "Cravio became my complete creative atelier. From visual storytelling to caption craftsmanship — every element feels meticulously curated for Instagram excellence.",
     avatar: '/review/ash-allen.jpeg',
     subscribers: '2.3M',
   },
   {
     name: 'Marcus Rodriguez',
-    role: 'Luxury Lifestyle Influencer',
+    role: 'Connoisseur of Contemporary Luxury',
     quote:
-      "From concept to curation — Cravio understands the nuance of high-end visuals. It elevated my personal brand instantly.",
+      "The trifecta of perfection — stunning images, cinematic videos, and eloquent captions. Cravio transformed my entire Instagram presence into a luxury experience.",
     avatar: '/review/alex-george.webp',
     subscribers: '1.8M',
   },
   {
     name: 'Emma Thompson',
-    role: 'Runway Model & Content Aesthete',
+    role: 'Couture Model & Visual Architect',
     quote:
-      "Consistency is everything. Cravio crafts flawless, on-brand images that mirror the elegance I demand from every shoot.",
+      "Consistency across every medium — photography, videography, and copy. Cravio delivers the editorial coherence that high-fashion demands.",
     avatar: '/review/Laurence Vincent.jpg',
     subscribers: '950K',
   },
   {
     name: 'David Park',
-    role: 'Visual Curator & Creator',
+    role: 'Creative Director & Visual Strategist',
     quote:
-      "Cravio feels like having an elite creative director on demand. Every image aligns with my vision — seamlessly and fast.",
+      "Like having an entire creative studio at my fingertips. Cravio's unified approach to imagery, motion, and narrative elevated my Instagram to gallery status.",
     avatar: '/review/Ishan Sharma.jpg',
     subscribers: '1.4M',
   },
   {
     name: 'Jessica Williams',
-    role: 'High Fashion Content Creator',
+    role: 'Avant-Garde Content Curator',
     quote:
-      "Scroll-stopping visuals with couture-level quality. Cravio turned my content into a luxury experience.",
+      "Museum-quality visuals, cinematic storytelling, and literary captions — all seamlessly integrated. Cravio is the future of luxury content creation.",
     avatar: '/review/Louis Dershal.png',
     subscribers: '3.2M',
   },
   {
     name: 'Taylor Brooks',
-    role: 'Beauty Model & Aesthetic Strategist',
+    role: 'Beauty Artisan & Aesthetic Curator',
     quote:
-      "Cravio makes my content feel intentional, elevated, and visually iconic — without needing a production team.",
+      "Every image, every video, every caption feels intentionally crafted. Cravio brings haute couture precision to Instagram content creation.",
     avatar: '/review/Rose Delvard..png',
     subscribers: '680K',
   },
 ]
+
 
 
 const Review = () => {

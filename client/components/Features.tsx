@@ -150,7 +150,7 @@ const Features = () => {
             <motion.div variants={itemVariants} className="pt-8">
               <Link href="/admin/dashboard">
                 <motion.button
-                  className="group inline-flex items-center px-12 py-5 bg-[#B08D57] text-black font-medium rounded-full text-lg tracking-wide relative overflow-hidden"
+                  className="group inline-flex items-center px-12 py-5 bg-[#B08D57] text-black font-medium text-lg tracking-wide relative overflow-hidden"
                   whileHover={{
                     scale: 1.02,
                     boxShadow: "0 15px 50px rgba(176, 141, 87, 0.4)"
@@ -158,9 +158,8 @@ const Features = () => {
                   whileTap={{ scale: 0.98 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <span className="relative z-10 mr-3">Begin Creating</span>
-                  <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform duration-300" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#B08D57] to-[#D4AF37] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <span className="relative z-10 mr-3">BEGIN CREATING</span>
+                  <div className="absolute inset-0  opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </motion.button>
               </Link>
             </motion.div>
