@@ -236,18 +236,40 @@ const PricingCard: React.FC<PricingCardProps> = ({
                     transition={{ delay: delay + 0.7, duration: 0.6 }}
                     className="mb-6 relative z-10"
                 >
-                    <p className="text-zinc-300 text-sm mb-4 select-text" style={{ pointerEvents: 'auto' }}>
+                    <div className="text-zinc-300 text-sm mb-4 select-text flex items-center gap-1" style={{ pointerEvents: 'auto' }}>
                         Curate {' '}
                         <motion.span
                             key={`aura-${isYearly}`}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="text-[#B08D57] font-bold"
+                            className="text-[#B08D57] font-bold flex items-center"
                         >
+                            <svg width="30" height="30" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="minimalistGold" cx="50%" cy="50%" r="60%">
+                                        <stop offset="0%" style={{ stopColor: "#F4E4BC", stopOpacity: 1 }} />
+                                        <stop offset="50%" style={{ stopColor: "#E6C878", stopOpacity: 1 }} />
+                                        <stop offset="100%" style={{ stopColor: "#C9A96E", stopOpacity: 1 }} />
+                                    </linearGradient>
+                                </defs>
+
+                                <path d="M 200 40 
+                                     Q 225 155 250 175 
+                                     Q 295 185 340 200 
+                                     Q 295 215 250 225 
+                                     Q 225 245 200 360 
+                                     Q 175 245 150 225 
+                                     Q 105 215 60 200 
+                                     Q 105 185 150 175 
+                                     Q 175 155 200 40 
+                                     Z"
+                                    fill="url(#minimalistGold)"
+                                    stroke="none" />
+                            </svg>
                             {currentAura.toLocaleString()} Aura
                         </motion.span>{' '}
                         per {isYearly ? 'year' : 'month'}.
-                    </p>
+                    </div>
 
                     {/* CTA Button */}
                     <a href={currentUrl}>

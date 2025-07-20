@@ -344,8 +344,29 @@ const Page = () => {
                                     </Button>
                                 </div>
                                 <p className="text-slate-400 text-sm mt-4 flex items-center justify-center gap-2">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path fillRule="evenodd" clipRule="evenodd" d="M13.2319 2.28681C13.5409 2.38727 13.75 2.6752 13.75 3.00005V9.25005H19C19.2821 9.25005 19.5403 9.40834 19.6683 9.65972C19.7963 9.9111 19.7725 10.213 19.6066 10.4412L11.6066 21.4412C11.4155 21.7039 11.077 21.8137 10.7681 21.7133C10.4591 21.6128 10.25 21.3249 10.25 21.0001V14.7501H5C4.71791 14.7501 4.45967 14.5918 4.33167 14.3404C4.20366 14.089 4.22753 13.7871 4.39345 13.5589L12.3935 2.55892C12.5845 2.2962 12.923 2.18635 13.2319 2.28681Z" fill="url(&quot;#linearGradient&quot;)"></path><defs><linearGradient gradientTransform="rotate(90)" id="linearGradient"><stop offset="0%" stopColor="#FFE629"></stop><stop offset="100%" stopColor="#FFA057"></stop></linearGradient></defs></svg>
-                                    This will use 5 credits
+                                    <svg width="30" height="30" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="minimalistGold" cx="50%" cy="50%" r="60%">
+                <stop offset="0%" style={{ stopColor: "#F4E4BC", stopOpacity: 1 }} />
+                <stop offset="50%" style={{ stopColor: "#E6C878", stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: "#C9A96E", stopOpacity: 1 }} />
+              </linearGradient>
+            </defs>
+
+            <path d="M 200 40 
+         Q 225 155 250 175 
+         Q 295 185 340 200 
+         Q 295 215 250 225 
+         Q 225 245 200 360 
+         Q 175 245 150 225 
+         Q 105 215 60 200 
+         Q 105 185 150 175 
+         Q 175 155 200 40 
+         Z"
+              fill="url(#minimalistGold)"
+              stroke="none" />
+          </svg>
+                                    This will use 5 aura
                                 </p>
                             </div>
 
@@ -403,8 +424,29 @@ const Page = () => {
                                             </div>
                                         </Button>
                                         <p className="text-slate-400 text-sm mt-4 flex items-center justify-center gap-2">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path fillRule="evenodd" clipRule="evenodd" d="M13.2319 2.28681C13.5409 2.38727 13.75 2.6752 13.75 3.00005V9.25005H19C19.2821 9.25005 19.5403 9.40834 19.6683 9.65972C19.7963 9.9111 19.7725 10.213 19.6066 10.4412L11.6066 21.4412C11.4155 21.7039 11.077 21.8137 10.7681 21.7133C10.4591 21.6128 10.25 21.3249 10.25 21.0001V14.7501H5C4.71791 14.7501 4.45967 14.5918 4.33167 14.3404C4.20366 14.089 4.22753 13.7871 4.39345 13.5589L12.3935 2.55892C12.5845 2.2962 12.923 2.18635 13.2319 2.28681Z" fill="url(&quot;#linearGradient&quot;)"></path><defs><linearGradient gradientTransform="rotate(90)" id="linearGradient"><stop offset="0%" stopColor="#FFE629"></stop><stop offset="100%" stopColor="#FFA057"></stop></linearGradient></defs></svg>
-                                            This will use 5 credits
+                                            <svg width="30" height="30" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="minimalistGold" cx="50%" cy="50%" r="60%">
+                <stop offset="0%" style={{ stopColor: "#F4E4BC", stopOpacity: 1 }} />
+                <stop offset="50%" style={{ stopColor: "#E6C878", stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: "#C9A96E", stopOpacity: 1 }} />
+              </linearGradient>
+            </defs>
+
+            <path d="M 200 40 
+         Q 225 155 250 175 
+         Q 295 185 340 200 
+         Q 295 215 250 225 
+         Q 225 245 200 360 
+         Q 175 245 150 225 
+         Q 105 215 60 200 
+         Q 105 185 150 175 
+         Q 175 155 200 40 
+         Z"
+              fill="url(#minimalistGold)"
+              stroke="none" />
+          </svg>
+                                            This will use 5 aura
                                         </p>
                                     </div>
                                 </CardContent>
