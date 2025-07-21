@@ -21,7 +21,7 @@ const PrivacyPage = () => {
               &larr; Back
             </Button>
 
-            <h1 className="text-3xl font-bold ">Privacy Policy</h1>
+            <h1 className="text-3xl font-bold text-[#B08D57] underline">Privacy Policy</h1>
             <p className="text-muted-foreground text-lg">
               Welcome to Cravio! We respect your privacy and are committed to protecting your personal data. This Privacy Policy outlines how we collect, use, and protect your information when using our AI-powered tools.
             </p>

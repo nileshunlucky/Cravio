@@ -372,7 +372,7 @@ const Page = () => {
                 yearly: `https://cravioai.lemonsqueezy.com/buy/f2e8c0e4-39fc-4a40-a490-ea70f85c20f1?checkout[email]=${encodeURIComponent(email)}`
             },
             isPopular: false,
-            buttonText: "Start Free Trial",
+            buttonText: "Elevate Your Signature",
             features: {
                 aura: {
                     monthly: 1000,
@@ -400,7 +400,7 @@ const Page = () => {
                 yearly: `https://cravioai.lemonsqueezy.com/buy/2fbba06d-b1ab-40f2-969c-59a1c08bccb5?checkout[email]=${encodeURIComponent(email)}`
             },
             isPopular: true,
-            buttonText: "Start Free Trial",
+            buttonText: "Elevate Your Signature",
             features: {
                 aura: {
                     monthly: 2400,
@@ -427,7 +427,7 @@ const Page = () => {
                 yearly: `https://cravioai.lemonsqueezy.com/buy/67dceb1a-e06b-4610-8d9a-36e8fbe1cc24?checkout[email]=${encodeURIComponent(email)}`
             },
             isPopular: false,
-            buttonText: "Start Free Trial",
+            buttonText: "Elevate Your Signature",
             features: {
                 aura: {
                     monthly: 5000,
@@ -573,7 +573,7 @@ const Page = () => {
                     className="text-center mt-12 sm:mt-16"
                 >
                     <p className="text-zinc-400 text-sm select-text">
-                        All plans include a 7-day free trial • Cancel anytime • No hidden fees
+                        All plans include a 7-day FREE trial • Cancel anytime • No hidden fees
                     </p>
                 </motion.div>
             </motion.div>

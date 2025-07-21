@@ -1,33 +1,70 @@
+'use client'
+
+import React, { useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 import Link from 'next/link';
-import React from 'react';
+
+const fadeInUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: (delay = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.8,
+      ease: 'easeOut',
+      delay,
+    },
+  }),
+};
 
 const Caption = () => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-100px' }); // triggers when slightly visible
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center">
+    <motion.div
+      ref={ref}
+      className="min-h-screen w-full flex items-center justify-center"
+      initial="hidden"
+      animate={isInView ? 'visible' : 'hidden'}
+      variants={{
+        hidden: {},
+        visible: {},
+      }}
+    >
       <div className="w-full max-w-6xl mx-auto px-8">
-
         <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
-
+          
           {/* Left Content */}
           <div className="space-y-12">
-            <div>
+            <motion.div variants={fadeInUp} custom={0.1}>
               <div className="mb-8">
                 <div className="w-12 h-px bg-[#B08D57] mb-6"></div>
-                <h1 className="text-6xl lg:text-7xl font-extralight text-white/95 leading-[0.9] mb-4">
+                <motion.h1
+                  className="text-6xl lg:text-7xl font-extralight text-white/95 leading-[0.9] mb-4"
+                  variants={fadeInUp}
+                  custom={0.2}
+                >
                   Curated
-                </h1>
-                <h2 className="text-6xl lg:text-7xl font-extralight text-[#B08D57] leading-[0.9] mb-8">
+                </motion.h1>
+                <motion.h2
+                  className="text-6xl lg:text-7xl font-extralight text-[#B08D57] leading-[0.9] mb-8"
+                  variants={fadeInUp}
+                  custom={0.3}
+                >
                   Excellence
-                </h2>
-                <p className="text-xl font-extralight text-white/70 leading-relaxed">
-                 meticulously refined within every caption we curate for distinguished brands.
-                </p>
+                </motion.h2>
+                <motion.p
+                  className="text-xl font-extralight text-white/70 leading-relaxed"
+                  variants={fadeInUp}
+                  custom={0.4}
+                >
+                  meticulously refined within every caption we curate for distinguished brands.
+                </motion.p>
               </div>
+            </motion.div>
 
-            </div>
-
-            <div>
+            <motion.div variants={fadeInUp} custom={0.5}>
               <Link href="/admin/dashboard">
                 <button
                   className="group relative px-12 py-4 border border-[#B08D57] hover:bg-[#B08D57]/5 transition-all duration-500 disabled:opacity-50 overflow-hidden"
@@ -38,13 +75,16 @@ const Caption = () => {
                   </span>
                 </button>
               </Link>
-            </div>
+            </motion.div>
           </div>
 
           {/* Right Visual */}
-          <div className="relative">
+          <motion.div
+            className="relative"
+            variants={fadeInUp}
+            custom={0.6}
+          >
             <div className="aspect-[4/5] bg-gradient-to-br from-white/5 to-transparent border border-white/10 relative overflow-hidden">
-              {/* Placeholder luxury visual */}
               <div className="absolute inset-0 bg-gradient-to-br from-[#B08D57]/10 via-transparent to-transparent"></div>
               <div className="absolute inset-0 flex items-center justify-center">
                 <img src="/posts/post8.jpeg" alt="model" />
@@ -52,7 +92,11 @@ const Caption = () => {
             </div>
 
             {/* Floating metrics */}
-            <div className="absolute -right-8 bottom-16 bg-black/80 backdrop-blur border border-white/10 p-4">
+            <motion.div
+              className="absolute -right-8 bottom-16 bg-black/80 backdrop-blur border border-white/10 p-4"
+              variants={fadeInUp}
+              custom={0.8}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 bg-[#B08D57]"></div>
                 <div>
@@ -60,12 +104,11 @@ const Caption = () => {
                   <div className="text-white/50 font-light text-xs tracking-wider">#giorgio #model #fyp</div>
                 </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
-
       </div>
-    </div>
+    </motion.div>
   );
 };
 
