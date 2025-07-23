@@ -64,7 +64,7 @@ export function AppSidebar() {
                       asChild
                       className={`flex items-center gap-2 px-3 py-2  transition ${
                         isActive
-                          ? "bg-[#B08D57] text-black shadow-md hover:bg-[#B08D57]/90 hover:text-black"
+                          ? "bg-[#B08D57] text-white shadow-md hover:bg-[#B08D57]/90 hover:text-white"
                           : "text-white"
                       }`}
                     >

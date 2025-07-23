@@ -81,7 +81,6 @@ def save_referral(data: UserReferral = Body(...)):
         "email": data.email,
         "deviceId": data.deviceId,
         "user_paid": False,
-        "trial_used": False,
     }
     users_collection.insert_one(user_data)
     return {"message": "User added successfully"}

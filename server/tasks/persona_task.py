@@ -3,11 +3,23 @@ import traceback
 import zipfile
 import io
 import requests
+import uuid
 from datetime import datetime, timezone
 from celery_config import celery_app
 from db import users_collection
 import fal_client
+import boto3
 import os
+
+
+# Add S3 configuration (same as your API)
+S3_BUCKET = os.getenv("S3_BUCKET_NAME", "my-video-bucket")
+s3_client = boto3.client(
+    's3',
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    region_name=os.getenv("AWS_REGION", "us-east-1")
+)
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -16,11 +28,97 @@ logger = logging.getLogger(__name__)
 FAL_KEY = os.getenv("FAL_KEY") 
 fal_client.api_key = FAL_KEY
 
+
+def cleanup_s3_images(image_urls, persona_name):
+    """
+    Delete training images from S3 after LoRA training completes
+    
+    Args:
+        image_urls: List of S3 URLs to delete
+        persona_name: Name of persona (for logging)
+    """
+    deleted_count = 0
+    failed_count = 0
+    
+    for url in image_urls:
+        try:
+            # Extract S3 key from URL
+            # URL format: https://{bucket}.s3.amazonaws.com/{key}
+            if not url.startswith(f"https://{S3_BUCKET}.s3.amazonaws.com/"):
+                logger.warning(f"Skipping non-S3 URL: {url}")
+                continue
+                
+            s3_key = url.replace(f"https://{S3_BUCKET}.s3.amazonaws.com/", "")
+            
+            # Delete from S3
+            s3_client.delete_object(Bucket=S3_BUCKET, Key=s3_key)
+            deleted_count += 1
+            logger.info(f"Deleted S3 object: {s3_key}")
+            
+        except Exception as e:
+            failed_count += 1
+            logger.error(f"Failed to delete S3 object {url}: {str(e)}")
+    
+    logger.info(f"S3 cleanup for persona '{persona_name}': {deleted_count} deleted, {failed_count} failed")
+    return deleted_count, failed_count
+
+
+def save_lora_to_s3(final_result, persona_name, persona_id):
+    """
+    Download LoRA model from FAL.ai and save to S3 bucket
+    
+    Args:
+        final_result: FAL.ai training result
+        persona_name: Name of persona
+        persona_id: Unique persona identifier
+        
+    Returns:
+        str: S3 URL for the saved LoRA model file
+    """
+    try:
+        # Get LoRA file info from FAL result
+        lora_file = final_result.get("diffusers_lora_file", {})
+        if not lora_file.get("url"):
+            logger.error("No LoRA file URL found in training result")
+            return None
+        
+        # Download LoRA model from FAL.ai
+        logger.info(f"Downloading LoRA model from FAL.ai: {lora_file['url']}")
+        response = requests.get(lora_file["url"], timeout=120)
+        response.raise_for_status()
+        
+        # Save to S3
+        s3_key = f"models/{persona_name}_{persona_id}/pytorch_lora_weights.safetensors"
+        s3_client.put_object(
+            Bucket=S3_BUCKET,
+            Key=s3_key,
+            Body=response.content,
+            ContentType="application/octet-stream",
+            Metadata={
+                'persona_name': persona_name,
+                'persona_id': persona_id,
+                'original_filename': lora_file.get('file_name', 'pytorch_lora_weights.safetensors'),
+                'file_size': str(lora_file.get('file_size', len(response.content)))
+            }
+        )
+        
+        s3_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{s3_key}"
+        logger.info(f"Successfully saved LoRA model to S3: {s3_key}")
+        logger.info(f"LoRA model size: {len(response.content)} bytes")
+        
+        return s3_url
+        
+    except Exception as e:
+        logger.error(f"Failed to save LoRA model to S3: {str(e)}")
+        return None
+
+
 def on_queue_update(update):
     """Handle queue updates from FAL.ai"""
     if isinstance(update, fal_client.InProgress):
         for log in update.logs:
             logger.info(log["message"])
+
 
 def create_zip_from_urls(image_urls, persona_name):
     """
@@ -59,10 +157,11 @@ def create_zip_from_urls(image_urls, persona_name):
     zip_buffer.seek(0)
     return zip_buffer.getvalue()
 
+
 @celery_app.task(bind=True, time_limit=3600, soft_time_limit=3500)
 def train_persona_lora(self, persona_name, image_urls, email):
     """
-    Train a LoRA model using FAL.ai API
+    Train a LoRA model using FAL.ai API - Stores persona in user's personas array
     
     Args:
         persona_name: Name of the persona
@@ -70,10 +169,14 @@ def train_persona_lora(self, persona_name, image_urls, email):
         email: User email
     """
     
-    # Create persona record in database
+    # Generate unique persona ID
+    persona_id = f"persona_{uuid.uuid4().hex[:12]}"
+    
+    # Create persona object
     persona_doc = {
+        "persona_id": persona_id,
         "persona_name": persona_name,
-        "image_urls": image_urls[0],
+        "image_url": image_urls[0],
         "status": "started",
         "progress": 0,
         "created_at": datetime.now(timezone.utc),
@@ -82,26 +185,33 @@ def train_persona_lora(self, persona_name, image_urls, email):
     }
     
     try:
-        # Save initial persona record
-        persona_result = users_collection.insert_one(persona_doc)
-        persona_id = str(persona_result.inserted_id)
-        logger.info(f"Created persona record with ID: {persona_id}")
-        
-        # Update initial state
-        self.update_state(state='PROGRESS', meta={'status': 'Training started', 'progress': 0})
-        
         # Check if user exists
         user = users_collection.find_one({"email": email})
         if not user:
             raise Exception(f"User with email '{email}' not found")
+        
+        # Add persona to user's personas array
+        users_collection.update_one(
+            {"email": email},
+            {"$push": {"personas": persona_doc}}
+        )
+        
+        logger.info(f"Created persona '{persona_name}' with ID: {persona_id} for user {email}")
+        
+        # Update initial state
+        self.update_state(state='PROGRESS', meta={'status': 'Training started', 'progress': 0})
         
         logger.info(f"Starting training for persona '{persona_name}' with {len(image_urls)} images for email '{email}'")
         
         # Update progress - Creating zip file
         self.update_state(state='PROGRESS', meta={'status': 'Creating training data', 'progress': 5})
         users_collection.update_one(
-            {"_id": persona_result.inserted_id},
-            {"$set": {"status": "preparing", "progress": 5, "updated_at": datetime.now(timezone.utc)}}
+            {"email": email, "personas.persona_id": persona_id},
+            {"$set": {
+                "personas.$.status": "preparing", 
+                "personas.$.progress": 5, 
+                "personas.$.updated_at": datetime.now(timezone.utc)
+            }}
         )
         
         # Create zip file from image URLs
@@ -116,13 +226,16 @@ def train_persona_lora(self, persona_name, image_urls, email):
         # Update progress - Uploading to FAL
         self.update_state(state='PROGRESS', meta={'status': 'Uploading training data', 'progress': 10})
         users_collection.update_one(
-            {"_id": persona_result.inserted_id},
-            {"$set": {"status": "uploading", "progress": 10, "updated_at": datetime.now(timezone.utc)}}
+            {"email": email, "personas.persona_id": persona_id},
+            {"$set": {
+                "personas.$.status": "uploading", 
+                "personas.$.progress": 10, 
+                "personas.$.updated_at": datetime.now(timezone.utc)
+            }}
         )
         
         # Upload zip to FAL storage
         try:
-            # Fix: Pass the bytes content directly instead of BytesIO object
             uploaded_url = fal_client.upload(zip_content, "application/zip")
             logger.info(f"Uploaded zip file to FAL storage: {uploaded_url}")
         except Exception as e:
@@ -132,15 +245,20 @@ def train_persona_lora(self, persona_name, image_urls, email):
         # Update progress - Submitting training request
         self.update_state(state='PROGRESS', meta={'status': 'Submitting to FAL.ai', 'progress': 15})
         users_collection.update_one(
-            {"_id": persona_result.inserted_id},
-            {"$set": {"status": "submitting", "progress": 15, "updated_at": datetime.now(timezone.utc)}}
+            {"email": email, "personas.persona_id": persona_id},
+            {"$set": {
+                "personas.$.status": "submitting", 
+                "personas.$.progress": 15, 
+                "personas.$.updated_at": datetime.now(timezone.utc)
+            }}
         )
         
         # Submit training request to FAL.ai
         result = fal_client.subscribe(
             "fal-ai/flux-lora-fast-training",
             arguments={
-                "images_data_url": uploaded_url
+                "images_data_url": uploaded_url,
+                "trigger_word": persona_name
             },
             with_logs=True,
             on_queue_update=on_queue_update,
@@ -151,12 +269,12 @@ def train_persona_lora(self, persona_name, image_urls, email):
         
         # Update database with FAL request ID
         users_collection.update_one(
-            {"_id": persona_result.inserted_id},
+            {"email": email, "personas.persona_id": persona_id},
             {"$set": {
-                "fal_request_id": fal_request_id,
-                "training_data_url": uploaded_url,
-                "status": "training",
-                "progress": 20,
+                "personas.$.fal_request_id": fal_request_id,
+                "personas.$.status": "training",
+                "personas.$.progress": 20,
+                "personas.$.updated_at": datetime.now(timezone.utc)
             }}
         )
         
@@ -166,29 +284,48 @@ def train_persona_lora(self, persona_name, image_urls, email):
         # Wait for completion and get final result
         final_result = fal_client.result("fal-ai/flux-lora-fast-training", fal_request_id)
         
+        # Update progress - Saving model to S3
+        self.update_state(state='PROGRESS', meta={'status': 'Saving model to S3', 'progress': 90})
+        users_collection.update_one(
+            {"email": email, "personas.persona_id": persona_id},
+            {"$set": {
+                "personas.$.status": "saving_model", 
+                "personas.$.progress": 90, 
+                "personas.$.updated_at": datetime.now(timezone.utc)
+            }}
+        )
+        
+        # Save LoRA model to S3
+        s3_model_url = save_lora_to_s3(final_result, persona_name, persona_id)
+        
         # Update final state
         self.update_state(state='SUCCESS', meta={'status': 'Training completed', 'progress': 100})
         
         # Save final result to database
         users_collection.update_one(
-            {"_id": persona_result.inserted_id},
+            {"email": email, "personas.persona_id": persona_id},
             {"$set": {
-                "status": "completed",
-                "progress": 100,
-                "result": final_result,
-                "completed_at": datetime.now(timezone.utc),
-                "updated_at": datetime.now(timezone.utc)
+                "personas.$.status": "completed",
+                "personas.$.progress": 100,
+                "personas.$.model": s3_model_url,
             }}
         )
         
         logger.info(f"Training completed successfully for persona '{persona_name}'")
+
+        # ✅ CLEANUP: Delete S3 training images after successful training
+        try:
+            cleanup_s3_images(image_urls, persona_name)
+        except Exception as cleanup_error:
+            logger.error(f"S3 cleanup failed after successful training for persona '{persona_name}': {str(cleanup_error)}")
+            # Don't fail the task if cleanup fails
         
         return {
             "status": "success",
             "message": f"Training completed for persona '{persona_name}' with email '{email}'.",
             "persona_id": persona_id,
             "fal_request_id": fal_request_id,
-            "result": final_result,
+            "model_url": s3_model_url,  # ✅ Return S3 URL
         }
         
     except Exception as e:
@@ -208,17 +345,24 @@ def train_persona_lora(self, persona_name, image_urls, email):
             }
         )
         
-        # Update database with error
-        if 'persona_result' in locals():
+        # Update database with error (if persona was created)
+        if 'persona_id' in locals():
             users_collection.update_one(
-                {"_id": persona_result.inserted_id},
+                {"email": email, "personas.persona_id": persona_id},
                 {"$set": {
-                    "status": "failed",
-                    "error": error_msg,
-                    "error_traceback": error_trace,
-                    "updated_at": datetime.now(timezone.utc),
+                    "personas.$.status": "failed",
+                    "personas.$.error": error_msg,
+                    "personas.$.error_traceback": error_trace,
+                    "personas.$.updated_at": datetime.now(timezone.utc),
                 }}
             )
+
+        # ✅ CLEANUP: Delete S3 training images after training failure
+        try:
+            cleanup_s3_images(image_urls, persona_name)
+        except Exception as cleanup_error:
+            logger.error(f"S3 cleanup failed after training failure for persona '{persona_name}': {str(cleanup_error)}")
+            # Don't fail the task if cleanup fails
         
         # Refund credits to user if training failed
         try:
@@ -227,5 +371,8 @@ def train_persona_lora(self, persona_name, image_urls, email):
         except Exception as refund_error:
             logger.error(f"Failed to refund credits to user {email}: {str(refund_error)}")
         
-        # Fix: Raise the exception properly for Celery to handle
-        raise Exception(error_msg)
+        return {
+            "status": "error",
+            "message": f"Training failed for persona '{persona_name}': {error_msg}",
+            "error": error_msg
+        }
