@@ -14,7 +14,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-import { LayoutDashboard, Type, DollarSign, Briefcase } from "lucide-react"
+import { LayoutDashboard, Type, DollarSign, Briefcase, User } from "lucide-react"
 
 // Add luxury styling improvements
 const items = [
@@ -22,6 +22,11 @@ const items = [
     title: "Dashboard",
     url: "/admin/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Persona",
+    url: "/admin/persona",
+    icon: User
   },
   {
     title: "Caption",

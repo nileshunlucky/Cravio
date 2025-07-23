@@ -40,12 +40,6 @@ interface Persona {
     model_s3_url?: string
     trigger_word?: string
 }
-interface UserData {
-    _id: string
-    email: string
-    credits: number
-    personas: Persona[]
-}
 
 const MAX_IMAGES = 20
 
@@ -339,7 +333,7 @@ const Page = () => {
                                 <motion.label
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
-                                    className="relative w-full border-2 border-dashed border-[#B08D57]/30 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-[#B08D57]/50 transition-all duration-300 bg-gradient-to-br from-[#B08D57]/5 to-transparent group"
+                                    className="relative w-full border-2 border-[#B08D57]/30 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-[#B08D57]/50 transition-all duration-300 bg-gradient-to-br from-[#B08D57]/5 to-transparent group"
                                 >
                                     <div className="absolute inset-0 bg-[#B08D57]/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     <Upload className="w-8 h-8 mb-3 text-[#B08D57] group-hover:scale-110 transition-transform duration-300" />
@@ -380,7 +374,7 @@ const Page = () => {
                                                                 whileHover={{ scale: 1.1 }}
                                                                 whileTap={{ scale: 0.9 }}
                                                                 onClick={() => handleRemoveImage(index)}
-                                                                className="absolute top-1 right-1 bg-red-500/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                                                className="absolute top-1 right-1 bg-[#B08D57] text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                                                             >
                                                                 <X size={12} />
                                                             </motion.button>

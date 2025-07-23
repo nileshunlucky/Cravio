@@ -122,9 +122,8 @@ def train_persona_lora(self, persona_name, image_urls, email):
         
         # Upload zip to FAL storage
         try:
-            zip_file_obj = io.BytesIO(zip_content)
-            zip_file_obj.name = f"{persona_name}_training_images.zip"
-            uploaded_url = fal_client.upload(zip_file_obj, "application/zip")
+            # Fix: Pass the bytes content directly instead of BytesIO object
+            uploaded_url = fal_client.upload(zip_content, "application/zip")
             logger.info(f"Uploaded zip file to FAL storage: {uploaded_url}")
         except Exception as e:
             logger.error(f"Failed to upload zip to FAL storage: {str(e)}")
@@ -217,19 +216,16 @@ def train_persona_lora(self, persona_name, image_urls, email):
                     "status": "failed",
                     "error": error_msg,
                     "error_traceback": error_trace,
-                    "created_at": datetime.now(timezone.utc),
+                    "updated_at": datetime.now(timezone.utc),
                 }}
             )
         
         # Refund credits to user if training failed
         try:
-            users_collection.update_one({"email": email}, {"$inc": {"credits": 200}})
-            logger.info(f"Refunded 200 credits to user {email} due to training failure")
+            users_collection.update_one({"email": email}, {"$inc": {"credits": 250}})
+            logger.info(f"Refunded 250 credits to user {email} due to training failure")
         except Exception as refund_error:
             logger.error(f"Failed to refund credits to user {email}: {str(refund_error)}")
         
-        return {
-            "status": "error",
-            "message": f"Training failed for persona '{persona_name}': {error_msg}",
-            "error": error_msg
-        }
+        # Fix: Raise the exception properly for Celery to handle
+        raise Exception(error_msg)
