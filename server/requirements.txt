@@ -18,3 +18,4 @@ opencv-python-headless
 apscheduler
 httpx
 pydantic[email]
+fal_client

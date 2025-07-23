@@ -24,9 +24,6 @@ PLANS = {
     908476: 60000, # Platinum /y
 }
 
-# Credits to grant for a free trial
-FREE_TRIAL_CREDITS = 230
-
 # --- Helper Functions ---
 
 def verify_signature(payload: bytes, signature: str) -> bool:
@@ -70,85 +67,33 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
 
     # --- Event Handling ---
 
-    # Event: A new subscription is created (could be a trial or direct payment)
+    # Event: A new subscription is created
     if event == "subscription_created":
-        is_trial = attributes.get("trial_ends_at") is not None
+        credits_to_add = PLANS.get(variant_id)
+        if not credits_to_add:
+            return {"status": "error", "message": f"Invalid plan variant ID: {variant_id}"}
         
-        if is_trial:
-            # ---> Scenario: User starts a 7-day free trial.
-            
-            # Anti-abuse: Check if email or device has already used a trial
-            if user.get("trial_used"):
-                return {"status": "info", "message": "Trial already used for this email."}
-            
-            device_id = user.get("deviceId")
-            if device_id:
-                device_in_use = users_collection.find_one({"deviceId": device_id, "trial_used": True})
-                if device_in_use:
-                    return {"status": "error", "message": "Device has already been used for a free trial."}
+        users_collection.update_one(
+            {"email": email},
+            {
+                "$set": {
+                    "subscription_status": "active",
+                    "plan_variant_id": variant_id,
+                    "subscription_id": data.get("id"),
+                    "subscription_started_at": datetime.now(timezone.utc)
+                },
+                "$set": {"credits": credits_to_add},
+                "$set": {"user_paid": True},
+            }
+        )
+        return {"status": "success", "message": f"Granted {credits_to_add} credits for new subscription."}
 
-            # Grant 10 free trial credits and set status to "trialing"
-            users_collection.update_one(
-                {"email": email},
-                {
-                    "$set": {
-                        "trial_used": True,
-                        "subscription_status": "trialing",
-                        "plan_variant_id": variant_id,
-                        "subscription_id": data.get("id"),
-                        "trial_granted_at": datetime.now(timezone.utc)
-                    },
-                    "$inc": {"credits": FREE_TRIAL_CREDITS}
-                }
-            )
-            return {"status": "success", "message": f"Granted {FREE_TRIAL_CREDITS} free trial credits."}
-            
-        else:
-            # ---> Scenario: User pays for a plan directly without a trial.
-            credits_to_add = PLANS.get(variant_id)
-            if not credits_to_add:
-                return {"status": "error", "message": f"Invalid plan variant ID: {variant_id}"}
-            
-            users_collection.update_one(
-                {"email": email},
-                {
-                    "$set": {
-                        "subscription_status": "active",
-                        "plan_variant_id": variant_id,
-                        "subscription_id": data.get("id"),
-                        "subscription_started_at": datetime.now(timezone.utc)
-                    },
-                    "$inc": {"credits": credits_to_add}
-                }
-            )
-            return {"status": "success", "message": f"Granted {credits_to_add} credits for new subscription."}
-
-    # Event: A subscription is updated (e.g., trial converts to paid)
+    # Event: A subscription is updated
     elif event == "subscription_updated":
-        # ---> Scenario: Trial ends and user is successfully charged.
-        is_trialing_in_db = user.get("subscription_status") == "trialing"
-        is_now_active = attributes.get("status") == "active"
-
-        if is_trialing_in_db and is_now_active:
-            credits_to_add = PLANS.get(variant_id)
-            if not credits_to_add:
-                return {"status": "error", "message": f"Invalid plan ID on trial conversion: {variant_id}"}
-            
-            users_collection.update_one(
-                {"email": email},
-                {
-                    "$set": {
-                        "subscription_status": "active",
-                        "subscription_started_at": datetime.now(timezone.utc)
-                    },
-                    "$inc": {"credits": credits_to_add}
-                }
-            )
-            return {"status": "success", "message": f"Trial converted. Granted {credits_to_add} credits."}
+        return {"status": "info", "message": "Subscription updated."}
 
     # Event: Subscription is cancelled by the user or admin
     elif event == "subscription_cancelled":
-        # ---> Scenario: User cancels their subscription.
         users_collection.update_one(
             {"email": email},
             {
@@ -156,7 +101,9 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
                     "subscription_status": "cancelled",
                     "subscription_cancelled_at": datetime.now(timezone.utc),
                 },
-                "$unset": {"plan_variant_id": ""}
+                "$unset": {"plan_variant_id": ""},
+                "$set": {"credits": ""},
+                "$set": {"user_paid": False}
             }
         )
         return {"status": "success", "message": "Subscription successfully cancelled."}
@@ -170,7 +117,9 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
                     "subscription_status": "expired",
                     "subscription_expired_at": datetime.now(timezone.utc),
                 },
-                "$unset": {"plan_variant_id": ""}
+                "$unset": {"plan_variant_id": ""},
+                "$set": {"credits": ""},
+                "$set": {"user_paid": False}
             }
         )
         return {"status": "success", "message": "Subscription has expired."}

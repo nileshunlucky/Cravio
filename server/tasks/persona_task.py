@@ -1,317 +1,235 @@
 import logging
-import time
-import uuid
-import os
+import traceback
+import zipfile
+import io
 import requests
-import json
-from datetime import datetime
+from datetime import datetime, timezone
 from celery_config import celery_app
 from db import users_collection
+import fal_client
+import os
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Configs (assumes your .env or system environments)
-RUNPOD_API_KEY = os.getenv("RUNPOD_API_KEY")
-RUNPOD_ENDPOINT_ID = os.getenv("RUNPOD_ENDPOINT_ID")
-RUNPOD_API_URL = f"https://api.runpod.ai/v2/{RUNPOD_ENDPOINT_ID}/run"
-HEADERS = {"Authorization": f"Bearer {RUNPOD_API_KEY}"}
+FAL_KEY = os.getenv("FAL_KEY") 
+fal_client.api_key = FAL_KEY
 
-logger.info(f"🔧 RunPod Configuration:")
-logger.info(f"  - Endpoint ID: {RUNPOD_ENDPOINT_ID}")
-logger.info(f"  - API URL: {RUNPOD_API_URL}")
-logger.info(f"  - API Key configured: {'✅' if RUNPOD_API_KEY else '❌'}")
+def on_queue_update(update):
+    """Handle queue updates from FAL.ai"""
+    if isinstance(update, fal_client.InProgress):
+        for log in update.logs:
+            logger.info(log["message"])
+
+def create_zip_from_urls(image_urls, persona_name):
+    """
+    Create a zip file from a list of image URLs
+    
+    Args:
+        image_urls: List of image URLs
+        persona_name: Name of the persona (for logging)
+        
+    Returns:
+        bytes: Zip file content
+    """
+    zip_buffer = io.BytesIO()
+    
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for i, url in enumerate(image_urls):
+            try:
+                # Download image
+                response = requests.get(url, timeout=30)
+                response.raise_for_status()
+                
+                # Get filename from URL or create one
+                filename = url.split('/')[-1]
+                if not filename or '.' not in filename:
+                    filename = f"image_{i+1}.jpg"
+                
+                # Add to zip
+                zip_file.writestr(filename, response.content)
+                logger.info(f"Added {filename} to zip for persona '{persona_name}'")
+                
+            except Exception as e:
+                logger.error(f"Failed to download image {url}: {str(e)}")
+                # Continue with other images instead of failing completely
+                continue
+    
+    zip_buffer.seek(0)
+    return zip_buffer.getvalue()
 
 @celery_app.task(bind=True, time_limit=3600, soft_time_limit=3500)
-def train_persona_lora(self, persona_name, s3_image_urls, email):
+def train_persona_lora(self, persona_name, image_urls, email):
     """
-    Celery task: Launches a serverless LoRA training job on RunPod,
-    tracks job status, and updates user DB.
+    Train a LoRA model using FAL.ai API
+    
+    Args:
+        persona_name: Name of the persona
+        image_urls: List of image URLs to use for training
+        email: User email
     """
     
-    # Input validation with detailed logging
-    logger.info(f"🎯 Starting LoRA training task for {email}")
-    logger.info(f"  - Persona name: {persona_name}")
-    logger.info(f"  - Number of images: {len(s3_image_urls) if s3_image_urls else 0}")
-    
-    if not persona_name or not s3_image_urls or not email:
-        error_msg = "persona_name, s3_image_urls, and email are required."
-        logger.error(f"❌ Validation failed: {error_msg}")
-        raise ValueError(error_msg)
-
-    if not (10 <= len(s3_image_urls) <= 20):
-        error_msg = f"Invalid image count: {len(s3_image_urls)}. Must be between 10 and 20."
-        logger.error(f"❌ {error_msg}")
-        raise ValueError("You must provide between 10 and 20 training images.")
-
-    # Generate IDs and setup
-    persona_id = str(uuid.uuid4())
-    user_doc = users_collection.find_one({"email": email})
-    trigger_word = f"{persona_id}_{persona_name.lower().replace(' ', '_')}"
-
-    logger.info(f"📝 Generated persona details:")
-    logger.info(f"  - Persona ID: {persona_id}")
-    logger.info(f"  - Trigger word: {trigger_word}")
-    logger.info(f"  - User exists in DB: {'✅' if user_doc else '❌'}")
-
-    persona_summary = {
-        "id": persona_id,
+    # Create persona record in database
+    persona_doc = {
         "persona_name": persona_name,
-        "trigger_word": trigger_word,
-        "uploaded_urls": s3_image_urls[0],  # Store first URL as sample
-        "training_status": "pending",
-        "created_at": datetime.utcnow(),
-        "total_images": len(s3_image_urls)
+        "image_urls": image_urls[0],
+        "status": "started",
+        "progress": 0,
+        "created_at": datetime.now(timezone.utc),
+        "fal_request_id": None,
+        "model": None,
     }
-
-    # Create or update user record
-    try:
-        if user_doc:
-            result = users_collection.update_one(
-                {"email": email}, {"$push": {"personas": persona_summary}}
-            )
-            logger.info(f"📚 Updated existing user record: {result.modified_count} documents modified")
-        else:
-            result = users_collection.insert_one(
-                {"email": email, "personas": [persona_summary], "created_at": datetime.utcnow()}
-            )
-            logger.info(f"📚 Created new user record: {result.inserted_id}")
-    except Exception as e:
-        logger.error(f"❌ Database operation failed: {str(e)}")
-        raise
-
-    # Step 1: Submit job to RunPod serverless
-    logger.info("🚀 Submitting job to RunPod...")
-    self.update_state(state="PROGRESS", meta={"stage": "posting", "status": "Submitting job to RunPod"})
     
     try:
-        # Payload structure for RunPod serverless
-        payload = {
-            "input": {
-                "s3_image_urls": s3_image_urls,
-                "email": email,
-                "persona_name": persona_name,
-                "trigger_word": trigger_word,
-            }
-        }
-
-        logger.info(f"📦 Payload prepared:")
-        logger.info(f"  - Image URLs count: {len(s3_image_urls)}")
-        logger.info(f"  - First 3 URLs: {s3_image_urls[:3]}")
-        logger.info(f"  - Request URL: {RUNPOD_API_URL}")
-
-        response = requests.post(
-            RUNPOD_API_URL,
-            headers={**HEADERS, "Content-Type": "application/json"},
-            json=payload,
-            timeout=30,
-        )
+        # Save initial persona record
+        persona_result = users_collection.insert_one(persona_doc)
+        persona_id = str(persona_result.inserted_id)
+        logger.info(f"Created persona record with ID: {persona_id}")
         
-        logger.info(f"📡 RunPod response:")
-        logger.info(f"  - Status code: {response.status_code}")
-        logger.info(f"  - Headers: {dict(response.headers)}")
+        # Update initial state
+        self.update_state(state='PROGRESS', meta={'status': 'Training started', 'progress': 0})
         
-        response.raise_for_status()
-        job = response.json()
+        # Check if user exists
+        user = users_collection.find_one({"email": email})
+        if not user:
+            raise Exception(f"User with email '{email}' not found")
         
-        logger.info(f"📋 Job response: {json.dumps(job, indent=2)}")
+        logger.info(f"Starting training for persona '{persona_name}' with {len(image_urls)} images for email '{email}'")
         
-        if "id" not in job:
-            logger.error(f"❌ No job ID in response: {job}")
-            raise ValueError("RunPod response missing job ID")
-            
-        job_id = job["id"]
-        logger.info(f"✅ Job submitted successfully: {job_id}")
-        
-        # Update database with job ID
-        result = users_collection.update_one(
-            {"personas.id": persona_id},
-            {"$set": {"personas.$.runpod_job_id": job_id}}
-        )
-        logger.info(f"📚 Updated persona with job ID: {result.modified_count} documents modified")
-        
-    except requests.exceptions.RequestException as e:
-        error_msg = f"RunPod API request failed: {str(e)}"
-        logger.error(f"❌ {error_msg}")
-        if hasattr(e, 'response') and e.response is not None:
-            logger.error(f"Response content: {e.response.text}")
-        
+        # Update progress - Creating zip file
+        self.update_state(state='PROGRESS', meta={'status': 'Creating training data', 'progress': 5})
         users_collection.update_one(
-            {"personas.id": persona_id},
-            {"$set": {"personas.$.training_status": "error", "personas.$.error": error_msg}}
+            {"_id": persona_result.inserted_id},
+            {"$set": {"status": "preparing", "progress": 5, "updated_at": datetime.now(timezone.utc)}}
         )
-        raise
-    except Exception as exc:
-        error_msg = f"Unexpected error during job submission: {str(exc)}"
-        logger.error(f"❌ {error_msg}")
+        
+        # Create zip file from image URLs
+        logger.info(f"Creating zip file from {len(image_urls)} images")
+        zip_content = create_zip_from_urls(image_urls, persona_name)
+        
+        if not zip_content:
+            raise Exception("Failed to create zip file - no images were processed")
+        
+        logger.info(f"Created zip file with size: {len(zip_content)} bytes")
+        
+        # Update progress - Uploading to FAL
+        self.update_state(state='PROGRESS', meta={'status': 'Uploading training data', 'progress': 10})
         users_collection.update_one(
-            {"personas.id": persona_id},
-            {"$set": {"personas.$.training_status": "error", "personas.$.error": error_msg}}
+            {"_id": persona_result.inserted_id},
+            {"$set": {"status": "uploading", "progress": 10, "updated_at": datetime.now(timezone.utc)}}
         )
-        raise
-
-    # Step 2: Poll RunPod for status
-    status_url = f"https://api.runpod.ai/v2/{RUNPOD_ENDPOINT_ID}/status/{job_id}"
-    logger.info(f"🔍 Starting status polling:")
-    logger.info(f"  - Status URL: {status_url}")
-    logger.info(f"  - Job ID: {job_id}")
-    
-    poll_interval = 30  # seconds
-    timeout = 60 * 60  # 1 hour
-    waited = 0
-    max_checks = timeout // poll_interval
-    checks_done = 0
-
-    logger.info(f"⏱️  Polling configuration:")
-    logger.info(f"  - Poll interval: {poll_interval}s")
-    logger.info(f"  - Timeout: {timeout}s ({timeout//60}min)")
-    logger.info(f"  - Max checks: {max_checks}")
-
-    while waited < timeout:
+        
+        # Upload zip to FAL storage
         try:
-            checks_done += 1
-            progress = min((checks_done / max_checks) * 100, 99)  # never report 100% until actually done
-            
-            logger.info(f"🔍 Status check #{checks_done}/{max_checks} (waited {waited}s)")
-            
-            status_res = requests.get(status_url, headers=HEADERS, timeout=15)
-            
-            logger.info(f"📡 Status response:")
-            logger.info(f"  - Status code: {status_res.status_code}")
-            logger.info(f"  - Response headers: {dict(status_res.headers)}")
-            
-            # Check if request was successful
-            if status_res.status_code != 200:
-                logger.error(f"❌ Status request failed with code {status_res.status_code}")
-                logger.error(f"Response content: {status_res.text}")
-                raise requests.exceptions.HTTPError(f"Status request failed: {status_res.status_code}")
-            
-            job_status = status_res.json()
-            logger.info(f"📋 Full job status response: {json.dumps(job_status, indent=2)}")
-            
-            # Extract phase with multiple fallbacks
-            phase = None
-            if "status" in job_status:
-                phase = job_status["status"]
-            elif "state" in job_status:
-                phase = job_status["state"]
-            elif "phase" in job_status:
-                phase = job_status["phase"]
-            else:
-                logger.warning(f"⚠️  No status field found in response")
-                phase = "UNKNOWN"
-            
-            logger.info(f"📊 Job phase: '{phase}'")
-
-            # Update Celery task state
-            meta = {
-                "stage": "training",
-                "status": phase,
-                "current": checks_done,
-                "total": max_checks,
-                "progress": round(progress, 2),
-                "job_id": job_id,
-                "waited_seconds": waited
-            }
-            
-            self.update_state(state="PROGRESS", meta=meta)
-            
-            # Update database
-            db_update = {
-                "personas.$.training_status": phase,
-                "personas.$.progress": round(progress, 2),
-                "personas.$.last_check": datetime.utcnow(),
-                "personas.$.checks_completed": checks_done
-            }
-            
-            result = users_collection.update_one(
-                {"personas.id": persona_id},
-                {"$set": db_update}
-            )
-            logger.info(f"📚 Updated DB status: {result.modified_count} documents modified")
-            
-            # Handle completion states
-            if phase == "COMPLETED":
-                logger.info("🎉 Job completed successfully!")
-                output = job_status.get("output", {})
-                logger.info(f"📤 Job output: {json.dumps(output, indent=2)}")
-                
-                model_s3_url = output.get("model_s3_url")
-                if not model_s3_url:
-                    logger.error("❌ Job completed but model_s3_url is missing")
-                    raise ValueError("Job completed, but model_s3_url is missing in the output.")
-
-                final_update = {
-                    "personas.$.training_status": "completed",
-                    "personas.$.model_s3_url": model_s3_url,
-                    "personas.$.completed_at": datetime.utcnow(),
-                    "personas.$.progress": 100
-                }
-                
-                users_collection.update_one(
-                    {"personas.id": persona_id},
-                    {"$set": final_update}
-                )
-                
-                logger.info(f"✅ Training completed successfully!")
-                logger.info(f"  - Model URL: {model_s3_url}")
-                
-                return {
-                    "persona_id": persona_id, 
-                    "status": "completed", 
-                    "model_s3_url": model_s3_url, 
-                    "progress": 100,
-                    "checks_completed": checks_done,
-                    "total_time_seconds": waited
-                }
-                
-            elif phase == "FAILED":
-                logger.error("❌ Job failed!")
-                error_info = job_status.get("error", "No error details provided")
-                logger.error(f"Error details: {error_info}")
-                
-                users_collection.update_one(
-                    {"personas.id": persona_id},
-                    {"$set": {
-                        "personas.$.training_status": "failed", 
-                        "personas.$.error": str(error_info),
-                        "personas.$.failed_at": datetime.utcnow()
-                    }}
-                )
-                return {"persona_id": persona_id, "status": "failed", "error": error_info}
-                
-            elif phase in ["IN_QUEUE", "IN_PROGRESS", "RUNNING"]:
-                logger.info(f"⏳ Job still running: {phase}")
-            else:
-                logger.warning(f"⚠️  Unknown phase: '{phase}'")
-
-        except requests.exceptions.RequestException as e:
-            logger.warning(f"🚨 Polling failed on check #{checks_done} for job {job_id}: {str(e)}")
-            if hasattr(e, 'response') and e.response is not None:
-                logger.warning(f"Response content: {e.response.text}")
+            zip_file_obj = io.BytesIO(zip_content)
+            zip_file_obj.name = f"{persona_name}_training_images.zip"
+            uploaded_url = fal_client.upload(zip_file_obj, "application/zip")
+            logger.info(f"Uploaded zip file to FAL storage: {uploaded_url}")
         except Exception as e:
-            logger.error(f"❌ Unexpected error during polling: {str(e)}")
-            logger.exception("Full exception details:")
-
-        # Wait before next check
-        logger.info(f"😴 Sleeping for {poll_interval}s before next check...")
-        time.sleep(poll_interval)
-        waited += poll_interval
-
-    # Timeout reached
-    logger.error(f"⏰ Timeout reached after {waited}s ({waited//60}min)")
-    users_collection.update_one(
-        {"personas.id": persona_id},
-        {"$set": {
-            "personas.$.training_status": "timeout",
-            "personas.$.timeout_at": datetime.utcnow(),
-            "personas.$.total_checks": checks_done
-        }}
-    )
-    return {
-        "persona_id": persona_id, 
-        "status": "timeout",
-        "checks_completed": checks_done,
-        "total_time_seconds": waited
-    }
+            logger.error(f"Failed to upload zip to FAL storage: {str(e)}")
+            raise Exception(f"Failed to upload training data: {str(e)}")
+        
+        # Update progress - Submitting training request
+        self.update_state(state='PROGRESS', meta={'status': 'Submitting to FAL.ai', 'progress': 15})
+        users_collection.update_one(
+            {"_id": persona_result.inserted_id},
+            {"$set": {"status": "submitting", "progress": 15, "updated_at": datetime.now(timezone.utc)}}
+        )
+        
+        # Submit training request to FAL.ai
+        result = fal_client.subscribe(
+            "fal-ai/flux-lora-fast-training",
+            arguments={
+                "images_data_url": uploaded_url
+            },
+            with_logs=True,
+            on_queue_update=on_queue_update,
+        )
+        
+        fal_request_id = result.get('request_id')
+        logger.info(f"Training started for persona '{persona_name}' with email '{email}'. Request ID: {fal_request_id}")
+        
+        # Update database with FAL request ID
+        users_collection.update_one(
+            {"_id": persona_result.inserted_id},
+            {"$set": {
+                "fal_request_id": fal_request_id,
+                "training_data_url": uploaded_url,
+                "status": "training",
+                "progress": 20,
+            }}
+        )
+        
+        # Update progress
+        self.update_state(state='PROGRESS', meta={'status': 'Training in progress', 'progress': 20})
+        
+        # Wait for completion and get final result
+        final_result = fal_client.result("fal-ai/flux-lora-fast-training", fal_request_id)
+        
+        # Update final state
+        self.update_state(state='SUCCESS', meta={'status': 'Training completed', 'progress': 100})
+        
+        # Save final result to database
+        users_collection.update_one(
+            {"_id": persona_result.inserted_id},
+            {"$set": {
+                "status": "completed",
+                "progress": 100,
+                "result": final_result,
+                "completed_at": datetime.now(timezone.utc),
+                "updated_at": datetime.now(timezone.utc)
+            }}
+        )
+        
+        logger.info(f"Training completed successfully for persona '{persona_name}'")
+        
+        return {
+            "status": "success",
+            "message": f"Training completed for persona '{persona_name}' with email '{email}'.",
+            "persona_id": persona_id,
+            "fal_request_id": fal_request_id,
+            "result": final_result,
+        }
+        
+    except Exception as e:
+        error_msg = str(e)
+        error_trace = traceback.format_exc()
+        
+        logger.error(f"Training failed for persona '{persona_name}': {error_msg}")
+        logger.error(f"Error traceback: {error_trace}")
+        
+        # Update task state
+        self.update_state(
+            state='FAILURE',
+            meta={
+                'status': 'Training failed',
+                'error': error_msg,
+                'progress': 0
+            }
+        )
+        
+        # Update database with error
+        if 'persona_result' in locals():
+            users_collection.update_one(
+                {"_id": persona_result.inserted_id},
+                {"$set": {
+                    "status": "failed",
+                    "error": error_msg,
+                    "error_traceback": error_trace,
+                    "created_at": datetime.now(timezone.utc),
+                }}
+            )
+        
+        # Refund credits to user if training failed
+        try:
+            users_collection.update_one({"email": email}, {"$inc": {"credits": 200}})
+            logger.info(f"Refunded 200 credits to user {email} due to training failure")
+        except Exception as refund_error:
+            logger.error(f"Failed to refund credits to user {email}: {str(refund_error)}")
+        
+        return {
+            "status": "error",
+            "message": f"Training failed for persona '{persona_name}': {error_msg}",
+            "error": error_msg
+        }

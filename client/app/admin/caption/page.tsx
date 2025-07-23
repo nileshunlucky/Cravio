@@ -274,14 +274,14 @@ const Page = () => {
                                 <div className="flex items-center justify-center ">
                                     <Quote className="w-6 h-6 text-[#B08D57]/60 mr-3" />
                                     <h3 style={{ filter: 'drop-shadow(0 0 10px rgba(176, 141, 87, 0.6)' }}
-                                     className="md:text-3xl whitespace-nowrap font-bold bg-gradient-to-r from-[#B08D57] to-[#B08D57]/50 bg-clip-text text-transparent tracking-wide">
+                                        className="md:text-3xl whitespace-nowrap font-bold bg-gradient-to-r from-[#B08D57] to-[#B08D57]/50 bg-clip-text text-transparent tracking-wide">
                                         Generating Caption
                                     </h3>
                                     <Quote className="w-6 h-6 text-[#B08D57]/60 ml-3 rotate-180" />
                                 </div>
                             </motion.div>
 
-                           
+
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -345,15 +345,15 @@ const Page = () => {
                                 </div>
                                 <p className="text-slate-400 text-sm mt-4 flex items-center justify-center gap-2">
                                     <svg width="30" height="30" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="minimalistGold" cx="50%" cy="50%" r="60%">
-                <stop offset="0%" style={{ stopColor: "#F4E4BC", stopOpacity: 1 }} />
-                <stop offset="50%" style={{ stopColor: "#E6C878", stopOpacity: 1 }} />
-                <stop offset="100%" style={{ stopColor: "#C9A96E", stopOpacity: 1 }} />
-              </linearGradient>
-            </defs>
+                                        <defs>
+                                            <linearGradient id="minimalistGold" cx="50%" cy="50%" r="60%">
+                                                <stop offset="0%" style={{ stopColor: "#F4E4BC", stopOpacity: 1 }} />
+                                                <stop offset="50%" style={{ stopColor: "#E6C878", stopOpacity: 1 }} />
+                                                <stop offset="100%" style={{ stopColor: "#C9A96E", stopOpacity: 1 }} />
+                                            </linearGradient>
+                                        </defs>
 
-            <path d="M 200 40 
+                                        <path d="M 200 40 
          Q 225 155 250 175 
          Q 295 185 340 200 
          Q 295 215 250 225 
@@ -363,9 +363,9 @@ const Page = () => {
          Q 105 185 150 175 
          Q 175 155 200 40 
          Z"
-              fill="url(#minimalistGold)"
-              stroke="none" />
-          </svg>
+                                            fill="url(#minimalistGold)"
+                                            stroke="none" />
+                                    </svg>
                                     This will use 5 aura
                                 </p>
                             </div>
@@ -432,16 +432,15 @@ const Page = () => {
                 <stop offset="100%" style={{ stopColor: "#C9A96E", stopOpacity: 1 }} />
               </linearGradient>
             </defs>
-
             <path d="M 200 40 
-         Q 225 155 250 175 
-         Q 295 185 340 200 
-         Q 295 215 250 225 
-         Q 225 245 200 360 
-         Q 175 245 150 225 
-         Q 105 215 60 200 
-         Q 105 185 150 175 
-         Q 175 155 200 40 
+         Q 220 160 240 180 
+         Q 290 190 340 200 
+         Q 290 210 240 220 
+         Q 220 240 200 360 
+         Q 180 240 160 220 
+         Q 110 210 60 200 
+         Q 110 190 160 180 
+         Q 180 160 200 40 
          Z"
               fill="url(#minimalistGold)"
               stroke="none" />

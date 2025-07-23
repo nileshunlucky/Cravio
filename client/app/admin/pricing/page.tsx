@@ -252,17 +252,16 @@ const PricingCard: React.FC<PricingCardProps> = ({
                                         <stop offset="100%" style={{ stopColor: "#C9A96E", stopOpacity: 1 }} />
                                     </linearGradient>
                                 </defs>
-
                                 <path d="M 200 40 
-                                     Q 225 155 250 175 
-                                     Q 295 185 340 200 
-                                     Q 295 215 250 225 
-                                     Q 225 245 200 360 
-                                     Q 175 245 150 225 
-                                     Q 105 215 60 200 
-                                     Q 105 185 150 175 
-                                     Q 175 155 200 40 
-                                     Z"
+         Q 220 160 240 180 
+         Q 290 190 340 200 
+         Q 290 210 240 220 
+         Q 220 240 200 360 
+         Q 180 240 160 220 
+         Q 110 210 60 200 
+         Q 110 190 160 180 
+         Q 180 160 200 40 
+         Z"
                                     fill="url(#minimalistGold)"
                                     stroke="none" />
                             </svg>
@@ -565,17 +564,6 @@ const Page = () => {
                         ))}
                     </AnimatePresence>
                 </div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.5, duration: 0.8 }}
-                    className="text-center mt-12 sm:mt-16"
-                >
-                    <p className="text-zinc-400 text-sm select-text">
-                        All plans include a 7-day FREE trial • Cancel anytime • No hidden fees
-                    </p>
-                </motion.div>
             </motion.div>
 
             {/* Floating Particles Effect */}

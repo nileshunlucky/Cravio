@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, X, CheckCircle, AlertCircle, Clock, Loader2, Crown, Sparkles, Calendar } from 'lucide-react'
+import { Upload, X, CheckCircle, AlertCircle, Clock, Loader2, Sparkles, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { useUser } from '@clerk/nextjs'
 
@@ -56,7 +56,6 @@ const Page = () => {
     const [taskId, setTaskId] = useState<string | null>(null)
     const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null)
     const { user } = useUser()
-    const [userData, setUserData] = useState<UserData | null>(null)
     const [existingPersonas, setExistingPersonas] = useState<Persona[]>([])
     const [showExisting, setShowExisting] = useState(false)
     const email = user?.emailAddresses?.[0]?.emailAddress || ''
@@ -73,7 +72,6 @@ const Page = () => {
                 const data = await res.json()
 
                 if (res.ok) {
-                    setUserData(data)
                     setExistingPersonas(data.personas || [])
                     if (data.personas && data.personas.length > 0) {
                         setShowExisting(true)
@@ -321,9 +319,6 @@ const Page = () => {
                             <CardTitle className="text-[#B08D57] flex items-center gap-2">
                                 <Sparkles className="w-5 h-5" />
                                 Create New Persona
-                                {userData && userData.credits >= 200 && (
-                                    <span className="ml-2 text-xs text-green-400">(Sufficient credits)</span>
-                                )}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-6">
@@ -335,7 +330,7 @@ const Page = () => {
                                     value={personaName}
                                     onChange={(e) => setPersonaName(e.target.value)}
                                     disabled={isSubmitting}
-                                    className="bg-gray-800/50 border-[#B08D57]/30 text-white placeholder-gray-400 focus:border-[#B08D57] focus:ring-[#B08D57]/20"
+                                    className="bg-zinc-800/50 border-[#B08D57]/30 text-white placeholder-gray-400 focus:border-[#B08D57] focus:ring-[#B08D57]/20"
                                 />
                             </div>
 
@@ -373,7 +368,7 @@ const Page = () => {
                                                 animate={{ opacity: 1, scale: 1 }}
                                                 transition={{ delay: index * 0.05 }}
                                             >
-                                                <Card className="relative group overflow-hidden bg-gray-800/50 border-[#B08D57]/20">
+                                                <Card className="relative group overflow-hidden bg-zinc-800/50 border-[#B08D57]/20">
                                                     <CardContent className="p-0">
                                                         <img
                                                             src={img.preview}
@@ -424,8 +419,7 @@ const Page = () => {
                                         </>
                                     ) : (
                                         <>
-                                            <Crown className="w-5 h-5 mr-3" />
-                                            Train Persona (200 Credits)
+                                            Train Persona
                                         </>
                                     )}
                                 </Button>
@@ -482,7 +476,7 @@ const Page = () => {
                                             <div className="relative">
                                                 <Progress
                                                     value={taskStatus.progress || 0}
-                                                    className="h-3 bg-gray-800 border border-[#B08D57]/20"
+                                                    className="h-3 bg-zinc-800 border border-[#B08D57]/20"
                                                 />
                                                 <motion.div
                                                     className="absolute inset-0 bg-gradient-to-r from-transparent via-[#B08D57]/30 to-transparent h-full rounded-full"
@@ -547,7 +541,7 @@ const Page = () => {
 
                                         {/* Task ID */}
                                         {taskId && (
-                                            <div className="text-xs text-gray-500 font-mono bg-gray-800/50 p-2 rounded border border-gray-700">
+                                            <div className="text-xs text-gray-500 font-mono bg-zinc-800/50 p-2 rounded border border-gray-700">
                                                 <span className="text-gray-400">Task ID:</span> {taskId}
                                             </div>
                                         )}
