@@ -57,7 +57,13 @@ const Page = () => {
     useEffect(() => {
         const fetchUserData = async () => {
             if (!user?.emailAddresses?.[0]?.emailAddress) {
-                toast.error("Failed to load user data")
+                toast.error("Failed to load user data", {
+                    style: {
+                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
+                        color: "black",
+                        border: "2px solid black"
+                    }
+                })
                 return
             }
 
@@ -72,7 +78,13 @@ const Page = () => {
                     }
                 } else {
                     console.error("Error from server:", data)
-                    toast.error("Failed to load user data")
+                    toast.error("Failed to load user data", {
+                    style: {
+                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
+                        color: "black",
+                        border: "2px solid black"
+                    }
+                })
                 }
             } catch (error) {
                 console.error("Failed to fetch user data:", error)
@@ -96,15 +108,33 @@ const Page = () => {
                 if (status.state === 'SUCCESS' || status.state === 'FAILURE') {
                     setIsSubmitting(false);
                     if (status.state === 'SUCCESS') {
-                        toast.success('Persona training completed successfully!');
+                        toast.success('Persona training completed successfully!', {
+                    style: {
+                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
+                        color: "black",
+                        border: "2px solid black"
+                    }
+                });
                         setTimeout(() => window.location.reload(), 2000);
                     } else {
-                        toast.error(`Training failed: ${status.error}`);
+                        toast.error(`Training failed: ${status.error}`, {
+                    style: {
+                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
+                        color: "black",
+                        border: "2px solid black"
+                    }
+                });
                     }
                 }
             } catch (error) {
                 console.error('Error polling:', error);
-                toast.error('Error checking task status');
+                toast.error('Error checking task status', {
+                    style: {
+                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
+                        color: "black",
+                        border: "2px solid black"
+                    }
+                });
             }
         };
 
@@ -140,7 +170,13 @@ const Page = () => {
 
     const handleSubmit = async () => {
         if (!personaName || images.length < 10) {
-            toast.error('Please enter a name and upload at least 10 images.')
+            toast.error('Please enter a name and upload at least 10 images.', {
+                    style: {
+                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
+                        color: "black",
+                        border: "2px solid black"
+                    }
+                })
             return
         }
 
@@ -164,14 +200,26 @@ const Page = () => {
 
             if (res.ok) {
                 setTaskId(data.task_id)
-                toast.success('Training started! You can track progress below.')
+                toast.success('Training started! You can track progress below.', {
+                    style: {
+                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
+                        color: "black",
+                        border: "2px solid black"
+                    }
+                })
             } else {
                 throw new Error(data.detail || 'Failed to start training')
             }
 
         } catch (error) {
             console.error('Error submitting persona:', error)
-            toast.error('An error occurred while starting training.')
+            toast.error('An error occurred while starting training.', {
+                    style: {
+                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
+                        color: "black",
+                        border: "2px solid black"
+                    }
+                })
             setIsSubmitting(false)
         }
     }

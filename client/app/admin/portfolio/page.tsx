@@ -3,7 +3,7 @@
 import React, {useEffect} from 'react'
 import { useUser } from '@clerk/nextjs'
 
-const page = () => {
+const Page = () => {
   const { user } = useUser()
   
   useEffect(() => {
@@ -36,4 +36,4 @@ const page = () => {
   )
 }
 
-export default page
+export default Page

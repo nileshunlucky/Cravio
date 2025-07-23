@@ -4,7 +4,9 @@ import React, { useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
 import { motion, AnimatePresence, useMotionValue } from 'framer-motion'
-import { Upload, Sparkles, ArrowRight } from 'lucide-react'
+import { Upload } from 'lucide-react'
+import LuxuryProcessingAnimation from '@/components/LuxuryProcessingAnimation'
+
 
 // Define a consistent type for a Persona
 type Persona = {
@@ -53,16 +55,29 @@ const Page = () => {
                     }
                 } else {
                     console.error("Error from server:", data)
-                    toast.error("Failed to load user data")
+                    toast.error("Failed to load user data", {
+                        style: {
+                            background: "linear-gradient(to right, #B08D57, #4e3c20)",
+                            color: "black",
+                            border: "2px solid black"
+                        }
+                    })
                 }
             } catch (error) {
                 console.error("Failed to fetch user data:", error)
-                toast.error("An error occurred while fetching data.")
+                toast.error("An error occurred while fetching data.", {
+                    style: {
+                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
+                        color: "black",
+                        border: "2px solid black"
+                    }
+                })
             }
         }
 
         fetchUserData()
     }, [email])
+
 
     // Handler for image file selection
     const handleImageUpload = (file: File) => {
@@ -101,46 +116,55 @@ const Page = () => {
 
     // Handler for the generate button
     const handleGenerate = async () => {
-        if (!prompt || !selectedPersona || !uploadedImage) {
-            toast.error("Please upload an image, select a persona, and enter a prompt.")
-            return
-        }
+        if (!prompt || !selectedPersona || !uploadedImage) return toast.error(!prompt ? "Please enter a prompt." : !selectedPersona ? "Please select a persona." : "Please upload an image.", {
+            style: {
+                background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+                color: "white",
+                border: "2px solid black"
+            }
+        });
+
 
         try {
             setIsProcessing(true)
-        // Simulate processing
-        setTimeout(() => {
-            setIsProcessing(false)
-            toast.success("Image generated successfully!", {
-                style: {
-                    background: "linear-gradient(to right, #B08D57, #4e3c20)",
-                    color: "black",
-                    border: "2px solid black"
-                }
-            })
-        }, 3000)
+            // Simulate processing
+            setTimeout(() => {
+                setIsProcessing(false)
+                toast.success("Image generated successfully!", {
+                    style: {
+                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
+                        color: "black",
+                        border: "2px solid black"
+                    }
+                })
+            }, 30000)
+
         } catch (error) {
             toast.error("An error occurred while generating the image.", {
                 style: {
-                    background: "linear-gradient(to right, #B08D57, #4e3c20)",
-                    color: "black",
+                    background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+                    color: "white",
                     border: "2px solid black"
                 }
             })
             setIsProcessing(false)
+            console.log(error)
         }
     }
 
     return (
         <div
-            className="min-h-screen bg-black text-white overflow-hidden relative flex items-center justify-center p-4 sm:p-6 lg:p-8"
+            className="min-h-screen overflow-hidden relative flex items-center justify-center p-4 sm:p-6 lg:p-8"
             onMouseMove={(e) => {
                 mouseX.set(e.clientX)
                 mouseY.set(e.clientY)
             }}
         >
             <main className="w-full max-w-7xl mx-auto">
-                <div className="grid lg:grid-cols-3 gap-8 items-start">
+                {
+                    isProcessing ?
+                        <LuxuryProcessingAnimation isProcessing={isProcessing} />
+                        : ( <div className="grid md:grid-cols-2 gap-8">
 
                     {/* Column 1: Image Upload */}
                     <motion.div
@@ -150,9 +174,7 @@ const Page = () => {
                         className="lg:col-span-1"
                     >
                         <motion.div
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className={`relative border-2 transition-all duration-500 rounded-2xl p-8 text-center cursor-pointer group
+                            className={`relative border-2 transition-all duration-500 rounded-2xl p-2 text-center cursor-pointer group
                                 ${dragActive ? 'border-[#B08D57] bg-[#B08D57]/5' : 'border-[#B08D57]/50'}
                                 ${imagePreview ? 'border-[#B08D57]/50' : ''}
                             `}
@@ -217,39 +239,42 @@ const Page = () => {
                             <h2 className="text-2xl font-light text-zinc-300 tracking-wide">Select Your Persona</h2>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                            {existingPersonas.map((persona) => (
-                                <motion.div
-                                    key={persona.persona_name}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => setSelectedPersona(persona)}
-                                    className={`relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300 aspect-square
+                            {existingPersonas?.length > 0 ? (
+                                existingPersonas.map((persona) => (
+                                    <motion.div
+                                        key={persona.persona_name}
+                                        onClick={() => setSelectedPersona(persona)}
+                                        className={`relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300 aspect-square
                                         ${selectedPersona?.persona_name === persona.persona_name ? 'ring-2 ring-offset-2 ring-offset-black ring-[#B08D57]' : 'ring-1 ring-white/10'}`}
-                                >
-                                    <img
-                                        src={persona.image_url}
-                                        alt={persona.persona_name}
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => { e.currentTarget.src = `https://placehold.co/200x200/1a1a1a/ffffff?text=${persona.persona_name.charAt(0)}` }}
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                                    <p className="absolute bottom-2 left-3 text-white font-medium text-sm">{persona.persona_name}</p>
-                                    <AnimatePresence>
-                                        {selectedPersona?.persona_name === persona.persona_name && (
-                                            <motion.div
-                                                initial={{ opacity: 0, scale: 0.5 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                exit={{ opacity: 0, scale: 0.5 }}
-                                                className="absolute top-2 right-2 w-6 h-6 bg-[#B08D57] rounded-full flex items-center justify-center"
-                                            >
-                                                <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </motion.div>
-                            ))}
+                                    >
+                                        <img
+                                            src={persona.image_url}
+                                            alt={persona.persona_name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                                        <p className="absolute bottom-2 left-3 text-white font-medium text-sm">{persona.persona_name}</p>
+                                        <AnimatePresence>
+                                            {selectedPersona?.persona_name === persona.persona_name && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, scale: 0.5 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    exit={{ opacity: 0, scale: 0.5 }}
+                                                    className="absolute top-2 right-2 w-6 h-6 bg-[#B08D57] rounded-full flex items-center justify-center"
+                                                >
+                                                    <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </motion.div>
+                                ))
+
+                            ) : (<div className="text-center text-sm text-gray-400 mt-4">
+                                No personas found.
+                            </div>)}
+
                         </div>
                     </motion.div>
 
@@ -278,41 +303,17 @@ const Page = () => {
                             </motion.div>
                         </div>
 
-                        <motion.div
-                            whileTap={{ scale: 0.95 }}
+                        <motion.button
                             onClick={handleGenerate}
-                            className="w-full bg-gradient-to-r from-[#B08D57] to-[#4e3c20] text-black py-4 rounded-xl font-medium tracking-wide disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group h-16 flex items-center justify-center"
-                            >
-                            <AnimatePresence mode="wait">
-                                {isProcessing ? (
-                                    <motion.div
-                                        key="processing"
-                                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                                        className="flex items-center justify-center space-x-2"
-                                    >
-                                        <motion.div
-                                            animate={{ rotate: 360 }}
-                                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                        >
-                                            <Sparkles className="w-5 h-5" />
-                                        </motion.div>
-                                        <span>Crafting...</span>
-                                    </motion.div>
-                                ) : (
-                                    <motion.button
-                                        disabled={!prompt || !selectedPersona || isProcessing}
-                                        key="generate"
-                                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                                        className="flex items-center justify-center space-x-2"
-                                    >
-                                        <span>Generate Masterpiece</span>
-                                        <ArrowRight className="w-5 h-5 transition-transform duration-300" />
-                                    </motion.button>
-                                )}
-                            </AnimatePresence>
-                        </motion.div>
+                            key="generate"
+                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                            className="w-full bg-gradient-to-r from-[#B08D57] to-[#4e3c20] text-black py-4 rounded-xl font-medium tracking-wide disabled:opacity-50 relative overflow-hidden group h-16 flex items-center justify-center cursor-pointer"
+                        >
+                            <span>Generate Masterpiece</span>
+                        </motion.button>
                     </motion.div>
-                </div>
+                </div>)
+                }
             </main>
         </div>
     )

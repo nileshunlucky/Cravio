@@ -92,7 +92,13 @@ const Page = () => {
             if (!response.ok) {
                 const data = await response.json();
                 if (response.status === 402 && data.error === "Not enough credits") {
-                    toast.error("Not enough credits");
+                    toast.error("Not enough credits", {
+                    style: {
+                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
+                        color: "black",
+                        border: "2px solid black"
+                    }
+                });
                     router.push("/admin/plan");
                     return;
                 }
