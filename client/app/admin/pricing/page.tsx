@@ -115,10 +115,10 @@ const PricingCard: React.FC<PricingCardProps> = ({
                         <div className="absolute inset-0 bg-gradient-to-r from-amber-200/20 via-yellow-100/30 to-amber-200/20 rounded-full blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-700"></div>
 
                         {/* Main badge */}
-                        <div className="relative bg-gradient-to-r from-[#1a1a1a] via-[#2d2d2d] to-[#1a1a1a] border-3 border-[#B08D57]/30 text-[#B08D57] px-8 py-3 rounded-full font-light tracking-[0.05em] flex items-center gap-3 shadow-2xl backdrop-blur-sm ">
+                        <div className="relative bg-gradient-to-r from-[#1a1a1a] via-[#2d2d2d] to-[#1a1a1a] border-2 border-[#B08D57] text-[#B08D57] px-8 py-3 rounded-full font-light tracking-[0.05em] flex items-center gap-3 shadow-2xl backdrop-blur-sm ">
 
                             {/* Premium typography */}
-                            <span className="text-sm font-extralight uppercase tracking-widest whitespace-nowrap">
+                            <span className="text-sm uppercase tracking-widest whitespace-nowrap">
                                 Maison Exclusive
                             </span>
                         </div>
@@ -154,7 +154,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: delay + 0.3, duration: 0.6 }}
-                        className={`text-2xl font-bold mb-2 ${isPopular ? 'text-[#B08D57]' : 'text-white'
+                        className={`text-2xl font-bold mb-2 ${isPopular ? 'bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-transparent bg-clip-text' : 'text-white'
                             }`}
                         style={{
                             filter: isPopular
@@ -168,6 +168,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                     </motion.h3>
 
                     {isYearly && (
+                        // #5C0A14, #BC2120, #9B111E
                         <motion.span
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -207,7 +208,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.5 }}
-                            className={`text-4xl sm:text-5xl font-bold ${isPopular ? 'text-[#B08D57]' : 'text-white'
+                            className={`text-4xl sm:text-5xl font-bold ${isPopular ? 'bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-transparent bg-clip-text' : 'text-white'
                                 }`}
                             style={isPopular ? { filter: '0 0 30px rgba(71, 255, 231, 0.1)' } : { filter: '0 0 30px rgba(255, 255, 255, 0.1)' }}
                         >
@@ -242,7 +243,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             key={`aura-${isYearly}`}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="text-[#B08D57] font-bold flex items-center"
+                            className="bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-transparent bg-clip-text font-bold flex items-center"
                         >
                             <svg width="30" height="30" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
                                 <defs>
@@ -282,7 +283,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             }}
                             whileTap={{ scale: 0.98 }}
                             className={`relative z-20 w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-center transition-all duration-300 cursor-pointer ${isPopular
-                                ? 'bg-[#B08D57] text-black hover:bg-[#B08D57]/80 shadow-lg'
+                                ? 'bg-gradient-to-r from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black hover:bg-[#B08D57]/80 shadow-lg'
                                 : 'bg-zinc-800 text-white hover:text-[#B08D57]  hover:bg-zinc-800 '
                                 }`}
                             type="button"
@@ -312,7 +313,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                         >
                             <div className="flex-shrink-0">
                                 {feature.included ? (
-                                    <div className="w-5 h-5 rounded-full bg-[#B08D57] flex items-center justify-center">
+                                    <div className="w-5 h-5 rounded-full bg-gradient-to-r from-[#B08D57] to-[#4e3c20] flex items-center justify-center">
                                         <Check className="w-3 h-3 text-black" />
                                     </div>
                                 ) : (
@@ -378,8 +379,6 @@ const Page = () => {
                     yearly: 12000
                 },
                 list: [
-                    // if aura is monthly then only show monthly aura, if aura is yearly then only show yearly aura
-                    { name: isYearly ? "12000 Aura" : "1000 Aura", included: true },
                     { name: "Persona", included: true },
                     { name: "Caption", included: true },
                     { name: "Upscaller", included: true },
@@ -406,7 +405,6 @@ const Page = () => {
                     yearly: 28800
                 },
                 list: [
-                    { name: isYearly ? "28800 Aura" : "2400 Aura", included: true },
                     { name: "Persona", included: true },
                     { name: "Caption", included: true },
                     { name: "Upscaller", included: true },
@@ -433,7 +431,6 @@ const Page = () => {
                     yearly: 60000
                 },
                 list: [
-                    { name: isYearly ? "60000 Aura" : "5000 Aura", included: true },
                     { name: "Persona", included: true },
                     { name: "Caption", included: true },
                     { name: "Upscaller", included: true },
@@ -512,7 +509,7 @@ const Page = () => {
                     variants={titleVariants}
                     className="text-center mb-8 sm:mb-12"
                 >
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-[#B08D57] drop-shadow-lg select-text">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-transparent bg-clip-text drop-shadow-lg select-text">
                         Select Your Collection
                     </h1>
                     <p className="text-base sm:text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed select-text">
@@ -524,7 +521,7 @@ const Page = () => {
                 <motion.div variants={toggleVariants} className="flex justify-center mb-12">
                     <div className="relative bg-[#0f0f0f] border border-[#B08D57]/40 p-2 rounded-xl">
                         <motion.div
-                            className="absolute inset-y-2 bg-[#B08D57] rounded-lg"
+                            className="absolute inset-y-2 bg-gradient-to-r from-[#4e3c20] via-[#B08D57] to-[#4e3c20] rounded-lg"
                             animate={{
                                 x: isYearly ? "calc(100% - 8px)" : "8px",
                                 width: "calc(50% - 8px)"

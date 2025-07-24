@@ -14,34 +14,34 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-import { LayoutDashboard, Type, DollarSign, Briefcase, User } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 
 // Add luxury styling improvements
 const items = [
   {
     title: "Dashboard",
     url: "/admin/dashboard",
-    icon: LayoutDashboard,
+    icon: ChevronRight
   },
   {
     title: "Persona",
     url: "/admin/persona",
-    icon: User
+    icon: ChevronRight
   },
   {
     title: "Caption",
     url: "/admin/caption",
-    icon: Type,
+    icon: ChevronRight
   },
   {
     title: "Pricing",
-    url: "/admin/pricing", 
-    icon: DollarSign,
+    url: "/admin/pricing",
+    icon: ChevronRight
   },
   {
     title: "Portfolio",
     url: "/admin/portfolio",
-    icon: Briefcase,
+    icon: ChevronRight
   },
 ]
 
@@ -51,26 +51,29 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarContent>
-        <SidebarGroup className="gap-3">
-          <SidebarGroupLabel className="text-xl font-medium">Cravio</SidebarGroupLabel>
+        <SidebarGroup className="gap-5">
+          <SidebarGroupLabel className="text-xl font-medium relative flex justify-center items-center my-3">
+            <p>C R A V I O</p>
+            <div className="absolute left-0 -bottom-1 w-full h-[2px] bg-gradient-to-r from-[#4e3c20] via-[#B08D57] to-[#4e3c20] rounded-full" />
+          </SidebarGroupLabel>
+
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => {
                 const isActive = pathname === item.url
 
                 return (
-                  <SidebarMenuItem key={item.title}>
+                  <SidebarMenuItem key={item.title} className="py-1">
                     <SidebarMenuButton
                       asChild
-                      className={`flex items-center gap-2 px-3 py-2  transition ${
-                        isActive
-                          ? "bg-gradient-to-r from-[#B08D57] to-[#4e3c20] text-black hover:text-black shadow-md"
+                      className={`flex items-center gap-2 px-3 py-5 justify-between transition text-lg ${isActive
+                          ? "bg-gradient-to-r from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black hover:text-black shadow-md"
                           : "text-white"
-                      }`}
+                        }`}
                     >
                       <Link href={item.url}>
-                        <item.icon className="w-5 h-5" />
                         <span>{item.title}</span>
+                        <item.icon size={20} />
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

@@ -38,7 +38,7 @@ const Navbar = ({ aura = 0 }: { aura: number }) => {
               stroke="none" />
           </svg>
 
-          <span className="font-bold">{aura}</span>
+          <span className="font-bold bg-gradient-to-br from-[#C9A96E] via-[#B08D57] to-[#ad8544] text-transparent bg-clip-text">{aura}</span>
         </div>
 
         <UserButton afterSignOutUrl="/" />

@@ -4,7 +4,7 @@ import React, { useState, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { motion, AnimatePresence } from "framer-motion"
-import { Sparkles, UploadCloud, Check, Copy, Undo2, Quote, Zap } from "lucide-react"
+import { Sparkles, Upload, Check, Copy, Undo2, Quote, Zap } from "lucide-react"
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { toast } from "sonner"
@@ -76,44 +76,52 @@ const Page = () => {
     }
 
     const handleGenerate = async () => {
-        if (!file) return;
-        setLoading(true);
-        setCaptions([]);
+    if (!file) return;
+    setLoading(true);
+    setCaptions([]);
 
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("email", email || '');
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("email", email || '');
 
-        try {
-            const response = await fetch("https://cravio-ai.onrender.com/api/post2caption", {
-                method: "POST",
-                body: formData,
-            });
-            if (!response.ok) {
-                const data = await response.json();
-                if (response.status === 403 && data.error === "Not enough aura") {
-                    toast.error("Not enough aura", {
+    try {
+        const response = await fetch("https://cravio-ai.onrender.com/api/post2caption", {
+            method: "POST",
+            body: formData,
+        });
+        
+        // Read the response once
+        const data = await response.json();
+        
+        if (!response.ok) {
+            if (response.status === 403 && data.error === "Not enough aura") {
+                toast.error("Not enough aura", {
                     style: {
-                    background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
-                    color: "white",
-                    border: "2px solid black"
+                        background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+                        color: "white",
+                        border: "2px solid black"
                     }
                 });
-                    router.push("/admin/pricing");
-                    return;
-                }
+                router.push("/admin/pricing");
+                return;
             }
-
-            const data = await response.json();
-            const generatedCaptions = data.Captions;
-
-            setCaptions(generatedCaptions);
-        } catch (err) {
-            console.error("Generation failed", err);
-        } finally {
-            setLoading(false);
+            // Handle other errors (like 500)
+            console.error("Server error:", response.status, data);
+            toast.error("Something went wrong. Please try again.");
+            return;
         }
-    };
+
+        // Success case
+        const generatedCaptions = data.Captions;
+        setCaptions(generatedCaptions);
+        
+    } catch (err) {
+        console.error("Generation failed", err);
+        toast.error("Network error. Please check your connection.");
+    } finally {
+        setLoading(false);
+    }
+};
 
     return (
         <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 my-5">
@@ -134,7 +142,7 @@ const Page = () => {
                             className="flex flex-col items-center justify-center py-24 px-12 min-h-[500px]"
                         >
                             {/* Main Container */}
-                            <div className="relative">
+                            <div className="relative ">
                                 {/* Outer Glow Ring */}
                                 <motion.div
                                     className="absolute -inset-16 rounded-full border-2 border-[#B08D57]/20"
@@ -279,9 +287,9 @@ const Page = () => {
                             >
                                 <div className="flex items-center justify-center ">
                                     <Quote className="w-6 h-6 text-[#B08D57]/60 mr-3" />
-                                    <h3 style={{ filter: 'drop-shadow(0 0 10px rgba(176, 141, 87, 0.6)' }}
-                                        className="md:text-3xl whitespace-nowrap font-bold bg-gradient-to-r from-[#B08D57] to-[#B08D57]/50 bg-clip-text text-transparent tracking-wide">
-                                        Generating Caption
+                                    <h3
+                                        className="md:text-3xl whitespace-nowrap font-bold bg-gradient-to-r from-[#4e3c20] via-[#B08D57] to-[#4e3c20] bg-clip-text text-transparent tracking-wide">
+                                        Curating Caption
                                     </h3>
                                     <Quote className="w-6 h-6 text-[#B08D57]/60 ml-3 rotate-180" />
                                 </div>
@@ -310,9 +318,6 @@ const Page = () => {
                                                 delay: i * 0.15,
                                                 repeat: Infinity
                                             }}
-                                            style={{
-                                                boxShadow: '0 0 15px rgba(176, 141, 87, 0.8)'
-                                            }}
                                         />
                                     ))}
                                 </div>
@@ -335,11 +340,11 @@ const Page = () => {
                                 <div className="flex md:flex-row flex-col items-center justify-center gap-3">
                                     <Button
                                         onClick={handleGenerate}
-                                        className="w-full max-w-sm h-14 bg-[#B08D57] text-black font-bold text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 border-2 border-slate-700  hover:bg-[#B08D57]/80"
+                                        className="w-full max-w-sm h-14 bg-gradient-to-r from-[#4e3c20] via-[#B08D57] to-[#4e3c20]   text-black font-bold text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 border-2 border-slate-700  hover:bg-[#B08D57]/80"
                                     >
                                         <div className="flex items-center justify-center space-x-3">
                                             <Undo2 />
-                                            <span>Generate Again</span>
+                                            <span>Craft Again</span>
                                         </div>
                                     </Button>
                                     {/* New Caption */}
@@ -349,31 +354,6 @@ const Page = () => {
                                         <span>New Caption</span>
                                     </Button>
                                 </div>
-                                <p className="text-slate-400 text-sm mt-4 flex items-center justify-center gap-2">
-                                    <svg width="30" height="30" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-                                        <defs>
-                                            <linearGradient id="minimalistGold" cx="50%" cy="50%" r="60%">
-                                                <stop offset="0%" style={{ stopColor: "#F4E4BC", stopOpacity: 1 }} />
-                                                <stop offset="50%" style={{ stopColor: "#E6C878", stopOpacity: 1 }} />
-                                                <stop offset="100%" style={{ stopColor: "#C9A96E", stopOpacity: 1 }} />
-                                            </linearGradient>
-                                        </defs>
-
-                                        <path d="M 200 40 
-         Q 225 155 250 175 
-         Q 295 185 340 200 
-         Q 295 215 250 225 
-         Q 225 245 200 360 
-         Q 175 245 150 225 
-         Q 105 215 60 200 
-         Q 105 185 150 175 
-         Q 175 155 200 40 
-         Z"
-                                            fill="url(#minimalistGold)"
-                                            stroke="none" />
-                                    </svg>
-                                    This will use 5 aura
-                                </p>
                             </div>
 
                             {/* -- Generated Captions List -- */}
@@ -409,7 +389,8 @@ const Page = () => {
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
                             transition={{ duration: 0.5 }}
-                            className="w-full"
+                            className="max-w-sm mx-auto"
+
                         >
                             <Card className="bg-transparent border-0 shadow-none">
                                 <CardContent className="p-0">
@@ -419,40 +400,12 @@ const Page = () => {
                                     <div className="mt-8 text-center">
                                         <Button
                                             onClick={handleGenerate}
-                                            className="w-full max-w-sm h-14 bg-gradient-to-r from-[#B08D57] to-[#8f6a34] text-slate-900 font-bold text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-                                            style={{
-                                                boxShadow: '0 0 15px rgba(255, 215, 100, 0.5)'
-                                            }}
+                                            className="w-full max-w-sm h-14 bg-gradient-to-r from-[#4e3c20] via-[#B08D57] to-[#4e3c20]  font-bold text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                                         >
                                             <div className="flex items-center justify-center space-x-3">
-                                                <Sparkles className="w-6 h-6" />
-                                                <span>Generate Viral Captions</span>
+                                                <span>Craft Exclusive Captions</span>
                                             </div>
                                         </Button>
-                                        <p className="text-slate-400 text-sm mt-4 flex items-center justify-center gap-2">
-                                            <svg width="30" height="30" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="minimalistGold" cx="50%" cy="50%" r="60%">
-                <stop offset="0%" style={{ stopColor: "#F4E4BC", stopOpacity: 1 }} />
-                <stop offset="50%" style={{ stopColor: "#E6C878", stopOpacity: 1 }} />
-                <stop offset="100%" style={{ stopColor: "#C9A96E", stopOpacity: 1 }} />
-              </linearGradient>
-            </defs>
-            <path d="M 200 40 
-         Q 220 160 240 180 
-         Q 290 190 340 200 
-         Q 290 210 240 220 
-         Q 220 240 200 360 
-         Q 180 240 160 220 
-         Q 110 210 60 200 
-         Q 110 190 160 180 
-         Q 180 160 200 40 
-         Z"
-              fill="url(#minimalistGold)"
-              stroke="none" />
-          </svg>
-                                            This will use 5 aura
-                                        </p>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -464,18 +417,26 @@ const Page = () => {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.5 }}
+                            className="max-w-sm mx-auto"
                         >
                             <label
                                 htmlFor="file-upload"
-                                className="relative block w-full cursor-pointer group"
+                                className="relative block cursor-pointer group"
                             >
-                                <div className="w-full aspect-[9/16] flex items-center justify-center border-3 border-[#B08D57] rounded-2xl p-8 text-center transition-all duration-300 group-hover:border-[#B08D57]/50 group-hover:bg-[#B08D57]/20 bg-[#B08D57]/10 relative overflow-hidden">
+                                <div className="aspect-[9/16] flex items-center justify-center border-3 border-[#B08D57] rounded-2xl p-8 text-center transition-all duration-300 group-hover:border-[#B08D57]/50 group-hover:bg-[#B08D57]/20relative overflow-hidden">
                                     <div className="absolute inset-0 bg-gradient-to-r from-[#B08D57]/0 via-[#B08D57]/5 to-[#B08D57]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                    <div className="relative z-10 text-[#B08D57] group-hover:text-[#B08D57] transition-colors duration-300">
-                                        <UploadCloud className="w-16 h-16 mx-auto mb-4" />
-                                        <p className="text-xl font-semibold mb-2">Upload Your post</p>
-                                        <p className="text-sm opacity-80">Drag & drop or click to browse</p>
-                                    </div>
+                                    <motion.div
+                                                key="upload"
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -20 }}
+                                                className="py-12 flex flex-col justify-center items-center h-64"
+                                            >
+                                                <div className="w-16 h-16 mx-auto mb-6 border border-[#B08D57]/30 rounded-full flex items-center justify-center">
+                                                    <Upload className="w-6 h-6 text-[#B08D57]" />
+                                                </div>
+                                                <p className="text-white/70 font-light mb-2">Drop your POST here</p>
+                                            </motion.div>
                                 </div>
                                 <input
                                     id="file-upload"

@@ -75,19 +75,19 @@ const Page = () => {
                     console.error("Error from server:", data)
                     toast.error("Failed to load user data", {
                         style: {
-                            background: "linear-gradient(to right, #B08D57, #4e3c20)",
-                            color: "black",
+                            background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+                            color: "white",
                             border: "2px solid black"
                         }
                     })
-                    
+
                 }
             } catch (error) {
                 console.error("Failed to fetch user data:", error)
                 toast.error("An error occurred while fetching data.", {
                     style: {
-                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
-                        color: "black",
+                        background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+                        color: "white",
                         border: "2px solid black"
                     }
                 })
@@ -163,7 +163,7 @@ const Page = () => {
                 setTaskId(data.task_id)
                 toast.success('Image generation started!', {
                     style: {
-                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
+                        background: "linear-gradient(to right, #4e3c20, #B08D57, #4e3c20)",
                         color: "black",
                         border: "2px solid black"
                     }
@@ -172,9 +172,9 @@ const Page = () => {
             else if (res.status === 403) {
                 toast.error('Not enough aura', {
                     style: {
-                    background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
-                    color: "white",
-                    border: "2px solid black"
+                        background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+                        color: "white",
+                        border: "2px solid black"
                     }
                 });
                 router.push('/admin/pricing')
@@ -209,7 +209,7 @@ const Page = () => {
                     if (status.state === 'SUCCESS') {
                         toast.success('Persona training completed successfully!', {
                             style: {
-                                background: "linear-gradient(to right, #B08D57, #4e3c20)",
+                                background: "linear-gradient(to right, #4e3c20, #B08D57, #4e3c20)",
                                 color: "black",
                                 border: "2px solid black"
                             }
@@ -218,10 +218,10 @@ const Page = () => {
                     } else {
                         toast.error(`Training failed: ${status.error}`, {
                             style: {
-                                background: "linear-gradient(to right, #B08D57, #4e3c20)",
-                                color: "black",
-                                border: "2px solid black"
-                            }
+                            background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+                            color: "white",
+                            border: "2px solid black"
+                        }
                         });
                     }
                 }
@@ -229,10 +229,10 @@ const Page = () => {
                 console.error('Error polling:', error);
                 toast.error('Error checking task status', {
                     style: {
-                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
-                        color: "black",
-                        border: "2px solid black"
-                    }
+                            background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+                            color: "white",
+                            border: "2px solid black"
+                        }
                 });
             }
         };
@@ -306,7 +306,6 @@ const Page = () => {
                                                     <Upload className="w-6 h-6 text-[#B08D57]" />
                                                 </div>
                                                 <p className="text-white/70 font-light mb-2">Drop your image here</p>
-                                                <p className="text-white/40 text-sm font-light">or click to browse</p>
                                             </motion.div>
                                         )}
                                     </AnimatePresence>
@@ -384,7 +383,7 @@ const Page = () => {
                                             onChange={(e) => setPrompt(e.target.value)}
                                             placeholder="Describe your vision..."
                                             maxLength={500}
-                                            className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-white/40 resize-none focus:outline-none focus:border-[#B08D57]/50 transition-all duration-300 font-light"
+                                            className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 placeholder-white/40 resize-none focus:outline-none focus:border-[#B08D57]/50 transition-all duration-300 font-light"
                                         />
                                         <motion.div
                                             className="absolute bottom-3 right-3 text-white/30 text-xs font-light"
@@ -399,7 +398,7 @@ const Page = () => {
                                     onClick={handleGenerate}
                                     key="generate"
                                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                                    className="w-full bg-gradient-to-r from-[#B08D57] to-[#4e3c20] text-black py-4 rounded-xl font-medium tracking-wide disabled:opacity-50 relative overflow-hidden group h-16 flex items-center justify-center cursor-pointer"
+                                    className="w-full bg-gradient-to-r from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black py-4 rounded-xl font-medium tracking-wide disabled:opacity-50 relative overflow-hidden group h-16 flex items-center justify-center cursor-pointer"
                                 >
                                     <span>Craft Masterpiece</span>
                                 </motion.button>
