@@ -97,7 +97,7 @@ const Page = () => {
             if (response.status === 403 && data.error === "Not enough aura") {
                 toast.error("Not enough aura", {
                     style: {
-                        background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+                        background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                         color: "white",
                         border: "2px solid black"
                     }
@@ -107,7 +107,13 @@ const Page = () => {
             }
             // Handle other errors (like 500)
             console.error("Server error:", response.status, data);
-            toast.error("Something went wrong. Please try again.");
+            toast.error("Something went wrong. Please try again.",{
+                 style: {
+                        background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
+                        color: "white",
+                        border: "2px solid black"
+                    }
+            });
             return;
         }
 
@@ -117,7 +123,13 @@ const Page = () => {
         
     } catch (err) {
         console.error("Generation failed", err);
-        toast.error("Network error. Please check your connection.");
+        toast.error("Network error. Please check your connection.",{
+                 style: {
+                        background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
+                        color: "white",
+                        border: "2px solid black"
+                    }
+            });
     } finally {
         setLoading(false);
     }
@@ -288,7 +300,7 @@ const Page = () => {
                                 <div className="flex items-center justify-center ">
                                     <Quote className="w-6 h-6 text-[#B08D57]/60 mr-3" />
                                     <h3
-                                        className="md:text-3xl whitespace-nowrap font-bold bg-gradient-to-r from-[#4e3c20] via-[#B08D57] to-[#4e3c20] bg-clip-text text-transparent tracking-wide">
+                                        className="md:text-3xl whitespace-nowrap font-bold bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] bg-clip-text text-transparent tracking-wide">
                                         Curating Caption
                                     </h3>
                                     <Quote className="w-6 h-6 text-[#B08D57]/60 ml-3 rotate-180" />
@@ -340,7 +352,7 @@ const Page = () => {
                                 <div className="flex md:flex-row flex-col items-center justify-center gap-3">
                                     <Button
                                         onClick={handleGenerate}
-                                        className="w-full max-w-sm h-14 bg-gradient-to-r from-[#4e3c20] via-[#B08D57] to-[#4e3c20]   text-black font-bold text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 border-2 border-slate-700  hover:bg-[#B08D57]/80"
+                                        className="w-full max-w-sm h-14 bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20]   text-black font-bold text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 border-2 border-slate-700  hover:bg-[#B08D57]/80"
                                     >
                                         <div className="flex items-center justify-center space-x-3">
                                             <Undo2 />
@@ -400,7 +412,7 @@ const Page = () => {
                                     <div className="mt-8 text-center">
                                         <Button
                                             onClick={handleGenerate}
-                                            className="w-full max-w-sm h-14 bg-gradient-to-r from-[#4e3c20] via-[#B08D57] to-[#4e3c20]  font-bold text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                                            className="w-full max-w-sm h-14 bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20]  font-bold text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                                         >
                                             <div className="flex items-center justify-center space-x-3">
                                                 <span>Craft Exclusive Captions</span>
@@ -424,7 +436,7 @@ const Page = () => {
                                 className="relative block cursor-pointer group"
                             >
                                 <div className="aspect-[9/16] flex items-center justify-center border-3 border-[#B08D57] rounded-2xl p-8 text-center transition-all duration-300 group-hover:border-[#B08D57]/50 group-hover:bg-[#B08D57]/20relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-[#B08D57]/0 via-[#B08D57]/5 to-[#B08D57]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    <div className="absolute inset-0 bg-gradient-to-br from-[#B08D57]/0 via-[#B08D57]/5 to-[#B08D57]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     <motion.div
                                                 key="upload"
                                                 initial={{ opacity: 0, y: 20 }}

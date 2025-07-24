@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Body, Response
 from fastapi.middleware.cors import CORSMiddleware
+import httpx
 from pydantic import BaseModel, EmailStr
 from db import users_collection
 from api.lemon_webhook import router as lemon_webhook_router
@@ -86,3 +87,28 @@ def save_referral(data: UserReferral = Body(...)):
     }
     users_collection.insert_one(user_data)
     return {"message": "User added successfully"}
+
+@app.get("/proxy-image")
+async def proxy_image(url: str):
+    """Proxy endpoint to fetch images and avoid CORS issues"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                }
+            )
+            response.raise_for_status()
+            
+            content_type = response.headers.get("content-type", "image/jpeg")
+            
+            return Response(
+                content=response.content,
+                media_type=content_type,
+                headers={
+                    "Cache-Control": "public, max-age=3600"
+                }
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch image: {str(e)}")

@@ -112,19 +112,19 @@ const PricingCard: React.FC<PricingCardProps> = ({
                 >
                     <div className="relative group">
                         {/* Subtle glow effect */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-amber-200/20 via-yellow-100/30 to-amber-200/20 rounded-full blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-700"></div>
+                        <div className="absolute inset-0 bg-gradient-to-br from-amber-200/20 via-yellow-100/30 to-amber-200/20 rounded-full blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-700"></div>
 
                         {/* Main badge */}
-                        <div className="relative bg-gradient-to-r from-[#1a1a1a] via-[#2d2d2d] to-[#1a1a1a] border-2 border-[#B08D57] text-[#B08D57] px-8 py-3 rounded-full font-light tracking-[0.05em] flex items-center gap-3 shadow-2xl backdrop-blur-sm ">
+                        <div className="relative bg-gradient-to-br from-[#1a1a1a] via-[#2d2d2d] to-[#1a1a1a] border-2 border-[#B08D57] text-[#B08D57] px-8 py-3 rounded-full font-light tracking-[0.05em] flex items-center gap-3 shadow-2xl backdrop-blur-sm ">
 
                             {/* Premium typography */}
-                            <span className="text-sm uppercase tracking-widest whitespace-nowrap">
+                            <span className="text-sm uppercase tracking-widest whitespace-nowrap ">
                                 Maison Exclusive
                             </span>
                         </div>
 
                         {/* Subtle accent line */}
-                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-px bg-gradient-to-r from-transparent via-[#B08D57]/50 to-transparent"></div>
+                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-px bg-gradient-to-br from-transparent via-[#B08D57]/50 to-transparent"></div>
                     </div>
                 </motion.div>
             )}
@@ -283,7 +283,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             }}
                             whileTap={{ scale: 0.98 }}
                             className={`relative z-20 w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-center transition-all duration-300 cursor-pointer ${isPopular
-                                ? 'bg-gradient-to-r from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black hover:bg-[#B08D57]/80 shadow-lg'
+                                ? 'bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black hover:bg-[#B08D57]/80 shadow-lg'
                                 : 'bg-zinc-800 text-white hover:text-[#B08D57]  hover:bg-zinc-800 '
                                 }`}
                             type="button"
@@ -313,7 +313,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                         >
                             <div className="flex-shrink-0">
                                 {feature.included ? (
-                                    <div className="w-5 h-5 rounded-full bg-gradient-to-r from-[#B08D57] to-[#4e3c20] flex items-center justify-center">
+                                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-[#B08D57] to-[#4e3c20] flex items-center justify-center">
                                         <Check className="w-3 h-3 text-black" />
                                     </div>
                                 ) : (
@@ -340,7 +340,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             repeat: Infinity,
                             ease: "easeInOut"
                         }}
-                        className="absolute inset-0 bg-gradient-to-r from-[#B08D57]/10 via-transparent to-[#B08D57]/10 rounded-2xl"
+                        className="absolute inset-0 bg-gradient-to-br from-[#B08D57]/10 via-transparent to-[#B08D57]/10 rounded-2xl"
                         style={{ pointerEvents: 'none' }}
                     />
                 )}
@@ -521,7 +521,7 @@ const Page = () => {
                 <motion.div variants={toggleVariants} className="flex justify-center mb-12">
                     <div className="relative bg-[#0f0f0f] border border-[#B08D57]/40 p-2 rounded-xl">
                         <motion.div
-                            className="absolute inset-y-2 bg-gradient-to-r from-[#4e3c20] via-[#B08D57] to-[#4e3c20] rounded-lg"
+                            className="absolute inset-y-2 bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] rounded-lg"
                             animate={{
                                 x: isYearly ? "calc(100% - 8px)" : "8px",
                                 width: "calc(50% - 8px)"

@@ -3,22 +3,23 @@
 import React, { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, X, CheckCircle, AlertCircle, Clock, Loader2, Sparkles, Calendar } from 'lucide-react'
+import { Upload, X,Loader2, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
+
 interface ImageFile {
     file: File
     preview: string
 }
+
 interface TaskResult {
     message: string
 }
-
 
 interface TaskStatus {
     state: string
@@ -31,17 +32,33 @@ interface TaskStatus {
 }
 
 interface Persona {
-    uploaded_urls: string | undefined
+    image_url: string 
     progress: number
     _id: string
     persona_name: string
-    training_status: string
+    status: string
     created_at: string
-    model_s3_url?: string
-    trigger_word?: string
+    model: string
 }
 
 const MAX_IMAGES = 20
+
+// Skeleton Components
+const PersonaSkeleton = () => (
+    <div className="aspect-square bg-gradient-to-br from-zinc-900/40 to-zinc-800/20 rounded-2xl overflow-hidden">
+        <motion.div 
+            className="w-full h-full bg-gradient-to-br from-transparent via-white/5 to-transparent"
+            animate={{
+                x: ['-100%', '100%']
+            }}
+            transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+            }}
+        />
+    </div>
+)
 
 const Page = () => {
     const [personaName, setPersonaName] = useState('')
@@ -49,21 +66,21 @@ const Page = () => {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [taskId, setTaskId] = useState<string | null>(null)
     const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null)
-    const { user } = useUser()
     const [existingPersonas, setExistingPersonas] = useState<Persona[]>([])
-    const [showExisting, setShowExisting] = useState(false)
-    const email = user?.emailAddresses?.[0]?.emailAddress || ''
-
+    const [showCreateNew, setShowCreateNew] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
+    const { user } = useUser()
     const router = useRouter()
+    const email = user?.emailAddresses?.[0]?.emailAddress || ''
 
     useEffect(() => {
         const fetchUserData = async () => {
             if (!user?.emailAddresses?.[0]?.emailAddress) {
-                toast.error("Failed to load user data", {
+                toast.error("Authentication required", {
                     style: {
-                    background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
-                    color: "white",
-                    border: "2px solid black"
+                        background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
+                        color: "white",
+                        border: "2px solid black"
                     }
                 })
                 return
@@ -75,28 +92,32 @@ const Page = () => {
 
                 if (res.ok) {
                     setExistingPersonas(data.personas || [])
-                    if (data.personas && data.personas.length > 0) {
-                        setShowExisting(true)
-                    }
                 } else {
-                    console.error("Error from server:", data)
-                    toast.error("Failed to load user data", {
-                    style: {
-                    background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
-                    color: "white",
-                    border: "2px solid black"
-                    }
-                })
+                    toast.error("Failed to load data", {
+                        style: {
+                            background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
+                            color: "white",
+                            border: "2px solid black"
+                        }
+                    })
                 }
             } catch (error) {
                 console.error("Failed to fetch user data:", error)
+                toast.error("Failed to load data", {
+                    style: {
+                        background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
+                        color: "white",
+                        border: "2px solid black"
+                    }
+                })
+            } finally {
+                setIsLoading(false)
             }
         }
 
         fetchUserData()
-    }, [user])
+    }, [user, email])
 
-    // Poll task status when we have a task ID
     useEffect(() => {
         if (!taskId) return;
 
@@ -106,35 +127,34 @@ const Page = () => {
                 const status = await response.json();
                 setTaskStatus(status);
 
-                // Stop polling if task finished
                 if (status.state === 'SUCCESS' || status.state === 'FAILURE') {
                     setIsSubmitting(false);
                     if (status.state === 'SUCCESS') {
-                        toast.success('Persona training completed successfully!', {
-                    style: {
-                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
-                        color: "black",
-                        border: "2px solid black"
-                    }
-                });
+                        toast.success('Training completed', {
+                            style: {
+                                background: "linear-gradient(to bottom right, #4e3c20, #B08D57, #4e3c20)",
+                                color: "black",
+                                border: "2px solid black"
+                            }
+                        });
                         setTimeout(() => window.location.reload(), 2000);
                     } else {
                         toast.error(`Training failed: ${status.error}`, {
-                    style: {
-                    background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
-                    color: "white",
-                    border: "2px solid black"
-                    }
-                });
+                            style: {
+                                background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
+                                color: "white",
+                                border: "2px solid black"
+                            }
+                        });
                     }
                 }
             } catch (error) {
                 console.error('Error polling:', error);
-                toast.error('Error checking task status', {
+                toast.error('Status check failed', {
                     style: {
-                    background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
-                    color: "white",
-                    border: "2px solid black"
+                        background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
+                        color: "white",
+                        border: "2px solid black"
                     }
                 });
             }
@@ -146,13 +166,11 @@ const Page = () => {
         return () => clearInterval(interval);
     }, [taskId]);
 
-
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files
         if (!files) return
 
         const selectedFiles = Array.from(files).slice(0, MAX_IMAGES - images.length)
-
         const newImages = selectedFiles.map(file => ({
             file,
             preview: URL.createObjectURL(file),
@@ -172,13 +190,13 @@ const Page = () => {
 
     const handleSubmit = async () => {
         if (!personaName || images.length < 10) {
-            toast.error('Please enter a name and upload at least 10 images.', {
-                    style: {
-                    background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+            toast.error('Name and 10+ images required!', {
+                style: {
+                    background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                     color: "white",
                     border: "2px solid black"
-                    }
-                })
+                }
+            })
             return
         }
 
@@ -202,409 +220,315 @@ const Page = () => {
 
             if (res.ok) {
                 setTaskId(data.task_id)
-                toast.success('Training started! You can track progress below.', {
+                toast.success('Training initiated', {
                     style: {
-                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
+                        background: "linear-gradient(to bottom right, #4e3c20, #B08D57, #4e3c20)",
                         color: "black",
                         border: "2px solid black"
                     }
                 })
             }
             if (res.status === 403) {
-                            toast.error('Not enough aura', {
-                                style: {
-                                background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
-                                color: "white",
-                                border: "2px solid black"
-                                }
-                            });
-                            router.push('/admin/pricing')
-                        }
+                toast.error('Not enough aura', {
+                    style: {
+                        background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
+                        color: "white",
+                        border: "2px solid black"
+                    }
+                })
+                router.push('/admin/pricing')
+            }
 
         } catch (error) {
             console.error('Error submitting persona:', error)
-            toast.error('An error occurred while starting training.', {
-                    style: {
-                    background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+            toast.error('Training failed to start', {
+                style: {
+                    background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                     color: "white",
                     border: "2px solid black"
-                    }
-                })
-            
+                }
+            })
         } finally {
             setIsSubmitting(false)
         }
-    }  
-
-    const getStatusIcon = (state: string) => {
-        switch (state) {
-            case 'SUCCESS':
-                return <CheckCircle className="w-5 h-5 text-[#B08D57]" />
-            case 'FAILURE':
-                return <AlertCircle className="w-5 h-5 text-red-500" />
-            case 'PROGRESS':
-                return <Loader2 className="w-5 h-5 text-[#B08D57] animate-spin" />
-            default:
-                return <Clock className="w-5 h-5 text-[#B08D57]/70" />
-        }
     }
 
-    const getStatusColor = (state: string) => {
-        switch (state) {
-            case 'SUCCESS':
-                return 'text-[#B08D57]'
-            case 'FAILURE':
-                return 'text-red-500'
-            case 'PROGRESS':
-                return 'text-[#B08D57]'
-            default:
-                return 'text-[#B08D57]/70'
-        }
-    }
 
     const getPersonaStatusBadge = (status: string) => {
-        switch (status) {
-            case 'completed':
-                return <Badge className="bg-[#B08D57]/20 text-[#B08D57] border-[#B08D57]/30">Completed</Badge>
-            case 'training_in_progress':
-                return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Training</Badge>
-            case 'failed':
-                return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Failed</Badge>
-            default:
-                return <Badge className="bg-[#B08D57]/20 text-[#B08D57] border-[#B08D57]/30">{status}</Badge>
+        const variants: Record<string, string> = {
+            // #4e3c20, #B08D57, #4e3c20
+            'completed': 'bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black',
+            'processing': 'bg-black text-[#B08D57] border-[#B08D57] border-2',
+            'failed': 'bg-gradient-to-br from-[#5C0A14] via-[#BC2120] to-[#9B111E] text-white',
         }
-    }
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        })
+        return (
+            <Badge className={`${variants[status]} `}>
+                {status === 'completed' ? 'Completed' : status === 'processing' ? 'Processing' : 'Failed'}
+            </Badge>
+        )
     }
 
     return (
-        <div className="min-h-screen">
-            <div className="relative z-10 max-w-6xl mx-auto p-6 space-y-8">
-
-                {/* Existing Personas */}
-                <AnimatePresence>
-                    {showExisting && existingPersonas.length > 0 && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.5 }}
-                            className="space-y-4"
-                        >
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-2xl font-bold text-[#B08D57]">Your Personas</h2>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setShowExisting(!showExisting)}
-                                    className="text-[#B08D57] hover:bg-[#B08D57]/10"
-                                >
-                                    {showExisting ? 'Hide' : 'Show'} ({existingPersonas.length})
-                                </Button>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {existingPersonas.map((persona, index) => (
-                                    <motion.div
-                                        key={index}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.1 }}
-                                    >
-                                        <Card className=" border-[#B08D57]/20 backdrop-blur-sm hover:border-[#B08D57]/40 transition-all duration-300 group">
-                                            <CardHeader className="pb-3">
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <img
-                                                            src={persona.uploaded_urls}
-                                                            alt={persona.persona_name}
-                                                            className="w-10 h-10 rounded-full object-cover"
-                                                        />
-                                                        <CardTitle className="text-white truncate">
-                                                            {persona.persona_name}
-                                                        </CardTitle>
-                                                    </div>
-                                                    {getPersonaStatusBadge(persona.training_status)}
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent className="pt-0">
-                                                <div className="space-y-2 text-sm">
-                                                    {/* show progress only when  */}
-                                                    <div className="flex items-center gap-2">
-                                                        <Progress
-                                                            value={persona.progress || 100}
-                                                            className="w-full h-3 bg-[#B08D57] border border-[#B08D57]/20"
-                                                        />
-                                                        <span className="text-xs text-gray-400">
-                                                            {Math.round(persona.progress || 100)}%
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 text-gray-400">
-                                                        <Calendar className="w-4 h-4" />
-                                                        <span>{formatDate(persona.created_at)}</span>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Main Training Form */}
+        <div className="min-h-screen bg-black">
+            {/* Ambient Background */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <motion.div
-                    className="space-y-6"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3, duration: 0.8 }}
+                    className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-gradient-to-br from-[#B08D57]/5 to-transparent blur-3xl"
+                    animate={{
+                        scale: [1, 1.2, 1],
+                        opacity: [0.3, 0.5, 0.3]
+                    }}
+                    transition={{ duration: 8, repeat: Infinity }}
+                />
+            </div>
+
+            <div className="relative z-10 max-w-6xl mx-auto px-4 py-8">
+                
+                {/* Header */}
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center justify-between mb-12"
                 >
-                    <Card className=" border-[#B08D57]/20 backdrop-blur-sm">
-                        <CardHeader>
-                            <CardTitle className="text-[#B08D57] flex items-center gap-2">
-                                <Sparkles className="w-5 h-5" />
-                                Create New Persona
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-300">Persona Name</label>
-                                <Input
-                                    type="text"
-                                    placeholder="Enter a unique name for your AI persona"
-                                    value={personaName}
-                                    onChange={(e) => setPersonaName(e.target.value)}
-                                    disabled={isSubmitting}
-                                    className="bg-zinc-800/50 border-[#B08D57]/30 text-white placeholder-gray-400 focus:border-[#B08D57] focus:ring-[#B08D57]/20"
-                                />
-                            </div>
+                    <div className="flex items-center gap-4">
+                        {showCreateNew && (
+                            <motion.button
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => setShowCreateNew(false)}
+                                className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-900/80 to-zinc-800/60 backdrop-blur-xl border border-zinc-700/50 flex items-center justify-center text-white/70 hover:text-white transition-colors"
+                            >
+                                <ArrowLeft className="w-4 h-4" />
+                            </motion.button>
+                        )}
+                        <h1 className="text-3xl md:text-4xl font-extralight text-white tracking-wider">
+                            {showCreateNew ? 'Create' : `Persona's`}
+                        </h1>
+                    </div>
 
-                            <div className="space-y-4">
-                                <label className="text-sm font-medium text-gray-300">Training Images</label>
-                                <motion.label
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    className="relative w-full border-2 border-[#B08D57]/30 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-[#B08D57]/50 transition-all duration-300 bg-gradient-to-br from-[#B08D57]/5 to-transparent group"
-                                >
-                                    <div className="absolute inset-0 bg-[#B08D57]/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                    <Upload className="w-8 h-8 mb-3 text-[#B08D57] group-hover:scale-110 transition-transform duration-300" />
-                                    <span className="text-lg font-medium text-[#B08D57] mb-1">Upload 10–20 Images</span>
-                                    <span className="text-sm text-gray-400">High-quality images work best</span>
-                                    <Input
-                                        type="file"
-                                        multiple
-                                        accept="image/png, image/jpg"
-                                        className="hidden"
-                                        onChange={handleImageUpload}
-                                        disabled={isSubmitting}
-                                    />
-                                </motion.label>
+                    {!showCreateNew && (
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setShowCreateNew(true)}
+                            className="px-6 py-3 bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black font-light rounded-lg flex items-center gap-2 hover:shadow-lg hover:shadow-[#B08D57]/20 transition-all duration-300"
+                        >
+                            <span>New Persona</span>
+                        </motion.button>
+                    )}
+                </motion.div>
 
-                                {images.length > 0 && (
+                <AnimatePresence mode="wait">
+                    {!showCreateNew ? (
+                        /* Collection Grid */
+                        <motion.div
+                            key="collection"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+                        >
+                            {isLoading ? (
+                                Array.from({ length: 10 }).map((_, i) => (
                                     <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3"
+                                        key={i}
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: i * 0.1 }}
                                     >
-                                        {images.map((img, index) => (
+                                        <PersonaSkeleton />
+                                    </motion.div>
+                                ))
+                            ) : (
+                                existingPersonas.map((persona, index) => (
+                                    <motion.div
+                                        key={persona._id}
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: index * 0.05 }}
+                                        className="group cursor-pointer"
+                                    >
+                                        <div className="aspect-square relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900/50 to-zinc-800/30 backdrop-blur-xl border-3 border-zinc-700/30 hover:border-[#B08D57] transition-all duration-500">
+                                            <img
+                                                src={persona.image_url}
+                                                alt={persona.persona_name}
+                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-100 transition-opacity duration-300" />
+                                            
+                                            {/* Status Badge */}
+                                            <div className="absolute top-3 right-3">
+                                                {getPersonaStatusBadge(persona.status)}
+                                            </div>
+
+                                            {/* Name Overlay */}
+                                            <div className="absolute bottom-0 left-0 right-0 p-4 transform  transition-transform duration-300">
+                                                <h3 className="text-white font-light text-sm tracking-wide">
+                                                    {persona.persona_name}
+                                                </h3>
+                                                {persona.status === 'processing' && (
+                                                    <div className="mt-2 flex items-center">
+                                                        <Progress
+                                                            value={persona.progress}
+                                                            className="h-1 bg-zinc-800/50"
+                                                        />
+                                                        <p>{persona.progress}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))
+                            )}
+                        </motion.div>
+                    ) : (
+                        /* Create New Persona */
+                        <motion.div
+                            key="create"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="max-w-2xl mx-auto"
+                        >
+                            <Card className="bg-gradient-to-br from-zinc-900/40 to-zinc-800/20 border-zinc-700/50 backdrop-blur-2xl rounded-3xl overflow-hidden">
+                                <CardContent className="p-8">
+
+                                    {/* Name Input */}
+                                    <div className="mb-8">
+                                        <Input
+                                            type="text"
+                                            placeholder="Persona Name"
+                                            value={personaName}
+                                            onChange={(e) => setPersonaName(e.target.value)}
+                                            disabled={isSubmitting}
+                                            className="bg-transparent border-0 border-b border-zinc-700/50 rounded-none placeholder-zinc-500 text-xl font-light p-3 focus:border-[#B08D57] focus:ring-0 transition-colors duration-500"
+                                        />
+                                    </div>
+
+                                    {/* Image Upload */}
+                                    <div className="mb-8">
+                                        <motion.label
+                                            whileHover={{ scale: 1.005 }}
+                                            className="relative block w-full aspect-[3/2] border-2 border-[#B08D57] rounded-2xl cursor-pointer group overflow-hidden hover:border-[#B08D57]/50 transition-colors duration-500"
+                                        >
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                <motion.div
+                                                    whileHover={{ scale: 1.1 }}
+                                                    className="w-12 h-12 rounded-full bg-gradient-to-br from-[#B08D57]/10 to-[#4e3c20]/10 backdrop-blur-xl flex items-center justify-center mb-4"
+                                                >
+                                                    <Upload className="w-5 h-5 text-[#B08D57]" />
+                                                </motion.div>
+                                                <p className="text-white/70 font-light mb-1">Upload Images</p>
+                                                <p className="text-zinc-500 text-sm font-light">10-20 high quality photos</p>
+                                            </div>
+                                            <Input
+                                                type="file"
+                                                multiple
+                                                accept="image/png, image/jpg"
+                                                className="hidden"
+                                                onChange={handleImageUpload}
+                                                disabled={isSubmitting}
+                                            />
+                                        </motion.label>
+
+                                        {/* Image Preview Grid */}
+                                        {images.length > 0 && (
                                             <motion.div
-                                                key={img.preview}
-                                                initial={{ opacity: 0, scale: 0.8 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                transition={{ delay: index * 0.05 }}
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: 'auto' }}
+                                                className="grid grid-cols-8 gap-2 mt-6"
                                             >
-                                                <Card className="relative group overflow-hidden bg-zinc-800/50 border-[#B08D57]/20">
-                                                    <CardContent className="p-0">
+                                                {images.map((img, index) => (
+                                                    <motion.div
+                                                        key={img.preview}
+                                                        initial={{ opacity: 0, scale: 0.8 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        transition={{ delay: index * 0.05 }}
+                                                        className="relative aspect-square group"
+                                                    >
                                                         <img
                                                             src={img.preview}
-                                                            alt={`upload-${index}`}
-                                                            className="w-full h-20 object-cover transition-transform duration-300 group-hover:scale-110"
+                                                            alt={`${index}`}
+                                                            className="w-full h-full object-cover rounded-lg"
                                                         />
                                                         {!isSubmitting && (
                                                             <motion.button
                                                                 whileHover={{ scale: 1.1 }}
                                                                 whileTap={{ scale: 0.9 }}
                                                                 onClick={() => handleRemoveImage(index)}
-                                                                className="absolute top-1 right-1 bg-[#B08D57] text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                                                className="absolute -top-1 -right-1 w-5 h-5 bg-zinc-800/90 backdrop-blur-xl rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                                             >
-                                                                <X size={12} />
+                                                                <X className="w-3 h-3 text-white" />
                                                             </motion.button>
                                                         )}
-                                                    </CardContent>
-                                                </Card>
+                                                    </motion.div>
+                                                ))}
                                             </motion.div>
-                                        ))}
-                                    </motion.div>
-                                )}
+                                        )}
 
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-gray-400">
-                                        {images.length} / {MAX_IMAGES} images uploaded
-                                    </span>
-                                    <span className="text-[#B08D57]">
-                                        {images.length >= 10 ? '✓ Ready to train' : `${10 - images.length} more needed`}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <motion.div
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                            >
-                                <Button
-                                    onClick={handleSubmit}
-                                    disabled={images.length < 10 || !personaName || isSubmitting}
-                                    className="w-full bg-[#B08D57] hover:bg-[#B08D57]/90 text-white font-medium py-6 text-lg disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-[#B08D57]/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-                                    {isSubmitting ? (
-                                        <>
-                                            <Loader2 className="w-5 h-5 mr-3 animate-spin" />
-                                            Initializing Training...
-                                        </>
-                                    ) : (
-                                        <>
-                                            Train Persona
-                                        </>
-                                    )}
-                                </Button>
-                            </motion.div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Premium Training Status */}
-                    <AnimatePresence>
-                        {taskStatus && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                                className="relative"
-                            >
-                                <Card className="bg-gradient-to-br from-gray-900/80 to-gray-900/60 border-[#B08D57]/30 backdrop-blur-sm overflow-hidden">
-                                    {/* Animated Background */}
-                                    <div className="absolute inset-0 bg-gradient-to-r from-[#B08D57]/5 via-transparent to-[#B08D57]/5 animate-pulse"></div>
-
-                                    <CardHeader className="relative z-10">
-                                        <CardTitle className="flex items-center gap-3">
-                                            <motion.div
-                                                animate={{ rotate: taskStatus.state === 'PROGRESS' ? 360 : 0 }}
-                                                transition={{ duration: 2, repeat: taskStatus.state === 'PROGRESS' ? Infinity : 0, ease: "linear" }}
-                                            >
-                                                {getStatusIcon(taskStatus.state)}
-                                            </motion.div>
-                                            <span className={`text-xl font-bold ${getStatusColor(taskStatus.state)}`}>
-                                                Premium Training Status
+                                        {/* Progress */}
+                                        <div className="flex justify-between items-center mt-4">
+                                            <span className="text-zinc-500 text-sm font-light">
+                                                {images.length} / {MAX_IMAGES}
                                             </span>
-                                            <div className="flex-1"></div>
-                                            {taskStatus.state === 'PROGRESS' && (
-                                                <motion.div
-                                                    animate={{ opacity: [0.5, 1, 0.5] }}
-                                                    transition={{ duration: 2, repeat: Infinity }}
-                                                    className="flex items-center gap-2 text-[#B08D57]"
-                                                >
-                                                    <Sparkles className="w-4 h-4" />
-                                                    <span className="text-sm">Processing</span>
-                                                </motion.div>
-                                            )}
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="relative z-10 space-y-6">
-                                        {/* Progress Bar */}
-                                        <div className="space-y-3">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-sm font-medium text-gray-300">Progress</span>
-                                                <span className="text-sm font-bold text-[#B08D57]">
-                                                    {Math.round(taskStatus.progress || 0)}%
-                                                </span>
+                                            <span className={`text-sm font-light ${images.length >= 10 ? 'text-[#B08D57]' : 'text-zinc-500'}`}>
+                                                {images.length >= 10 ? 'Ready' : `${10 - images.length} more needed`}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Submit Button */}
+                                    <Button
+                                        onClick={handleSubmit}
+                                        className="w-full bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black hover:shadow-lg hover:shadow-[#B08D57]/20 font-light py-6 text-lg disabled:opacity-30 rounded-2xl transition-all duration-500"
+                                    >
+                                        {isSubmitting ? (
+                                            <div className="flex items-center justify-center gap-3">
+                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                                <span>Training</span>
                                             </div>
-                                            <div className="relative">
+                                        ) : (
+                                            <span>Begin Training</span>
+                                        )}
+                                    </Button>
+                                </CardContent>
+                            </Card>
+
+                            {/* Training Status */}
+                            <AnimatePresence>
+                                {taskStatus && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -20 }}
+                                        className="mt-6"
+                                    >
+                                        <Card className="bg-gradient-to-br from-zinc-900/40 to-zinc-800/20 border-zinc-700/50 backdrop-blur-2xl rounded-2xl">
+                                            <CardContent className="p-6">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <Loader2 className="w-4 h-4 text-[#B08D57] animate-spin" />
+                                                        <span className="text-white font-light">Training</span>
+                                                    </div>
+                                                    <span className="text-[#B08D57] text-sm font-light">
+                                                        {Math.round(taskStatus.progress || 0)}%
+                                                    </span>
+                                                </div>
                                                 <Progress
                                                     value={taskStatus.progress || 0}
-                                                    className="h-3 bg-zinc-800 border border-[#B08D57]/20"
+                                                    className="h-1 bg-zinc-800/50"
                                                 />
-                                                <motion.div
-                                                    className="absolute inset-0 bg-gradient-to-r from-transparent via-[#B08D57]/30 to-transparent h-full rounded-full"
-                                                    animate={{ x: [-100, 200] }}
-                                                    transition={{
-                                                        duration: 2,
-                                                        repeat: taskStatus.state === 'PROGRESS' ? Infinity : 0,
-                                                        ease: "linear"
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* Status Details */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <div className="text-sm text-gray-400">Current Status</div>
-                                                <div className="text-lg font-medium text-white">
-                                                    {taskStatus.status || taskStatus.state}
-                                                </div>
-                                            </div>
-
-                                            {taskStatus.current && taskStatus.total && (
-                                                <div className="space-y-2">
-                                                    <div className="text-sm text-gray-400">Training Step</div>
-                                                    <div className="text-lg font-medium text-[#B08D57]">
-                                                        {taskStatus.current} of {taskStatus.total}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Error Display */}
-                                        {taskStatus.error && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: 'auto' }}
-                                                className="bg-red-500/10 border border-red-500/30 rounded-lg p-4"
-                                            >
-                                                <div className="flex items-center gap-2 text-red-400 mb-2">
-                                                    <AlertCircle className="w-4 h-4" />
-                                                    <span className="font-medium">Training Error</span>
-                                                </div>
-                                                <div className="text-sm text-red-300">{taskStatus.error}</div>
-                                            </motion.div>
-                                        )}
-
-                                        {/* Success Display */}
-                                        {taskStatus.result && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: 'auto' }}
-                                                className="bg-[#B08D57]/10 border border-[#B08D57]/30 rounded-lg p-4"
-                                            >
-                                                <div className="flex items-center gap-2 text-[#B08D57] mb-2">
-                                                    <CheckCircle className="w-4 h-4" />
-                                                    <span className="font-medium">Training Complete!</span>
-                                                </div>
-                                                <div className="text-sm text-gray-300">{taskStatus.result.message}</div>
-                                            </motion.div>
-                                        )}
-
-                                        {/* Task ID */}
-                                        {taskId && (
-                                            <div className="text-xs text-gray-500 font-mono bg-zinc-800/50 p-2 rounded border border-gray-700">
-                                                <span className="text-gray-400">Task ID:</span> {taskId}
-                                            </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </motion.div>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     )

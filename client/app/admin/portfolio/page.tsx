@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Send , Link, ArrowDownToLine } from 'lucide-react'
+import { Send, Link, ArrowDownToLine } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Post {
   post_url: string
@@ -17,6 +18,99 @@ const Page = () => {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedPost, setSelectedPost] = useState<Post | null>(null)
+
+  const copyToClipboard = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Post Link Copied", {
+        style: {
+          background: "linear-gradient(to bottom right, #4e3c20, #B08D57, #4e3c20)",
+          color: "black",
+          border: "2px solid black"
+        }
+      })
+    } catch (err) {
+      console.error("Failed to copy to clipboard:", err);
+      toast.error("Failed to copy to clipboard", {
+        style: {
+          background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
+          color: "white",
+          border: "2px solid black"
+        }
+      });
+    }
+  };
+
+  const sharePost = async (url: string, caption: string) => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Check this out!',
+          text: caption,
+          url: url,
+        });
+      } catch (err) {
+        console.error("Error sharing:", err);
+        toast.error("Failed to share", {
+          style: {
+            background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
+            color: "white",
+            border: "2px solid black"
+          }
+        });
+      }
+    } else {
+      toast.error("Share not supported on this browser.", {
+        style: {
+          background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
+          color: "white",
+          border: "2px solid black"
+        }
+      });
+    }
+  };
+
+  const downloadImage = async (imageUrl: string) => {
+    try {
+      // Use your FastAPI backend URL
+      const proxyUrl = `https://cravio-ai.onrender.com/proxy-image?url=${encodeURIComponent(imageUrl)}`
+      const response = await fetch(proxyUrl)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const blob = await response.blob()
+      const downloadUrl = URL.createObjectURL(blob)
+
+      const a = document.createElement('a')
+      a.href = downloadUrl
+      a.download = `Post-${Date.now()}.jpg`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(downloadUrl)
+
+      toast.success("Post Downloaded!", {
+        style: {
+          background: "linear-gradient(to bottom right, #4e3c20, #B08D57, #4e3c20)",
+          color: "black",
+          border: "2px solid black"
+        }
+      })
+    } catch (error) {
+      console.error("Download failed:", error)
+      toast.error("Download failed. Opening image in new tab...", {
+        style: {
+          background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
+          color: "white",
+          border: "2px solid black"
+        }
+      })
+      window.open(imageUrl)
+    }
+  }
+
 
 
   useEffect(() => {
@@ -107,7 +201,7 @@ const Page = () => {
 
               {/* Overlay */}
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                
+
               </div>
 
               {/* Corner gradient */}
@@ -147,8 +241,15 @@ const Page = () => {
               <div className="w-full md:w-80 p-6 flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" />
-                    <span className="text-white font-medium">Luxury Brand</span>
+                    {user?.imageUrl && (
+                      <img
+                        src={user.imageUrl}
+                        alt="Profile"
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    )}
+
+                    <span className="text-white font-medium"> {user?.fullName}</span>
                   </div>
                 </div>
 
@@ -163,9 +264,9 @@ const Page = () => {
 
                 <div className="flex items-center justify-between pt-4 border-t border-white/10">
                   <div className="flex items-center space-x-6">
-                    <Send className="w-6 h-6 text-white/70 hover:text-white transition-colors cursor-pointer" />
-                    <Link className="w-6 h-6 text-white/70 hover:text-white transition-colors cursor-pointer" />
-                    <ArrowDownToLine className="w-6 h-6 text-white/70 hover:text-white transition-colors cursor-pointer" />
+                    <Send onClick={() => sharePost(selectedPost.post_url, selectedPost.caption)} className="w-6 h-6 text-white/70 hover:text-white transition-colors cursor-pointer" />
+                    <Link onClick={() => copyToClipboard(selectedPost.post_url)} className="w-6 h-6 text-white/70 hover:text-white transition-colors cursor-pointer" />
+                    <ArrowDownToLine onClick={() => downloadImage(selectedPost.post_url)} className="w-6 h-6 text-white/70 hover:text-white transition-colors cursor-pointer" />
                   </div>
                 </div>
               </div>

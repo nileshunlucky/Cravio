@@ -208,7 +208,7 @@ def train_persona_lora(self, persona_name, image_urls, email):
         users_collection.update_one(
             {"email": email, "personas.persona_id": persona_id},
             {"$set": {
-                "personas.$.status": "preparing", 
+                "personas.$.status": "processing", 
                 "personas.$.progress": 5, 
                 "personas.$.updated_at": datetime.now(timezone.utc)
             }}
@@ -228,7 +228,7 @@ def train_persona_lora(self, persona_name, image_urls, email):
         users_collection.update_one(
             {"email": email, "personas.persona_id": persona_id},
             {"$set": {
-                "personas.$.status": "uploading", 
+                "personas.$.status": "processing", 
                 "personas.$.progress": 10, 
                 "personas.$.updated_at": datetime.now(timezone.utc)
             }}
@@ -247,7 +247,7 @@ def train_persona_lora(self, persona_name, image_urls, email):
         users_collection.update_one(
             {"email": email, "personas.persona_id": persona_id},
             {"$set": {
-                "personas.$.status": "submitting", 
+                "personas.$.status": "processing", 
                 "personas.$.progress": 15, 
                 "personas.$.updated_at": datetime.now(timezone.utc)
             }}
@@ -272,7 +272,7 @@ def train_persona_lora(self, persona_name, image_urls, email):
             {"email": email, "personas.persona_id": persona_id},
             {"$set": {
                 "personas.$.fal_request_id": fal_request_id,
-                "personas.$.status": "training",
+                "personas.$.status": "processing",
                 "personas.$.progress": 20,
                 "personas.$.updated_at": datetime.now(timezone.utc)
             }}
@@ -289,7 +289,7 @@ def train_persona_lora(self, persona_name, image_urls, email):
         users_collection.update_one(
             {"email": email, "personas.persona_id": persona_id},
             {"$set": {
-                "personas.$.status": "saving_model", 
+                "personas.$.status": "processing", 
                 "personas.$.progress": 90, 
                 "personas.$.updated_at": datetime.now(timezone.utc)
             }}
