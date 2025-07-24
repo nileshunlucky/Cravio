@@ -243,6 +243,7 @@ const Page = () => {
         return () => clearInterval(interval);
     }, [taskId]);
 
+    console.log(taskStatus)
     return (
         <div
             className="min-h-screen overflow-hidden relative flex items-center justify-center p-4 sm:p-6 lg:p-8"
