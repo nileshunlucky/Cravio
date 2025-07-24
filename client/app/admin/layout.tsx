@@ -10,7 +10,7 @@ import { Toaster } from "sonner";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { user } = useUser()
-  const [credits, setCredits] = useState<number | null>(null)
+  const [aura, setAura] = useState<number | null>(null)
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -21,7 +21,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       try {
         const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`)
         const data = await res.json()
-        setCredits(data.credits)
+        setAura(data.aura)
       } catch (error) {
         console.error('Error fetching videos:', error)
       } 
@@ -37,7 +37,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <AppSidebar />
       <SidebarTrigger />
       <div className="flex flex-col w-full h-full overflow-hidden">
-        <Navbar credits={credits ?? 0} />
+        <Navbar aura={aura ?? 0} />
         <SignedIn>
           <SendEmailToBackend />
         </SignedIn>

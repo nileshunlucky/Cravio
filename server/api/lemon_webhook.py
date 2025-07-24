@@ -13,7 +13,7 @@ LEMON_SQUEEZING_WEBHOOK_SECRET = os.getenv("LEMON_SQUEEZING_WEBHOOK_SECRET")
 
 # --- Configuration ---
 
-# Map your Lemon Squeezy plan variant IDs to the number of credits
+# Map your Lemon Squeezy plan variant IDs to the number of aura
 PLANS = {
     908443: 1000, # Classic /m
     908458: 2400, # Premium /m
@@ -69,8 +69,8 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
 
     # Event: A new subscription is created
     if event == "subscription_created":
-        credits_to_add = PLANS.get(variant_id)
-        if not credits_to_add:
+        aura_to_add = PLANS.get(variant_id)
+        if not aura_to_add:
             return {"status": "error", "message": f"Invalid plan variant ID: {variant_id}"}
         
         users_collection.update_one(
@@ -82,11 +82,11 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
                     "subscription_id": data.get("id"),
                     "subscription_started_at": datetime.now(timezone.utc)
                 },
-                "$set": {"credits": credits_to_add},
+                "$set": {"aura": aura_to_add},
                 "$set": {"user_paid": True},
             }
         )
-        return {"status": "success", "message": f"Granted {credits_to_add} credits for new subscription."}
+        return {"status": "success", "message": f"Granted {aura_to_add} aura for new subscription."}
 
     # Event: A subscription is updated
     elif event == "subscription_updated":
@@ -102,7 +102,7 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
                     "subscription_cancelled_at": datetime.now(timezone.utc),
                 },
                 "$unset": {"plan_variant_id": ""},
-                "$set": {"credits": ""},
+                "$set": {"aura": ""},
                 "$set": {"user_paid": False}
             }
         )
@@ -118,7 +118,7 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
                     "subscription_expired_at": datetime.now(timezone.utc),
                 },
                 "$unset": {"plan_variant_id": ""},
-                "$set": {"credits": ""},
+                "$set": {"aura": ""},
                 "$set": {"user_paid": False}
             }
         )

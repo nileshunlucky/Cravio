@@ -52,7 +52,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup className="gap-3">
-          <SidebarGroupLabel className="text-xl font-medium">Cravio Ai</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xl font-medium">Cravio</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => {
@@ -64,7 +64,7 @@ export function AppSidebar() {
                       asChild
                       className={`flex items-center gap-2 px-3 py-2  transition ${
                         isActive
-                          ? "bg-[#B08D57] text-white shadow-md hover:bg-[#B08D57]/90 hover:text-white"
+                          ? "bg-gradient-to-r from-[#B08D57] to-[#4e3c20] text-black hover:text-black shadow-md"
                           : "text-white"
                       }`}
                     >

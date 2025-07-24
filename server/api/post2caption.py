@@ -10,19 +10,19 @@ client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 @router.post("/api/post2caption")
-async def thumb_to_title(file: UploadFile = File(...), email: str = Form(...)):
+async def post_to_caption(file: UploadFile = File(...), email: str = Form(...)):
     try:
-        # check user exists and has enough 5 credits
+        # check user exists and has enough 5 aura
         user = users_collection.find_one({"email": email})
         if not user:
             return JSONResponse(content={"error": "User not found"}, status_code=400)
-        if user.get("credits", 0) < 5:
+        if user.get("aura", 0) < 5:
             return JSONResponse(
-                content={"error": "Not enough credits"}, status_code=402
+                content={"error": "Not enough aura"}, status_code=403
             )
 
-        # Deduct credits
-        users_collection.update_one({"email": email}, {"$inc": {"credits": -5}})
+        # Deduct aura
+        users_collection.update_one({"email": email}, {"$inc": {"aura": -5}})
 
         # --- ORIGINAL CODE ---
         image_bytes = await file.read()

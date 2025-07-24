@@ -5,14 +5,14 @@ import { UserButton } from '@clerk/nextjs'
 import Image from 'next/image'
 import Link from 'next/link'
 
-const Navbar = ({ credits = 0 }: { credits: number }) => {
+const Navbar = ({ aura = 0 }: { aura: number }) => {
 
   return (
     <nav className="w-full  border-b shadow-sm py-2 px-4 flex items-center justify-between">
       {/* Left: Logo */}
       <Link href="/admin/dashboard"><Image src='/logo.png' alt="Logo" width={50} height={50} /></Link>
 
-      {/* Right: Credits + Clerk User Button */}
+      {/* Right: aura + Clerk User Button */}
       <div className="flex items-center gap-5">
         <div className="text-sm flex items-center">
 
@@ -38,7 +38,7 @@ const Navbar = ({ credits = 0 }: { credits: number }) => {
               stroke="none" />
           </svg>
 
-          <span className="font-bold">{credits}</span>
+          <span className="font-bold">{aura}</span>
         </div>
 
         <UserButton afterSignOutUrl="/" />

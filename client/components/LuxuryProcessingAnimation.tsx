@@ -39,8 +39,7 @@ const LuxuryProcessingAnimation: FC<Props> = ({ isProcessing }) => {
         >
           {/* 9:16 aspect ratio container - like a phone screen */}
           <div 
-            className="relative bg-zinc-900 rounded-lg overflow-hidden "
-            style={{ width: '400px', height: '650px' }} // 9:16 ratio
+            className="relative bg-zinc-900 rounded-xl overflow-hidden aspect-[9/16] w-full max-w-xs"// 9:16 ratio
           >
             {/* Progress Fill - Coming from top to bottom */}
             <motion.div
@@ -65,7 +64,7 @@ const LuxuryProcessingAnimation: FC<Props> = ({ isProcessing }) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: progress > 0 ? 1 : 0 }}
             />
-        <p className='absolute bottom-2 right-5 text-[#B08D57] font-bold text-5xl'>{progress}%</p>
+        <p className='absolute bottom-2 right-5 bg-gradient-to-b from-[#B08D57] to-[#4e3c20] bg-clip-text text-transparent font-bold text-5xl'>{Math.round(progress)}%</p>
           </div>
         </motion.div>
       )}

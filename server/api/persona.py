@@ -29,13 +29,13 @@ async def upload_persona(
     if not (10 <= len(images) <= 20):
         raise HTTPException(status_code=400, detail="Upload between 10 and 20 images.")
     
-    # Check if user has 250 credits or not
+    # Check if user has 250 aura or not
     user = users_collection.find_one({"email": email})
-    if not user or user.get("credits", 0) < 250:
-        raise HTTPException(status_code=403, detail="Not enough credits")
+    if not user or user.get("aura", 0) < 250:
+        raise HTTPException(status_code=403, detail="Not enough aura")
     
-    # Deduct credits
-    users_collection.update_one({"email": email}, {"$inc": {"credits": -250}})
+    # Deduct aura
+    users_collection.update_one({"email": email}, {"$inc": {"aura": -250}})
     
     # Create a unique folder for this persona
     unique_id = uuid.uuid4().hex[:8]

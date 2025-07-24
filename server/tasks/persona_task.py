@@ -364,12 +364,12 @@ def train_persona_lora(self, persona_name, image_urls, email):
             logger.error(f"S3 cleanup failed after training failure for persona '{persona_name}': {str(cleanup_error)}")
             # Don't fail the task if cleanup fails
         
-        # Refund credits to user if training failed
+        # Refund aura to user if training failed
         try:
-            users_collection.update_one({"email": email}, {"$inc": {"credits": 250}})
-            logger.info(f"Refunded 250 credits to user {email} due to training failure")
+            users_collection.update_one({"email": email}, {"$inc": {"aura": 250}})
+            logger.info(f"Refunded 250 aura to user {email} due to training failure")
         except Exception as refund_error:
-            logger.error(f"Failed to refund credits to user {email}: {str(refund_error)}")
+            logger.error(f"Failed to refund aura to user {email}: {str(refund_error)}")
         
         return {
             "status": "error",

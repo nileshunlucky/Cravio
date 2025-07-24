@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, X, CheckCircle, AlertCircle, Clock, Loader2, Sparkles, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { useUser } from '@clerk/nextjs'
-
+import { useRouter } from 'next/navigation'
 interface ImageFile {
     file: File
     preview: string
@@ -54,14 +54,16 @@ const Page = () => {
     const [showExisting, setShowExisting] = useState(false)
     const email = user?.emailAddresses?.[0]?.emailAddress || ''
 
+    const router = useRouter()
+
     useEffect(() => {
         const fetchUserData = async () => {
             if (!user?.emailAddresses?.[0]?.emailAddress) {
                 toast.error("Failed to load user data", {
                     style: {
-                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
-                        color: "black",
-                        border: "2px solid black"
+                    background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+                    color: "white",
+                    border: "2px solid black"
                     }
                 })
                 return
@@ -80,9 +82,9 @@ const Page = () => {
                     console.error("Error from server:", data)
                     toast.error("Failed to load user data", {
                     style: {
-                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
-                        color: "black",
-                        border: "2px solid black"
+                    background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+                    color: "white",
+                    border: "2px solid black"
                     }
                 })
                 }
@@ -119,9 +121,9 @@ const Page = () => {
                     } else {
                         toast.error(`Training failed: ${status.error}`, {
                     style: {
-                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
-                        color: "black",
-                        border: "2px solid black"
+                    background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+                    color: "white",
+                    border: "2px solid black"
                     }
                 });
                     }
@@ -130,9 +132,9 @@ const Page = () => {
                 console.error('Error polling:', error);
                 toast.error('Error checking task status', {
                     style: {
-                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
-                        color: "black",
-                        border: "2px solid black"
+                    background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+                    color: "white",
+                    border: "2px solid black"
                     }
                 });
             }
@@ -172,9 +174,9 @@ const Page = () => {
         if (!personaName || images.length < 10) {
             toast.error('Please enter a name and upload at least 10 images.', {
                     style: {
-                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
-                        color: "black",
-                        border: "2px solid black"
+                    background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+                    color: "white",
+                    border: "2px solid black"
                     }
                 })
             return
@@ -207,22 +209,32 @@ const Page = () => {
                         border: "2px solid black"
                     }
                 })
-            } else {
-                throw new Error(data.detail || 'Failed to start training')
             }
+            if (res.status === 403) {
+                            toast.error('Not enough aura', {
+                                style: {
+                                background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+                                color: "white",
+                                border: "2px solid black"
+                                }
+                            });
+                            router.push('/admin/pricing')
+                        }
 
         } catch (error) {
             console.error('Error submitting persona:', error)
             toast.error('An error occurred while starting training.', {
                     style: {
-                        background: "linear-gradient(to right, #B08D57, #4e3c20)",
-                        color: "black",
-                        border: "2px solid black"
+                    background: "linear-gradient(to right, #5C0A14, #BC2120, #9B111E)",
+                    color: "white",
+                    border: "2px solid black"
                     }
                 })
+            
+        } finally {
             setIsSubmitting(false)
         }
-    }
+    }  
 
     const getStatusIcon = (state: string) => {
         switch (state) {
