@@ -4,7 +4,7 @@ import React, { useState, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { motion, AnimatePresence } from "framer-motion"
-import { Sparkles, Upload, Check, Copy, Undo2, Quote, Zap } from "lucide-react"
+import { Sparkles, Upload, Check, Copy, Quote, Zap } from "lucide-react"
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { toast } from "sonner"
@@ -17,29 +17,46 @@ const CopyButton = ({ textToCopy }: { textToCopy: string }) => {
     const handleCopy = useCallback(() => {
         navigator.clipboard.writeText(textToCopy).then(() => {
             setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            setTimeout(() => setCopied(false), 2500);
         });
     }, [textToCopy]);
 
     return (
-        <Button
-            onClick={handleCopy}
-            variant="ghost"
-            size="icon"
-            className="text-slate-400 hover:text-[#B08D57] hover:bg-slate-700/50 transition-all duration-300 rounded-full"
+        <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
         >
-            <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                    key={copied ? "check" : "copy"}
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.5 }}
-                    transition={{ duration: 0.2 }}
-                >
-                    {copied ? <Check className="w-5 h-5 text-[#B08D57]" /> : <Copy className="w-5 h-5" />}
-                </motion.div>
-            </AnimatePresence>
-        </Button>
+            <Button
+                onClick={handleCopy}
+                variant="ghost"
+                size="icon"
+                className="relative h-10 w-10 rounded-full bg-gradient-to-br from-[#B08D57]/10 to-[#4e3c20]/10 border border-[#B08D57]/20 hover:border-[#B08D57]/40 backdrop-blur-xl transition-all duration-500 hover:shadow-lg hover:shadow-[#B08D57]/20"
+            >
+                <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                        key={copied ? "check" : "copy"}
+                        initial={{ opacity: 0, scale: 0.3, rotate: -180 }}
+                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                        exit={{ opacity: 0, scale: 0.3, rotate: 180 }}
+                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                    >
+                        {copied ? (
+                            <Check className="w-4 h-4 text-[#B08D57]" />
+                        ) : (
+                            <Copy className="w-4 h-4 text-slate-300 hover:text-[#B08D57] transition-colors duration-300" />
+                        )}
+                    </motion.div>
+                </AnimatePresence>
+                {copied && (
+                    <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1.5, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        className="absolute inset-0 rounded-full border-2 border-[#B08D57]/30"
+                    />
+                )}
+            </Button>
+        </motion.div>
     );
 };
 
@@ -341,10 +358,10 @@ const Page = () => {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.5 }}
-                            className="w-full"
+                            className="w-full flex flex-col items-center justify-center gap-7"
                         >
                             {/* -- post Preview (on results screen) -- */}
-                            <div className="aspect-w-16 aspect-h-9 w-full rounded-2xl overflow-hidden border-2 border-slate-700/50 shadow-2xl shadow-[#B08D57]/10">
+                            <div className="aspect-w-16 aspect-h-9 w-full rounded-2xl overflow-hidden border-3 border-[#B08D57] shadow-2xl shadow-[#B08D57]/10">
                                 <img src={imagePreview!} alt="post Preview" className="w-full h-full object-cover" />
                             </div>
                             {/* -- Generate Again Button -- */}
@@ -352,46 +369,76 @@ const Page = () => {
                                 <div className="flex md:flex-row flex-col items-center justify-center gap-3">
                                     <Button
                                         onClick={handleGenerate}
-                                        className="w-full max-w-sm h-14 bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20]   text-black font-bold text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 border-2 border-slate-700  hover:bg-[#B08D57]/80"
+                                        className="w-full max-w-sm h-14 bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20]   text-black font-bold text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300   hover:bg-[#B08D57]/80"
                                     >
                                         <div className="flex items-center justify-center space-x-3">
-                                            <Undo2 />
                                             <span>Craft Again</span>
                                         </div>
                                     </Button>
                                     {/* New Caption */}
                                     <Button onClick={handleNewCaption}
-                                        className="w-full max-w-sm h-14 bg-[#B08D57] text-black font-bold text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 border-2 border-slate-700  hover:bg-[#B08D57]/80">
-                                        <Sparkles />
+                                        className="w-full max-w-sm h-14  bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20]  text-black font-bold text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300  hover:bg-[#B08D57]/80">
                                         <span>New Caption</span>
                                     </Button>
                                 </div>
                             </div>
 
                             {/* -- Generated Captions List -- */}
-                            <div
-                                className="mt-8"
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.6 }}
+                                className="space-y-4 max-w-4xl mx-auto"
                             >
-                                <div className="space-y-4">
-                                    {Captions.map((Caption, idx) => (
-                                        <motion.div
-                                            key={idx}
-                                            initial={{ opacity: 0, x: -30 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{
-                                                delay: idx * 0.1,
-                                                duration: 0.5,
-                                                type: "spring",
-                                                stiffness: 100
-                                            }}
-                                            className="bg-zinc-900/50 backdrop-blur-md rounded-xl p-5 border-2 flex items-center justify-between space-x-4 transition-all duration-300 hover:border-[#B08D57] hover:shadow-lg hover:shadow-[#B08D57]/5"
-                                        >
-                                            <p className="text-lg text-[#B08D57] font-medium">{Caption}</p>
-                                            <CopyButton textToCopy={Caption} />
-                                        </motion.div>
-                                    ))}
-                                </div>
-                            </div>
+                                {Captions.map((caption, idx) => (
+                                    <motion.div
+                                        key={idx}
+                                        initial={{ opacity: 0, x: -50, scale: 0.95 }}
+                                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                                        transition={{
+                                            delay: 0.8 + (idx * 0.15),
+                                            duration: 0.6,
+                                            type: "spring",
+                                            stiffness: 120,
+                                            damping: 20
+                                        }}
+                                        whileHover={{
+                                            scale: 1.01,
+                                            transition: { duration: 0.2 }
+                                        }}
+                                        className="group relative"
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-r from-[#B08D57]/5 to-[#4e3c20]/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                        <div className="relative bg-zinc-900/40 backdrop-blur-xl rounded-2xl p-6 border border-zinc-800/50 group-hover:border-[#B08D57]/30 transition-all duration-500 flex items-start justify-between gap-4">
+                                            <div className="flex-1">
+                                                <motion.div
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 0.6 }}
+                                                    transition={{ delay: 1 + (idx * 0.15) }}
+                                                    className="text-xs text-[#B08D57] font-medium tracking-widest uppercase mb-2"
+                                                >
+                                                    Caption {idx + 1}
+                                                </motion.div>
+                                                <motion.p
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    transition={{ delay: 1.1 + (idx * 0.15) }}
+                                                    className="text-slate-200 text-base leading-relaxed font-light"
+                                                >
+                                                    {caption}
+                                                </motion.p>
+                                            </div>
+                                            <motion.div
+                                                initial={{ opacity: 0, scale: 0 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ delay: 1.2 + (idx * 0.15) }}
+                                            >
+                                                <CopyButton textToCopy={caption} />
+                                            </motion.div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </motion.div>
 
                         </motion.div>
                     ) : imagePreview ? (

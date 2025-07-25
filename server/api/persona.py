@@ -32,7 +32,7 @@ async def upload_persona(
     # Check if user has 250 aura or not
     user = users_collection.find_one({"email": email})
     if not user or user.get("aura", 0) < 250:
-        raise HTTPException(status_code=403, detail="Not enough aura")
+        raise HTTPException(status_code=403, detail="Not enough Aura")
     
     # Deduct aura
     users_collection.update_one({"email": email}, {"$inc": {"aura": -250}})

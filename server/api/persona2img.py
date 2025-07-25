@@ -27,7 +27,7 @@ async def persona_image(
     # Check if user has enough aura
     user = users_collection.find_one({"email": email})
     if not user or user.get("aura", 0) < 10:
-        raise HTTPException(status_code=403, msg="Not enough aura")
+        raise HTTPException(status_code=403, detail="Not enough Aura")
     
     # Deduct aura immediately
     users_collection.update_one({"email": email}, {"$inc": {"aura": -10}})
@@ -81,4 +81,4 @@ async def persona_image(
     except Exception as e:
         # Refund aura if task creation fails
         users_collection.update_one({"email": email}, {"$inc": {"aura": 10}})
-        raise HTTPException(status_code=500, msg=f"Failed to queue generation: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to queue generation: {str(e)}")

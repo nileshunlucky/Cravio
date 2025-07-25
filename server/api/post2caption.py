@@ -16,7 +16,7 @@ async def post_to_caption(file: UploadFile = File(...), email: str = Form(...)):
         if not user:
             return JSONResponse(content={"error": "User not found"}, status_code=400)
         if user.get("aura", 0) < 5:
-            return JSONResponse(content={"error": "Not enough aura"}, status_code=403)
+            return JSONResponse(content={"error": "Not enough Aura"}, status_code=403)
 
         # Deduct aura
         users_collection.update_one({"email": email}, {"$inc": {"aura": -5}})

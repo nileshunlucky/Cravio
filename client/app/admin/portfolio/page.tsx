@@ -163,7 +163,7 @@ const Page = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] p-4">
+      <div className="min-h-screen  p-4">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-3 gap-1 auto-rows-[200px]">
             {Array.from({ length: 12 }).map((_, i) => (
@@ -176,7 +176,7 @@ const Page = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20]">
+    <div className="min-h-screen ">
 
       {/* Grid */}
       <div className="max-w-6xl mx-auto p-4">
