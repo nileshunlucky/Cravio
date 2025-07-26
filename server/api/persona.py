@@ -59,6 +59,8 @@ async def upload_persona(
             uploaded_urls.append(s3_url)
             
         except Exception as e:
+            # refund user aura if failed
+            users_collection.update_one({"email": email}, {"$inc": {"aura": 250}})
             raise HTTPException(status_code=500, detail=f"Failed to process {image.filename}: {str(e)}")
     
     # Send task with both image URLs 

@@ -142,4 +142,6 @@ async def post_to_caption(file: UploadFile = File(...), email: str = Form(...)):
         # Log the actual response for debugging
         if 'response' in locals():
             print(f"OpenAI response: {response.choices[0].message.content if response.choices else 'No choices'}")
+        # refund aura if failed
+        users_collection.update_one({"email": email}, {"$inc": {"aura": 5}})
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")

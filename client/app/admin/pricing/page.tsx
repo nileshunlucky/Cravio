@@ -380,7 +380,7 @@ const Page = () => {
                 },
                 list: [
                     { name: "Canvas", included: true },
-                    { name: "Opus (veo3, Kling, hailuo, Wan)", included: true },
+                    { name: "Opus (veo3, Kling, Hailuo, Wan)", included: true },
                     { name: "Persona", included: true },
                     { name: "Caption", included: true },
                     { name: "Upscaller", included: true },
@@ -408,7 +408,7 @@ const Page = () => {
                 },
                 list: [
                     { name: "Canvas", included: true },
-                    { name: "Opus (veo3, Kling, hailuo, Wan)", included: true },
+                    { name: "Opus (veo3, Kling, Hailuo, Wan)", included: true },
                     { name: "Persona", included: true },
                     { name: "Caption", included: true },
                     { name: "Upscaller", included: true },
@@ -436,7 +436,7 @@ const Page = () => {
                 },
                 list: [
                     { name: "Canvas", included: true },
-                    { name: "Opus (veo3, Kling, hailuo, Wan)", included: true },
+                    { name: "Opus (veo3, Kling, Hailuo, Wan)", included: true },
                     { name: "Persona", included: true },
                     { name: "Caption", included: true },
                     { name: "Upscaller", included: true },

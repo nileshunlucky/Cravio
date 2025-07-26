@@ -17,7 +17,7 @@ s3_client = boto3.client(
     region_name=os.getenv("AWS_REGION", "us-east-1"),
 )
 
-AURA_COSTS = {"veo3": 400, "kling 2.1 master": 200, "hailuo 02 pro": 200, "wan 2.1": 100}
+AURA_COSTS = {"veo3": 400, "kling 2.1 master": 250, "hailuo 02 pro": 250, "wan 2.1": 100}
 
 def deduct_aura_by_model(email: str, model: str):
     # Ensure model exists in pricing

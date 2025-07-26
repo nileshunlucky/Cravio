@@ -36,6 +36,12 @@ const Page = () => {
     const [progress, setProgress] = useState(0)
     const [dragActive, setDragActive] = useState(false)
 
+    const auraCost = [
+        { model: "veo3", cost: 400 },
+        { model: "kling 2.1 master", cost: 250 },
+        { model: "hailuo 02 pro", cost: 250 },
+        { model: "wan 2.1", cost: 100 },]
+
     useEffect(() => {
         if (isProcessing) {
             setProgress(0)
@@ -484,9 +490,29 @@ const Page = () => {
 
                                 <motion.button
                                     onClick={handleSubmit}
-                                    className="w-full rounded-lg py-2 text-lg bg-gradient-to-br from-[#000000] via-[#222222] to-[#000000] text-[#B08D57] cursor-pointer"
+                                    className="w-full rounded-lg py-2 text-lg bg-gradient-to-br from-[#000000] via-[#222222] to-[#000000] text-[#B08D57] cursor-pointer flex items-center justify-center  "
                                 >
-                                    Craft Vision
+                                    <svg width="30" height="30" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+                                        <defs>
+                                            <linearGradient id="minimalistGold" cx="50%" cy="50%" r="60%">
+                                                <stop offset="0%" style={{ stopColor: "#F4E4BC", stopOpacity: 1 }} />
+                                                <stop offset="50%" style={{ stopColor: "#E6C878", stopOpacity: 1 }} />
+                                                <stop offset="100%" style={{ stopColor: "#C9A96E", stopOpacity: 1 }} />
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M 200 40 
+                                                Q 220 160 240 180 
+                                                Q 290 190 340 200 
+                                                Q 290 210 240 220 
+                                                Q 220 240 200 360 
+                                                Q 180 240 160 220 
+                                                Q 110 210 60 200 
+                                                Q 110 190 160 180 
+                                                Q 180 160 200 40 
+                                                Z"
+                                            fill="url(#minimalistGold)"
+                                            stroke="none" />
+                                    </svg> {auraCost.find(item => item.model === model)?.cost}
                                 </motion.button>
                             </CardContent>
                         </Card>

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
@@ -393,18 +392,18 @@ const Page = () => {
                             exit={{ opacity: 0, y: -20 }}
                             className="max-w-2xl mx-auto"
                         >
-                            <Card className="bg-gradient-to-br from-zinc-900/40 to-zinc-800/20 border-zinc-700/50 backdrop-blur-2xl rounded-3xl overflow-hidden">
+                            <Card className="bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] backdrop-blur-2xl rounded-3xl overflow-hidden">
                                 <CardContent className="p-8">
 
                                     {/* Name Input */}
-                                    <div className="mb-8">
+                                    <div className="mb-8 bg-black">
                                         <Input
                                             type="text"
                                             placeholder="Persona Name"
                                             value={personaName}
                                             onChange={(e) => setPersonaName(e.target.value)}
                                             disabled={isSubmitting}
-                                            className="bg-transparent border-0 border-b border-zinc-700/50 rounded-none placeholder-zinc-500 text-xl font-light p-3 focus:border-[#B08D57] focus:ring-0 transition-colors duration-500"
+                                            className=" border-0 border-b border-zinc-700/50 rounded-none placeholder-zinc-500 text-xl font-light p-3 focus:border-[#B08D57] focus:ring-0 transition-colors duration-500"
                                         />
                                     </div>
 
@@ -412,7 +411,7 @@ const Page = () => {
                                     <div className="mb-8">
                                         <motion.label
                                             whileHover={{ scale: 1.005 }}
-                                            className="relative block w-full aspect-[3/2] border-2 border-[#B08D57] rounded-2xl cursor-pointer group overflow-hidden hover:border-[#B08D57]/50 transition-colors duration-500"
+                                            className="relative block w-full aspect-[3/2] bg-gradient-to-br from-[#000000] via-[#111111] to-[#000000] border-2 border-[#B08D57] rounded-2xl cursor-pointer group overflow-hidden hover:border-[#B08D57]/50 transition-colors duration-500"
                                         >
                                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                                 <motion.div
@@ -471,29 +470,51 @@ const Page = () => {
 
                                         {/* Progress */}
                                         <div className="flex justify-between items-center mt-4">
-                                            <span className="text-zinc-500 text-sm font-light">
+                                            <span className="text-black text-sm font-light">
                                                 {images.length} / {MAX_IMAGES}
                                             </span>
-                                            <span className={`text-sm font-light ${images.length >= 10 ? 'text-[#B08D57]' : 'text-zinc-500'}`}>
+                                            <span className={`text-sm font-light ${images.length >= 10 ? 'text-[#B08D57]' : 'text-black'}`}>
                                                 {images.length >= 10 ? 'Ready' : `${10 - images.length} more needed`}
                                             </span>
                                         </div>
                                     </div>
 
                                     {/* Submit Button */}
-                                    <Button
+                                    <motion.button
                                         onClick={handleSubmit}
-                                        className="w-full bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black hover:shadow-lg hover:shadow-[#B08D57]/20 font-light py-6 text-lg disabled:opacity-30 rounded-2xl transition-all duration-500"
+                                        className="w-full bg-gradient-to-br from-[#000000] via-[#111111] to-[#000000] text-[#B08D57] hover:shadow-lg hover:shadow-[#B08D57]/20 font-light py-6 text-lg disabled:opacity-30 rounded-2xl transition-all duration-500 flex justify-center items-center cursor-pointer"
                                     >
                                         {isSubmitting ? (
                                             <div className="flex items-center justify-center gap-3">
                                                 <Loader2 className="w-5 h-5 animate-spin" />
-                                                <span>Training</span>
+                                                <span>Training...</span>
                                             </div>
                                         ) : (
-                                            <span>Begin Training</span>
-                                        )}
-                                    </Button>
+                                            <motion.div>
+                                                <svg width="30" height="30" viewBox="0 0 400 400"  xmlns="http://www.w3.org/2000/svg">
+                                        <defs>
+                                            <linearGradient id="minimalistGold" cx="50%" cy="50%" r="60%">
+                                                <stop offset="0%" style={{ stopColor: "#F4E4BC", stopOpacity: 1 }} />
+                                                <stop offset="50%" style={{ stopColor: "#E6C878", stopOpacity: 1 }} />
+                                                <stop offset="100%" style={{ stopColor: "#C9A96E", stopOpacity: 1 }} />
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M 200 40 
+                                                Q 220 160 240 180 
+                                                Q 290 190 340 200 
+                                                Q 290 210 240 220 
+                                                Q 220 240 200 360 
+                                                Q 180 240 160 220 
+                                                Q 110 210 60 200 
+                                                Q 110 190 160 180 
+                                                Q 180 160 200 40 
+                                                Z"
+                                            fill="url(#minimalistGold)"
+                                            stroke="none" />
+                                    </svg>
+                                            </motion.div>
+                                        )} 250
+                                    </motion.button>
                                 </CardContent>
                             </Card>
 

@@ -28,8 +28,8 @@ fal_client.api_key = os.getenv("FAL_KEY")
 
 AURA_COSTS = {
     "veo3": 400,
-    "kling 2.1 master": 200,
-    "hailuo 02 pro": 200,
+    "kling 2.1 master": 250,
+    "hailuo 02 pro": 250,
     "wan 2.1": 100,
 }
 
