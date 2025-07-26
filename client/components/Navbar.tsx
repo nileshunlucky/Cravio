@@ -10,7 +10,7 @@ const Navbar = ({ aura = 0 }: { aura: number }) => {
   return (
     <nav className="w-full  border-b shadow-sm py-2 px-4 flex items-center justify-between">
       {/* Left: Logo */}
-      <Link href="/admin/dashboard"><Image src='/logo.png' alt="Logo" width={50} height={50} /></Link>
+      <Link href="/admin/canvas"><Image src='/logo.png' alt="Logo" width={50} height={50} /></Link>
 
       {/* Right: aura + Clerk User Button */}
       <div className="flex items-center gap-5">

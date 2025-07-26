@@ -80,7 +80,7 @@ const Page = () => {
                     style: {
                         background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                         color: "white",
-                        border: "2px solid black"
+                        border: "0px"
                     }
                 })
                 return
@@ -97,7 +97,7 @@ const Page = () => {
                         style: {
                             background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                             color: "white",
-                            border: "2px solid black"
+                            border: "0px"
                         }
                     })
                 }
@@ -107,7 +107,7 @@ const Page = () => {
                     style: {
                         background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                         color: "white",
-                        border: "2px solid black"
+                        border: "0px"
                     }
                 })
             } finally {
@@ -134,7 +134,7 @@ const Page = () => {
                             style: {
                                 background: "linear-gradient(to bottom right, #4e3c20, #B08D57, #4e3c20)",
                                 color: "black",
-                                border: "2px solid black"
+                                border: "0px"
                             }
                         });
                         setTimeout(() => window.location.reload(), 2000);
@@ -143,7 +143,7 @@ const Page = () => {
                             style: {
                                 background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                                 color: "white",
-                                border: "2px solid black"
+                                border: "0px"
                             }
                         });
                     }
@@ -154,7 +154,7 @@ const Page = () => {
                     style: {
                         background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                         color: "white",
-                        border: "2px solid black"
+                        border: "0px"
                     }
                 });
             }
@@ -194,7 +194,7 @@ const Page = () => {
                 style: {
                     background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                     color: "white",
-                    border: "2px solid black"
+                    border: "0px"
                 }
             })
             return
@@ -224,7 +224,7 @@ const Page = () => {
                     style: {
                         background: "linear-gradient(to bottom right, #4e3c20, #B08D57, #4e3c20)",
                         color: "black",
-                        border: "2px solid black"
+                        border: "0px"
                     }
                 })
             }
@@ -233,7 +233,7 @@ const Page = () => {
                     style: {
                         background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                         color: "white",
-                        border: "2px solid black"
+                        border: "0px"
                     }
                 })
                 router.push('/admin/pricing')
@@ -245,7 +245,7 @@ const Page = () => {
                 style: {
                     background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                     color: "white",
-                    border: "2px solid black"
+                    border: "0px"
                 }
             })
         } finally {

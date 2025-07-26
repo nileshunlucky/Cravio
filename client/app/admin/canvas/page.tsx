@@ -94,7 +94,7 @@ const Page = () => {
                         style: {
                             background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                             color: "white",
-                            border: "2px solid black"
+                            border: "0px"
                         }
                     })
 
@@ -105,7 +105,7 @@ const Page = () => {
                     style: {
                         background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                         color: "white",
-                        border: "2px solid black"
+                        border: "0px"
                     }
                 })
             }
@@ -156,7 +156,7 @@ const Page = () => {
             style: {
                 background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                 color: "white",
-                border: "2px solid black"
+                border: "0px"
             }
         });
 
@@ -184,7 +184,7 @@ const Page = () => {
                     style: {
                         background: "linear-gradient(to bottom right, #4e3c20, #B08D57, #4e3c20)",
                         color: "black",
-                        border: "2px solid black"
+                        border: "0px"
                     }
                 })
             }
@@ -193,7 +193,7 @@ const Page = () => {
                     style: {
                         background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                         color: "white",
-                        border: "2px solid black"
+                        border: "0px"
                     }
                 });
                 router.push('/admin/pricing')
@@ -204,7 +204,7 @@ const Page = () => {
                     style: {
                         background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                         color: "white",
-                        border: "2px solid black"
+                        border: "0px"
                     }
                 })
             }
@@ -214,7 +214,7 @@ const Page = () => {
                 style: {
                     background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                     color: "white",
-                    border: "2px solid black"
+                    border: "0px"
                 }
             })
             console.log(error)
@@ -244,7 +244,7 @@ const Page = () => {
                             style: {
                                 background: "linear-gradient(to bottom right, #4e3c20, #B08D57, #4e3c20)",
                                 color: "black",
-                                border: "2px solid black"
+                                border: "0px"
                             }
                         });
                     } else {
@@ -252,7 +252,7 @@ const Page = () => {
                             style: {
                                 background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                                 color: "white",
-                                border: "2px solid black"
+                                border: "0px"
                             }
                         });
                     }
@@ -263,7 +263,7 @@ const Page = () => {
                     style: {
                         background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                         color: "white",
-                        border: "2px solid black"
+                        border: "0px"
                     }
                 });
             }
@@ -301,7 +301,7 @@ const Page = () => {
                 style: {
                     background: "linear-gradient(to bottom right, #4e3c20, #B08D57, #4e3c20)",
                     color: "black",
-                    border: "2px solid black"
+                    border: "0px"
                 }
             })
         } catch (error) {
@@ -310,7 +310,7 @@ const Page = () => {
                 style: {
                     background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                     color: "white",
-                    border: "2px solid black"
+                    border: "0px"
                 }
             })
             window.open(imageUrl)
@@ -624,7 +624,7 @@ const Page = () => {
                                             whileTap={{ scale: 0.98 }}
                                         >
                                             <button
-                                                onClick={() => router.push('/admin/persona')}
+                                                onClick={() => router.push('/admin/personas')}
                                                 className="px-8 py-3 bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black rounded-xl font-medium tracking-wide shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
                                             >
                                                 Create Persona

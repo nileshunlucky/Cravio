@@ -19,8 +19,8 @@ import { ChevronRight } from "lucide-react"
 // Add luxury styling improvements
 const items = [
   {
-    title: "Dashboard",
-    url: "/admin/dashboard",
+    title: "Canvas",
+    url: "/admin/canvas",
     icon: ChevronRight
   },
   {
@@ -29,8 +29,8 @@ const items = [
     icon: ChevronRight
   },
   {
-    title: "Persona",
-    url: "/admin/persona",
+    title: "Persona's",
+    url: "/admin/personas",
     icon: ChevronRight
   },
   {

@@ -29,56 +29,6 @@ s3_client = boto3.client(
 )
 
 
-def save_image_to_s3(image_url, prompt, email):
-    """
-    Download generated image from FAL.ai and save to S3
-
-    Args:
-        image_url: URL of generated image from FAL.ai
-        prompt: The prompt used (for filename)
-        email: User email (for folder organization)
-
-    Returns:
-        str: S3 URL of saved image
-    """
-    try:
-        # Download image from FAL.ai
-        response = requests.get(image_url, timeout=60)
-        response.raise_for_status()
-
-        # Generate unique filename
-        unique_id = uuid.uuid4().hex[:8]
-        safe_prompt = "".join(
-            c for c in prompt[:20] if c.isalnum() or c in (" ", "-", "_")
-        ).rstrip()
-        filename = f"{safe_prompt}_{unique_id}.png"
-
-        # S3 key with user organization
-        s3_key = f"generated_images/{email}/{filename}"
-
-        # Upload to S3
-        s3_client.put_object(
-            Bucket=S3_BUCKET,
-            Key=s3_key,
-            Body=response.content,
-            ContentType="image/png",
-            Metadata={
-                "email": email,
-                "prompt": prompt[:100],  # Truncate long prompts
-                "generated_at": datetime.now(timezone.utc).isoformat(),
-            },
-        )
-
-        s3_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{s3_key}"
-        logger.info(f"Saved generated image to S3: {s3_key}")
-
-        return s3_url
-
-    except Exception as e:
-        logger.error(f"Failed to save image to S3: {str(e)}")
-        return None
-
-
 def cleanup_temp_image(image_url, email):
     """
     Delete temporary uploaded image from S3
@@ -144,20 +94,8 @@ def image2image(self, lora_url, prompt, image_url, email):
 
         logger.info(f"FAL.ai generation completed for {email}")
 
-        # Update progress
-        self.update_state(
-            state="PROGRESS",
-            meta={"status": "Saving generated image to S3", "progress": 80},
-        )
-
         # Get generated image URL
         generated_image_url = result["images"][0]["url"]
-
-        # Save generated image to S3
-        s3_image_url = save_image_to_s3(generated_image_url, prompt, email)
-
-        if not s3_image_url:
-            raise Exception("Failed to save generated image to S3")
 
         # Update progress
         self.update_state(
@@ -170,7 +108,7 @@ def image2image(self, lora_url, prompt, image_url, email):
             {
                 "$push": {
                     "posts": {
-                        "post_url": s3_image_url,
+                        "post_url": generated_image_url,
                         "caption": prompt,
                         "created_at": datetime.now(timezone.utc),
                     }
@@ -191,7 +129,7 @@ def image2image(self, lora_url, prompt, image_url, email):
 
         return {
             "status": "success",
-            "generated_image_url": s3_image_url,
+            "generated_image_url": generated_image_url,
         }
 
     except Exception as e:
@@ -267,20 +205,8 @@ def text2image(self, lora_url, prompt, email):
 
         logger.info(f"FAL.ai generation completed for {email}")
 
-        # Update progress
-        self.update_state(
-            state="PROGRESS",
-            meta={"status": "Saving generated image to S3", "progress": 80},
-        )
-
         # Get generated image URL
         generated_image_url = result["images"][0]["url"]
-
-        # Save generated image to S3
-        s3_image_url = save_image_to_s3(generated_image_url, prompt, email)
-
-        if not s3_image_url:
-            raise Exception("Failed to save generated image to S3")
 
         # Update progress
         self.update_state(
@@ -293,7 +219,7 @@ def text2image(self, lora_url, prompt, email):
             {
                 "$push": {
                     "posts": {
-                        "post_url": s3_image_url,
+                        "post_url": generated_image_url,
                         "caption": prompt,
                         "created_at": datetime.now(timezone.utc),
                     }
@@ -311,7 +237,7 @@ def text2image(self, lora_url, prompt, email):
 
         return {
             "status": "success",
-            "generated_image_url": s3_image_url,
+            "generated_image_url": generated_image_url,
         }
 
     except Exception as e:

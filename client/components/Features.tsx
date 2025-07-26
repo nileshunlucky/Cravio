@@ -148,7 +148,7 @@ const Features = () => {
 
             {/* Premium CTA */}
             <motion.div variants={itemVariants} className="pt-8">
-              <Link href="/admin/dashboard">
+              <Link href="/admin/canvas">
                 <motion.button
                   className="group inline-flex items-center px-12 py-5 bg-[#B08D57] text-black font-medium text-lg tracking-wide relative overflow-hidden"
                   whileHover={{

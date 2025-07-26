@@ -169,12 +169,8 @@ def train_persona_lora(self, persona_name, image_urls, email):
         email: User email
     """
     
-    # Generate unique persona ID
-    persona_id = f"persona_{uuid.uuid4().hex[:12]}"
-    
     # Create persona object
     persona_doc = {
-        "persona_id": persona_id,
         "persona_name": persona_name,
         "image_url": image_urls[0],
         "status": "started",

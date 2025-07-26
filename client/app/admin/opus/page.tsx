@@ -78,7 +78,7 @@ const Page = () => {
                 style: {
                     background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                     color: "white",
-                    border: "2px solid black"
+                    border: "0px"
                 }
             })
             return;
@@ -92,8 +92,11 @@ const Page = () => {
             formData.append('model', model)
             formData.append('email', email)
             formData.append('prompt', prompt)
-            formData.append('image', image || '')
             formData.append('aspect_ratio', aspectRatio)
+
+            if (image) {
+                formData.append('image', image)
+            }
 
             const res = await fetch('https://cravio-ai.onrender.com/api/opus', {
                 method: 'POST',
@@ -108,27 +111,26 @@ const Page = () => {
                     style: {
                         background: "linear-gradient(to bottom right, #4e3c20, #B08D57, #4e3c20)",
                         color: "black",
-                        border: "2px solid black"
+                        border: "0px"
                     }
                 })
             }
-            else if (res.status === 403) {
+            if (res.status === 403) {
                 toast.error('Not enough aura', {
                     style: {
                         background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                         color: "white",
-                        border: "2px solid black"
+                        border: "0px"
                     }
                 });
                 router.push('/admin/pricing')
-            }
-            else {
+            } else if (!res.ok) {
                 console.error("Error from server:", data)
                 toast.error("Failed to generate image", {
                     style: {
                         background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                         color: "white",
-                        border: "2px solid black"
+                        border: "0px"
                     }
                 })
             }
@@ -138,7 +140,7 @@ const Page = () => {
                 style: {
                     background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                     color: "white",
-                    border: "2px solid black"
+                    border: "0px"
                 }
             })
             console.error("Error:", error)
@@ -172,7 +174,7 @@ const Page = () => {
                 style: {
                     background: "linear-gradient(to bottom right, #4e3c20, #B08D57, #4e3c20)",
                     color: "black",
-                    border: "2px solid black"
+                    border: "0px"
                 }
             })
         } catch (error) {
@@ -181,7 +183,7 @@ const Page = () => {
                 style: {
                     background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                     color: "white",
-                    border: "2px solid black"
+                    border: "0px"
                 }
             })
             window.open(videoUrl)
@@ -211,11 +213,12 @@ const Page = () => {
                 if (status.state === 'SUCCESS' || status.state === 'FAILURE') {
                     setIsProcessing(false);
                     if (status.state === 'SUCCESS') {
+                        setGeneratedVideoUrl(status.result.fal_url);
                         toast.success('Training completed', {
                             style: {
                                 background: "linear-gradient(to bottom right, #4e3c20, #B08D57, #4e3c20)",
                                 color: "black",
-                                border: "2px solid black"
+                                border: "0px"
                             }
                         });
                         setTimeout(() => window.location.reload(), 2000);
@@ -224,7 +227,7 @@ const Page = () => {
                             style: {
                                 background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                                 color: "white",
-                                border: "2px solid black"
+                                border: "0px"
                             }
                         });
                     }
@@ -235,7 +238,7 @@ const Page = () => {
                     style: {
                         background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                         color: "white",
-                        border: "2px solid black"
+                        border: "0px"
                     }
                 });
             }
@@ -394,7 +397,7 @@ const Page = () => {
                         </motion.div>
                     ) : (
                         <Card className="w-full max-w-xl mx-auto rounded-2xl shadow-xl bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black my-5">
-                            <CardContent className="p-8 space-y-6">
+                            <CardContent className="md:p-8 p-4 space-y-6">
                                 <motion.h1
                                     initial={{ opacity: 0, y: -20 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -414,24 +417,26 @@ const Page = () => {
 
                                 <motion.div className='flex items-center justify-between gap-3'>
                                     <Select value={model} onValueChange={setModel}>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select Model" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black">
-                                        <SelectItem value="veo3">Veo 3</SelectItem>
-                                        <SelectItem value="kling2.1 master">Kling 2.1 Master</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select Model" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black">
+                                            <SelectItem value="veo3">Veo 3</SelectItem>
+                                            <SelectItem value="hailuo 02 pro">Hailuo 02 Pro</SelectItem>
+                                            <SelectItem value="kling 2.1 master">Kling 2.1 Master</SelectItem>
+                                            <SelectItem value="wan 2.1">Wan 2.1</SelectItem>
+                                        </SelectContent>
+                                    </Select>
 
-                                <Select value={aspectRatio} onValueChange={setAspectRatio}>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select Model" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black">
-                                        <SelectItem value="9:16">9:16</SelectItem>
-                                        <SelectItem value="16:9">16:9</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                    <Select value={aspectRatio} onValueChange={setAspectRatio}>
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select Model" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black">
+                                            <SelectItem value="9:16">9:16</SelectItem>
+                                            <SelectItem value="16:9">16:9</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </motion.div>
 
                                 <motion.div className="w-full space-y-4">
@@ -450,7 +455,7 @@ const Page = () => {
                                                     <motion.img
                                                         src={videoPreview}
                                                         alt="Preview"
-                                                        className="w-full h-64 object-cover rounded-xl"
+                                                        className="w-full h-full object-cover rounded-xl"
                                                         initial={{ opacity: 0 }}
                                                         animate={{ opacity: 1 }}
                                                         transition={{ duration: 0.5 }}
@@ -465,9 +470,9 @@ const Page = () => {
                                                     initial={{ opacity: 0, y: 20 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     exit={{ opacity: 0, y: -20 }}
-                                                    className="py-12 flex flex-col justify-center items-center h-64"
+                                                    className="py-12 flex flex-col justify-center items-center h-64 "
                                                 >
-                                                    <div className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center">
+                                                    <div className="w-16 h-16 mx-auto mb-6 border border-[#B08D57]/30 rounded-full flex items-center justify-center">
                                                         <Upload className="w-6 h-6 text-[#B08D57]" />
                                                     </div>
                                                     <p className="text-white/70 font-light mb-2">Drop your image here</p>
@@ -478,12 +483,12 @@ const Page = () => {
                                     </label>
                                 </motion.div>
 
-                                <Button
+                                <motion.button
                                     onClick={handleSubmit}
-                                    className="w-full rounded-lg p-4 bg-gradient-to-br from-[#000000] via-[#222222] to-[#000000] text-[#B08D57]"
+                                    className="w-full rounded-lg py-2 text-lg bg-gradient-to-br from-[#000000] via-[#222222] to-[#000000] text-[#B08D57] cursor-pointer"
                                 >
                                     Craft Vision
-                                </Button>
+                                </motion.button>
                             </CardContent>
                         </Card>
                     )}

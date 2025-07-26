@@ -116,7 +116,7 @@ const Page = () => {
                     style: {
                         background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                         color: "white",
-                        border: "2px solid black"
+                        border: "0px"
                     }
                 });
                 router.push("/admin/pricing");
@@ -128,7 +128,7 @@ const Page = () => {
                  style: {
                         background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                         color: "white",
-                        border: "2px solid black"
+                        border: "0px"
                     }
             });
             return;
@@ -144,7 +144,7 @@ const Page = () => {
                  style: {
                         background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                         color: "white",
-                        border: "2px solid black"
+                        border: "0px"
                     }
             });
     } finally {

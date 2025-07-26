@@ -26,7 +26,7 @@ const Page = () => {
         style: {
           background: "linear-gradient(to bottom right, #4e3c20, #B08D57, #4e3c20)",
           color: "black",
-          border: "2px solid black"
+          border: "0px"
         }
       })
     } catch (err) {
@@ -35,7 +35,7 @@ const Page = () => {
         style: {
           background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
           color: "white",
-          border: "2px solid black"
+          border: "0px"
         }
       });
     }
@@ -55,7 +55,7 @@ const Page = () => {
           style: {
             background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
             color: "white",
-            border: "2px solid black"
+            border: "0px"
           }
         });
       }
@@ -64,7 +64,7 @@ const Page = () => {
         style: {
           background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
           color: "white",
-          border: "2px solid black"
+          border: "0px"
         }
       });
     }
@@ -95,7 +95,7 @@ const Page = () => {
         style: {
           background: "linear-gradient(to bottom right, #4e3c20, #B08D57, #4e3c20)",
           color: "black",
-          border: "2px solid black"
+          border: "0px"
         }
       })
     } catch (error) {
@@ -104,7 +104,7 @@ const Page = () => {
         style: {
           background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
           color: "white",
-          border: "2px solid black"
+          border: "0px"
         }
       })
       window.open(imageUrl)

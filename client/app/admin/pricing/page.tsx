@@ -379,10 +379,12 @@ const Page = () => {
                     yearly: 12000
                 },
                 list: [
+                    { name: "Canvas", included: true },
+                    { name: "Opus (veo3, Kling, hailuo, Wan)", included: true },
                     { name: "Persona", included: true },
                     { name: "Caption", included: true },
                     { name: "Upscaller", included: true },
-                    { name: "Atelier", included: false },
+                    { name: "Atelier (GPT-4o)", included: false },
                     { name: "Exclusive Support", included: false },
                 ]
             }
@@ -405,11 +407,13 @@ const Page = () => {
                     yearly: 28800
                 },
                 list: [
+                    { name: "Canvas", included: true },
+                    { name: "Opus (veo3, Kling, hailuo, Wan)", included: true },
                     { name: "Persona", included: true },
                     { name: "Caption", included: true },
                     { name: "Upscaller", included: true },
-                    { name: "Atelier", included: true },
-                    { name: "Exclusive Support", included: false },
+                    { name: "Atelier (GPT-4o)", included: true },
+                    { name: "Exclusive Support", included: true },
                 ]
             }
         },
@@ -431,10 +435,12 @@ const Page = () => {
                     yearly: 60000
                 },
                 list: [
+                    { name: "Canvas", included: true },
+                    { name: "Opus (veo3, Kling, hailuo, Wan)", included: true },
                     { name: "Persona", included: true },
                     { name: "Caption", included: true },
                     { name: "Upscaller", included: true },
-                    { name: "Atelier", included: true },
+                    { name: "Atelier (GPT-4o)", included: true },
                     { name: "Exclusive Support", included: true },
                 ]
             }

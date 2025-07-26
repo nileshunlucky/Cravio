@@ -36,7 +36,7 @@ const Nav = () => {
 
         <SignedIn>
           {/* Dashboard button */}
-          <Link href="/admin/dashboard">
+          <Link href="/admin/canvas">
             <Button className='bg-[#B08D57] text-black hover:bg-[#B08D57]/80' variant="default">Dashboard</Button>
           </Link>
         </SignedIn>
