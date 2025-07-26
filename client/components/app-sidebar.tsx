@@ -24,6 +24,11 @@ const items = [
     icon: ChevronRight
   },
   {
+    title: "Opus",
+    url: "/admin/opus",
+    icon: ChevronRight
+  },
+  {
     title: "Persona",
     url: "/admin/persona",
     icon: ChevronRight

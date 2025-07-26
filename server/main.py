@@ -7,6 +7,7 @@ from api.lemon_webhook import router as lemon_webhook_router
 from api.post2caption import router as thumb2title_router
 from api.persona import router as persona_router
 from api.persona2img import router as img2img_router
+from api.opus import router as opus_router
 
 app = FastAPI()
 
@@ -24,6 +25,7 @@ app.include_router(lemon_webhook_router)
 app.include_router(thumb2title_router)
 app.include_router(persona_router)
 app.include_router(img2img_router)
+app.include_router(opus_router)
 
 # Get user by email
 @app.get("/user/{email}")
@@ -112,3 +114,30 @@ async def proxy_image(url: str):
             )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch image: {str(e)}")
+
+@app.get("/proxy-video")
+async def proxy_video(url: str):
+    """Proxy endpoint to fetch videos and avoid CORS issues"""
+    try:
+        async with httpx.AsyncClient(timeout=300.0) as client:  # 5 minute timeout for videos
+            response = await client.get(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                }
+            )
+            response.raise_for_status()
+            
+            content_type = response.headers.get("content-type", "video/mp4")
+            
+            return Response(
+                content=response.content,
+                media_type=content_type,
+                headers={
+                    "Cache-Control": "public, max-age=7200",  # 2 hours cache
+                    "Content-Disposition": "attachment; filename=video.mp4"
+                }
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch video: {str(e)}")
+

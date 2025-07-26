@@ -381,7 +381,7 @@ const Page = () => {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: progress > 0 ? 1 : 0 }}
                                     />
-                                    <p className='absolute bottom-2 right-5 bg-gradient-to-b from-[#B08D57] to-[#4e3c20] bg-clip-text text-transparent font-bold text-5xl'>{Math.round(progress)}%</p>
+                                    <p className='absolute bottom-2 right-5 bg-gradient-to-br from-[#B08D57] to-[#4e3c20] bg-clip-text text-transparent font-bold text-5xl'>{Math.round(progress)}%</p>
                                 </div>
                             </motion.div>
                         </AnimatePresence>
@@ -485,7 +485,6 @@ const Page = () => {
                                                     initial={{ opacity: 0, scale: 0.8 }}
                                                     animate={{ opacity: 1, scale: 1 }}
                                                     exit={{ opacity: 0, scale: 0.8 }}
-                                                    className="relative"
                                                 >
                                                     <img
                                                         src={imagePreview}
