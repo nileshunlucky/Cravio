@@ -100,7 +100,7 @@ const Caption = () => {
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 bg-[#B08D57]"></div>
                 <div>
-                  <div className="text-white/90 font-light text-2xl">Curated by Cravio.ai</div>
+                  <div className="text-white/90 font-light text-2xl">Curated by Mellvitta</div>
                   <div className="text-white/50 font-light text-xs tracking-wider">#giorgio #model #fyp</div>
                 </div>
               </div>

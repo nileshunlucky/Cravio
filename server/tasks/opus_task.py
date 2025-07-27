@@ -348,7 +348,7 @@ def wan_2_1(self, prompt: str, email: str, aspect_ratio: str, image_url: str = N
             api_endpoint = "fal-ai/wan-pro/image-to-video"
         else:
             # Text-to-video mode - use different endpoint
-            api_endpoint = "fal-ai/wan-t2v"
+            api_endpoint = "fal-ai/wan-pro/text-to-video"
 
         # Call fal.ai wan 2.1 API
         result = fal_client.subscribe(

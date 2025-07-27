@@ -10,7 +10,7 @@ const testimonials = [
     name: 'Sarah Chen',
     role: 'Editorial Muse & Creative Visionary',
     quote:
-      "Cravio became my complete creative atelier. From visual storytelling to caption craftsmanship — every element feels meticulously curated for Instagram excellence.",
+      "Mellvitta became my complete creative atelier. From visual storytelling to caption craftsmanship — every element feels meticulously curated for Instagram excellence.",
     avatar: '/review/ash-allen.jpeg',
     subscribers: '2.3M',
   },
@@ -18,7 +18,7 @@ const testimonials = [
     name: 'Marcus Rodriguez',
     role: 'Connoisseur of Contemporary Luxury',
     quote:
-      "The trifecta of perfection — stunning images, cinematic videos, and eloquent captions. Cravio transformed my entire Instagram presence into a luxury experience.",
+      "The trifecta of perfection — stunning images, cinematic videos, and eloquent captions. Mellvitta transformed my entire Instagram presence into a luxury experience.",
     avatar: '/review/alex-george.webp',
     subscribers: '1.8M',
   },
@@ -26,7 +26,7 @@ const testimonials = [
     name: 'Emma Thompson',
     role: 'Couture Model & Visual Architect',
     quote:
-      "Consistency across every medium — photography, videography, and copy. Cravio delivers the editorial coherence that high-fashion demands.",
+      "Consistency across every medium — photography, videography, and copy. Mellvitta delivers the editorial coherence that high-fashion demands.",
     avatar: '/review/Laurence Vincent.jpg',
     subscribers: '950K',
   },
@@ -34,7 +34,7 @@ const testimonials = [
     name: 'David Park',
     role: 'Creative Director & Visual Strategist',
     quote:
-      "Like having an entire creative studio at my fingertips. Cravio's unified approach to imagery, motion, and narrative elevated my Instagram to gallery status.",
+      "Like having an entire creative studio at my fingertips. Mellvitta's unified approach to imagery, motion, and narrative elevated my Instagram to gallery status.",
     avatar: '/review/Ishan Sharma.jpg',
     subscribers: '1.4M',
   },
@@ -42,7 +42,7 @@ const testimonials = [
     name: 'Jessica Williams',
     role: 'Avant-Garde Content Curator',
     quote:
-      "Museum-quality visuals, cinematic storytelling, and literary captions — all seamlessly integrated. Cravio is the future of luxury content creation.",
+      "Museum-quality visuals, cinematic storytelling, and literary captions — all seamlessly integrated. Mellvitta is the future of luxury content creation.",
     avatar: '/review/Louis Dershal.png',
     subscribers: '3.2M',
   },
@@ -50,7 +50,7 @@ const testimonials = [
     name: 'Taylor Brooks',
     role: 'Beauty Artisan & Aesthetic Curator',
     quote:
-      "Every image, every video, every caption feels intentionally crafted. Cravio brings haute couture precision to Instagram content creation.",
+      "Every image, every video, every caption feels intentionally crafted. Mellvitta brings haute couture precision to Instagram content creation.",
     avatar: '/review/Rose Delvard..png',
     subscribers: '680K',
   },
@@ -77,7 +77,7 @@ const Review = () => {
       className="underline decoration-2 underline-offset-4"
       style={{ textDecorationColor: '#B08D57' }}
     >
-      Cravio.AI
+      Mellvitta.AI
     </span>
   </h2>
   <p className="text-lg text-[#B08D57]">

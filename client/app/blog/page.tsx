@@ -57,7 +57,7 @@ export default function Blog() {
             </Badge>
           </div>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-4">
-            Cravio AI Blog
+            Mellvitta AI Blog
           </h1>
           <p className="text-lg opacity-70 max-w-2xl">
             Insights, updates, and stories from the world of artificial intelligence

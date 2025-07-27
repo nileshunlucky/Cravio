@@ -58,7 +58,7 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup className="gap-5">
           <SidebarGroupLabel className="text-xl font-medium relative flex justify-center items-center my-3">
-            <p>C R A V I O</p>
+            <p>M E L L V I T T A</p>
             <div className="absolute left-0 -bottom-1 w-full h-[2px] bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] rounded-full" />
           </SidebarGroupLabel>
 

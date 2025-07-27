@@ -482,7 +482,7 @@ const Page = () => {
                                     {/* Submit Button */}
                                     <motion.button
                                         onClick={handleSubmit}
-                                        className="w-full bg-gradient-to-br from-[#000000] via-[#111111] to-[#000000] text-[#B08D57] hover:shadow-lg hover:shadow-[#B08D57]/20 font-light py-6 text-lg disabled:opacity-30 rounded-2xl transition-all duration-500 flex justify-center items-center cursor-pointer"
+                                        className="w-full bg-gradient-to-br from-[#000000] via-[#111111] to-[#000000] text-[#B08D57] hover:shadow-lg hover:shadow-[#B08D57]/20 font-light py-3 text-lg disabled:opacity-30 rounded-2xl transition-all duration-500 flex justify-center items-center cursor-pointer"
                                     >
                                         {isSubmitting ? (
                                             <div className="flex items-center justify-center gap-3">

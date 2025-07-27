@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cravio AI",
-  description: "Cravio AI - AI content automation tool",
+  title: "Mellvitta AI",
+  description: "Mellvitta AI is a platform for creating consistent content with AI-powered tools.",
   icons: {
     icon: "/logo.png",
   },
