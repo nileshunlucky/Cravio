@@ -1,18 +1,17 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { Suspense, useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation'
 
 interface TaskResult {
     message: string
     generated_image_url?: string
 }
-
 
 interface TaskStatus {
     state: string
@@ -23,6 +22,7 @@ interface TaskStatus {
     result?: TaskResult
     error?: string
 }
+
 // Define a consistent type for a Persona
 type Persona = {
     persona_name: string;
@@ -30,11 +30,12 @@ type Persona = {
     model: string;
 };
 
-const Page = () => {
+// Component that uses useSearchParams - wrapped in Suspense
+function CanvasContent() {
     const { user } = useUser()
     const email = user?.emailAddresses?.[0]?.emailAddress || ''
-
     const router = useRouter()
+    const searchParams = useSearchParams() // Now safely wrapped in Suspense
 
     // State for personas fetched from the database
     const [existingPersonas, setExistingPersonas] = useState<Persona[]>([])
@@ -50,7 +51,8 @@ const Page = () => {
     const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null)
     const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null)
 
-    const searchParams = useSearchParams();
+    // Lux processing animation
+    const [progress, setProgress] = useState(0)
 
     // Handle URL parameters on component mount
     useEffect(() => {
@@ -71,12 +73,8 @@ const Page = () => {
             setTimeout(() => {
                 router.replace('/admin/canvas');
             }, 100);
-    
         }
     }, [searchParams, router]);
-
-    // Lux processing animation
-    const [progress, setProgress] = useState(0)
 
     useEffect(() => {
         if (isProcessing) {
@@ -123,7 +121,6 @@ const Page = () => {
                             border: "0px"
                         }
                     })
-
                 }
             } catch (error) {
                 console.error("Failed to fetch user data:", error)
@@ -139,7 +136,6 @@ const Page = () => {
 
         fetchUserData()
     }, [email])
-
 
     // Handler for image file selection
     const handleImageUpload = (file: File) => {
@@ -354,8 +350,6 @@ const Page = () => {
         setSelectedPersona(null);
     };
 
-
-
     useEffect(() => {
         if (taskStatus) {
             // Use real progress from API if available
@@ -366,9 +360,7 @@ const Page = () => {
     }, [taskStatus])
 
     return (
-        <div
-            className="min-h-screen overflow-hidden relative flex items-center justify-center p-4 sm:p-6 lg:p-8"
-        >
+        <div className="min-h-screen overflow-hidden relative flex items-center justify-center p-4 sm:p-6 lg:p-8">
             <main className="w-full max-w-7xl mx-auto">
                 {
                     isProcessing ? (
@@ -561,14 +553,13 @@ const Page = () => {
                                                 value={prompt}
                                                 onChange={(e) => setPrompt(e.target.value)}
                                                 placeholder="Describe your vision..."
-                                                maxLength={500}
                                                 className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 placeholder-white/40 resize-none focus:outline-none focus:border-[#B08D57]/50 transition-all duration-300 font-light scroll-hidden"
                                             />
                                             <motion.div
                                                 className="absolute bottom-3 right-3 text-white/30 text-xs font-light"
                                                 animate={{ opacity: prompt.length > 0 ? 1 : 0.5 }}
                                             >
-                                                {prompt.length}/500
+                                                {prompt.length}
                                             </motion.div>
                                         </motion.div>
                                     </div>
@@ -666,6 +657,27 @@ const Page = () => {
                 }
             </main>
         </div>
+    )
+}
+
+// Main Page component with Suspense boundary
+const Page = () => {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen overflow-hidden relative flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-black">
+                <div className="flex items-center justify-center">
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-white text-lg font-light"
+                    >
+                        Loading canvas...
+                    </motion.div>
+                </div>
+            </div>
+        }>
+            <CanvasContent />
+        </Suspense>
     )
 }
 
