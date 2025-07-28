@@ -125,7 +125,7 @@ function ImageCard({
           onLoad();
         }}
         onError={(e) => {
-          console.error('Image failed to load:', src);
+          console.error('Image failed to load:', e);
           setImageError(true);
           onLoad(); // Hide skeleton even on error
         }}
