@@ -95,7 +95,7 @@ const HeroX = () => {
                                     transition={{ delay: 0.8, duration: 0.8 }}
                                     className="pt-4"
                                 >
-                                    <Link href="/admin/canvas">
+                                    <Link href="/admin/explore">
                                         <motion.button
                                             whileHover={{ 
                                                 scale: 1.02,

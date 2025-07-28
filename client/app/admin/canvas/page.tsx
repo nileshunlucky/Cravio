@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation';
 
 interface TaskResult {
     message: string
@@ -48,6 +49,31 @@ const Page = () => {
     const [taskId, setTaskId] = useState<string | null>(null)
     const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null)
     const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null)
+
+    const searchParams = useSearchParams();
+
+    // Handle URL parameters on component mount
+    useEffect(() => {
+        const urlPrompt = searchParams.get('prompt');
+        const referenceImage = searchParams.get('referenceImage');
+
+        if (urlPrompt) {
+            setPrompt(decodeURIComponent(urlPrompt));
+        }
+
+        if (referenceImage) {
+            // If you want to set the reference image as well
+            const imageUrl = decodeURIComponent(referenceImage);
+            // You can set this in an image preview state or use it as needed
+            setImagePreview(imageUrl);
+            
+            // clear the search params
+            setTimeout(() => {
+                router.replace('/admin/canvas');
+            }, 100);
+    
+        }
+    }, [searchParams, router]);
 
     // Lux processing animation
     const [progress, setProgress] = useState(0)
@@ -494,6 +520,8 @@ const Page = () => {
                                                     <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center opacity-100 transition-opacity duration-300">
                                                         <p className="text-white text-sm font-light">Click or drop to change</p>
                                                     </div>
+                                                    {/* remove setImagePreview button */}
+                                                    <button onClick={() => setImagePreview(null)} className="absolute top-0 right-2 text-[#B08D57] text-3xl p-3 rounded-full p-2">x</button>
                                                 </motion.div>
                                             ) : (
                                                 <motion.div
@@ -534,7 +562,7 @@ const Page = () => {
                                                 onChange={(e) => setPrompt(e.target.value)}
                                                 placeholder="Describe your vision..."
                                                 maxLength={500}
-                                                className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 placeholder-white/40 resize-none focus:outline-none focus:border-[#B08D57]/50 transition-all duration-300 font-light"
+                                                className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 placeholder-white/40 resize-none focus:outline-none focus:border-[#B08D57]/50 transition-all duration-300 font-light scroll-hidden"
                                             />
                                             <motion.div
                                                 className="absolute bottom-3 right-3 text-white/30 text-xs font-light"

@@ -65,7 +65,7 @@ const Caption = () => {
             </motion.div>
 
             <motion.div variants={fadeInUp} custom={0.5}>
-              <Link href="/admin/canvas">
+              <Link href="/admin/explore">
                 <button
                   className="group relative px-12 py-4 border border-[#B08D57] hover:bg-[#B08D57]/5 transition-all duration-500 disabled:opacity-50 overflow-hidden"
                 >

@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -417,7 +417,7 @@ const Page = () => {
                                     onChange={(e) => setPrompt(e.target.value)}
                                     placeholder="Describe your vision..."
                                     rows={3}
-                                    className="w-full bg-transparent border-2 border-black rounded-2xl p-3 placeholder:text-black text-black resize-none focus:outline-none transition-all duration-300 tracking-wide"
+                                    className="w-full bg-transparent border-2 border-black rounded-2xl p-3 placeholder:text-black text-black resize-none focus:outline-none transition-all duration-300 tracking-wide scroll-hidden"
                                 />
 
                                 <motion.div className='flex items-center justify-between gap-3'>

@@ -19,6 +19,11 @@ import { ChevronRight } from "lucide-react"
 // Add luxury styling improvements
 const items = [
   {
+    title: "Explore",
+    url: "/admin/explore",
+    icon: ChevronRight
+  },
+  {
     title: "Canvas",
     url: "/admin/canvas",
     icon: ChevronRight
