@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from 'next/navigation';
 
-// Image collections with prompts
+// Image collections with prompts 
 const imageCollections = [
   {
     long: {
