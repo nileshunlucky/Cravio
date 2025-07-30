@@ -191,7 +191,9 @@ function CanvasContent() {
             formData.append('lora_url', selectedPersona.model)
             formData.append('email', email)
             formData.append('prompt', prompt)
-            formData.append('image', uploadedImage || '')
+            if (uploadedImage) {
+                formData.append('image', uploadedImage)
+            }
 
             const res = await fetch('https://cravio-ai.onrender.com/api/persona-image', {
                 method: 'POST',
