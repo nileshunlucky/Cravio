@@ -7,12 +7,11 @@ import { useRouter } from 'next/navigation';
 // Image collections with prompts 
 const imageCollections = [
   {
-    long: {
-      url: "https://higgsfield.ai/_next/image?url=https%3A%2F%2Fdqv0cqkoy5oj7.cloudfront.net%2Fuser_2vtxM3DRcDcQIjpmiCpUDF2wcAT%2Fd142f4a6-5d04-4a7d-8e73-84aa4cdc6fd4.png&w=640&q=75",
-      url2: "https://res.cloudinary.com/deoxpvjjg/image/upload/v1753891631/3c637f74-83ec-43b7-a1b1-7cb7675867af_xt3of7.png",
-      prompt: "A young woman in low-rise jeans and a slightly cropped white tee layered under a soft, slightly oversized brown leather jacket stands casually in a modern airport terminal near floor-to-ceiling windows. She wears relaxed white sneakers, and sleek black headphones rest comfortably around her neck, complementing her natural, loose hair. Her carry-on suitcase, a streamlined matte black model, leans gently beside her. Warm, slightly underexposed ambient daylight streams through large windows, casting delicate shadows and highlighting the tactile grain of her clothing and natural skin textures. Captured from a spontaneous mid-shot with a subtle tilt and off-center framing, the image conveys an unposed, intimate moment of waiting. The clean, industrial airport architecture with muted tones and polished surfaces enhances the natural lighting and authentic textural realism characteristic of candid iPhone photography, perfectly embodying the relaxed, sporty-chic travel vibe."
-    },
-    small: [
+    image: [
+      {
+        url: "https://higgsfield.ai/_next/image?url=https%3A%2F%2Fdqv0cqkoy5oj7.cloudfront.net%2Fuser_2vtxM3DRcDcQIjpmiCpUDF2wcAT%2Fd142f4a6-5d04-4a7d-8e73-84aa4cdc6fd4.png&w=640&q=75",
+        prompt: "A young woman in low-rise jeans and a slightly cropped white tee layered under a soft, slightly oversized brown leather jacket stands casually in a modern airport terminal near floor-to-ceiling windows. She wears relaxed white sneakers, and sleek black headphones rest comfortably around her neck, complementing her natural, loose hair. Her carry-on suitcase, a streamlined matte black model, leans gently beside her. Warm, slightly underexposed ambient daylight streams through large windows, casting delicate shadows and highlighting the tactile grain of her clothing and natural skin textures. Captured from a spontaneous mid-shot with a subtle tilt and off-center framing, the image conveys an unposed, intimate moment of waiting. The clean, industrial airport architecture with muted tones and polished surfaces enhances the natural lighting and authentic textural realism characteristic of candid iPhone photography, perfectly embodying the relaxed, sporty-chic travel vibe."
+      },
       {
         url: "https://res.cloudinary.com/deoxpvjjg/image/upload/v1753892268/Lucid_Realism_A_woman_with_long_wavy_hair_and_sunglasses_sits__1_wvblfe.jpg",
         prompt: "A woman with long wavy hair and sunglasses sits near the window of a private jet, dressed in a black and beige designer jacket and high beige boots. A black leather bag with metal details rests beside her. The cabin interior is sharp and refined."
@@ -32,6 +31,10 @@ const imageCollections = [
       {
         url: "https://res.cloudinary.com/deoxpvjjg/image/upload/v1753892022/Default_A_casually_candid_iPhonestyled_photo_capturing_a_solo__0_ucaltl.jpg",
         prompt: "A casually candid iPhone-styled photo capturing a solo woman seated on a narrow, slightly worn Parisian stone stair beside an aged textured doorway. She wears a refined beige trench coat from Totême layered over subtle soft tailoring from COS, paired with sleek brown leather loafers, exemplifying minimalist sophistication. One relaxed hand rests gently on a structured Polène handbag placed softly beside her, showing visible leather grain and soft creases, while the other hand holds a clear takeaway coffee cup with subtle condensation and authentic translucency. Her medium-length hair is effortlessly styled in loose waves, strands softly framing her calm, neutral expression gazing quietly across the cobblestone street. The ambient natural daylight softly diffuses across the scene, casting gentle shadows and subtle highlights that reveal fine skin texture and delicate fabric wrinkles. The informal composition is slightly tilted with the woman positioned off-center, capturing an intuitive, unposed moment filled with authentic urban Parisian charm, perfectly emulating genuine candid iPhone street photography."
+      },
+      {
+        url: "https://res.cloudinary.com/deoxpvjjg/image/upload/v1754564279/755e85ce-f762-4874-b55e-6e647b7289f8_qmija9.png",
+        prompt: "A fierce young woman stands against a deep blood-red studio backdrop, shown from mid-thigh up in a casual, slightly angled mid-close shot. Her long jet-black hair is styled in a messy half-up ponytail, adorned with small white clips, with natural flyaways visible. She wears an oversized black sweater featuring a vivid graphic of a melting monstrous green face with yellow eyes and dripping red accents resembling flames, the fabric textured with gentle wrinkles. Below, white frilly bloomers peek out subtly. Her tattooed legs display large, detailed black floral and demonic motifs, layered with loosely hanging metal chains as accessories. Chunky black platform shoes with white frilly socks complete her look. She wears bold winged eyeliner and deep lipstick with natural skin texture visible on her pale face. Lighting is high-contrast studio but softened to mimic iPhone warmth, lending an eerie yet playful atmosphere. The composition feels relaxed and spontaneous, with slight tilt and imperfect framing."
       },
       {
         url: "https://orchestration.civitai.com/v2/consumer/blobs/8HB5D4RT37NNVYRJ5S2SF1ZCP0.jpeg",
@@ -151,15 +154,14 @@ function PinterestGallery({
   index
 }: {
   images: {
-    long: { url: string; prompt: string };
-    small: { url: string; prompt: string }[]
+    image: { url: string; prompt: string }[]
   };
   index: number;
 }) {
   const router = useRouter();
   
   // Flatten all images into a single array
-  const allImages = [images.long, ...images.small];
+  const allImages = [ ...images.image];
   
   const [loadingStates, setLoadingStates] = useState(() => 
     new Array(allImages.length).fill(true)
