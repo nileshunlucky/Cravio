@@ -56,7 +56,7 @@ const imageCollections = [
 // Skeleton component
 function ImageSkeleton({ className }: { className?: string }) {
   return (
-    <div className={`bg-zinc-900 animate-pulse rounded ${className}`} />
+    <div className={`bg-zinc-900 animate-pulse rounded-lg ${className}`} />
   );
 }
 
@@ -66,19 +66,19 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.03,
+      staggerChildren: 0.05,
       duration: 0.6
     },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 30 },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.4
+      duration: 0.5
     }
   },
 };
@@ -102,11 +102,11 @@ function ImageCard({
 
   return (
     <motion.div
-      className={`relative overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl group bg-zinc-900 ${className}`}
+      className={`relative overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl group bg-zinc-900 rounded-lg ${className}`}
       onClick={onClick}
       variants={itemVariants}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
     >
       {/* Show skeleton only when loading and no error */}
       {isLoading && !imageError && (
@@ -118,8 +118,9 @@ function ImageCard({
       <img
         src={src}
         alt={alt}
-        className={`w-full h-full object-cover transition-all duration-500 group-hover:brightness-110 ${isLoading && !imageError ? 'opacity-0' : 'opacity-100'
-          }`}
+        className={`w-full h-auto object-contain transition-all duration-500 group-hover:brightness-110 ${
+          isLoading && !imageError ? 'opacity-0' : 'opacity-100'
+        }`}
         loading="lazy"
         onLoad={() => {
           console.log(`Image loaded: ${src}`);
@@ -134,18 +135,18 @@ function ImageCard({
 
       {/* Error fallback */}
       {imageError && (
-        <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center">
+        <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center rounded-lg">
           <p className="text-gray-400 text-xs">Failed to load</p>
         </div>
       )}
 
       {/* Hover overlay */}
-      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
     </motion.div>
   );
 }
 
-function InstagramGallery({
+function PinterestGallery({
   images,
   index
 }: {
@@ -156,22 +157,19 @@ function InstagramGallery({
   index: number;
 }) {
   const router = useRouter();
-  const [loadingStates, setLoadingStates] = useState(() => ({
-    long: true,
-    small: new Array(images.small.length).fill(true)
-  }));
+  
+  // Flatten all images into a single array
+  const allImages = [images.long, ...images.small];
+  
+  const [loadingStates, setLoadingStates] = useState(() => 
+    new Array(allImages.length).fill(true)
+  );
 
-  const handleLongImageLoad = () => {
-    console.log(`Long image ${index} loaded`);
-    setLoadingStates(prev => ({ ...prev, long: false }));
-  };
-
-  const handleSmallImageLoad = (idx: number) => {
-    console.log(`Small image ${index}-${idx} loaded`);
-    setLoadingStates(prev => ({
-      ...prev,
-      small: prev.small.map((loading, i) => i === idx ? false : loading)
-    }));
+  const handleImageLoad = (idx: number) => {
+    console.log(`Image ${index}-${idx} loaded`);
+    setLoadingStates(prev => 
+      prev.map((loading, i) => i === idx ? false : loading)
+    );
   };
 
   const handleImageClick = (prompt: string, imageUrl: string) => {
@@ -182,16 +180,11 @@ function InstagramGallery({
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      setLoadingStates({
-        long: false,
-        small: new Array(images.small.length).fill(false)
-      });
+      setLoadingStates(new Array(allImages.length).fill(false));
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [images.small.length]);
-
-  const allImages = [images.long, ...images.small];
+  }, [allImages.length]);
 
   return (
     <motion.div
@@ -199,147 +192,34 @@ function InstagramGallery({
       variants={containerVariants}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, margin: "-20px" }}
+      viewport={{ once: true, margin: "-50px" }}
     >
-      {/* Instagram Explore Grid Pattern with proper gap handling */}
-      <div className="grid grid-cols-3 gap-0.5 md:gap-1">
-        
-        {/* Hero image - properly sized with gap consideration */}
-        <div className="col-span-2 row-span-2">
-          <ImageCard
-            src={allImages[0].url}
-            alt="Featured image"
-            className="w-full h-full aspect-square"
-            isLoading={loadingStates.long}
-            onLoad={handleLongImageLoad}
-            onClick={() => handleImageClick(allImages[0].prompt, allImages[0].url)}
-          />
-        </div>
-
-        {/* Right side images that align with hero */}
-        <div className="col-span-1">
-          <ImageCard
-            src={allImages[1].url}
-            alt="Grid image 1"
-            className="w-full aspect-square"
-            isLoading={loadingStates.small[0]}
-            onLoad={() => handleSmallImageLoad(0)}
-            onClick={() => handleImageClick(allImages[1].prompt, allImages[1].url)}
-          />
-        </div>
-
-        <div className="col-span-1">
-          <ImageCard
-            src={allImages[2].url}
-            alt="Grid image 2"
-            className="w-full aspect-square"
-            isLoading={loadingStates.small[1]}
-            onLoad={() => handleSmallImageLoad(1)}
-            onClick={() => handleImageClick(allImages[2].prompt, allImages[2].url)}
-          />
-        </div>
-
-        {/* Row 2 - 3 equal squares */}
-        {allImages.slice(3, 6).map((image, idx) => (
-          <div key={idx + 3} className="col-span-1">
+      {/* Pinterest Grid Layout: 2 columns on mobile, 4 on md+ */}
+      <div className="columns-2 md:columns-4 gap-2 md:gap-4 space-y-2 md:space-y-4">
+        {allImages.map((image, idx) => (
+          <div key={idx} className="break-inside-avoid mb-2 md:mb-4">
             <ImageCard
               src={image.url}
-              alt={`Grid image ${idx + 3}`}
-              className="w-full aspect-square"
-              isLoading={loadingStates.small[idx + 2]}
-              onLoad={() => handleSmallImageLoad(idx + 2)}
+              alt={`Gallery image ${idx + 1}`}
+              className="w-full"
+              isLoading={loadingStates[idx]}
+              onLoad={() => handleImageLoad(idx)}
               onClick={() => handleImageClick(image.prompt, image.url)}
             />
           </div>
         ))}
-
-        {/* Row 3 - 2 squares + 1 tall image */}
-        <div className="col-span-1">
-          <ImageCard
-            src={allImages[6].url}
-            alt="Grid image 6"
-            className="w-full aspect-square"
-            isLoading={loadingStates.small[5]}
-            onLoad={() => handleSmallImageLoad(5)}
-            onClick={() => handleImageClick(allImages[6].prompt, allImages[6].url)}
-          />
-        </div>
-
-        <div className="col-span-1">
-          <ImageCard
-            src={allImages[7].url}
-            alt="Grid image 7"
-            className="w-full aspect-square"
-            isLoading={loadingStates.small[6]}
-            onLoad={() => handleSmallImageLoad(6)}
-            onClick={() => handleImageClick(allImages[7].prompt, allImages[7].url)}
-          />
-        </div>
-
-        <div className="col-span-1 row-span-2">
-          <ImageCard
-            src={allImages[8].url}
-            alt="Grid image 8"
-            className="w-full h-full aspect-[1/2]"
-            isLoading={loadingStates.small[7]}
-            onLoad={() => handleSmallImageLoad(7)}
-            onClick={() => handleImageClick(allImages[8].prompt, allImages[8].url)}
-          />
-        </div>
-
-        {/* Row 4 - Wide image (spans 2 columns) */}
-        <div className="col-span-2">
-          <ImageCard
-            src={allImages[9].url}
-            alt="Grid image 9"
-            className="w-full aspect-[2/1]"
-            isLoading={loadingStates.small[8]}
-            onLoad={() => handleSmallImageLoad(8)}
-            onClick={() => handleImageClick(allImages[9].prompt, allImages[9].url)}
-          />
-        </div>
-
-        {/* Row 5 - Remaining squares */}
-        {allImages.slice(10, 12).map((image, idx) => (
-          <div key={idx + 10} className="col-span-1">
-            <ImageCard
-              src={image.url}
-              alt={`Grid image ${idx + 10}`}
-              className="w-full aspect-square"
-              isLoading={loadingStates.small[idx + 9]}
-              onLoad={() => handleSmallImageLoad(idx + 9)}
-              onClick={() => handleImageClick(image.prompt, image.url)}
-            />
-          </div>
-        ))}
-
-        {/* Optional 12th image if it exists */}
-        {allImages[12] && (
-          <div className="col-span-1">
-            <ImageCard
-              src={allImages[12].url}
-              alt="Grid image 12"
-              className="w-full aspect-square"
-              isLoading={loadingStates.small[11]}
-              onLoad={() => handleSmallImageLoad(11)}
-              onClick={() => handleImageClick(allImages[12].prompt, allImages[12].url)}
-            />
-          </div>
-        )}
-
       </div>
     </motion.div>
   );
 }
 
-
 export default function PremiumGalleryLayout() {
   return (
     <div className="min-h-screen bg-black">
-      <div className="w-full px-1 md:px-2 lg:px-4 py-4 md:py-8">
-        <div className="space-y-2 md:space-y-4">
+      <div className="w-full px-2 md:px-4 lg:px-6 py-4 md:py-8">
+        <div className="space-y-8 md:space-y-12">
           {imageCollections.map((collection, index) => (
-            <InstagramGallery
+            <PinterestGallery
               key={index}
               images={collection}
               index={index}

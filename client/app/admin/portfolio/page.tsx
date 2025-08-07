@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Send, Link, ArrowDownToLine } from 'lucide-react'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 
 interface Post {
   post_url: string
@@ -18,6 +19,7 @@ const Page = () => {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedPost, setSelectedPost] = useState<Post | null>(null)
+  const router = useRouter()
 
   const copyToClipboard = async (url: string) => {
     try {
@@ -111,12 +113,9 @@ const Page = () => {
     }
   }
 
-
-
   useEffect(() => {
     const fetchUserData = async () => {
       if (!user?.emailAddresses?.[0]?.emailAddress) {
-
         return
       }
 
@@ -131,7 +130,7 @@ const Page = () => {
         }
       } catch (error) {
         console.error("Failed to fetch user data:", error)
-        setPosts([]) // Fallback to mock data
+        setPosts([]) // Fallback to empty array
       } finally {
         setLoading(false)
       }
@@ -163,7 +162,7 @@ const Page = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen  p-4">
+      <div className="min-h-screen p-4">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-3 gap-1 auto-rows-[200px]">
             {Array.from({ length: 12 }).map((_, i) => (
@@ -175,9 +174,24 @@ const Page = () => {
     )
   }
 
-  return (
-    <div className="min-h-screen ">
+  // Show empty state when no posts
+  if (!loading && posts.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <h2 className="md:text-4xl text-xl font-semibold text-white mb-5">
+            Create your first post
+          </h2>
+            <button onClick={() => router.push('/admin/canvas')} className="bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-white md:px-6 md:py-3 py-2 px-4 rounded-lg hover:scale-105 transition-transform duration-200 font-medium">
+              Create
+            </button>
+        </div>
+      </div>
+    )
+  }
 
+  return (
+    <div className="min-h-screen">
       {/* Grid */}
       <div className="max-w-6xl mx-auto p-4">
         <div className="grid grid-cols-3 gap-1 auto-rows-[200px]">
@@ -248,8 +262,7 @@ const Page = () => {
                         className="w-8 h-8 rounded-full object-cover"
                       />
                     )}
-
-                    <span className="text-white font-medium"> {user?.fullName}</span>
+                    <span className="text-white font-medium">{user?.fullName}</span>
                   </div>
                 </div>
 

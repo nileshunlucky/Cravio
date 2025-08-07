@@ -528,7 +528,7 @@ function CanvasContent() {
                                                     <div className="w-16 h-16 mx-auto mb-6 border border-[#B08D57]/30 rounded-full flex items-center justify-center">
                                                         <Upload className="w-6 h-6 text-[#B08D57]" />
                                                     </div>
-                                                    <p className="text-white/70 font-light mb-2">Drop your image here</p>
+                                                    <p className="text-white/70 font-light mb-2">Drop your reference image here (optional)</p>
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>

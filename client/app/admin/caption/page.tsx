@@ -366,10 +366,10 @@ const Page = () => {
                             </div>
                             {/* -- Generate Again Button -- */}
                             <div className="mt-8 text-center">
-                                <div className="flex md:flex-row flex-col items-center justify-center gap-3">
+                                <div className="flex items-center justify-center gap-3">
                                     <Button
                                         onClick={handleGenerate}
-                                        className="w-full max-w-sm h-14 bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20]   text-black font-bold text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300   hover:bg-[#B08D57]/80"
+                                        className=" bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20]  text-black font-bold md:text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300  hover:bg-[#B08D57]/80"
                                     >
                                         <div className="flex items-center justify-center space-x-3">
                                             <span>Craft Again</span>
@@ -377,7 +377,7 @@ const Page = () => {
                                     </Button>
                                     {/* New Caption */}
                                     <Button onClick={handleNewCaption}
-                                        className="w-full max-w-sm h-14  bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20]  text-black font-bold text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300  hover:bg-[#B08D57]/80">
+                                        className="bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20]  text-black font-bold md:text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300  hover:bg-[#B08D57]/80">
                                         <span>New Caption</span>
                                     </Button>
                                 </div>
