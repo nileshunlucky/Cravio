@@ -153,3 +153,8 @@ body {
 .Didot {
   font-family: 'Didot', serif;
 }
+
+/* smooth scroll */
+*{
+  scroll-behavior: smooth;
+}
