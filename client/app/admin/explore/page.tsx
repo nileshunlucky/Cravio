@@ -65,8 +65,8 @@ const Page = () => {
   return (
     <div className="min-h-screen">
       {/* Template Selector - Sticky positioning */}
-      <div className="sticky top-0 z-50 bg-black/95 backdrop-blur-sm border-b border-zinc-900">
-        <div className="flex justify-center items-center gap-8 py-6">
+      <div className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl">
+        <div className="flex justify-center items-center gap-8 md:py-6 py-3">
           {templates.map((template) => (
             <motion.div
               key={template.id}
@@ -79,7 +79,7 @@ const Page = () => {
                 className="block cursor-pointer"
               >
                 <p
-                  className={`text-2xl font-semibold transition-all duration-300 ${
+                  className={`md:text-2xl font-semibold transition-all duration-300 ${
                     activeTemplate === template.id
                       ? 'bg-gradient-to-br from-[#B08D57] to-[#4e3c20] bg-clip-text text-transparent'
                       : 'text-zinc-500 hover:text-zinc-300'
