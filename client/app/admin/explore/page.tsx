@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import CanvasExplore from '@/components/CanvasExplore'
 import DevilExplore from '@/components/DevilExplore'
 
-const page = () => {
+const Page = () => {
   const [activeTemplate, setActiveTemplate] = useState<string>('canvas')
 
   const templates = [
@@ -70,4 +70,4 @@ const page = () => {
   )
 }
 
-export default page
+export default Page
