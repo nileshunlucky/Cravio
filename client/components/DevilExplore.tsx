@@ -21,6 +21,10 @@ const imageCollections = [
                 prompt: "A striking, high-fashion portrait of a confident young woman with wavy chin-length red hair and blunt bangs, her head tilted slightly back in a bold, elegant pose, wearing a deep V-neck black outfit, vivid glossy red lips, and flawless porcelain skin, captured under dramatic cinematic lighting with a fiery orange-to-red gradient background for an intense, moody, editorial look."
             },
             {
+                url: "https://res.cloudinary.com/deoxpvjjg/image/upload/v1754754528/893f803e-aedb-4c57-bc17-9e24cc55d524.png",
+                prompt: "Create a cinematic portrait of an extremely muscular yet athletically proportioned young man with a perfectly sculpted physique featuring pronounced chest definition, six-pack abs, powerful shoulders and arms with visible veins, dark textured undercut hair with messy styling on top, facing the camera directly with an intense yet gentle expression as he gazes down at a single long-stemmed dark crimson rose held delicately between both hands at mid-chest level, wearing only black formal trousers, shot against a rich blood-red gradient background that transitions from deep burgundy to bright red, with dramatic chiaroscuro lighting creating strong shadows and highlights that emphasize every muscle contour, professional studio photography with high contrast, razor-sharp focus, and cinematic color grading."
+            },
+            {
                 url: "https://res.cloudinary.com/deoxpvjjg/image/upload/v1754737077/0_ma9v4l.jpg",
                 prompt: "A moody, artistic portrait of a young man with curly dark hair and piercing blue eyes, standing against a vivid crimson red background, his face partially obscured by a narrow strip of dramatic shadow across the eyes, wearing a dark shirt that blends into the shadows, with high-contrast cinematic lighting creating a mysterious, intense atmosphere."
             },

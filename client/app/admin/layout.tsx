@@ -36,7 +36,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <AppSidebar />
       <SidebarTrigger />
-      <div className="flex flex-col w-full h-full overflow-hidden">
+      <div className="flex flex-col w-full">
         <Navbar aura={aura ?? 0} />
         <SignedIn>
           <SendEmailToBackend />
