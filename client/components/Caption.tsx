@@ -1,114 +1,134 @@
-'use client'
+'use client';
 
 import React, { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import Link from 'next/link';
+import { UtensilsCrossed } from 'lucide-react';
 
-const fadeInUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: (delay = 0) => ({
+// Subtle, staggered fade-in-up animation
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
     opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
     y: 0,
+    opacity: 1,
     transition: {
       duration: 0.8,
       ease: 'easeOut',
-      delay,
     },
-  }),
+  },
+};
+
+const imageVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      duration: 1.2,
+      ease: [0.16, 1, 0.3, 1],
+    },
+  },
 };
 
 const Caption = () => {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-100px' }); // triggers when slightly visible
+  const isInView = useInView(ref, { once: true, amount: 0.3 });
 
   return (
-    <motion.div
+    <div
       ref={ref}
-      className="min-h-screen w-full flex items-center justify-center"
-      initial="hidden"
-      animate={isInView ? 'visible' : 'hidden'}
-      variants={{
-        hidden: {},
-        visible: {},
-      }}
+      className="bg-[#111111] min-h-screen w-full flex items-center justify-center font-sans p-4"
     >
-      <div className="w-full max-w-6xl mx-auto px-8">
-        <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
-          
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center"
+          initial="hidden"
+          animate={isInView ? 'visible' : 'hidden'}
+          variants={containerVariants}
+        >
           {/* Left Content */}
-          <div className="space-y-12">
-            <motion.div variants={fadeInUp} custom={0.1}>
-              <div className="mb-8">
-                <div className="w-12 h-px bg-[#B08D57] mb-6"></div>
-                <motion.h1
-                  className="text-6xl lg:text-7xl font-extralight text-white/95 leading-[0.9] mb-4"
-                  variants={fadeInUp}
-                  custom={0.2}
-                >
-                  Curated
-                </motion.h1>
-                <motion.h2
-                  className="text-6xl lg:text-7xl font-extralight text-[#B08D57] leading-[0.9] mb-8"
-                  variants={fadeInUp}
-                  custom={0.3}
-                >
-                  Excellence
-                </motion.h2>
-                <motion.p
-                  className="text-xl font-extralight text-white/70 leading-relaxed"
-                  variants={fadeInUp}
-                  custom={0.4}
-                >
-                  meticulously refined within every caption we curate for distinguished brands.
-                </motion.p>
-              </div>
+          <div className="space-y-8">
+            <motion.div variants={itemVariants}>
+              <div className="w-16 h-1 bg-[#B08D57] mb-6 rounded-full"></div>
+              <h1 className="text-5xl md:text-6xl font-light text-white/90 leading-tight">
+                Curated
+                <br />
+                <span className="text-[#B08D57]">Excellence.</span>
+              </h1>
             </motion.div>
 
-            <motion.div variants={fadeInUp} custom={0.5}>
-              <Link href="/admin/explore">
-                <button
-                  className="group relative px-12 py-4 border border-[#B08D57] hover:bg-[#B08D57]/5 transition-all duration-500 disabled:opacity-50 overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                  <span className="relative text-[#B08D57] font-light tracking-[0.25em] text-sm uppercase">
-                    CREATE EXCLUSIVE CAPTIONS
-                  </span>
+            <motion.p
+              className="text-lg font-light text-white/60 leading-relaxed max-w-md"
+              variants={itemVariants}
+            >
+              Simple, beautiful captions that make your posts stand out. Upload your photo and get three ready-to-use captions with matching hashtags.
+            </motion.p>
+
+            <motion.div variants={itemVariants}>
+              <a href="/admin/explore">
+                <button className="group text-sm font-medium tracking-wider uppercase px-8 py-4 bg-[#B08D57]/10 text-[#B08D57] border border-[#B08D57]/40 rounded-lg transition-all duration-300 ease-out hover:bg-[#B08D57]/20 hover:shadow-lg hover:shadow-[#B08D57]/10 hover:scale-105">
+                  Create Exclusive Captions
                 </button>
-              </Link>
+              </a>
             </motion.div>
           </div>
 
-          {/* Right Visual */}
-          <motion.div
-            className="relative"
-            variants={fadeInUp}
-            custom={0.6}
-          >
-            <div className="aspect-[4/5] bg-gradient-to-br from-white/5 to-transparent border border-white/10 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#B08D57]/10 via-transparent to-transparent"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <img src="/posts/post8.jpeg" alt="model" />
-              </div>
+          {/* Right Image + Caption Card */}
+          <motion.div className="relative" variants={imageVariants}>
+            <div className="aspect-[4/5] relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-black/50">
+              <img
+                src="https://res.cloudinary.com/deoxpvjjg/image/upload/v1754926789/8da7c3ed-de6c-410d-b38b-09bfa033ed65_unqxsa.png"
+                alt="AI generated fashion model"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src =
+                    'https://placehold.co/600x750/111111/B08D57?text=Image+Not+Found';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10"></div>
             </div>
 
-            {/* Floating metrics */}
             <motion.div
-              className="absolute -right-8 bottom-16 bg-black/80 backdrop-blur border border-white/10 p-4"
-              variants={fadeInUp}
-              custom={0.8}
+              className="absolute -right-4 sm:-right-8 -bottom-8 w-[90%] sm:w-auto bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-lg"
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={
+                isInView
+                  ? { opacity: 1, y: 0, scale: 1 }
+                  : {}
+              }
+              transition={{
+                duration: 0.8,
+                delay: 0.8,
+                ease: [0.16, 1, 0.3, 1],
+              }}
             >
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-[#B08D57]"></div>
+              <div className="flex items-start gap-4">
+                <UtensilsCrossed />
                 <div>
-                  <div className="text-white/90 font-light text-2xl">Curated by Mellvitta</div>
-                  <div className="text-white/50 font-light text-xs tracking-wider">#giorgio #model #fyp</div>
+                  <p className="text-white/80 text-sm mt-1">
+                    Sweet mornings, fluffy pancakes, fresh berries… and that smile. 🍓🥞
+                  </p>
+                  <p className="text-[#B08D57] text-xs font-medium tracking-wide mt-2">
+                    #morningvibes #berrydelight #cozybed #breakfastinbed
+                  </p>
+
                 </div>
               </div>
             </motion.div>
           </motion.div>
-        </div>
+        </motion.div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

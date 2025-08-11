@@ -106,7 +106,6 @@ const HeroX = () => {
                                 className="text-xl lg:text-2xl text-gray-400 font-light leading-relaxed max-w-2xl"
                             >
                                 Generate viral-ready images and videos that get millions of views. 
-                                Join the creators making $10K+ monthly with AI.
                             </motion.p>
                             
                             {/* CTA Button */}
@@ -125,16 +124,10 @@ const HeroX = () => {
                                         whileTap={{ scale: 0.95 }}
                                         className="group relative px-10 py-5 bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] text-black font-medium rounded-2xl text-lg transition-all duration-300 hover:shadow-2xl hover:shadow-[#B08D57]/25 flex items-center gap-3"
                                     >
-                                        <span className="font-medium">Start Creating Free</span>
+                                        <span className="font-medium">Start Creating</span>
                                         <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                                         
-                                        {/* Subtle shine effect */}
-                                        <motion.div 
-                                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-2xl"
-                                            initial={{ x: "-100%" }}
-                                            whileHover={{ x: "100%" }}
-                                            transition={{ duration: 0.6, ease: "easeInOut" }}
-                                        />
+
                                     </motion.button>
                                 </Link>
                             </motion.div>
@@ -165,7 +158,7 @@ const HeroX = () => {
                                         </div>
                                     </div>
                                     <div>
-                                        <div className="text-2xl font-light text-white">50M+</div>
+                                        <div className="text-2xl font-light text-white">100k+</div>
                                         <div className="text-sm text-gray-500">Generated</div>
                                     </div>
                                 </div>
@@ -189,40 +182,11 @@ const HeroX = () => {
                             >
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent z-10" />
                                 <img
-                                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=600&fit=crop&auto=format"
+                                    src="https://sdmntprwestus3.oaiusercontent.com/files/00000000-cee0-61fd-b0c1-294e67a889a9/raw?se=2025-08-11T15%3A44%3A39Z&sp=r&sv=2024-08-04&sr=b&scid=38eafa7c-9d55-5285-8093-a46dacef38b2&skoid=9ccea605-1409-4478-82eb-9c83b25dc1b0&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-08-11T08%3A04%3A28Z&ske=2025-08-12T08%3A04%3A28Z&sks=b&skv=2024-08-04&sig=JoYZO5lt5GZvdVAltQSmBqTL1nJHbjPspqEwxh6cHHA%3D"
                                     alt="Content creator using AI"
                                     className="w-full h-full object-cover"
                                 />
                                 
-                            </motion.div>
-
-                            {/* Secondary influencer images */}
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.8, duration: 0.6 }}
-                                className="absolute -top-6 -left-6 w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden shadow-xl border-2 border-white/20"
-                            >
-                                <img
-                                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&auto=format"
-                                    alt="Successful content creator"
-                                    className="w-full h-full object-cover"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-br from-purple-400/20 to-pink-400/20" />
-                            </motion.div>
-
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 1, duration: 0.6 }}
-                                className="absolute -bottom-8 -right-8 w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shadow-xl border-2 border-white/20"
-                            >
-                                <img
-                                    src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&auto=format"
-                                    alt="Influencer creating content"
-                                    className="w-full h-full object-cover"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-cyan-400/20" />
                             </motion.div>
 
                             {/* Floating stats card */}
@@ -230,21 +194,13 @@ const HeroX = () => {
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: 1.2, duration: 0.6 }}
-                                className="absolute bottom-0 left-0 right-0 mx-6"
+                                className="absolute bottom-3 left-0 right-0 mx-6"
                             >
                                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
-                                    <div className="flex items-center justify-between text-center">
+                                    <div className="flex items-center justify-center">
                                         <div>
-                                            <div className="text-lg font-light text-white">2.4M</div>
-                                            <div className="text-xs text-gray-400">Views</div>
-                                        </div>
-                                        <div>
-                                            <div className="text-lg font-light text-white">$12K</div>
-                                            <div className="text-xs text-gray-400">Monthly</div>
-                                        </div>
-                                        <div>
-                                            <div className="text-lg font-light text-white">99%</div>
-                                            <div className="text-xs text-gray-400">AI Made</div>
+                                            <div className="text-lg font-light text-white">Serving greenhouse glam in violet 💜🌿 
+                                                #GreenhouseVibes</div>
                                         </div>
                                     </div>
                                 </div>
