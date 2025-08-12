@@ -248,7 +248,7 @@ const Features = () => {
                 whileHover={{ rotate: 0, scale: 1.05 }}
               >
                 <img
-                  src="/persona/LisaPost.png"
+                  src="https://i.pinimg.com/736x/24/c7/70/24c7706a1eae5c3fd580a4b341b6df53.jpg"
                   alt="Generated content"
                   className="w-full h-full object-cover"
                 />
