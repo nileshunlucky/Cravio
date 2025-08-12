@@ -182,7 +182,7 @@ const HeroX = () => {
                             >
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent z-10" />
                                 <img
-                                    src="https://sdmntprwestus3.oaiusercontent.com/files/00000000-cee0-61fd-b0c1-294e67a889a9/raw?se=2025-08-11T15%3A44%3A39Z&sp=r&sv=2024-08-04&sr=b&scid=38eafa7c-9d55-5285-8093-a46dacef38b2&skoid=9ccea605-1409-4478-82eb-9c83b25dc1b0&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-08-11T08%3A04%3A28Z&ske=2025-08-12T08%3A04%3A28Z&sks=b&skv=2024-08-04&sig=JoYZO5lt5GZvdVAltQSmBqTL1nJHbjPspqEwxh6cHHA%3D"
+                                    src="https://res.cloudinary.com/deoxpvjjg/image/upload/v1754964016/5e9506e1-f0c1-49d5-b32e-be3bbd33dadd_nw9uh6.png"
                                     alt="Content creator using AI"
                                     className="w-full h-full object-cover"
                                 />
