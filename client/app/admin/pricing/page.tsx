@@ -282,8 +282,8 @@ const PricingCard: React.FC<PricingCardProps> = ({
                                     : "0 10px 30px rgba(176, 141, 87, 0.3)"
                             }}
                             whileTap={{ scale: 0.98 }}
-                            className={`relative z-20 w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-center transition-all duration-300 cursor-pointer ${isPopular
-                                ? 'bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black hover:bg-[#B08D57]/80 shadow-lg'
+                            className={`group relative inline-flex items-center justify-center z-20 w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-center transition-all duration-300 cursor-pointer ${isPopular
+                                ? 'bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black hover:bg-[#B08D57]/80 shadow-lg'
                                 : 'bg-zinc-800 text-white hover:text-[#B08D57]  hover:bg-zinc-800 '
                                 }`}
                             type="button"
@@ -291,6 +291,8 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             aria-label={`${buttonText} for ${plan} plan`}
                             style={{ pointerEvents: 'auto' }}
                         >
+                            {/* Button Background */}
+                            {isPopular && <div className="absolute inset-0 bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] rounded-2xl blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-500" />}
                             {buttonText}
                         </motion.button>
                     </a>
@@ -351,7 +353,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
 
 const Page = () => {
     const [isClient, setIsClient] = useState(false);
-    const [isYearly, setIsYearly] = useState(false);
+    const [isYearly, setIsYearly] = useState(true);
 
     const { user } = useUser();
     const email = user?.emailAddresses[0]?.emailAddress || '';
@@ -521,7 +523,7 @@ const Page = () => {
                 <motion.div variants={toggleVariants} className="flex justify-center mb-12">
                     <div className="relative bg-[#0f0f0f] border border-[#B08D57]/40 p-2 rounded-xl">
                         <motion.div
-                            className="absolute inset-y-2 bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] rounded-lg"
+                            className="absolute inset-y-2 bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black rounded-lg"
                             animate={{
                                 x: isYearly ? "calc(100% - 8px)" : "8px",
                                 width: "calc(50% - 8px)"
@@ -534,14 +536,14 @@ const Page = () => {
                                 className={`relative z-10 px-12 py-4 font-light tracking-[0.08em] transition-all duration-400 uppercase text-xs ${!isYearly ? 'text-black' : 'text-[#B08D57]/60'
                                     }`}
                             >
-                                Mensuel
+                                Monthly
                             </button>
                             <button
                                 onClick={() => setIsYearly(true)}
                                 className={`relative z-10 px-12 py-4 font-light tracking-[0.08em] transition-all duration-400 uppercase text-xs ${isYearly ? 'text-black' : 'text-[#B08D57]/60'
                                     }`}
                             >
-                                Annuel
+                                Yearly
                             </button>
                         </div>
                     </div>

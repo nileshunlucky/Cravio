@@ -448,7 +448,7 @@ const Page = () => {
                                     <label className="cursor-pointer block w-full">
                                         <motion.div
 
-                                            className={`relative bg-gradient-to-br from-[#000000] via-[#1d1d1d] to-[#000000]  transition-all duration-500 rounded-2xl text-center cursor-pointer group
+                                            className={`relative bg-black transition-all duration-500 rounded-2xl text-center cursor-pointer group
                                 ${dragActive ? 'border-2' : ''}
 
                             `} onDragEnter={handleDrag}
@@ -490,7 +490,7 @@ const Page = () => {
 
                                 <motion.button
                                     onClick={handleSubmit}
-                                    className="w-full rounded-lg py-2 text-lg bg-gradient-to-br from-[#000000] via-[#222222] to-[#000000] text-[#B08D57] cursor-pointer flex items-center justify-center  "
+                                    className="w-full rounded-lg py-2 text-lg bg-black text-[#B08D57] cursor-pointer flex items-center justify-center  "
                                 >
                                     <svg width="30" height="30" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
                                         <defs>

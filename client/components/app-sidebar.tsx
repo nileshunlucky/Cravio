@@ -71,7 +71,6 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((item) => {
                 const isActive = pathname === item.url
-
                 return (
                   <SidebarMenuItem key={item.title} className="py-1">
                     <SidebarMenuButton

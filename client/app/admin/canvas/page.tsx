@@ -460,7 +460,7 @@ function CanvasContent() {
                                     {/* Download Button */}
                                     <motion.button
                                         onClick={() => downloadImage(generatedImageUrl)}
-                                        className="flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black rounded-2xl font-medium tracking-wide shadow-lg hover:shadow-xl transition-all duration-300 group"
+                                        className="flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] transition-all duration-300 text-black rounded-2xl font-medium tracking-wide shadow-lg hover:shadow-xl transition-all duration-300 group"
                                     >
                                         Download Masterpiece
                                     </motion.button>
@@ -570,7 +570,7 @@ function CanvasContent() {
                                         onClick={handleGenerate}
                                         key="generate"
                                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                                        className="w-full bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black py-4 rounded-xl font-medium tracking-wide disabled:opacity-50 relative overflow-hidden group h-16 flex items-center justify-center cursor-pointer"
+                                        className="w-full bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] transition-all duration-300 text-black py-4 rounded-xl font-medium tracking-wide disabled:opacity-50 relative overflow-hidden group h-16 flex items-center justify-center cursor-pointer"
                                     >
                                         <span>Craft Masterpiece</span>
                                     </motion.button>
@@ -646,7 +646,7 @@ function CanvasContent() {
                                         >
                                             <button
                                                 onClick={() => router.push('/admin/personas')}
-                                                className="px-8 py-3 bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black rounded-xl font-medium tracking-wide shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+                                                className="px-8 py-3 bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] transition-all duration-300 text-black rounded-xl font-medium tracking-wide shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
                                             >
                                                 Create Persona
                                             </button>
