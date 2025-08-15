@@ -239,7 +239,7 @@ if (!loading && posts.length === 0) {
 
         {/* Subtle hint text */}
         <p className="text-zinc-600 text-sm font-light">
-          No posts yet — but that's about to change
+          No posts yet — but that&rsquo;s about to change
         </p>
       </div>
     </div>
