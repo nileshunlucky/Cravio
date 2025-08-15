@@ -77,7 +77,7 @@ export function AppSidebar() {
                     <SidebarMenuButton
                       asChild
                       className={`flex items-center gap-2 px-3 py-5 justify-between transition text-lg ${isActive
-                          ? "bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black hover:text-black shadow-md"
+                          ? "bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] transition-all duration-300 text-black hover:text-black shadow-md"
                           : "text-white"
                         }`}
                     >

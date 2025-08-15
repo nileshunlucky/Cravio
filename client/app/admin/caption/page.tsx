@@ -369,7 +369,7 @@ const Page = () => {
                                 <div className="flex items-center justify-center gap-3">
                                     <Button
                                         onClick={handleGenerate}
-                                        className=" bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20]  text-black font-bold md:text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300  hover:bg-[#B08D57]/80"
+                                        className="bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] text-black font-bold md:text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300  hover:bg-[#B08D57]/80"
                                     >
                                         <div className="flex items-center justify-center space-x-3">
                                             <span>Craft Again</span>
@@ -377,7 +377,7 @@ const Page = () => {
                                     </Button>
                                     {/* New Caption */}
                                     <Button onClick={handleNewCaption}
-                                        className="bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20]  text-black font-bold md:text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300  hover:bg-[#B08D57]/80">
+                                        className="bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544]  text-black font-bold md:text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300  hover:bg-[#B08D57]/80">
                                         <span>New Caption</span>
                                     </Button>
                                 </div>
@@ -415,7 +415,7 @@ const Page = () => {
                                                     initial={{ opacity: 0 }}
                                                     animate={{ opacity: 0.6 }}
                                                     transition={{ delay: 1 + (idx * 0.15) }}
-                                                    className="text-xs text-[#B08D57] font-medium tracking-widest uppercase mb-2"
+                                                    className="text-xs bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] bg-clip-text text-transparent font-medium tracking-widest uppercase mb-2"
                                                 >
                                                     Caption {idx + 1}
                                                 </motion.div>
@@ -459,7 +459,7 @@ const Page = () => {
                                     <div className="mt-8 text-center">
                                         <Button
                                             onClick={handleGenerate}
-                                            className="w-full max-w-sm h-14 bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20]  font-bold text-lg rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                                            className="w-full max-w-sm h-14 bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] transition-all duration-300 text-black rounded-xl relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                                         >
                                             <div className="flex items-center justify-center space-x-3">
                                                 <span>Craft Exclusive Captions</span>

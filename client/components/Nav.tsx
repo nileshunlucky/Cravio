@@ -27,17 +27,17 @@ const Nav = () => {
       <div className="flex items-center gap-4">
         <SignedOut>
           <SignInButton mode="modal">
-            <Button className='bg-[#B08D57] text-black hover:bg-[#B08D57]/80' variant="default">Sign In</Button>
+            <Button className='bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] transition-all duration-300 text-black' variant="default">Sign In</Button>
           </SignInButton>
           <SignUpButton mode="modal">
-            <Button className='bg-[#B08D57] text-black hover:bg-[#B08D57]/80' variant="default">Sign Up</Button>
+            <Button className='bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] transition-all duration-300 text-black' variant="default">Sign Up</Button>
           </SignUpButton>
         </SignedOut>
 
         <SignedIn>
           {/* Dashboard button */}
           <Link href="/admin/explore">
-            <Button className='bg-[#B08D57] text-black hover:bg-[#B08D57]/80' variant="default">Dashboard</Button>
+            <Button className='bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] transition-all duration-300 text-black' variant="default">Dashboard</Button>
           </Link>
         </SignedIn>
       </div>
