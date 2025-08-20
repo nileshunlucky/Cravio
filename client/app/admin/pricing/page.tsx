@@ -403,7 +403,7 @@ const Page = () => {
             buttonText: "Elevate Your Signature",
             features: {
                 aura: {
-                    monthly: 2400,
+                    monthly: 2000,
                     yearly: 24000
                 },
                 list: [
