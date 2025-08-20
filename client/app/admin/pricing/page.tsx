@@ -404,7 +404,7 @@ const Page = () => {
             features: {
                 aura: {
                     monthly: 2400,
-                    yearly: 28800
+                    yearly: 24000
                 },
                 list: [
                     { name: "Canvas", included: true },
@@ -429,8 +429,8 @@ const Page = () => {
             buttonText: "Elevate Your Signature",
             features: {
                 aura: {
-                    monthly: 5000,
-                    yearly: 60000
+                    monthly: 3500,
+                    yearly: 42000
                 },
                 list: [
                     { name: "Canvas", included: true },
