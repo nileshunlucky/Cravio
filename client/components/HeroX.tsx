@@ -65,7 +65,7 @@ const HeroX = () => {
                         initial={{ opacity: 0, y: 60 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5, duration: 1, ease: "easeOut" }}
-                        className="relative max-w-3xl mx-auto"
+                        className="relative max-w-5xl mx-auto"
                     >
                         {/* Enhanced white glow effect behind image */}
                         <div className="absolute inset-0 -m-5">
@@ -81,7 +81,7 @@ const HeroX = () => {
                                 className="w-full h-auto object-cover"
                             />
                             {/* Subtle overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
                         </div>
                         
                         {/* Floating stats */}

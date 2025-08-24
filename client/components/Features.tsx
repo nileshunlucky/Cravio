@@ -1,50 +1,54 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Play, Sparkles, TrendingUp, Share2, BarChart3 } from 'lucide-react';
+"use client"
+
+import React, { useRef } from 'react';
+import { motion, useScroll, useInView } from 'framer-motion';
+import { ArrowRight,BarChart3 } from 'lucide-react';
 
 const HowItWorks = () => {
   const containerRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"]
-  });
 
   const steps = [
     {
       id: 1,
-      title: "Design Your Character",
-      subtitle: "Upload photos of yourself, friends, or fictional characters to create a unique digital persona. Complete with a bio that sets the stage for meaningful interactions.",
-      buttonText: "Start Creating Now",
-      image: "https://res.cloudinary.com/deoxpvjjg/image/upload/v1756033329/herox_xq8x8r.png",
-      features: ["Upload multiple photos", "AI-powered training", "Custom personality", "Bio generation"]
-    },
+      title: "Train Your Model",
+      subtitle: "Give Name & Upload Multiple images of yourself or ai models to create a consitent realist persona.",
+      buttonText: "Start Training Now",
+      image: "https://res.cloudinary.com/deoxpvjjg/image/upload/v1756054043/Behind_the_scenes_from_photoshoot_m2umkj.jpg",    },
     {
       id: 2,
-      title: "Generate Content",
-      subtitle: "Utilize our user-friendly tools to effortlessly craft posts, images, and videos. Now with our new Subject Swap workflow, you can replace people in your videos with your AI influencer for even more creative possibilities.",
-      buttonText: "Try Content Tools",
-      image: "https://res.cloudinary.com/deoxpvjjg/image/upload/v1756033329/herox_xq8x8r.png",
+      title: "Create Content",
+      subtitle: "Create eye-catching posts, images, and videos in minutes. With our new Subject Swap, your AI influencer can take the spotlight in any video — giving you endless ways to keep fans hooked and paying.",
+      buttonText: "Create Content",
+      video: "https://v1.pinimg.com/videos/iht/expMp4/43/0d/24/430d2432b9e83342353fd1636eb1eb9e_720w.mp4",
       features: [
-        { name: "Subject Swap", desc: "Replace people in videos with your AI influencer using our advanced subject swap technology. Create engaging videos with just a few clicks." },
-        { name: "Ultra Realistic Videos (Ver. 2)", desc: "Generate ultra-realistic videos with Google's latest Ver 2 model, supporting both image-to-video and text-to-video generation." },
-        { name: "Virtual Wardrobe", desc: "Try different outfits without physical clothes" },
-        { name: "Face Swap", desc: "Seamlessly swap faces in photos and videos" }
-      ]
+  { 
+    name: "Subject Swap", 
+    desc: "Put your AI influencer center stage. Instantly replace anyone in your videos with your persona for fresh, exclusive content fans can’t resist." 
+  },
+  { 
+    name: "Ultra-Realistic Videos (Veo 3)", 
+    desc: "Bring your ideas to life with jaw-dropping realism. Powered by Google’s Veo 3, create videos from text or images that look like high-end productions." 
+  },
+  { 
+    name: "Virtual Wardrobe", 
+    desc: "Dress your AI influencer in endless outfits. Try new styles, themes, and looks without ever buying physical clothes." 
+  },
+]
+
     },
     {
       id: 3,
-      title: "Make Profit",
-      subtitle: "Your influencer will do it by themselves while you're not around - chatting and selling exclusive content, so you don't have to.",
+      title: "Monitize it",
+      subtitle: "Your AI influencer takes care of it all while you’re away, Even when you’re not around — selling exclusive content on Fanvue and generating revenue.",
       buttonText: "View Earning Potential",
-      image: "https://res.cloudinary.com/deoxpvjjg/image/upload/v1756033329/herox_xq8x8r.png",
-      features: ["Automated interactions", "Content monetization", "24/7 availability", "Revenue tracking"]
+      image: "https://pbs.twimg.com/media/Gdn46DqXwAEimXh.jpg",
     },
     {
       id: 4,
-      title: "Spread the Word",
+      title: "Promote on Social Media",
       subtitle: "Share your digital persona across social media platforms, online communities, or wherever potential fans hang out.",
       buttonText: "Start Creating",
-      image: "https://res.cloudinary.com/deoxpvjjg/image/upload/v1756033329/herox_xq8x8r.png",
+      image: "https://images.unsplash.com/photo-1683721003111-070bcc053d8b?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDE3fHx8ZW58MHx8fHx8",
       platforms: ["Instagram", "YouTube", "Snapchat", "TikTok"]
     },
     {
@@ -52,7 +56,6 @@ const HowItWorks = () => {
       title: "Watch Your Earnings Climb",
       subtitle: "Monitor your financial progress with our straightforward dashboard, featuring real-time analytics and multiple cash-out options.",
       buttonText: "Get Started Now",
-      features: ["Real-time analytics", "Multiple payout methods", "Revenue optimization", "Performance insights"]
     }
   ];
 
@@ -81,7 +84,7 @@ const HowItWorks = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.4 }}
         >
-          Everything you'll need to create a unique AI influencer
+          Everything you need to create a modern AI influencer
         </motion.p>
       </motion.div>
 
@@ -159,10 +162,10 @@ const StepSection = ({ step, index }) => {
         variants={itemVariants}
       >
         <motion.div
-          className="inline-flex items-center gap-2 bg-[#B08D57]/10 border border-[#B08D57]/20 rounded-full px-4 py-2"
+          className="inline-flex items-center gap-2 border-3 border-[#B08D57]  rounded-full px-6 py-3"
           whileHover={{ scale: 1.05 }}
         >
-          <span className="text-sm font-medium text-[#B08D57]">Step {step.id}</span>
+          <span className="text-xl font-medium text-[#B08D57]">Step {step.id}</span>
         </motion.div>
 
         <motion.h2 
@@ -220,7 +223,7 @@ const StepSection = ({ step, index }) => {
       {/* Visual */}
       <motion.div className={`${!isEven ? 'lg:order-1' : ''} relative`} variants={imageVariants}>
   {step.id === 1 && <Step1Visual image={step.image} />}
-  {step.id === 2 && <Step2Visual image={step.image} />}
+  {step.id === 2 && <Step2Visual video={step.video} />}
   {step.id === 3 && <Step3Visual image={step.image} />}
   {step.id === 4 && <Step4Visual image={step.image} />}
   {step.id === 5 && <Step5Visual />}
@@ -246,20 +249,24 @@ const Step1Visual = ({ image }: { image: string }) => (
   </motion.div>
 );
 
-const Step2Visual = ({ image }: { image: string }) => (
+const Step2Visual = ({ video }: { video: string }) => (
   <motion.div 
     className="relative bg-gradient-to-br from-zinc-900 to-black rounded-3xl border border-zinc-800 max-w-lg mx-auto"
     whileHover={{ rotateY: -5, rotateX: 5 }}
     style={{ transformStyle: 'preserve-3d' }}
   >
-    <motion.img 
-      src={image}
-      alt="Step 2 visual"
-      className="rounded-2xl shadow-lg w-full object-cover"
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.8 }}
-    />
+    <motion.video 
+  src={video}
+  loop
+  muted
+  autoPlay
+  playsInline
+  className="rounded-2xl shadow-lg w-full object-cover"
+  initial={{ opacity: 0, scale: 0.9 }}
+  animate={{ opacity: 1, scale: 1 }}
+  transition={{ duration: 0.8 }}
+/>
+
   </motion.div>
 );
 
