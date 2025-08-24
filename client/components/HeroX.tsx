@@ -2,13 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 const HeroX = () => {
     const [userCount, setUserCount] = useState(100);
-    const router = useRouter()
 
     useEffect(() => {
         const fetchUserCount = async () => {
@@ -25,232 +23,112 @@ const HeroX = () => {
         fetchUserCount()
     }, [])
 
-    const handleImageClick = (prompt: string, imageUrl: string) => {
-        const encodedPrompt = encodeURIComponent(prompt);
-        const encodedImage = encodeURIComponent(imageUrl);
-        router.push(`/admin/canvas?prompt=${encodedPrompt}&referenceImage=${encodedImage}`);
-    };
-
     return (
         <div className="min-h-screen bg-black text-white relative overflow-hidden">
-            {/* Subtle animated background */}
-            <div className="absolute inset-0">
-                <motion.div
-                    animate={{
-                        scale: [1, 1.1, 1],
-                        opacity: [0.1, 0.2, 0.1]
-                    }}
-                    transition={{
-                        duration: 8,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                    }}
-                    className="absolute top-1/3 left-1/4 w-96 h-96 bg-gradient-to-r from-[#C9A96E] to-[#B08D57] rounded-full blur-3xl"
-                />
-                <motion.div
-                    animate={{
-                        scale: [1, 1.2, 1],
-                        opacity: [0.05, 0.15, 0.05]
-                    }}
-                    transition={{
-                        duration: 10,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: 2
-                    }}
-                    className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-gradient-to-l from-[#ad8544] to-[#B08D57] rounded-full blur-3xl"
-                />
-            </div>
-
+            {/* Subtle background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-900/20 to-black" />
+            
             {/* Main content */}
-            <div className="relative z-10 container mx-auto px-6 lg:px-16 xl:px-24 py-16 lg:py-24">
+            <div className="relative z-10 container mx-auto px-6 py-20 lg:py-32">
+                <div className="max-w-4xl mx-auto text-center space-y-16">
+                    
+                    {/* Headline Section */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 40 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                        className="space-y-6 mx-auto"
+                    >
+                        <h1 className="text-5xl md:text-8xl font-light tracking-tight leading-[0.9] text-center">
+<span className="block bg-gradient-to-r from-[#ffffff] via-[#cfcfcf] to-[#7a7a7a] bg-clip-text text-transparent">
+  Create
+</span>
 
-                {/* Content grid */}
-                <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center min-h-[70vh]">
+  <span className="block bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] bg-clip-text text-transparent">
+    AI Influencers
+  </span>
+</h1>
 
-                    {/* Left side - Content */}
-                    <div className="lg:col-span-7 order-2 lg:order-1">
-                        <motion.div
-                            initial={{ opacity: 0, x: -40 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 1, ease: "easeOut" }}
-                            className="space-y-10 lg:space-y-12"
+                        
+                        <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.3, duration: 0.8 }}
+                            className="text-xl lg:text-2xl text-gray-400 font-light max-w-2xl mx-auto leading-relaxed"
                         >
-                            {/* Hook headline */}
-                            <div className="space-y-4">
-                                <motion.h1
-                                    initial={{ opacity: 0, y: 30 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.2, duration: 0.8 }}
-                                    className="text-5xl md:text-6xl lg:text-7xl font-light leading-[0.9] tracking-tight"
-                                >
-                                    <span className="text-white">Your</span>
-                                </motion.h1>
-                                <motion.h1
-                                    initial={{ opacity: 0, y: 30 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.3, duration: 0.8 }}
-                                    className="text-5xl md:text-6xl lg:text-7xl font-light leading-[0.9] tracking-tight"
-                                >
-                                    <span className="bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] bg-clip-text text-transparent">
-                                        Content Empire
-                                    </span>
-                                </motion.h1>
-                                <motion.h1
-                                    initial={{ opacity: 0, y: 30 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.4, duration: 0.8 }}
-                                    className="text-5xl md:text-6xl lg:text-7xl font-light leading-[0.9] tracking-tight text-white"
-                                >
-                                    Starts Here
-                                </motion.h1>
-                            </div>
+                            Build your digital persona. Generate viral content. Scale your influence.
+                        </motion.p>
+                    </motion.div>
 
-                            {/* Subtitle */}
-                            <motion.p
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.5, duration: 0.8 }}
-                                className="text-xl lg:text-2xl text-gray-400 font-light leading-relaxed max-w-2xl"
-                            >
-                                Generate viral-ready images and videos that get millions of views.
-                            </motion.p>
-
-                            {/* CTA Button */}
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.6, duration: 0.8 }}
-                                className="pt-6"
-                            >
-                                <Link href="/admin/explore">
-                                    <motion.button
-                                        whileHover={{
-                                            scale: 1.05,
-                                            y: -3
-                                        }}
-                                        whileTap={{ scale: 0.95 }}
-                                        className="group relative px-10 py-5 bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] text-black font-medium rounded-2xl text-lg transition-all duration-300 hover:shadow-2xl hover:shadow-[#B08D57]/25 flex items-center gap-3"
-                                    >
-                                        <span className="font-medium">Start Creating</span>
-                                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-
-
-                                    </motion.button>
-                                </Link>
-                            </motion.div>
-
-                            {/* Social proof */}
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.7, duration: 0.8 }}
-                                className="flex items-center gap-8 pt-8"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#C9A96E] to-[#B08D57] p-[1px]">
-                                        <div className="w-full h-full bg-black rounded-full flex items-center justify-center">
-                                            <Users className="w-5 h-5 text-[#B08D57]" />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div className="text-2xl font-light text-white">{userCount.toLocaleString()}+</div>
-                                        <div className="text-sm text-gray-500">Creators</div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#C9A96E] to-[#B08D57] p-[1px]">
-                                        <div className="w-full h-full bg-black rounded-full flex items-center justify-center">
-                                            <Sparkles className="w-5 h-5 text-[#B08D57]" />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div className="text-2xl font-light text-white">100k+</div>
-                                        <div className="text-sm text-gray-500">Generated</div>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </motion.div>
-                    </div>
-
-                    {/* Right side - Influencer showcase */}
-                    <div className="lg:col-span-5 order-1 lg:order-2">
-                        <motion.div
-                            initial={{ opacity: 0, x: 40 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
-                            className="relative max-w-md mx-auto lg:max-w-lg"
-                        >
-                            {/* Main influencer image */}
-                            <motion.div
-                                onClick={() => handleImageClick("A full-body, low-angle editorial fashion photo of a young woman in a glossy deep-violet oversized quilted suit with matching pants and jacket, hands in pockets, wearing chunky black leather shoes and a large geometric black cone hat, standing confidently in the center of a lush tropical greenhouse under a symmetrical glass dome with dense monstera and palm leaves around, shot with a 16mm wide-angle lens in natural diffused daylight, ultra-detailed and realistic.",
-
-                                    "https://res.cloudinary.com/deoxpvjjg/image/upload/v1754964016/5e9506e1-f0c1-49d5-b32e-be3bbd33dadd_nw9uh6.png")}
-                                whileHover={{ scale: 1.02 }}
-                                transition={{ duration: 0.4 }}
-                                className="relative aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl mb-8 cursor-pointer"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent z-10" />
-                                <img
-
-                                    src="https://res.cloudinary.com/deoxpvjjg/image/upload/v1754964016/5e9506e1-f0c1-49d5-b32e-be3bbd33dadd_nw9uh6.png"
-                                    alt="Content creator using AI"
-                                    className="w-full h-full object-cover"
-                                />
-
-                            </motion.div>
-
-                            {/* Floating stats card */}
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 1.2, duration: 0.6 }}
-                                className="absolute bottom-3 left-0 right-0 mx-6"
-                            >
-                                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
-                                    <div className="flex items-center justify-center">
-                                        <div>
-                                            <div className="md:text-lg text-sm font-light text-white">A full-body, low-angle editorial fashion photo of a young woman in a glossy deep-violet oversized quilted suit with matching pants and jacket, hands in pockets, wearing chunky black leather shoes and a large geometric black cone hat, standing confidently in the center of a lush tropical greenhouse under a symmetrical glass dome with dense monstera and palm leaves around, shot with a 16mm wide-angle lens in natural diffused daylight, ultra-detailed and realistic.
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* Decorative floating elements */}
-                            <motion.div
-                                animate={{
-                                    y: [0, -10, 0],
-                                    rotate: [0, 5, 0]
-                                }}
-                                transition={{
-                                    duration: 4,
-                                    repeat: Infinity,
-                                    ease: "easeInOut"
-                                }}
-                                className="absolute top-1/2 -left-12 w-6 h-6 bg-gradient-to-r from-[#C9A96E] to-[#B08D57] rounded-full opacity-60"
+                    {/* Hero Image */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 60 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5, duration: 1, ease: "easeOut" }}
+                        className="relative max-w-3xl mx-auto"
+                    >
+                        {/* Enhanced white glow effect behind image */}
+                        <div className="absolute inset-0 -m-5">
+                            <div className="absolute inset-0 bg-gradient-to-t from-white/10 via-white/90 to-white/10 rounded-full blur-[100px] scale-125" />
+                            <div className="absolute inset-0 bg-white/20 rounded-full blur-[60px] scale-110" />
+                            <div className="absolute inset-0 bg-white/15 blur-[120px] scale-100" />
+                        </div>
+                        
+                        <div className="relative rounded-3xl overflow-hidden shadow-2xl z-10">
+                            <img 
+                                src="https://res.cloudinary.com/deoxpvjjg/image/upload/v1756033329/herox_xq8x8r.png"
+                                alt="AI Influencers"
+                                className="w-full h-auto object-cover"
                             />
+                            {/* Subtle overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
+                        </div>
+                        
+                        {/* Floating stats */}
+<motion.div
+  initial={{ opacity: 0, scale: 0.8 }}
+  animate={{ opacity: 1, scale: 1 }}
+  transition={{ delay: 1.2, duration: 0.6 }}
+  className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 z-50 w-max max-w-full px-2"
+>
+  <div className="bg-gradient-to-r from-[#f9f9f9]/90 via-[#dcdcdc]/90 to-[#a1a1a1]/90 backdrop-blur-xl rounded-2xl px-4 py-2 md:px-8 md:py-4 border border-white/20 shadow-lg text-center break-words">
+    <div className="text-xs md:text-lg text-gray-800 leading-snug font-medium">
+      Trusted by{' '}
+      <span className="text-black font-semibold">{userCount.toLocaleString()}+</span>
+      {' '} Creators
+    </div>
+  </div>
+</motion.div>
 
-                            <motion.div
-                                animate={{
-                                    y: [0, 10, 0],
-                                    rotate: [0, -5, 0]
-                                }}
-                                transition={{
-                                    duration: 5,
-                                    repeat: Infinity,
-                                    ease: "easeInOut",
-                                    delay: 1
-                                }}
-                                className="absolute top-1/4 -right-8 w-4 h-4 bg-gradient-to-r from-[#B08D57] to-[#ad8544] rounded-full opacity-40"
-                            />
-                        </motion.div>
-                    </div>
+                    </motion.div>
 
+                    {/* CTA Section */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 40 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.8, duration: 0.8 }}
+                        className="pt-8"
+                    >
+                        <Link href="/admin/explore">
+                            <motion.button
+                                whileHover={{ 
+                                    scale: 1.05,
+                                    y: -2
+                                }}
+                                whileTap={{ scale: 0.98 }}
+                                className="group relative px-12 py-4 bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] text-black font-medium rounded-full text-lg transition-all duration-300 hover:shadow-xl hover:shadow-[#B08D57]/20 flex items-center gap-3 mx-auto"
+                            >
+                                <span>Get Started</span>
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                            </motion.button>
+                        </Link>
+                    </motion.div>
 
                 </div>
             </div>
+
+            {/* Bottom fade */}
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent" />
         </div>
     );
 };

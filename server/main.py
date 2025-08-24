@@ -4,7 +4,6 @@ import httpx
 from pydantic import BaseModel, EmailStr
 from db import users_collection
 from api.lemon_webhook import router as lemon_webhook_router
-from api.post2caption import router as thumb2title_router
 from api.persona import router as persona_router
 from api.persona2img import router as img2img_router
 from api.opus import router as opus_router
@@ -22,7 +21,6 @@ app.add_middleware(
 
 # add routers
 app.include_router(lemon_webhook_router)
-app.include_router(thumb2title_router)
 app.include_router(persona_router)
 app.include_router(img2img_router)
 app.include_router(opus_router)
