@@ -6,7 +6,7 @@ import Review from '@/components/Review'
 import HeroX from '@/components/HeroX'
 import React from 'react'
 import Features from '@/components/Features'
-import DevilExplore from '@/components/DevilExplore'
+import DemoModal from '@/components/DemoModal'
 
 const page = () => {
   return (
@@ -14,7 +14,7 @@ const page = () => {
       <Nav/>
       <HeroX/>
       <Features/>
-      <DevilExplore/>
+      <DemoModal/>
       <Review/>
       <Footer/>
     </div>

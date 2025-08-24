@@ -39,13 +39,13 @@ const HeroX = () => {
                         transition={{ duration: 1, ease: "easeOut" }}
                         className="space-y-6 mx-auto"
                     >
-                        <h1 className="text-5xl md:text-8xl font-light tracking-tight leading-[0.9] text-center">
-<span className="block bg-gradient-to-r from-[#ffffff] via-[#cfcfcf] to-[#7a7a7a] bg-clip-text text-transparent">
-  Create
+                        <h1 className="text-6xl md:text-8xl font-light tracking-tight leading-[0.9] text-center">
+<span className="block bg-gradient-to-r from-[#ffffff] via-[#cfcfcf] to-[#7a7a7a] bg-clip-text text-transparent text-5xl md:text-7xl">
+  Create Your Own
 </span>
 
   <span className="block bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] bg-clip-text text-transparent">
-    AI Influencers
+    AI Influencer
   </span>
 </h1>
 
@@ -54,9 +54,9 @@ const HeroX = () => {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.3, duration: 0.8 }}
-                            className="text-xl lg:text-2xl text-gray-400 font-light max-w-2xl mx-auto leading-relaxed"
+                            className="text-lg lg:text-xl text-gray-400 font-light max-w-2xl mx-auto leading-relaxed"
                         >
-                            Build your digital persona. Generate viral content. Scale your influence.
+                            Build your AI influencer instantly. scale your reach, and unlock new income streams with Exclusive cOOntent.
                         </motion.p>
                     </motion.div>
 
@@ -91,7 +91,7 @@ const HeroX = () => {
   transition={{ delay: 1.2, duration: 0.6 }}
   className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 z-50 w-max max-w-full px-2"
 >
-  <div className="bg-gradient-to-r from-[#f9f9f9]/90 via-[#dcdcdc]/90 to-[#a1a1a1]/90 backdrop-blur-xl rounded-2xl px-4 py-2 md:px-8 md:py-4 border border-white/20 shadow-lg text-center break-words">
+  <div className="bg-gradient-to-r from-[#f9f9f9]/90 via-[#dcdcdc]/90 to-[#a1a1a1]/90 backdrop-blur-xl rounded-xl px-4 py-2 md:px-8 md:py-4 border border-white/20 shadow-lg text-center break-words">
     <div className="text-xs md:text-lg text-gray-800 leading-snug font-medium">
       Trusted by{' '}
       <span className="text-black font-semibold">{userCount.toLocaleString()}+</span>
@@ -111,18 +111,28 @@ const HeroX = () => {
                     >
                         <Link href="/admin/explore">
                             <motion.button
-                                whileHover={{ 
-                                    scale: 1.05,
-                                    y: -2
-                                }}
-                                whileTap={{ scale: 0.98 }}
-                                className="group relative px-12 py-4 bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] text-black font-medium rounded-full text-lg transition-all duration-300 hover:shadow-xl hover:shadow-[#B08D57]/20 flex items-center gap-3 mx-auto"
-                            >
-                                <span>Get Started</span>
-                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                            </motion.button>
+                            whileHover={{
+                                scale: 1.02,
+                                y: -2,
+                                boxShadow: "0 10px 30px rgba(176, 141, 87, 0.3)"
+                            }}
+                            whileTap={{ scale: 0.98 }}
+                            className={'group relative inline-flex items-center gap-2 justify-center z-20 w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-center transition-all duration-300 cursor-pointer bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black hover:bg-[#B08D57]/80 shadow-lg'}
+                            type="button"
+                            role="button"
+                            style={{ pointerEvents: 'auto' }}
+                        >
+                            {/* Button Background */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] rounded-2xl blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-500 " />
+                            <span>Get Started</span>
+
+                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                        </motion.button>
                         </Link>
                     </motion.div>
+
+
+                    
 
                 </div>
             </div>

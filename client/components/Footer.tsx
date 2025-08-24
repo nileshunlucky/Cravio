@@ -23,7 +23,7 @@ const Footer = () => {
                 className="hover:opacity-80 transition"
               />
             </Link>
-            <Link href="https://www.youtube.com/@mellvitta-ai" target="_blank">
+            <Link href="https://www.youtube.com/@mellvittaai" target="_blank">
               <Image
                 src="/icons/youtube.png"
                 alt="YouTube"
@@ -48,7 +48,7 @@ const Footer = () => {
         {/* Logo + Copyright */}
         <div className="flex flex-col items-start md:items-end justify-between gap-4">
           <Image src="/logo.png" alt="Mellvitta Logo" width={60} height={60} />
-          <p className="text-sm text-muted-foreground">© 2025 Mellvitta, Inc.</p>
+          <p className="text-sm text-muted-foreground">© 2025 Mellvitta, All rights reserved.</p>
         </div>
       </div>
     </footer>
