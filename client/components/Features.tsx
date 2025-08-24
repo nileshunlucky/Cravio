@@ -2,18 +2,41 @@
 
 import React, { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { ArrowRight,BarChart3 } from 'lucide-react';
+import { ArrowRight, BarChart3 } from 'lucide-react';
+
+// Define the structure for a single step object
+interface Step {
+  id: number;
+  title: string;
+  subtitle: string;
+  buttonText: string;
+  image?: string; // The '?' makes this property optional
+  video?: string; // Optional
+  features?: {
+    name: string;
+    desc: string;
+  }[]; // Optional array of objects
+  platforms?: string[]; // Optional array of strings
+}
+
+// Define the type for all props passed to StepSection
+interface StepSectionProps {
+  step: Step;
+  index: number;
+}
+
 
 const HowItWorks = () => {
   const containerRef = useRef(null);
 
-  const steps = [
+  const steps: Step[] = [ // You can optionally type the array as well
     {
       id: 1,
       title: "Train Your Model",
       subtitle: "Give Name & Upload Multiple images of yourself or ai models to create a consitent realist persona.",
       buttonText: "Start Training Now",
-      image: "https://res.cloudinary.com/deoxpvjjg/image/upload/v1756054043/Behind_the_scenes_from_photoshoot_m2umkj.jpg",    },
+      image: "https://res.cloudinary.com/deoxpvjjg/image/upload/v1756054043/Behind_the_scenes_from_photoshoot_m2umkj.jpg",
+    },
     {
       id: 2,
       title: "Create Content",
@@ -21,20 +44,19 @@ const HowItWorks = () => {
       buttonText: "Create Content",
       video: "https://v1.pinimg.com/videos/iht/expMp4/43/0d/24/430d2432b9e83342353fd1636eb1eb9e_720w.mp4",
       features: [
-  { 
-    name: "Subject Swap", 
-    desc: "Put your AI influencer center stage. Instantly replace anyone in your videos with your persona for fresh, exclusive content fans can’t resist." 
-  },
-  { 
-    name: "Ultra-Realistic Videos (Veo 3)", 
-    desc: "Bring your ideas to life with jaw-dropping realism. Powered by Google’s Veo 3, create videos from text or images that look like high-end productions." 
-  },
-  { 
-    name: "Virtual Wardrobe", 
-    desc: "Dress your AI influencer in endless outfits. Try new styles, themes, and looks without ever buying physical clothes." 
-  },
-]
-
+        {
+          name: "Subject Swap",
+          desc: "Put your AI influencer center stage. Instantly replace anyone in your videos with your persona for fresh, exclusive content fans can’t resist."
+        },
+        {
+          name: "Ultra-Realistic Videos (Veo 3)",
+          desc: "Bring your ideas to life with jaw-dropping realism. Powered by Google’s Veo 3, create videos from text or images that look like high-end productions."
+        },
+        {
+          name: "Virtual Wardrobe",
+          desc: "Dress your AI influencer in endless outfits. Try new styles, themes, and looks without ever buying physical clothes."
+        },
+      ]
     },
     {
       id: 3,
@@ -62,14 +84,13 @@ const HowItWorks = () => {
   return (
     <div ref={containerRef} className="min-h-screen bg-black text-white overflow-hidden">
       {/* Header Section */}
-      <motion.div 
+      <motion.div
         className="text-center py-20 px-6"
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, ease: "easeOut" }}
       >
-
-        <motion.h1 
+        <motion.h1
           className="text-5xl md:text-7xl font-bold mb-6 tracking-tight"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -78,7 +99,7 @@ const HowItWorks = () => {
           How It Works
         </motion.h1>
 
-        <motion.p 
+        <motion.p
           className="text-xl text-zinc-400 max-w-2xl mx-auto font-light mb-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -98,7 +119,7 @@ const HowItWorks = () => {
   );
 };
 
-const StepSection = ({ step, index }) => {
+const StepSection = ({ step, index }: StepSectionProps) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: false, amount: 0.3 });
   const isEven = index % 2 === 0;
@@ -115,8 +136,8 @@ const StepSection = ({ step, index }) => {
   };
 
   const itemVariants = {
-    hidden: { 
-      opacity: 0, 
+    hidden: {
+      opacity: 0,
       y: 50,
       x: isEven ? -50 : 50
     },
@@ -132,8 +153,8 @@ const StepSection = ({ step, index }) => {
   };
 
   const imageVariants = {
-    hidden: { 
-      opacity: 0, 
+    hidden: {
+      opacity: 0,
       scale: 0.8,
       x: isEven ? 50 : -50
     },
@@ -157,7 +178,7 @@ const StepSection = ({ step, index }) => {
       animate={isInView ? "visible" : "hidden"}
     >
       {/* Content */}
-      <motion.div 
+      <motion.div
         className={`${!isEven ? 'lg:order-2' : ''} space-y-8`}
         variants={itemVariants}
       >
@@ -168,14 +189,14 @@ const StepSection = ({ step, index }) => {
           <span className="text-xl font-medium text-[#B08D57]">Step {step.id}</span>
         </motion.div>
 
-        <motion.h2 
+        <motion.h2
           className="text-4xl md:text-5xl font-bold tracking-tight"
           variants={itemVariants}
         >
           {step.title}
         </motion.h2>
 
-        <motion.p 
+        <motion.p
           className="text-xl text-zinc-400 leading-relaxed"
           variants={itemVariants}
         >
@@ -222,23 +243,23 @@ const StepSection = ({ step, index }) => {
 
       {/* Visual */}
       <motion.div className={`${!isEven ? 'lg:order-1' : ''} relative`} variants={imageVariants}>
-  {step.id === 1 && <Step1Visual image={step.image} />}
-  {step.id === 2 && <Step2Visual video={step.video} />}
-  {step.id === 3 && <Step3Visual image={step.image} />}
-  {step.id === 4 && <Step4Visual image={step.image} />}
-  {step.id === 5 && <Step5Visual />}
-</motion.div>
+        {step.id === 1 && step.image && <Step1Visual image={step.image} />}
+        {step.id === 2 && step.video && <Step2Visual video={step.video} />}
+        {step.id === 3 && step.image && <Step3Visual image={step.image} />}
+        {step.id === 4 && step.image && <Step4Visual image={step.image} />}
+        {step.id === 5 && <Step5Visual />}
+      </motion.div>
     </motion.div>
   );
 };
 
 const Step1Visual = ({ image }: { image: string }) => (
-  <motion.div 
+  <motion.div
     className="relative bg-gradient-to-br from-zinc-900 to-black rounded-3xl border border-zinc-800 max-w-lg mx-auto"
     whileHover={{ rotateY: 5, rotateX: 5 }}
     style={{ transformStyle: 'preserve-3d' }}
   >
-    <motion.img 
+    <motion.img
       src={image}
       alt="Step 1 visual"
       className="rounded-2xl shadow-lg w-full object-cover"
@@ -250,33 +271,33 @@ const Step1Visual = ({ image }: { image: string }) => (
 );
 
 const Step2Visual = ({ video }: { video: string }) => (
-  <motion.div 
+  <motion.div
     className="relative bg-gradient-to-br from-zinc-900 to-black rounded-3xl border border-zinc-800 max-w-lg mx-auto"
     whileHover={{ rotateY: -5, rotateX: 5 }}
     style={{ transformStyle: 'preserve-3d' }}
   >
-    <motion.video 
-  src={video}
-  loop
-  muted
-  autoPlay
-  playsInline
-  className="rounded-2xl shadow-lg w-full object-cover"
-  initial={{ opacity: 0, scale: 0.9 }}
-  animate={{ opacity: 1, scale: 1 }}
-  transition={{ duration: 0.8 }}
-/>
+    <motion.video
+      src={video}
+      loop
+      muted
+      autoPlay
+      playsInline
+      className="rounded-2xl shadow-lg w-full object-cover"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.8 }}
+    />
 
   </motion.div>
 );
 
 const Step3Visual = ({ image }: { image: string }) => (
-  <motion.div 
+  <motion.div
     className="relative bg-gradient-to-br from-zinc-900 to-black rounded-3xl  border border-zinc-800 max-w-lg mx-auto"
     whileHover={{ rotateY: 5, rotateX: -5 }}
     style={{ transformStyle: 'preserve-3d' }}
   >
-    <motion.img 
+    <motion.img
       src={image}
       alt="Step 3 visual"
       className="rounded-2xl shadow-lg w-full object-cover"
@@ -288,12 +309,12 @@ const Step3Visual = ({ image }: { image: string }) => (
 );
 
 const Step4Visual = ({ image }: { image: string }) => (
-  <motion.div 
+  <motion.div
     className="relative bg-gradient-to-br from-zinc-900 to-black rounded-3xl  border border-zinc-800 max-w-lg mx-auto"
     whileHover={{ rotateY: 5, rotateX: -5 }}
     style={{ transformStyle: 'preserve-3d' }}
   >
-    <motion.img 
+    <motion.img
       src={image}
       alt="Step 4 visual"
       className="rounded-2xl shadow-lg w-full object-cover"
@@ -306,7 +327,7 @@ const Step4Visual = ({ image }: { image: string }) => (
 
 
 const Step5Visual = () => (
-  <motion.div 
+  <motion.div
     className="relative bg-gradient-to-br from-zinc-900 to-black rounded-3xl p-5 border border-zinc-800 max-w-lg mx-auto"
     whileHover={{ rotateY: -5, rotateX: 5 }}
     style={{ transformStyle: 'preserve-3d' }}
@@ -317,7 +338,7 @@ const Step5Visual = () => (
         <BarChart3 className="w-6 h-6 text-[#B08D57]" />
       </div>
       <div className="flex items-end gap-2 h-24 mb-4">
-        {[1,2,3,4,5,6,7,8].map((i) => (
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
           <motion.div
             key={i}
             className="flex-1 bg-gradient-to-t from-[#B08D57] to-[#B08D57]/50 rounded-t"
