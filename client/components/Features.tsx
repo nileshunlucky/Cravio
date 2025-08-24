@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useRef } from 'react';
-import { motion, useScroll, useInView } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import { ArrowRight,BarChart3 } from 'lucide-react';
 
 const HowItWorks = () => {

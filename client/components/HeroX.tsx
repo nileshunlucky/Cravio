@@ -130,10 +130,6 @@ const HeroX = () => {
                         </motion.button>
                         </Link>
                     </motion.div>
-
-
-                    
-
                 </div>
             </div>
 
