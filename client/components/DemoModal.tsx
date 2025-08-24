@@ -3,35 +3,55 @@
 import React, { useState, useMemo } from 'react';
 import { Users, DollarSign, Gift, TrendingUp } from "lucide-react";
 
+// --- Type Definitions ---
+// Define types for component props to resolve the TypeScript errors.
+type UIComponentProps = {
+  children: React.ReactNode;
+  className?: string; // Optional since it has a default value
+};
+
+type SliderProps = {
+  value: number[];
+  onValueChange: (value: number[]) => void;
+  min: number;
+  max: number;
+  step: number;
+  className?: string;
+};
+
+type RevenueChartProps = {
+  revenue: number;
+};
+
 // --- Mock UI Components ---
 // In a real app, these would be imported from a UI library like shadcn/ui
 // I've recreated their basic structure and styling here for a complete example.
 
-const Card = ({ children, className = '' }) => (
+const Card = ({ children, className = '' }: UIComponentProps) => (
   <div className={`bg-zinc-900/60 border border-zinc-800 rounded-2xl shadow-lg ${className}`}>
     {children}
   </div>
 );
 
-const CardHeader = ({ children, className = '' }) => (
+const CardHeader = ({ children, className = '' }: UIComponentProps) => (
   <div className={`p-6 ${className}`}>
     {children}
   </div>
 );
 
-const CardTitle = ({ children, className = '' }) => (
+const CardTitle = ({ children, className = '' }: UIComponentProps) => (
   <h3 className={`text-lg font-semibold text-white ${className}`}>
     {children}
   </h3>
 );
 
-const CardContent = ({ children, className = '' }) => (
+const CardContent = ({ children, className = '' }: UIComponentProps) => (
   <div className={`p-6 pt-0 ${className}`}>
     {children}
   </div>
 );
 
-const Slider = ({ value, onValueChange, min, max, step, className = '' }) => (
+const Slider = ({ value, onValueChange, min, max, step, className = '' }: SliderProps) => (
   <input
     type="range"
     min={min}
@@ -46,7 +66,7 @@ const Slider = ({ value, onValueChange, min, max, step, className = '' }) => (
 // --- Revenue Chart Component ---
 // A dedicated component for the dynamic "Apple-style" chart.
 
-const RevenueChart = ({ revenue }) => {
+const RevenueChart = ({ revenue }: RevenueChartProps) => {
   const width = 300;
   const height = 100;
   // We set a max revenue for visualization to make the chart feel responsive even at lower values.
