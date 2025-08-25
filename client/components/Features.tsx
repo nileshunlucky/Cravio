@@ -25,7 +25,6 @@ interface StepSectionProps {
   index: number;
 }
 
-
 const HowItWorks = () => {
   const containerRef = useRef(null);
 
@@ -324,7 +323,6 @@ const Step4Visual = ({ image }: { image: string }) => (
     />
   </motion.div>
 );
-
 
 const Step5Visual = () => (
   <motion.div

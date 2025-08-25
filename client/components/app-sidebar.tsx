@@ -39,11 +39,6 @@ const items = [
     icon: ChevronRight
   },
   {
-    title: "Caption",
-    url: "/admin/caption",
-    icon: ChevronRight
-  },
-  {
     title: "Pricing",
     url: "/admin/pricing",
     icon: ChevronRight

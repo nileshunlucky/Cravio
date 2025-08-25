@@ -384,7 +384,7 @@ const Page = () => {
                     { name: "Canvas", included: true },
                     { name: "Opus (veo3, Kling, Hailuo, Wan)", included: true },
                     { name: "Persona", included: true },
-                    { name: "Caption", included: true },
+                    { name: "Upscaler", included: true },
                     { name: "Exclusive Support", included: false },
                 ]
             }
@@ -410,7 +410,7 @@ const Page = () => {
                     { name: "Canvas", included: true },
                     { name: "Opus (veo3, Kling, Hailuo, Wan)", included: true },
                     { name: "Persona", included: true },
-                    { name: "Caption", included: true },
+                    { name: "Upscaler", included: true },
                     { name: "Exclusive Support", included: true },
                 ]
             }
@@ -436,7 +436,7 @@ const Page = () => {
                     { name: "Canvas", included: true },
                     { name: "Opus (veo3, Kling, Hailuo, Wan)", included: true },
                     { name: "Persona", included: true },
-                    { name: "Caption", included: true },
+                    { name: "Upscaler", included: true },
                     { name: "Exclusive Support", included: true },
                 ]
             }
@@ -521,7 +521,7 @@ const Page = () => {
 
                 {/* Premium Toggle */}
                 <motion.div variants={toggleVariants} className="flex justify-center mb-12">
-                    <div className="relative bg-[#0f0f0f] border border-[#B08D57]/40 p-2 rounded-xl">
+                    <div className="relative bg-[#0f0f0f] border-2 border-[#B08D57]/50 p-2 rounded-xl">
                         <motion.div
                             className="absolute inset-y-2 bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black rounded-lg"
                             animate={{
@@ -548,8 +548,6 @@ const Page = () => {
                         </div>
                     </div>
                 </motion.div>
-
-
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-7xl mx-auto">
                     <AnimatePresence mode="wait">

@@ -313,7 +313,7 @@ const Page = () => {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setShowCreateNew(true)}
-                            className="px-6 py-3 bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black font-light rounded-lg flex items-center gap-2 hover:shadow-lg hover:shadow-[#B08D57]/20 transition-all duration-300"
+                            className="px-6 py-3 bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] text-black hover:text-black shadow-md font-light rounded-lg flex items-center gap-2 hover:shadow-lg hover:shadow-[#B08D57]/20 transition-all duration-300"
                         >
                             <span>New Persona</span>
                         </motion.button>
