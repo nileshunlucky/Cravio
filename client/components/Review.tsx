@@ -105,7 +105,7 @@ const Review = () => {
                   <div className="relative flex-1">
                     <div className="absolute left-0 top-0 w-1 h-full bg-[#B08D57]/60 rounded-full"></div>
                     <blockquote className="text-muted-foreground leading-relaxed pl-4 sm:pl-6 text-sm sm:text-base lg:text-lg">
-                      "{testimonial.quote}"
+                      &ldquo;{testimonial.quote}&rdquo;
                     </blockquote>
                   </div>
                 </CardContent>
