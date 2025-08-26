@@ -4,14 +4,22 @@ import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence, useInView } from 'framer-motion'
 import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { useRouter } from 'next/navigation'
+
+type ImageItem = {
+  id: number
+  seoName: string
+  image: string
+  prompt: string
+}
 
 // Mock AI image data with prompts
-const imageData = [
+const imageData: ImageItem[] = [
   {
     id: 1,
-    seoName: "luxury-fashion-model-golden-hour-portrait",
-    image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400",
-    prompt: "Professional fashion model portrait, golden hour lighting, luxury background, high-end commercial photography, ultra realistic, 8K resolution"
+    seoName: "sunlit-fashion-model-linen-suit-sensual-portrait",
+    image: "https://i.pinimg.com/1200x/08/e3/79/08e3793a53904f3acb5ed917280795dd.jpg",
+    prompt: "Ultra-realistic portrait of a stylish woman standing by a window, golden hour sunlight casting dramatic shadows, wearing an oversized beige linen suit jacket and matching trousers with hands in pockets, jacket open in a sensual and elegant manner, long wavy brown hair, glossy lips, wearing round sunglasses, tropical greenery visible in the background, cinematic editorial photography, luxury aesthetic, professional high-end fashion shot, 8K resolution, sharp details, warm natural tones"
   },
   {
     id: 2,
@@ -56,12 +64,6 @@ const imageData = [
     prompt: "Vintage fashion model, retro styling, classic Hollywood glamour, warm film tones, timeless elegance, vintage photography aesthetic"
   },
   {
-    id: 9,
-    seoName: "futuristic-sci-fi-character-space-age",
-    image: "https://images.unsplash.com/photo-1595152772835-219674b2a8a6?w=360",
-    prompt: "Futuristic sci-fi character, space age costume, metallic textures, cosmic background, advanced technology elements, digital art rendering"
-  },
-  {
     id: 10,
     seoName: "bohemian-natural-beauty-outdoor-portrait",
     image: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=310",
@@ -72,38 +74,47 @@ const imageData = [
     seoName: "gothic-dark-aesthetic-dramatic-portrait",
     image: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=330",
     prompt: "Gothic dark aesthetic, dramatic portrait lighting, mysterious atmosphere, dark fashion, intense expression, artistic photography"
-  },
-  {
-    id: 12,
-    seoName: "minimalist-clean-portrait-modern-style",
-    image: "https://images.unsplash.com/photo-1554151228-14d9def656e4?w=370",
-    prompt: "Minimalist clean portrait, modern styling, neutral background, soft lighting, contemporary aesthetic, professional photography"
   }
 ]
 
-
-
 // Skeleton component
-const ImageSkeleton = () => (
-  <div className="mb-4">
-    <div className="bg-zinc-900/50 rounded-xl overflow-hidden">
+const ImageSkeleton = ({ height }: { height: number }) => (
+  <div className="break-inside-avoid mb-4">
+    <div className="bg-zinc-900/50 rounded-2xl overflow-hidden shadow-lg">
       <div className="animate-pulse">
-        <div className="bg-zinc-800 h-64 w-full rounded-xl"></div>
+        <div className="bg-zinc-800 w-full rounded-2xl" style={{ height: `${height}px` }}></div>
       </div>
     </div>
   </div>
 )
 
-const ImageCard = ({ item, index }: { item: any; index: number }) => {
+const ImageCard = ({ item, index }: { item: ImageItem; index: number }) => {
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [naturalHeight, setNaturalHeight] = useState(300)
   const cardRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(cardRef, { once: true, margin: "100px" })
-
-
+  const router = useRouter()
 
   const getRandomHeight = () => {
-    const heights = [240, 280, 320, 260, 300, 340, 360, 200, 380]
+    const heights = [250, 300, 350, 280, 320, 400, 380, 260, 420, 340]
     return heights[item.id % heights.length]
+  }
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.target as HTMLImageElement
+    const aspectRatio = img.naturalHeight / img.naturalWidth
+    const containerWidth = 300 // approximate container width
+    setNaturalHeight(Math.min(containerWidth * aspectRatio, 500))
+    setImageLoaded(true)
+  }
+
+  const handleImageClick = () => {
+    // Encode the prompt and image URL for the URL parameters
+    const encodedPrompt = encodeURIComponent(item.prompt)
+    const encodedImage = encodeURIComponent(item.image)
+    
+    // Redirect to canvas page with the prompt and reference image
+    router.push(`/admin/canvas?prompt=${encodedPrompt}&referenceImage=${encodedImage}`)
   }
 
   return (
@@ -116,24 +127,35 @@ const ImageCard = ({ item, index }: { item: any; index: number }) => {
         duration: 0.6,
         ease: [0.25, 0.46, 0.45, 0.94]
       }}
-      className="mb-4 group cursor-pointer"
+      className="break-inside-avoid mb-4 group cursor-pointer"
+      onClick={handleImageClick} // Add the click handler here
     >
-      <div className="relative bg-zinc-900/30 rounded-xl overflow-hidden backdrop-blur-sm hover:shadow-2xl transition-all duration-300">
-        <div className="relative overflow-hidden rounded-xl">
+      <div className="relative bg-zinc-900/20 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02]">
+        <div className="relative overflow-hidden rounded-2xl">
           {!imageLoaded && (
-            <div className="absolute inset-0 bg-zinc-800 animate-pulse" style={{ height: `${getRandomHeight()}px` }} />
+            <div 
+              className="absolute inset-0 bg-zinc-800 animate-pulse rounded-2xl" 
+              style={{ height: `${getRandomHeight()}px` }} 
+            />
           )}
           <img
             src={item.image}
             alt={item.seoName}
-            className={`w-full h-auto object-cover transition-all duration-300 ${
+            className={`w-full object-cover transition-all duration-500 rounded-2xl ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
-            style={{ height: `${getRandomHeight()}px` }}
+            style={{ 
+              height: imageLoaded ? 'auto' : `${getRandomHeight()}px`,
+              minHeight: '200px',
+              maxHeight: '500px'
+            }}
             loading="lazy"
-            onLoad={() => setImageLoaded(true)}
+            onLoad={handleImageLoad}
           />
           
+          {/* Overlay for hover effect */}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 rounded-2xl" />
+         
         </div>
       </div>
     </motion.div>
@@ -154,7 +176,7 @@ const Page = () => {
   }, [])
 
   // Filter images based on search term
-  const filteredImages = useMemo(() => {
+  const filteredImages = useMemo<ImageItem[]>(() => {
     if (!searchTerm) return imageData
     
     return imageData.filter(item => 
@@ -163,22 +185,27 @@ const Page = () => {
     )
   }, [searchTerm])
 
-  const handleSearch = (value) => {
+  const handleSearch = (value: string) => {
     setIsLoading(true)
     setSearchTerm(value)
     setTimeout(() => setIsLoading(false), 300)
   }
 
+  const getSkeletonHeights = () => {
+    const heights = [250, 300, 350, 280, 320, 400, 380, 260, 420, 340]
+    return Array.from({ length: 12 }, (_, i) => heights[i % heights.length])
+  }
+
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Header with search */}
+      {/* Header with search - KEEPING EXACTLY AS REQUESTED */}
       <motion.header 
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
-        className="sticky top-0 z-50 backdrop-blur-xl bg-black/50 border-b border-zinc-800"
+        className="sticky top-0 z-50 backdrop-blur-xl bg-black/50 rounded-b-xl"
       >
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="max-w-7xl mx-auto p-3">
           {/* Centered search bar */}
           <motion.div 
             className="relative max-w-2xl mx-auto"
@@ -189,7 +216,7 @@ const Page = () => {
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-zinc-500 w-5 h-5 z-10" />
             <Input
               type="text"
-              placeholder="Search by name or description..."
+              placeholder="Search poses"
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
               className="pl-12 pr-4 py-3 w-full bg-zinc-900/50 border-zinc-800 rounded-2xl text-white placeholder:text-zinc-500 focus:border-zinc-600 focus:bg-zinc-900/70 transition-all duration-300 backdrop-blur-sm"
@@ -207,20 +234,20 @@ const Page = () => {
         </div>
       </motion.header>
 
-      {/* Main Content - Pinterest Grid */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      {/* Main Content - Pinterest Masonry Grid */}
+      <main className="max-w-7xl mx-auto px-4 py-8">
         <AnimatePresence mode="wait">
           {imagesLoading ? (
-            // Skeleton loading state
+            // Skeleton loading state with masonry layout
             <motion.div
               key="skeleton"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-4"
+              className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-0"
             >
-              {Array.from({ length: 12 }).map((_, index) => (
-                <ImageSkeleton key={index} />
+              {getSkeletonHeights().map((height, index) => (
+                <ImageSkeleton key={index} height={height} />
               ))}
             </motion.div>
           ) : filteredImages.length === 0 ? (
@@ -241,7 +268,7 @@ const Page = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-4"
+              className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-0"
             >
               {filteredImages.map((item, index) => (
                 <ImageCard
