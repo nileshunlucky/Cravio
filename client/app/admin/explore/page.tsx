@@ -99,9 +99,10 @@ const ImageCard = ({ item, index }: { item: ImageItem; index: number }) => {
     return heights[item.id % heights.length]
   }
 
-  const handleImageLoad = (_e: React.SyntheticEvent<HTMLImageElement>) => {
-    setImageLoaded(true)
-  }
+ // With this:
+const handleImageLoad = () => {
+  setImageLoaded(true)
+}
 
   const handleImageClick = () => {
     // Encode the prompt and image URL for the URL parameters
