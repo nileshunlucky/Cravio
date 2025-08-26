@@ -79,7 +79,7 @@ const imageData: ImageItem[] = [
 
 // Skeleton component
 const ImageSkeleton = ({ height }: { height: number }) => (
-  <div className="break-inside-avoid mb-4">
+  <div className="break-inside-avoid mb-2">
     <div className="bg-zinc-900/50 rounded-2xl overflow-hidden shadow-lg">
       <div className="animate-pulse">
         <div className="bg-zinc-800 w-full rounded-2xl" style={{ height: `${height}px` }}></div>
@@ -123,7 +123,7 @@ const handleImageLoad = () => {
         duration: 0.6,
         ease: [0.25, 0.46, 0.45, 0.94]
       }}
-      className="break-inside-avoid mb-4 group cursor-pointer"
+      className="break-inside-avoid mb-2 group cursor-pointer"
       onClick={handleImageClick} // Add the click handler here
     >
       <div className="relative bg-zinc-900/20 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02]">
@@ -264,7 +264,7 @@ const Page = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-0"
+              className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-2 space-y-0"
             >
               {filteredImages.map((item, index) => (
                 <ImageCard
