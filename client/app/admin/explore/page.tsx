@@ -23,15 +23,15 @@ const imageData: ImageItem[] = [
   },
   {
     id: 2,
-    seoName: "virtual-beauty-influencer-minimalist-studio",
-    image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300",
-    prompt: "Beautiful virtual influencer, clean minimalist studio lighting, soft shadows, natural beauty, photorealistic render, professional headshot"
+    seoName: "blonde-model-sexy-swimsuit-poolside-portrait",
+    image: "https://i.pinimg.com/1200x/6c/4b/e8/6c4be8ca9bc0b90185d6e081940a169b.jpg",
+    prompt: "Ultra-realistic portrait of a blonde woman at a swimming pool, sitting on the pool edge with both hands resting on the ledge, wearing a revealing beige one-piece swimsuit with deep cut design, long wavy blonde hair, tanned smooth skin, natural makeup with glossy lips, bright daylight, clear blue water reflecting sunlight, green trees and wooden fence in background, cinematic luxury vacation aesthetic, professional high-end fashion photography, sharp details, 8K resolution, natural lighting"
   },
   {
     id: 3,
-    seoName: "fitness-model-workout-motivation-aesthetic",
-    image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=350",
-    prompt: "Athletic fitness model, dynamic workout pose, motivational aesthetic, gym environment, dramatic lighting, high contrast, fitness photography"
+    seoName: "cute-brunette-model-playful-outdoor-portrait",
+    image: "https://i.pinimg.com/736x/ae/45/80/ae458008232fa4c6196b8f169f71d1e1.jpg",
+    prompt: "Ultra-realistic portrait of a playful brunette woman outdoors, sticking out her tongue and looking upwards with a fun expression, wearing a tight green crop top and light gray shorts, layered gold necklaces around her neck, natural makeup with flushed cheeks, long tied-back hair with loose strands, background showing wooden deck, green grass, bushes, and a calm lake with blue sky and clouds, daylight natural lighting, cinematic outdoor vibe, sharp details, professional high-quality photography, 8K resolution"
   },
   {
     id: 4,
@@ -90,7 +90,6 @@ const ImageSkeleton = ({ height }: { height: number }) => (
 
 const ImageCard = ({ item, index }: { item: ImageItem; index: number }) => {
   const [imageLoaded, setImageLoaded] = useState(false)
-  const [naturalHeight, setNaturalHeight] = useState(300)
   const cardRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(cardRef, { once: true, margin: "100px" })
   const router = useRouter()
@@ -100,11 +99,7 @@ const ImageCard = ({ item, index }: { item: ImageItem; index: number }) => {
     return heights[item.id % heights.length]
   }
 
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.target as HTMLImageElement
-    const aspectRatio = img.naturalHeight / img.naturalWidth
-    const containerWidth = 300 // approximate container width
-    setNaturalHeight(Math.min(containerWidth * aspectRatio, 500))
+  const handleImageLoad = (_e: React.SyntheticEvent<HTMLImageElement>) => {
     setImageLoaded(true)
   }
 
