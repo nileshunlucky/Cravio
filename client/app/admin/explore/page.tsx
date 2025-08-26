@@ -2,9 +2,8 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence, useInView } from 'framer-motion'
-import { Search, Copy, Check } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 
 // Mock AI image data with prompts
 const imageData = [
@@ -82,12 +81,7 @@ const imageData = [
   }
 ]
 
-type ImageData = {
-  id: number
-  seoName: string
-  image: string
-  prompt: string
-}
+
 
 // Skeleton component
 const ImageSkeleton = () => (
@@ -100,20 +94,12 @@ const ImageSkeleton = () => (
   </div>
 )
 
-const ImageCard = ({ item, index }) => {
+const ImageCard = ({ item, index }: { item: any; index: number }) => {
   const [imageLoaded, setImageLoaded] = useState(false)
-  const cardRef = useRef(null)
+  const cardRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(cardRef, { once: true, margin: "100px" })
 
-  const copyPrompt = async (prompt, id) => {
-    try {
-      await navigator.clipboard.writeText(prompt)
-      setCopiedId(id)
-      setTimeout(() => setCopiedId(null), 2000)
-    } catch (err) {
-      console.error('Failed to copy text: ', err)
-    }
-  }
+
 
   const getRandomHeight = () => {
     const heights = [240, 280, 320, 260, 300, 340, 360, 200, 380]
