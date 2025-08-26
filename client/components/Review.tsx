@@ -14,7 +14,7 @@ const testimonials = [
   {
     name: 'Jake Thompson',
     role: 'AI Influencer Manager',
-    quote: "Just started using this last week to create my first AI influencer. Pretty cool seeing people actually chat with my AI and subscribe to the content. The automated interactions give me more time to plan out the growth strategy.",
+    quote: "Just started using this last week to create my first AI influencer. Pretty cool seeing people actually chat with my AI and subscribe to the content.",
     avatar: '/review/alex-george.webp',
   },
   {
@@ -45,69 +45,68 @@ const testimonials = [
 
 const Review = () => {
   const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, amount: 0.3 })
+  const isInView = useInView(ref, { once: true, amount: 0.2 })
 
   return (
-    <section ref={ref} className="px-6 py-24 bg-gradient-to-b from-background to-background/50">
+    <section ref={ref} className="w-full overflow-hidden px-4 sm:px-6 py-16 sm:py-24 bg-gradient-to-b from-background to-background/50">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={isInView ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="max-w-7xl mx-auto space-y-16"
+        className="max-w-7xl mx-auto"
       >
-        <div className="text-center space-y-6">
-        
-          <h2 className="text-5xl md:text-6xl font-bold">
-            
-Creators Love{' '}
-            <span
-              className="underline decoration-2 underline-offset-8"
-              style={{ textDecorationColor: '#B08D57' }}
-            >
+        {/* Header */}
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+            Creators Love{' '}
+            <span className="underline decoration-2 underline-offset-4 sm:underline-offset-8 decoration-[#B08D57]">
               Mellvitta.ai
             </span>
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {testimonials.map((t, idx) => (
+        {/* Testimonials Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {testimonials.map((testimonial, index) => (
             <motion.div
-              key={idx}
+              key={index}
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{
                 duration: 0.5,
-                delay: idx * 0.1,
+                delay: index * 0.1,
                 ease: 'easeOut'
               }}
+              className="w-full"
             >
-              <Card className="h-full rounded-3xl border border-border/50 p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-[#B08D57]/30 bg-card/80 backdrop-blur-sm">
-                <CardContent className="p-0 space-y-6 h-full flex flex-col">
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
+              <Card className="h-full rounded-2xl sm:rounded-3xl border border-border/50 p-6 sm:p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-[#B08D57]/30 bg-card/80 backdrop-blur-sm">
+                <CardContent className="p-0 h-full flex flex-col gap-4 sm:gap-6">
+                  {/* User Info */}
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="relative flex-shrink-0">
                       <img
-                        src={t.avatar}
-                        alt={t.name}
-                        className="w-16 h-16 rounded-2xl object-cover ring-2 ring-[#B08D57]/20"
+                        src={testimonial.avatar}
+                        alt={`${testimonial.name} avatar`}
+                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl object-cover ring-2 ring-[#B08D57]/20"
                       />
-                      <div
-                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full border-2 border-background"
-                        style={{ backgroundColor: '#B08D57' }}
-                      ></div>
+                      <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-[#B08D57] rounded-full border-2 border-background"></div>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-foreground text-lg">{t.name}</p>
-                      <p className="text-muted-foreground">{t.role}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-foreground text-base sm:text-lg truncate">
+                        {testimonial.name}
+                      </p>
+                      <p className="text-muted-foreground text-sm sm:text-base truncate">
+                        {testimonial.role}
+                      </p>
                     </div>
                   </div>
+
+                  {/* Quote */}
                   <div className="relative flex-1">
-                    <div
-                      className="absolute left-0 top-0 w-1 h-full rounded-full opacity-60"
-                      style={{ backgroundColor: '#B08D57' }}
-                    ></div>
-                    <p className="text-muted-foreground leading-relaxed pl-6 text-lg">
-                      &ldquo;{t.quote}&rdquo;
-                    </p>
+                    <div className="absolute left-0 top-0 w-1 h-full bg-[#B08D57]/60 rounded-full"></div>
+                    <blockquote className="text-muted-foreground leading-relaxed pl-4 sm:pl-6 text-sm sm:text-base lg:text-lg">
+                      "{testimonial.quote}"
+                    </blockquote>
                   </div>
                 </CardContent>
               </Card>

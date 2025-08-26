@@ -17,9 +17,9 @@ type ImageItem = {
 const imageData: ImageItem[] = [
   {
     id: 1,
-    seoName: "sunlit-fashion-model-linen-suit-sensual-portrait",
-    image: "https://i.pinimg.com/1200x/08/e3/79/08e3793a53904f3acb5ed917280795dd.jpg",
-    prompt: "Ultra-realistic portrait of a stylish woman standing by a window, golden hour sunlight casting dramatic shadows, wearing an oversized beige linen suit jacket and matching trousers with hands in pockets, jacket open in a sensual and elegant manner, long wavy brown hair, glossy lips, wearing round sunglasses, tropical greenery visible in the background, cinematic editorial photography, luxury aesthetic, professional high-end fashion shot, 8K resolution, sharp details, warm natural tones"
+    seoName: "brunette-model-sensual-outdoor-rock-portrait",
+    image: "https://i.pinimg.com/736x/18/f3/b0/18f3b06fe506fc2c821435f746d8967f.jpg",
+    prompt: "Ultra-realistic portrait of a brunette woman sitting on rocks outdoors, wearing a beige long-sleeve ribbed crop top with deep neckline and matching short skirt, playful and sensual pose with one hand near her lips, straight long dark hair flowing naturally, subtle makeup with highlighted eyes and soft lips, delicate jewelry including a choker necklace and pendant, natural background with greenery and rocky textures, golden hour natural lighting, cinematic outdoor fashion photography, sharp details, 8K resolution, high-end editorial aesthetic"
   },
   {
     id: 2,
@@ -35,45 +35,45 @@ const imageData: ImageItem[] = [
   },
   {
     id: 4,
-    seoName: "cyberpunk-neon-character-futuristic-style",
-    image: "https://images.unsplash.com/photo-1596815064285-45ed8a9c0463?w=280",
-    prompt: "Cyberpunk character portrait, neon lighting effects, futuristic cityscape background, holographic elements, sci-fi aesthetic, digital art style"
+    seoName: "fit-brunette-model-yoga-pose-sunlit-room",
+    image: "https://i.pinimg.com/736x/a8/38/d4/a838d4cf05be3339e791b2404f7fc000.jpg",
+    prompt: "Ultra-realistic portrait of a brunette woman doing yoga indoors, leaning forward on her arms in a stretching pose, wearing a light purple sports bra and matching high-waisted leggings, slim fit body, long straight brown hair falling to the side, natural makeup with soft features, sunlight streaming through a window casting bright highlights and shadows on her body and the floor, minimal indoor background with white walls and tiled flooring, cinematic lifestyle photography, high detail, 8K resolution, natural warm lighting"
   },
   {
     id: 5,
-    seoName: "professional-business-portrait-corporate-headshot",
-    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=320",
-    prompt: "Corporate business portrait, professional headshot, clean background, confident expression, executive style, commercial photography"
+    seoName: "blonde-model-pink-gymwear-mirror-selfie",
+    image: "https://i.pinimg.com/736x/8a/19/35/8a1935ae4d4003632dcfd1a50ad1e511.jpg",
+    prompt: "Ultra-realistic portrait of a blonde woman taking a mirror selfie indoors, sitting on the wooden floor in a kneeling pose, wearing a matching pink sports bra and high-waisted leggings, slim fit curvy body, long straight blonde hair, natural soft makeup, holding smartphone in her right hand with visible reflection, modern apartment interior with dark green sofa, curtains, glass balcony doors and city view in the background, bright daylight natural lighting, cinematic lifestyle fitness photography, sharp details, 8K resolution, luxury aesthetic"
   },
   {
     id: 6,
-    seoName: "fantasy-magical-character-ethereal-portrait",
-    image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=380",
-    prompt: "Fantasy character portrait, magical ethereal lighting, mystical atmosphere, enchanted forest background, fantasy art style, dreamy aesthetic"
+    seoName: "long-haired-blonde-model-bedroom-portrait",
+    image: "https://i.pinimg.com/736x/70/b4/45/70b4452d7015c08e2a7bd0fde033b105.jpg",
+    prompt: "Ultra-realistic portrait of a young blonde woman with very long straight hair, sitting on the floor in a bedroom, wearing an oversized white shirt with lace stockings partially visible, soft sensual pose leaning slightly to the side, natural subtle makeup with gentle expression, cozy modern interior with a bed, sofa, plush toy, and a large wall poster featuring sports cars and city background, warm natural daylight illuminating the room, cinematic lifestyle photography, high detail, 8K resolution, professional editorial aesthetic"
   },
   {
     id: 7,
-    seoName: "street-style-urban-fashion-editorial-shoot",
-    image: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=340",
-    prompt: "Urban street style fashion, editorial photography, city background, trendy outfit, natural lighting, contemporary fashion shoot"
+    seoName: "blonde-bikini-model-sunlit-outdoor-portrait",
+    image: "https://i.pinimg.com/736x/b1/89/dd/b189ddc321c4e3af51b2e7af874feb84.jpg",
+    prompt: "Ultra-realistic photo of a young blonde woman in a black bikini, sitting outdoors on a lounge chair, soft sunlight illuminating her body, playful sensual pose with closed eyes and a gentle smile, toned figure with a belly button piercing and delicate necklace, natural summer vibes, stone patio background with greenery, lifestyle fashion photography, cinematic warm tones, high detail, 8K resolution, professional editorial aesthetic"
   },
   {
     id: 8,
-    seoName: "vintage-retro-fashion-model-classic-style",
-    image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=290",
-    prompt: "Vintage fashion model, retro styling, classic Hollywood glamour, warm film tones, timeless elegance, vintage photography aesthetic"
+    seoName: "brunette-bikini-model-luxury-sports-car-summer-shoot",
+    image: "https://i.pinimg.com/736x/fd/e5/73/fde573b738733bad38df997e20347b87.jpg",
+    prompt: "Ultra-realistic editorial photo of a stunning brunette woman in a black bikini, leaning against a glossy pink luxury sports car under bright summer sunlight, confident and glamorous pose, toned body with natural curves, long wavy hair flowing, stylish high-end vibe, upscale outdoor location with stone driveway and villa wall, cinematic golden hour lighting, professional fashion and lifestyle photography, 8K resolution"
   },
   {
     id: 10,
-    seoName: "bohemian-natural-beauty-outdoor-portrait",
-    image: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=310",
-    prompt: "Bohemian natural beauty, outdoor portrait, golden hour lighting, flowing hair, earth tones, organic aesthetic, lifestyle photography"
+    seoName: "tattooed-brunette-model-selfie-white-dress-bedroom-aesthetic",
+    image: "https://i.pinimg.com/736x/fd/d9/b0/fdd9b098c48bde9a05fa94e1d66ae772.jpg",
+    prompt: "Ultra-realistic portrait of a tattooed brunette woman taking a mirror selfie, sitting elegantly on a bed with floral sheets, wearing a short white dress with ribbon straps, playful sensual pose with finger on lips, long flowing hair, visible tattoos on arms and legs, accessorized with earrings and necklace, modern feminine bedroom with natural daylight, lifestyle fashion photography, high detail, cinematic tones, 8K resolution"
   },
   {
     id: 11,
-    seoName: "gothic-dark-aesthetic-dramatic-portrait",
-    image: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=330",
-    prompt: "Gothic dark aesthetic, dramatic portrait lighting, mysterious atmosphere, dark fashion, intense expression, artistic photography"
+    seoName: "brunette-bikini-mirror-selfie-bathroom-intimate-pose",
+    image: "https://i.pinimg.com/736x/86/31/4d/86314d1e063b382bd959b2b6bcef52fe.jpg",
+    prompt: "Ultra-realistic portrait of a brunette woman with long wavy dark hair taking a mirror selfie in a modern bathroom, wearing a light blue/gray triangle bikini top and matching high-cut bikini bottoms, confident intimate pose with one hand holding phone, curvy feminine figure, flawless skin, standing in front of bathroom mirror with shower door visible in background, neutral bathroom tiles and modern fixtures, soft indoor lighting, lifestyle photography aesthetic, high detail, professional quality, 8K resolution"
   }
 ]
 
@@ -240,7 +240,7 @@ const Page = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-0"
+              className="columns-2 md:columns-3 lg:columns-4 xl:columns-5  gap-4  space-y-0"
             >
               {getSkeletonHeights().map((height, index) => (
                 <ImageSkeleton key={index} height={height} />
