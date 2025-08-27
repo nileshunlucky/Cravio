@@ -370,8 +370,8 @@ const Page = () => {
                 yearly: 243
             },
             urls: {
-                monthly: `https://cravioai.lemonsqueezy.com/buy/097976f3-ffdf-4693-bab8-3b3bd0be6637?checkout[email]=${encodeURIComponent(email)}`,
-                yearly: `https://cravioai.lemonsqueezy.com/buy/f2e8c0e4-39fc-4a40-a490-ea70f85c20f1?checkout[email]=${encodeURIComponent(email)}`
+                monthly: `https://mellvitta.lemonsqueezy.com/buy/097976f3-ffdf-4693-bab8-3b3bd0be6637?checkout[email]=${encodeURIComponent(email)}`,
+                yearly: `https://mellvitta.lemonsqueezy.com/buy/75d2f287-595b-4e7e-81e5-ab82271ef121?checkout[email]=${encodeURIComponent(email)}`
             },
             isPopular: false,
             buttonText: "Elevate Your Signature",
@@ -396,8 +396,8 @@ const Page = () => {
                 yearly: 495
             },
             urls: {
-                monthly: `https://cravioai.lemonsqueezy.com/buy/68fca232-744c-4083-af99-1bb43bedf430?checkout[email]=${encodeURIComponent(email)}`,
-                yearly: `https://cravioai.lemonsqueezy.com/buy/2fbba06d-b1ab-40f2-969c-59a1c08bccb5?checkout[email]=${encodeURIComponent(email)}`
+                monthly: `https://mellvitta.lemonsqueezy.com/buy/1e69aebb-1eaf-4c10-be06-ff479ab4137f?checkout[email]=${encodeURIComponent(email)}`,
+                yearly: `https://mellvitta.lemonsqueezy.com/buy/7a5edd94-7fef-4006-ad70-33bbb7ee26ee?checkout[email]=${encodeURIComponent(email)}`
             },
             isPopular: true,
             buttonText: "Elevate Your Signature",
@@ -422,8 +422,8 @@ const Page = () => {
                 yearly: 831
             },
             urls: {
-                monthly: `https://cravioai.lemonsqueezy.com/buy/0e104f00-418e-4f7f-b6ef-9be9be3b2473?checkout[email]=${encodeURIComponent(email)}`,
-                yearly: `https://cravioai.lemonsqueezy.com/buy/67dceb1a-e06b-4610-8d9a-36e8fbe1cc24?checkout[email]=${encodeURIComponent(email)}`
+                monthly: `https://mellvitta.lemonsqueezy.com/buy/14fb5888-bca6-4bbf-971e-492a7e133e43?checkout[email]=${encodeURIComponent(email)}`,
+                yearly: `https://mellvitta.lemonsqueezy.com/buy/417677ef-a16e-4077-8f01-e61b3d401dda?checkout[email]=${encodeURIComponent(email)}`
             },
             isPopular: false,
             buttonText: "Elevate Your Signature",
