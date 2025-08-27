@@ -64,17 +64,47 @@ const imageData: ImageItem[] = [
     prompt: "Ultra-realistic editorial photo of a stunning brunette woman in a black bikini, leaning against a glossy pink luxury sports car under bright summer sunlight, confident and glamorous pose, toned body with natural curves, long wavy hair flowing, stylish high-end vibe, upscale outdoor location with stone driveway and villa wall, cinematic golden hour lighting, professional fashion and lifestyle photography, 8K resolution"
   },
   {
-    id: 10,
+    id: 9,
     seoName: "tattooed-brunette-model-selfie-white-dress-bedroom-aesthetic",
     image: "https://i.pinimg.com/736x/fd/d9/b0/fdd9b098c48bde9a05fa94e1d66ae772.jpg",
     prompt: "Ultra-realistic portrait of a tattooed brunette woman taking a mirror selfie, sitting elegantly on a bed with floral sheets, wearing a short white dress with ribbon straps, playful sensual pose with finger on lips, long flowing hair, visible tattoos on arms and legs, accessorized with earrings and necklace, modern feminine bedroom with natural daylight, lifestyle fashion photography, high detail, cinematic tones, 8K resolution"
   },
   {
-    id: 11,
+    id: 10,
     seoName: "brunette-bikini-mirror-selfie-bathroom-intimate-pose",
     image: "https://i.pinimg.com/736x/86/31/4d/86314d1e063b382bd959b2b6bcef52fe.jpg",
     prompt: "Ultra-realistic portrait of a brunette woman with long wavy dark hair taking a mirror selfie in a modern bathroom, wearing a light blue/gray triangle bikini top and matching high-cut bikini bottoms, confident intimate pose with one hand holding phone, curvy feminine figure, flawless skin, standing in front of bathroom mirror with shower door visible in background, neutral bathroom tiles and modern fixtures, soft indoor lighting, lifestyle photography aesthetic, high detail, professional quality, 8K resolution"
-  }
+  },
+  {
+    id: 11,
+    seoName: "blonde-model-tan-trench-coat-platform-heels-studio-fashion",
+    image: "https://i.pinimg.com/1200x/90/eb/15/90eb15e328f612d8bd781726dae80bf3.jpg",
+    prompt: "Ultra-realistic portrait of a blonde woman with long wavy hair in a professional studio photoshoot, wearing an oversized tan/beige trench coat styled as a dress worn off-shoulder, black platform high heels with ankle straps, elegant confident pose looking over shoulder, flawless skin and makeup, sitting pose with legs crossed, clean white studio background, high-fashion editorial photography style, professional lighting, glamorous feminine aesthetic, high detail, commercial photography quality, 8kresolution"
+  },
+  {
+    id: 12,
+    seoName: "brunette-black-bodysuit-crouching-pose-high-heels-studio",
+    image: "https://i.pinimg.com/1200x/59/9c/96/599c96a5a4a566971cafab2f6a9fed81.jpg",
+    prompt: "Ultra-realistic portrait of a brunette woman with long wavy layered hair in a professional studio photoshoot, wearing a black long-sleeved bodysuit with cutout details, crouching pose with confident expression looking over shoulder, black strappy high heel sandals with ankle straps, athletic feminine figure, flawless skin and natural makeup, dramatic studio lighting against neutral beige background, modern fashion photography style, sophisticated sensual aesthetic, high detail, commercial photography quality, 8K resolution"
+  },
+  {
+    id: 13,
+    seoName: "blonde-bikini-hot-tub-bubble-dome-glamping-outdoor-luxury",
+    image: "https://i.pinimg.com/736x/bb/60/48/bb60489cad6ce3da212f4aba3e5f03ac.jpg",
+    prompt: "Ultra-realistic portrait of a blonde woman with long straight hair in a luxury outdoor hot tub spa setting, wearing a navy blue bikini with white string ties, sitting in bubbling hot tub water, looking over shoulder with bright smile, golden hour lighting with warm sunlight, transparent bubble dome glamping tent in background, autumn trees with yellow foliage, luxury outdoor resort atmosphere, natural outdoor lighting, lifestyle travel photography, high detail, premium vacation aesthetic, 8K resolution"
+  },
+  {
+    id: 14,
+    seoName: "brunette-gray-sweater-cozy-couch-living-room-casual-intimate",
+    image: "https://i.pinimg.com/736x/fd/31/4c/fd314c7f38413ed0fdcffa356938ff85.jpg",
+    prompt: "Ultra-realistic portrait of a brunette woman with long layered hair sitting on a beige sectional couch, wearing an oversized gray off-shoulder sweater, white ankle socks, relaxed intimate pose with hand in hair, cozy modern living room setting with neutral beige throw blanket with fringe details, William Morris botanical art prints on white wall, natural indoor lighting, casual lifestyle photography, comfortable home aesthetic, intimate feminine mood, high detail, candid photography style, 8K resolution"
+  },
+  {
+    id: 15,
+    seoName: "blonde-bikini-cooking-kitchen-luxury-home-domestic-lifestyle",
+    image: "https://i.pinimg.com/736x/77/65/83/776583ede4b82090d709e421e68d3fef.jpg",
+    prompt: "Ultra-realistic portrait of a blonde woman with long wavy hair cooking in a luxury modern kitchen, wearing a black triangle bikini top and matching bottoms, visible thigh tattoo with text, cooking vegetables in a stainless steel pan on gas stovetop, confident domestic pose, upscale white kitchen with coffered blue ceiling, white cabinetry and marble countertops, large windows with natural daylight, stainless steel appliances, lifestyle photography aesthetic, modern luxury home interior, casual domestic scene, high detail, professional photography quality, 8K resolution"
+  },
 ]
 
 // Skeleton component
@@ -231,7 +261,7 @@ const Page = () => {
       </motion.header>
 
       {/* Main Content - Pinterest Masonry Grid */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-2 py-8">
         <AnimatePresence mode="wait">
           {imagesLoading ? (
             // Skeleton loading state with masonry layout
