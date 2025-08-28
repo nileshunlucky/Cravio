@@ -384,7 +384,7 @@ const Page = () => {
                     { name: "Canvas", included: true },
                     { name: "Opus (veo3, Kling, Hailuo, Wan)", included: true },
                     { name: "Persona", included: true },
-                    { name: "Upscaler", included: true },
+                    { name: "Upto 4 influencers + 10 videos + 200 images", included: true },
                     { name: "Exclusive Support", included: false },
                 ]
             }
@@ -410,7 +410,7 @@ const Page = () => {
                     { name: "Canvas", included: true },
                     { name: "Opus (veo3, Kling, Hailuo, Wan)", included: true },
                     { name: "Persona", included: true },
-                    { name: "Upscaler", included: true },
+                    { name: "Upto 8 influencers + 20 videos + 400 images", included: true },
                     { name: "Exclusive Support", included: true },
                 ]
             }
@@ -436,7 +436,7 @@ const Page = () => {
                     { name: "Canvas", included: true },
                     { name: "Opus (veo3, Kling, Hailuo, Wan)", included: true },
                     { name: "Persona", included: true },
-                    { name: "Upscaler", included: true },
+                    { name: "Upto 14 influencers + 35 videos + 700 images", included: true },
                     { name: "Exclusive Support", included: true },
                 ]
             }
