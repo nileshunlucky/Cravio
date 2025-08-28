@@ -119,7 +119,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
 
                             {/* Premium typography */}
                             <span className="text-sm uppercase tracking-widest whitespace-nowrap ">
-                                Maison Exclusive
+                                Most Popular
                             </span>
                         </div>
 

@@ -105,6 +105,18 @@ const imageData: ImageItem[] = [
     image: "https://i.pinimg.com/736x/77/65/83/776583ede4b82090d709e421e68d3fef.jpg",
     prompt: "Ultra-realistic portrait of a blonde woman with long wavy hair cooking in a luxury modern kitchen, wearing a black triangle bikini top and matching bottoms, visible thigh tattoo with text, cooking vegetables in a stainless steel pan on gas stovetop, confident domestic pose, upscale white kitchen with coffered blue ceiling, white cabinetry and marble countertops, large windows with natural daylight, stainless steel appliances, lifestyle photography aesthetic, modern luxury home interior, casual domestic scene, high detail, professional photography quality, 8K resolution"
   },
+  {
+    id: 16,
+    seoName: "brunette-orange-bikini-tropical-villa-balcony-luxury-vacation",
+    image: "https://i.pinimg.com/1200x/1d/08/c2/1d08c2547ca6712804457f9932729e30.jpg",
+    prompt: "Ultra-realistic portrait of a brunette woman with long flowing dark hair on a luxury tropical villa balcony, wearing a bright orange triangle bikini top and matching high-cut bottoms, gold chain necklace and bracelets, confident pose with hands on ornate white stone balustrade, tropical paradise setting with palm trees and lush greenery, traditional tile-roof villa architecture in background, bright natural sunlight with blue sky and white clouds, luxury vacation lifestyle photography, tropical resort aesthetic, high detail, professional travel photography quality, 8K resolution"
+  },
+  {
+    id: 17,
+    seoName: "redhead-black-swimsuit-natural-pool-rock-formation-golden-hour",
+    image: "https://i.pinimg.com/736x/82/cd/4a/82cd4a3a1c103c653f6f328583b262b9.jpg",
+    prompt: "Ultra-realistic portrait of a redhead woman with long flowing auburn hair standing in a natural rock pool, wearing a black one-piece swimsuit with open back design, looking over shoulder pose, waist-deep in clear dark water with reflections, dramatic natural stone cliff walls and rock formations in background, golden hour lighting with warm sunlight, tropical natural swimming hole setting, adventure travel photography aesthetic, serene wilderness atmosphere, high detail, outdoor lifestyle photography, 8K resolution"
+  },
 ]
 
 // Skeleton component
