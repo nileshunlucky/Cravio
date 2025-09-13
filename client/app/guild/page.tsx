@@ -257,7 +257,7 @@ export default function Page(): JSX.Element {
                       <div className="mb-2 font-medium">Exact pose prompt (example):</div>
                       <div className="overflow-x-auto rounded-md border border-white/4 bg-white/3 p-3">
                         <pre className="whitespace-pre-wrap text-xs">
-"Ultra-realistic portrait of a blonde woman with long wavy hair cooking in a luxury modern kitchen, wearing a black triangle bikini top and matching bottoms, visible thigh tattoo with text, cooking vegetables in a stainless steel pan on gas stovetop, confident domestic pose, upscale white kitchen with coffered blue ceiling, white cabinetry and marble countertops, large windows with natural daylight, stainless steel appliances, lifestyle photography aesthetic, modern luxury home interior, casual domestic scene, high detail, professional photography quality, 8K resolution"
+{`"Ultra-realistic portrait of a blonde woman with long wavy hair cooking in a luxury modern kitchen, wearing a black triangle bikini top and matching bottoms, visible thigh tattoo with text, cooking vegetables in a stainless steel pan on gas stovetop, confident domestic pose, upscale white kitchen with coffered blue ceiling, white cabinetry and marble countertops, large windows with natural daylight, stainless steel appliances, lifestyle photography aesthetic, modern luxury home interior, casual domestic scene, high detail, professional photography quality, 8K resolution"`}
                         </pre>
                       </div>
                     </div>
