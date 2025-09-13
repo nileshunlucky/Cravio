@@ -20,7 +20,7 @@ const steps: Step[] = [
     id: 1,
     title: "Sign up free",
     description:
-      "Create your Mellvitta account — no card required. This unlocks the studio where you create and manage AI personas.",
+      "Create your Mellvitta account. This unlocks the studio where you create and manage AI personas.",
     tips: ["Use your creator email", "Verify for faster withdrawals"],
   },
   {
@@ -48,7 +48,7 @@ const steps: Step[] = [
     title: "Generate videos",
     description:
       "Produce short videos using integrated engines (veo3, kling, wan, hailou). Use your persona to create clips for reels, stories and ads.",
-    tips: ["Start with 8–15s clips", "Use captions + hook in first 2 seconds"],
+    tips: ["Start with Text to Video, Image to Video", "Use hook in first 3 seconds"],
   },
   {
     id: 5,
@@ -257,7 +257,7 @@ export default function Page() {
                       <div className="mb-2 font-medium">Exact pose prompt (example):</div>
                       <div className="overflow-x-auto rounded-md border border-white/4 bg-white/3 p-3">
                         <pre className="whitespace-pre-wrap text-xs">
-{`"Ultra-realistic portrait of a blonde woman with long wavy hair cooking in a luxury modern kitchen, wearing a black triangle bikini top and matching bottoms, visible thigh tattoo with text, cooking vegetables in a stainless steel pan on gas stovetop, confident domestic pose, upscale white kitchen with coffered blue ceiling, white cabinetry and marble countertops, large windows with natural daylight, stainless steel appliances, lifestyle photography aesthetic, modern luxury home interior, casual domestic scene, high detail, professional photography quality, 8K resolution"`}
+{`"a blonde woman with long wavy hair cooking in a luxury kitchen, wearing a black bikini, visible thigh tattoo, confident pose, natural daylight, white cabinetry, marble countertops, stainless steel appliances..."`}
                         </pre>
                       </div>
                     </div>
