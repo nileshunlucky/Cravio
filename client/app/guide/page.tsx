@@ -99,7 +99,7 @@ export default function Page() {
 
             <div className="mt-6 space-y-3">
               <a
-                href="https://mellvitta.com"
+                href="https://mellvitta.com/admin/explore"
                 target="_blank"
                 rel="noreferrer"
                 className="block"
@@ -172,7 +172,7 @@ export default function Page() {
 
               <div className="mt-6 flex items-center gap-4">
                 <a
-                  href="https://mellvitta.com"
+                  href="https://mellvitta.com/admin/explore"
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -311,7 +311,7 @@ export default function Page() {
             </div>
             <div className="flex-shrink-0">
               <a
-                href="https://mellvitta.com"
+                href="https://mellvitta.com/admin/explore"
                 target="_blank"
                 rel="noreferrer"
                 className="block"
