@@ -1,142 +1,248 @@
 "use client"
 
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import React, { useState, useMemo, useRef, useEffect } from 'react'
+import { motion, AnimatePresence, useInView } from 'framer-motion'
+import { Search } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { useRouter } from 'next/navigation'
 
-const HeroX = () => {
-    const [userCount, setUserCount] = useState(100);
+type ImageItem = {
+  id: number
+  seoName: string
+  image: string
+  prompt: string
+}
 
-    useEffect(() => {
-        const fetchUserCount = async () => {
-            try {
-                const res = await fetch(`https://cravio-ai.onrender.com/users-emails`)
-                const data = await res.json()
-                const totalUsers = Array.isArray(data) ? data.length : 100
-                setUserCount(totalUsers)
-            } catch (error) {
-                console.error('Error fetching user count:', error)
-                setUserCount(100)
-            }
-        }
-        fetchUserCount()
-    }, [])
+// Mock AI image data with prompts
+const imageData: ImageItem[] = [
+  {
+    id: 1,
+    seoName: "cute-brunette-model-playful-outdoor-portrait",
+    image: "https://i.pinimg.com/736x/ae/45/80/ae458008232fa4c6196b8f169f71d1e1.jpg",
+    prompt: "Ultra-realistic portrait of a playful brunette woman outdoors, sticking out her tongue and looking upwards with a fun expression, wearing a tight green crop top and light gray shorts, layered gold necklaces around her neck, natural makeup with flushed cheeks, long tied-back hair with loose strands, background showing wooden deck, green grass, bushes, and a calm lake with blue sky and clouds, daylight natural lighting, cinematic outdoor vibe, sharp details, professional high-quality photography, 8K resolution"
+  },
+  {
+    id: 2,
+    seoName: "brunette-black-bodysuit-crouching-pose-high-heels-studio",
+    image: "https://i.pinimg.com/1200x/59/9c/96/599c96a5a4a566971cafab2f6a9fed81.jpg",
+    prompt: "Ultra-realistic portrait of a brunette woman with long wavy layered hair in a professional studio photoshoot, wearing a black long-sleeved bodysuit with cutout details, crouching pose with confident expression looking over shoulder, black strappy high heel sandals with ankle straps, athletic feminine figure, flawless skin and natural makeup, dramatic studio lighting against neutral beige background, modern fashion photography style, sophisticated sensual aesthetic, high detail, commercial photography quality, 8K resolution"
+  },
+  {
+    id: 3,
+    seoName: "blonde-bikini-cooking-kitchen-luxury-home-domestic-lifestyle",
+    image: "https://i.pinimg.com/736x/77/65/83/776583ede4b82090d709e421e68d3fef.jpg",
+    prompt: "Ultra-realistic portrait of a blonde woman with long wavy hair cooking in a luxury modern kitchen, wearing a black triangle bikini top and matching bottoms, visible thigh tattoo with text, cooking vegetables in a stainless steel pan on gas stovetop, confident domestic pose, upscale white kitchen with coffered blue ceiling, white cabinetry and marble countertops, large windows with natural daylight, stainless steel appliances, lifestyle photography aesthetic, modern luxury home interior, casual domestic scene, high detail, professional photography quality, 8K resolution"
+  },
+    {
+    id: 4,
+    seoName: "brunette-gray-sweater-cozy-couch-living-room-casual-intimate",
+    image: "https://i.pinimg.com/736x/fd/31/4c/fd314c7f38413ed0fdcffa356938ff85.jpg",
+    prompt: "Ultra-realistic portrait of a brunette woman with long layered hair sitting on a beige sectional couch, wearing an oversized gray off-shoulder sweater, white ankle socks, relaxed intimate pose with hand in hair, cozy modern living room setting with neutral beige throw blanket with fringe details, William Morris botanical art prints on white wall, natural indoor lighting, casual lifestyle photography, comfortable home aesthetic, intimate feminine mood, high detail, candid photography style, 8K resolution"
+  },
+]
 
-    return (
-        <div className="min-h-screen bg-black text-white relative overflow-hidden">
-            {/* Subtle background gradient */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-900/20 to-black" />
-            
-            {/* Main content */}
-            <div className="relative z-10 container mx-auto px-6 py-20 lg:py-32">
-                <div className="max-w-4xl mx-auto text-center space-y-16">
-                    
-                    {/* Headline Section */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                        className="space-y-6 mx-auto"
-                    >
-                        <h1 className="text-6xl md:text-8xl font-light tracking-tight leading-[0.9] text-center">
-<span className="block bg-gradient-to-r from-[#ffffff] via-[#cfcfcf] to-[#7a7a7a] bg-clip-text text-transparent text-5xl md:text-7xl">
-  Create Your Own
-</span>
-
-  <span className="block bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] bg-clip-text text-transparent">
-    AI Influencer
-  </span>
-</h1>
-
-                        
-                        <motion.p
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.3, duration: 0.8 }}
-                            className="text-lg lg:text-xl text-gray-400 font-light max-w-2xl mx-auto leading-relaxed"
-                        >
-                            Build your AI influencer instantly. scale your reach, and unlock new income streams with Exclusive cOOntent.
-                        </motion.p>
-                    </motion.div>
-
-                    {/* Hero Image */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 60 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5, duration: 1, ease: "easeOut" }}
-                        className="relative max-w-5xl mx-auto"
-                    >
-                        {/* Enhanced white glow effect behind image */}
-                        <div className="absolute inset-0 -m-5">
-                            <div className="absolute inset-0 bg-gradient-to-t from-white/10 via-white/90 to-white/10 rounded-full blur-[100px] scale-125" />
-                            <div className="absolute inset-0 bg-white/20 rounded-full blur-[60px] scale-110" />
-                            <div className="absolute inset-0 bg-white/15 blur-[120px] scale-100" />
-                        </div>
-                        
-                        <div className="relative rounded-3xl overflow-hidden shadow-2xl z-10">
-                            <img 
-                                src="https://res.cloudinary.com/deoxpvjjg/image/upload/v1756033329/herox_xq8x8r.png"
-                                alt="AI Influencers"
-                                className="w-full h-auto object-cover"
-                            />
-                            {/* Subtle overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-                        </div>
-                        
-                        {/* Floating stats */}
-<motion.div
-  initial={{ opacity: 0, scale: 0.8 }}
-  animate={{ opacity: 1, scale: 1 }}
-  transition={{ delay: 1.2, duration: 0.6 }}
-  className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 z-50 w-max max-w-full px-2"
->
-  <div className="bg-gradient-to-r from-[#f9f9f9]/90 via-[#dcdcdc]/90 to-[#a1a1a1]/90 backdrop-blur-xl rounded-xl px-4 py-2 md:px-8 md:py-4 border border-white/20 shadow-lg text-center break-words">
-    <div className="text-xs md:text-lg text-gray-800 leading-snug font-medium">
-      Trusted by{' '}
-      <span className="text-black font-semibold">{userCount.toLocaleString()}+</span>
-      {' '} Creators
+// Skeleton component
+const ImageSkeleton = ({ height }: { height: number }) => (
+  <div className="break-inside-avoid mb-2">
+    <div className="bg-zinc-900/50 rounded-2xl overflow-hidden shadow-lg">
+      <div className="animate-pulse">
+        <div className="bg-zinc-800 w-full rounded-2xl" style={{ height: `${height}px` }}></div>
+      </div>
     </div>
   </div>
-</motion.div>
+)
 
-                    </motion.div>
+const ImageCard = ({ item, index }: { item: ImageItem; index: number }) => {
+  const [imageLoaded, setImageLoaded] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const isInView = useInView(cardRef, { once: true, margin: "100px" })
+  const router = useRouter()
 
-                    {/* CTA Section */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.8, duration: 0.8 }}
-                        className="pt-8"
-                    >
-                        <Link href="/admin/explore">
-                            <motion.button
-                            whileHover={{
-                                scale: 1.02,
-                                y: -2,
-                                boxShadow: "0 10px 30px rgba(176, 141, 87, 0.3)"
-                            }}
-                            whileTap={{ scale: 0.98 }}
-                            className={'group relative inline-flex items-center gap-2 justify-center z-20 w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-center transition-all duration-300 cursor-pointer bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black hover:bg-[#B08D57]/80 shadow-lg'}
-                            type="button"
-                            role="button"
-                            style={{ pointerEvents: 'auto' }}
-                        >
-                            {/* Button Background */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] rounded-2xl blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-500 " />
-                            <span>Get Started</span>
+  const getRandomHeight = () => {
+    const heights = [250, 300, 350, 280, 320, 400, 380, 260, 420, 340]
+    return heights[item.id % heights.length]
+  }
 
-                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                        </motion.button>
-                        </Link>
-                    </motion.div>
-                </div>
-            </div>
+ // With this:
+const handleImageLoad = () => {
+  setImageLoaded(true)
+}
 
-            {/* Bottom fade */}
-            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent" />
+  const handleImageClick = () => {
+    // Encode the prompt and image URL for the URL parameters
+    const encodedPrompt = encodeURIComponent(item.prompt)
+    const encodedImage = encodeURIComponent(item.image)
+    
+    // Redirect to canvas page with the prompt and reference image
+    router.push(`/admin/canvas?prompt=${encodedPrompt}&referenceImage=${encodedImage}`)
+  }
+
+  return (
+    <motion.div
+      ref={cardRef}
+      initial={{ opacity: 0, y: 20 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+      transition={{ 
+        delay: index * 0.05, 
+        duration: 0.6,
+        ease: [0.25, 0.46, 0.45, 0.94]
+      }}
+      className="break-inside-avoid mb-2 group cursor-pointer"
+      onClick={handleImageClick} // Add the click handler here
+    >
+      <div className="relative bg-zinc-900/20 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02]">
+        <div className="relative overflow-hidden rounded-2xl">
+          {!imageLoaded && (
+            <div 
+              className="absolute inset-0 bg-zinc-800 animate-pulse rounded-2xl" 
+              style={{ height: `${getRandomHeight()}px` }} 
+            />
+          )}
+          <img
+            src={item.image}
+            alt={item.seoName}
+            className={`w-full object-cover transition-all duration-500 rounded-2xl ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            style={{ 
+              height: imageLoaded ? 'auto' : `${getRandomHeight()}px`,
+              minHeight: '200px',
+              maxHeight: '500px'
+            }}
+            loading="lazy"
+            onLoad={handleImageLoad}
+          />
+          
+          {/* Overlay for hover effect */}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 rounded-2xl" />
+         
         </div>
-    );
-};
+      </div>
+    </motion.div>
+  )
+}
 
-export default HeroX;
+const Page = () => {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [imagesLoading, setImagesLoading] = useState(true)
+
+  // Simulate initial loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setImagesLoading(false)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Filter images based on search term
+  const filteredImages = useMemo<ImageItem[]>(() => {
+    if (!searchTerm) return imageData
+    
+    return imageData.filter(item => 
+      item.seoName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.prompt.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  }, [searchTerm])
+
+  const handleSearch = (value: string) => {
+    setIsLoading(true)
+    setSearchTerm(value)
+    setTimeout(() => setIsLoading(false), 300)
+  }
+
+  const getSkeletonHeights = () => {
+    const heights = [250, 300, 350, 280, 320, 400, 380, 260, 420, 340]
+    return Array.from({ length: 12 }, (_, i) => heights[i % heights.length])
+  }
+
+  return (
+    <div className="min-h-screen bg-black text-white">
+      {/* Header with search - KEEPING EXACTLY AS REQUESTED */}
+      <motion.header 
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="sticky top-0 z-50 backdrop-blur-xl bg-black/50 rounded-b-xl"
+      >
+        <div className="max-w-7xl mx-auto p-3">
+          {/* Centered search bar */}
+          <motion.div 
+            className="relative max-w-2xl mx-auto"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          >
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-zinc-500 w-5 h-5 z-10" />
+            <Input
+              type="text"
+              placeholder="Search poses"
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-12 pr-4 py-3 w-full bg-zinc-900/50 border-zinc-800 rounded-2xl text-white placeholder:text-zinc-500 focus:border-zinc-600 focus:bg-zinc-900/70 transition-all duration-300 backdrop-blur-sm"
+            />
+            {isLoading && (
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-5 h-5 border-2 border-zinc-600 border-t-transparent rounded-full"
+                />
+              </div>
+            )}
+          </motion.div>
+        </div>
+      </motion.header>
+
+      {/* Main Content - Pinterest Masonry Grid */}
+      <main className="max-w-7xl mx-auto px-2 py-8">
+        <AnimatePresence mode="wait">
+          {imagesLoading ? (
+            // Skeleton loading state with masonry layout
+            <motion.div
+              key="skeleton"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="columns-2 md:columns-3 lg:columns-4 xl:columns-5  gap-4  space-y-0"
+            >
+              {getSkeletonHeights().map((height, index) => (
+                <ImageSkeleton key={index} height={height} />
+              ))}
+            </motion.div>
+          ) : filteredImages.length === 0 ? (
+            <motion.div
+              key="no-results"
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -50 }}
+              className="text-center py-20"
+            >
+              <div className="text-6xl mb-4">🔍</div>
+              <h2 className="text-2xl font-medium mb-2 text-zinc-300">No images found</h2>
+              <p className="text-zinc-500">Try different search terms</p>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="results"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-2 space-y-0"
+            >
+              {filteredImages.map((item, index) => (
+                <ImageCard
+                  key={item.id}
+                  item={item}
+                  index={index}
+                />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
+    </div>
+  )
+}
+
+export default Page

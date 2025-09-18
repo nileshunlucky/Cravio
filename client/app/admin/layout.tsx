@@ -2,7 +2,7 @@
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
-import Navbar from "@/components/Navbar"
+import Nav from '@/components/Nav'
 import SendEmailToBackend from "@/components/SendEmailToBackend"
 import { SignedIn, useUser } from "@clerk/nextjs"
 import React, { useEffect, useState } from "react"
@@ -34,10 +34,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <AppSidebar />
-      <SidebarTrigger />
       <div className="flex flex-col w-full">
-        <Navbar aura={aura ?? 0} />
+        <Nav aura={aura ?? 0} />
         <SignedIn>
           <SendEmailToBackend />
         </SignedIn>

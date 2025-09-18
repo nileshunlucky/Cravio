@@ -20,7 +20,7 @@ import { ChevronRight } from "lucide-react"
 const items = [
   {
     title: "Explore",
-    url: "/admin/explore",
+    url: "/",
     icon: ChevronRight
   },
   {

@@ -10,12 +10,9 @@ import DemoModal from '@/components/DemoModal'
 
 const page = () => {
   return (
-    <div className='overflow-hidden'>
+    <div >
       <Nav/>
       <HeroX/>
-      <Features/>
-      <DemoModal/>
-      <Review/>
       <Footer/>
     </div>
   )
