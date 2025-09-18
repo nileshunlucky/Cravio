@@ -1,7 +1,6 @@
 "use client"
 
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/app-sidebar"
+import { SidebarProvider } from "@/components/ui/sidebar"
 import Nav from '@/components/Nav'
 import SendEmailToBackend from "@/components/SendEmailToBackend"
 import { SignedIn, useUser } from "@clerk/nextjs"
