@@ -17,6 +17,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </SignedIn>
         {children}
         <Toaster position="top-right" richColors />
+        <div className="mb-15" />
       </div>
     </SidebarProvider>
   )

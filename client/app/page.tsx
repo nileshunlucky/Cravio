@@ -2,7 +2,7 @@
 
 import Footer from '@/components/Footer'
 import Nav from '@/components/Nav'
-import HeroX from '@/components/HeroX'
+import Explore from '@/components/Explore'
 import React from 'react'
 
 
@@ -10,7 +10,7 @@ const page = () => {
   return (
     <div >
       <Nav/>
-      <HeroX/>
+      <Explore/>
       <Footer/>
     </div>
   )

@@ -17,8 +17,8 @@ import { usePathname } from 'next/navigation'
 import {
   Home,
   Play,
-  Cannabis,
-  CircleUserRound,
+  Star,
+  Folder,
   User as UserIcon,
 } from 'lucide-react'
 
@@ -54,10 +54,10 @@ const Nav = () => {
 
   const bottomLinks = [
     { href: '/', label: 'Home', icon: Home },
-    { href: '/admin/canvas', label: 'Canvas', icon: Cannabis  },
+    { href: '/admin/canvas', label: 'Canvas', icon: Star  },
     { href: '/admin/opus', label: 'Opus', icon: Play },
     { href: '/admin/personas', label: 'Personas', icon: UserIcon },
-    { href: '/admin/portfolio', label: 'Portfolio', icon: CircleUserRound  },
+    { href: '/admin/portfolio', label: 'Portfolio', icon: Folder  },
   ]
 
   return (

@@ -1,10 +1,29 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 
 const Footer = () => {
+    const [creators, setCreators] = useState<number | null>(null)
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const res = await fetch(
+          `https://cravio-ai.onrender.com/users-emails`
+        )
+        if (!res.ok) return
+        const data = await res.json()
+        setCreators(data.length)
+        
+      } catch (err) {
+        console.error('Failed to fetch user data:', err)
+      }
+    }
+    fetchUserData()
+  }, [])
+
   return (
     <footer className="w-full">
       {/* --- Top Banner --- */}
@@ -19,7 +38,7 @@ const Footer = () => {
     ELEVATING AI CREATIVITY <br /> FOR MODERN INFLUENCERS
   </h2>
   <p className="text-lg">
-    Inspiration for visionary creators <br /> and tastemakers
+    Inspiration for {creators}+ visionary creators <br /> and tastemakers
   </p>
 </div>
 

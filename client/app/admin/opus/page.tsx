@@ -42,6 +42,40 @@ const Page = () => {
         { model: "hailuo 02 pro", cost: 250 },
         { model: "wan 2.1", cost: 100 },]
 
+    
+    useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const urlPrompt = searchParams.get('prompt');
+    const referenceMedia = searchParams.get('referenceImage');
+
+    if (urlPrompt) {
+        setPrompt(decodeURIComponent(urlPrompt));
+    }
+
+    if (referenceMedia) {
+        const mediaUrl = decodeURIComponent(referenceMedia);
+        
+        // Check if it's a video file
+        const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.webm') || mediaUrl.includes('.mov');
+        
+        if (isVideo) {
+            // For videos, set as video preview
+            setvideoPreview(mediaUrl);
+        } else {
+            // Handle as image
+            setvideoPreview(mediaUrl);
+        }
+        
+        // Clear the search params after processing
+        setTimeout(() => {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('prompt');
+            url.searchParams.delete('referenceImage');
+            window.history.replaceState({}, '', url.toString());
+        }, 100);
+    }
+}, []);
+
     useEffect(() => {
         if (isProcessing) {
             setProgress(0)
