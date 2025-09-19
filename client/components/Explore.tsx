@@ -10,6 +10,7 @@ type MediaItem = {
   id: number
   seoName: string
   image?: string
+  img?: string
   video?: string
   prompt: string
 }
