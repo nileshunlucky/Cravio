@@ -147,8 +147,9 @@ const MediaCard = ({ item, index }: { item: MediaItem; index: number }) => {
         router.push(`/admin/canvas?prompt=${encodedPrompt}&referenceImage=${encodedImage}`)
     } 
     else if (item.video) {
-        const encodedVideoImg = encodeURIComponent(item.img)
-        router.push(`/admin/opus?prompt=${encodedPrompt}&referenceImage=${encodedVideoImg}`)
+        const preview = item.img ?? item.image ?? ''
+        const encodedVideoImg = encodeURIComponent(preview)
+        router.push(`/admin/opus?prompt=${encodedPrompt}${preview ? `&referenceImage=${encodedVideoImg}` : ''}`)
     }
   }
 
