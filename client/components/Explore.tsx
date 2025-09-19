@@ -269,10 +269,7 @@ const Page = () => {
     return Array.from({ length: 12 }, (_, i) => heights[i % heights.length])
   }
 
-  // Function to re-shuffle media
-  const reshuffleMedia = () => {
-    setShuffledMedia(shuffleArray(mediaData))
-  }
+
 
   return (
     <div className="min-h-screen bg-black text-white">
