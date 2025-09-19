@@ -384,7 +384,7 @@ const Page = () => {
                     { name: "Canvas", included: true },
                     { name: "Opus (veo3, Kling, Hailuo, Wan)", included: true },
                     { name: "Persona", included: true },
-                    { name: "Upto 4 influencers + 10 videos + 200 images", included: true },
+                    { name: "Upto 4 persona's + 10 videos + 200 images", included: true },
                     { name: "Exclusive Support", included: false },
                 ]
             }
@@ -410,7 +410,7 @@ const Page = () => {
                     { name: "Canvas", included: true },
                     { name: "Opus (veo3, Kling, Hailuo, Wan)", included: true },
                     { name: "Persona", included: true },
-                    { name: "Upto 8 influencers + 20 videos + 400 images", included: true },
+                    { name: "Upto 8 persona's + 20 videos + 400 images", included: true },
                     { name: "Exclusive Support", included: true },
                 ]
             }
@@ -436,7 +436,7 @@ const Page = () => {
                     { name: "Canvas", included: true },
                     { name: "Opus (veo3, Kling, Hailuo, Wan)", included: true },
                     { name: "Persona", included: true },
-                    { name: "Upto 14 influencers + 35 videos + 700 images", included: true },
+                    { name: "Upto 14 persona's + 35 videos + 700 images", included: true },
                     { name: "Exclusive Support", included: true },
                 ]
             }
@@ -515,7 +515,7 @@ const Page = () => {
                         Select Your Collection
                     </h1>
                     <p className="text-base sm:text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed select-text">
-                        Discover the art of artificial intelligence with our bespoke creations
+                        Empower your vision with bespoke AI artistry made for creators like you.
                     </p>
                 </motion.div>
 

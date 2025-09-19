@@ -450,8 +450,8 @@ const Page = () => {
                                     value={prompt}
                                     onChange={(e) => setPrompt(e.target.value)}
                                     placeholder="Describe your vision..."
-                                    rows={3}
-                                    className="w-full bg-transparent border-2 border-black rounded-2xl p-3 placeholder:text-black text-black resize-none focus:outline-none transition-all duration-300 tracking-wide scroll-hidden"
+                                    rows={5}
+                                    className="w-full bg-black border-2 border-black rounded-2xl p-3 placeholder:text-zinc-300 text-zinc-300 resize-none focus:outline-none transition-all duration-300 tracking-wide scroll-hidden"
                                 />
 
                                 <motion.div className='flex items-center justify-between gap-3'>
