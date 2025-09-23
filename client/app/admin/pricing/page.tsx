@@ -385,7 +385,7 @@ const Page = () => {
                     { name: "Opus (veo3, Kling, Hailuo, Wan)", included: true },
                     { name: "Persona", included: true },
                     { name: "Upto 4 persona's + 10 videos + 200 images", included: true },
-                    { name: "Exclusive Support", included: false },
+                    { name: "Standard Support", included: false },
                 ]
             }
         },
