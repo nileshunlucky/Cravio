@@ -187,15 +187,11 @@ const Nav = () => {
 
 {user && (
   <Link href={`/${user.username || user.id}`} className="flex items-center hidden">
-    {user ? (
     <img
       src={user.imageUrl}
       alt={user.username || 'Profile'}
       className="w-6 h-6 rounded-full object-cover"
     />
-  ) : (
-    <UserIcon size={24} className="text-zinc-500" />
-  )}
   </Link>
 )}
 

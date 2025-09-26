@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import httpx
 from pydantic import BaseModel, EmailStr
 from db import users_collection
-from db import flow_collection
+from flow import flow_collection
 from api.lemon_webhook import router as lemon_webhook_router
 from api.persona import router as persona_router
 from api.persona2img import router as img2img_router
