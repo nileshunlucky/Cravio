@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import httpx
 from pydantic import BaseModel, EmailStr
 from db import users_collection
+from db import flow_collection
 from api.lemon_webhook import router as lemon_webhook_router
 from api.persona import router as persona_router
 from api.persona2img import router as img2img_router
@@ -39,6 +40,12 @@ def get_user(email: str):
 def get_users():
     users = list(users_collection.find({}, {"_id": 0, "email": 1}))
     return users
+
+# get all flows collection
+@app.get("/flows")
+def get_users():
+    flows = list(flow_collection.find({}))
+    return flows
 
 @app.get("/users-full")
 def get_users_full():

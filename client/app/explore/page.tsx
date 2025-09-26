@@ -1,15 +1,13 @@
 "use client";
 
-import Hero from '@/components/Hero'
-import Footer from '@/components/Footer'
 import React from 'react'
+import Explore from '@/components/Explore'
 
 
 const page = () => {
   return (
     <div >
-    <Hero/>
-      <Footer/>
+          <Explore/>
     </div>
   )
 }
