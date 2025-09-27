@@ -7,19 +7,16 @@ import {
   SignUpButton,
   SignedOut,
   SignedIn,
-  UserButton,
   useUser,
 } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation'
 
 
-const page = () => {
-const [aura, setAura] = useState<number | null>(null)
+const Navbar = () => {
+  const [aura, setAura] = useState<number | null>(null)
   const { user } = useUser()
-  const pathname = usePathname()
 
   // Fetch user aura value
   useEffect(() => {
@@ -105,4 +102,4 @@ const [aura, setAura] = useState<number | null>(null)
   )
 }
 
-export default page
+export default Navbar

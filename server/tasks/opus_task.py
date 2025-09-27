@@ -90,6 +90,7 @@ def save_video_to_db(email: str, prompt: str, video_url: str):
     """Save video generation details to database"""
     try:
         video_doc = {
+            "id": uuid.uuid4().hex,
             "caption": prompt,
             "reel_url": video_url,
             "created_at": datetime.utcnow(),
