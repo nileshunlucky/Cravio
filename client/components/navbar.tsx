@@ -59,25 +59,35 @@ const Navbar = () => {
               </span>
             </Link>
 
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center">
-                <svg width="30" height="30" viewBox="0 0 400 400">
-                  <defs>
-                    <linearGradient id="gold" cx="50%" cy="50%" r="60%">
-                      <stop offset="0%" stopColor="#F4E4BC" />
-                      <stop offset="50%" stopColor="#E6C878" />
-                      <stop offset="100%" stopColor="#C9A96E" />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d="M200 40 Q220 160 240 180 Q290 190 340 200 
-                       Q290 210 240 220 Q220 240 200 360 
-                       Q180 240 160 220 Q110 210 60 200 
-                       Q110 190 160 180 Q180 160 200 40 Z"
-                    fill="url(#gold)"
-                  />
-                </svg>
-                <span className="font-bold bg-gradient-to-br from-[#C9A96E] via-[#B08D57] to-[#ad8544] text-transparent bg-clip-text">
+            <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <svg 
+                    width="32" 
+                    height="32" 
+                    viewBox="0 0 400 400" 
+                    className="w-8 h-8 flex-shrink-0"
+                    style={{ minWidth: '32px', minHeight: '32px' }}
+                  >
+                    <defs>
+                      <linearGradient id="gold-mobile" cx="50%" cy="50%" r="60%">
+                        <stop offset="0%" stopColor="#F4E4BC" />
+                        <stop offset="50%" stopColor="#E6C878" />
+                        <stop offset="100%" stopColor="#C9A96E" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M200 40 Q220 160 240 180 Q290 190 340 200 
+                         Q290 210 240 220 Q220 240 200 360 
+                         Q180 240 160 220 Q110 210 60 200 
+                         Q110 190 160 180 Q180 160 200 40 Z"
+                      fill="url(#gold-mobile)"
+                      stroke="#C9A96E"
+                      strokeWidth="2"
+                    />
+                  </svg>
+                </div>
+                <span className="font-bold text-[#C9A96E] text-base">
                   {aura}
                 </span>
               </div>
