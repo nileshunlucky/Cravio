@@ -1,7 +1,7 @@
-'use client'
+"use client"
 
-import React, { useState, useEffect } from 'react'
-import Link from 'next/link'
+import React, { useState, useEffect } from "react"
+import Link from "next/link"
 import {
   SignInButton,
   SignUpButton,
@@ -9,25 +9,17 @@ import {
   SignedIn,
   UserButton,
   useUser,
-} from '@clerk/nextjs'
-import { Button } from '@/components/ui/button'
-import { motion } from 'framer-motion'
-import Image from 'next/image'
-import { usePathname } from 'next/navigation'
-import { Home, Search, Play } from 'lucide-react'
+} from "@clerk/nextjs"
+import { Button } from "@/components/ui/button"
+import { motion } from "framer-motion"
+import Image from "next/image"
+import { usePathname } from "next/navigation"
+import { Home, Search, Play } from "lucide-react"
 
 const Nav = () => {
   const [aura, setAura] = useState<number | null>(null)
   const { user } = useUser()
   const pathname = usePathname()
-
-  const StarGlyph: React.FC<{ size?: number }> = ({ size = 25 }) => (
-    <span className={
-                pathname.startsWith('/mells')
-                  ? 'text-zinc-100'
-                  : 'text-zinc-500'
-              } style={{ fontSize: size, lineHeight: 1 }}>✦</span>
-  )
 
   // Fetch user aura value
   useEffect(() => {
@@ -41,59 +33,74 @@ const Nav = () => {
         const data = await res.json()
         setAura(data.aura)
       } catch (err) {
-        console.error('Failed to fetch user data:', err)
+        console.error("Failed to fetch user data:", err)
       }
     }
     fetchUserData()
   }, [user])
 
-  // Top-nav links for desktop
   const dashLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/explore', label: 'Explore' },
-    { href: '/create', label: 'Create' },
-    { href: '/mells', label: 'Mells' },
+    { href: "/", label: "Home", icon: Home },
+    { href: "/explore", label: "Explore", icon: Search },
+    { href: "/create", label: "Create", icon: null },
+    { href: "/mells", label: "Mells", icon: Play },
   ]
 
   return (
     <>
-      {/* ===== Top Nav (desktop) ===== */}
+      {/* ===== Sidebar (desktop) ===== */}
       <motion.nav
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="w-full px-6 py-4 flex justify-between items-center border-b shadow-sm bg-black"
+        initial={{ x: -50, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="hidden md:flex fixed top-0 left-0 h-screen w-20 flex-col justify-between border-r bg-black px-2 py-6 shadow-lg z-50"
       >
-        {/* Left side: logo + desktop links */}
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center">
-            <Image src="/logo.png" alt="Logo" width={45} height={45} />
-          </Link>
+        {/* Top: Logo */}
+        <Link href="/" className="mb-10 flex justify-center">
+          <Image src="/logo.png" alt="Logo" width={45} height={45} />
+        </Link>
 
+        {/* Middle: Navigation links */}
+        <div className="flex flex-col items-center gap-8">
           <SignedIn>
-            <div className="hidden md:flex items-center gap-5">
-              {dashLinks.map((link) => (
-                <Link key={link.href} href={link.href}>
-                  <span className="text-zinc-300 hover:text-zinc-100 text-lg">
-                    {link.label}
+            {dashLinks.map((link) => (
+              <Link key={link.href} href={link.href}>
+                {link.icon ? (
+                  <link.icon
+                    size={24}
+                    className={
+                      pathname === link.href
+                        ? "text-zinc-100"
+                        : "text-zinc-500 hover:text-zinc-100"
+                    }
+                  />
+                ) : (
+                  <span
+                    className={
+                      pathname === link.href
+                        ? "text-zinc-100 text-2xl"
+                        : "text-zinc-500 hover:text-zinc-100 text-2xl"
+                    }
+                  >
+                    ✦
                   </span>
-                </Link>
-              ))}
-            </div>
+                )}
+              </Link>
+            ))}
           </SignedIn>
         </div>
 
-        {/* Right side: pricing + user */}
-        <div className="flex items-center gap-4">
+        {/* Bottom: User + aura + pricing */}
+        <div className="flex flex-col items-center gap-6">
           <SignedIn>
             <Link href="/admin/pricing">
-              <span className="text-zinc-300 hover:text-zinc-100 text-lg">
+              <span className="text-zinc-300 hover:text-zinc-100 text-sm">
                 Pricing
               </span>
             </Link>
 
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center">
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex items-center gap-1">
                 <svg width="30" height="30" viewBox="0 0 400 400">
                   <defs>
                     <linearGradient id="gold" cx="50%" cy="50%" r="60%">
@@ -114,8 +121,7 @@ const Nav = () => {
                   {aura}
                 </span>
               </div>
-              <span className="md:flex hidden">  <UserButton  afterSignOutUrl="/" /></span>
-            
+              <UserButton afterSignOutUrl="/" />
             </div>
           </SignedIn>
 
@@ -134,67 +140,53 @@ const Nav = () => {
         </div>
       </motion.nav>
 
-      {/* ===== Mobile Bottom Bar ===== */}
+      {/* ===== Mobile Bottom Bar (unchanged) ===== */}
       <SignedIn>
         <div
-          className="fixed bottom-0 left-0 z-40 md:hidden
+          className="fixed bottom-0 left-0 z-50 md:hidden
                      flex justify-around items-center
                      w-full px-3 py-3 rounded-t-2xl
                      bg-black/80 backdrop-blur-md"
         >
-          {/* 1. Home */}
           <Link href="/" className="flex items-center">
             <Home
               size={24}
-              className={pathname === '/' ? 'text-zinc-100' : 'text-zinc-500'}
+              className={pathname === "/" ? "text-zinc-100" : "text-zinc-500"}
             />
           </Link>
 
-          {/* 2. Explore */}
           <Link href="/explore" className="flex items-center">
             <Search
               size={24}
               className={
-                pathname.startsWith('/explore')
-                  ? 'text-zinc-100'
-                  : 'text-zinc-500'
+                pathname.startsWith("/explore")
+                  ? "text-zinc-100"
+                  : "text-zinc-500"
               }
             />
           </Link>
 
-          {/* 3. Create */}
           <Link href="/create" className="flex items-center">
-            <StarGlyph
-  size={25}
-/>
-
+            <h1
+              className={
+                (pathname.startsWith("/create") ? "text-zinc-100" : "text-zinc-500") +
+                " text-2xl"
+              }
+            >
+              ✦
+            </h1>
           </Link>
 
-          {/* 4. Mells */}
           <Link href="/mells" className="flex items-center">
             <Play
               size={24}
               className={
-                pathname.startsWith('/mells')
-                  ? 'text-zinc-100'
-                  : 'text-zinc-500'
+                pathname.startsWith("/mells") ? "text-zinc-100" : "text-zinc-500"
               }
             />
           </Link>
 
-          {/* 5. User profile */}
           <UserButton />
-
-{user && (
-  <Link href={`/${user.username || user.id}`} className="flex items-center hidden">
-    <img
-      src={user.imageUrl}
-      alt={user.username || 'Profile'}
-      className="w-6 h-6 rounded-full object-cover"
-    />
-  </Link>
-)}
-
         </div>
       </SignedIn>
     </>

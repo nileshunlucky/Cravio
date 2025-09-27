@@ -10,6 +10,7 @@ const page = () => {
     <div >
     <Hero/>
       <Footer/>
+      <div className="mt-5"/>
     </div>
   )
 }

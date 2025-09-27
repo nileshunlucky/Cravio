@@ -35,6 +35,12 @@ def get_user(email: str):
         return user
     raise HTTPException(status_code=404, detail="User not found")
 
+# get all users data
+@app.get("/users")
+def get_users():
+    users = list(users_collection.find({}, {"_id": 0}))
+    return users
+
 # get users email
 @app.get("/users-emails")
 def get_users():

@@ -3,6 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import Navbar from "@/components/navbar";
 
 const products = [
   {
@@ -54,6 +55,7 @@ export default function Page() {
 
   return (
     <main className="min-h-screen">
+    <Navbar />
       {/* HERO IMAGE */}
       <section className="relative w-full">
         <div className="w-full">
