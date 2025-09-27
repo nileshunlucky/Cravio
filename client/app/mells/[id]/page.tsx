@@ -12,6 +12,19 @@ type Post = {
   id: string;
 };
 
+type UserPost = {
+  reel_url: string;
+  caption: string;
+  created_at: string;
+  id: string;
+};
+
+type User = {
+  posts?: UserPost[];
+  email?: string;
+  username?: string;
+};
+
 // Utility function to shuffle an array (Fisher-Yates)
 const shuffleArray = (array: Post[]) => {
   for (let i = array.length - 1; i > 0; i--) {
@@ -32,7 +45,6 @@ export default function MellByIdPage() {
   const { id } = useParams();
   const [posts, setPosts] = useState<Post[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState<boolean[]>([]);
   const [isMuted, setIsMuted] = useState<boolean[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [initialScrollDone, setInitialScrollDone] = useState(false);
@@ -74,13 +86,13 @@ export default function MellByIdPage() {
         const data = await res.json();
         
         // Extract all posts and filter for validity
-        const allValidPosts: Post[] = data.flatMap((user: any) => 
-          user.posts?.map((post: any) => ({
+        const allValidPosts: Post[] = data.flatMap((user: User) => 
+          user.posts?.map((post: UserPost) => ({
             reel_url: post.reel_url,
             caption: post.caption,
             created_at: post.created_at,
             id: post.id
-          })).filter((post: any) => post.reel_url && post.caption && post.created_at && post.id) || []
+          })).filter((post: Post) => post.reel_url && post.caption && post.created_at && post.id) || []
         );
         
         // --- 2. Separate Requested Post and Others ---
@@ -119,7 +131,6 @@ export default function MellByIdPage() {
         }
 
         setPosts(finalPosts);
-        setIsPlaying(new Array(finalPosts.length).fill(false));
         // Initialize all muted to true (standard for autoplay feeds)
         setIsMuted(new Array(finalPosts.length).fill(true)); 
         
@@ -166,18 +177,8 @@ export default function MellByIdPage() {
                     video.muted = isMuted[videoIndex];
                     
                     setCurrentIndex(videoIndex);
-                    setIsPlaying((prev) => {
-                        const newState = [...prev];
-                        newState[videoIndex] = true;
-                        return newState;
-                    });
                 } else {
                     video.pause();
-                    setIsPlaying((prev) => {
-                        const newState = [...prev];
-                        newState[videoIndex] = false;
-                        return newState;
-                    });
                 }
             });
         },
@@ -258,7 +259,7 @@ export default function MellByIdPage() {
     return (
       <div className="bg-black min-h-screen flex items-center justify-center">
         <div className="text-white text-center">
-          <p className="text-xl mb-2">No reels found</p>
+          <p className="text-xl mb-2">No mells found</p>
           <p className="text-zinc-400">Check back later for new content!</p>
         </div>
       </div>
