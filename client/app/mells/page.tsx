@@ -10,6 +10,12 @@ type Post = {
   id: string;
 };
 
+type User = {
+  posts?: Post[];
+};
+
+type ApiResponse = User[];
+
 export default function MellsRoot() {
   const router = useRouter();
 
@@ -18,16 +24,16 @@ export default function MellsRoot() {
       try {
         // Fetch all users and their posts from API
         const res = await fetch("https://cravio-ai.onrender.com/users");
-        const data = await res.json();
+        const data: ApiResponse = await res.json();
 
         // Extract all posts from all users
-        const allPosts: Post[] = data.flatMap((user: any) => 
-          user.posts?.map((post: any) => ({
+        const allPosts: Post[] = data.flatMap((user: User) => 
+          user.posts?.map((post: Post) => ({
             reel_url: post.reel_url,
             caption: post.caption,
             created_at: post.created_at,
             id: post.id
-          })).filter((post: any) => post.reel_url && post.caption && post.created_at && post.id) || []
+          })).filter((post: Post) => post.reel_url && post.caption && post.created_at && post.id) || []
         );
 
         if (allPosts.length === 0) {
