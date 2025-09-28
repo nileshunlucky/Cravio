@@ -3,7 +3,6 @@
 import { useState , useEffect} from "react";
 import { motion } from "framer-motion";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import {
   useUser,
 } from '@clerk/nextjs'
