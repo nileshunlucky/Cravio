@@ -269,7 +269,6 @@ if (!loading && posts.length === 0) {
                     <video
                 src={post.reel_url}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                loading="lazy"
               />
                   )
                   : (<img
