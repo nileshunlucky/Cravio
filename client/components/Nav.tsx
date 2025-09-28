@@ -141,7 +141,6 @@ const Nav = () => {
       </motion.nav>
 
       {/* ===== Mobile Bottom Bar (unchanged) ===== */}
-      <SignedIn>
         <div
           className="fixed bottom-0 left-0 z-50 md:hidden
                      flex justify-around items-center
@@ -186,9 +185,18 @@ const Nav = () => {
             />
           </Link>
 
-          <UserButton />
+          {
+            user ? (
+              <UserButton />
+            ) : (
+              <SignedOut>
+            <SignInButton mode="modal">
+              <div className="h-7 w-7 rounded-full bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544]" />
+            </SignInButton>
+          </SignedOut>
+            )
+          }
         </div>
-      </SignedIn>
     </>
   )
 }
