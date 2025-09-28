@@ -12,6 +12,7 @@ interface Post {
   post_url: string
   caption: string
   created_at: string
+  reel_url?: string
 }
 
 const Page = () => {
