@@ -262,12 +262,22 @@ if (!loading && posts.length === 0) {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <img
+              {
+                post.reel_url
+                  ? (
+                    <video
+                src={post.reel_url}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                loading="lazy"
+              />
+                  )
+                  : (<img
                 src={post.post_url}
                 alt={post.caption}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 loading="lazy"
-              />
+              />)
+              }
 
               {/* Overlay */}
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
@@ -288,23 +298,37 @@ if (!loading && posts.length === 0) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur"
             onClick={() => setSelectedPost(null)}
           >
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
-              className="bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] rounded-lg overflow-hidden max-w-4xl w-full max-h-[90vh] flex flex-col md:flex-row"
+              className="bg-black rounded-lg overflow-hidden max-w-4xl w-full max-h-[90vh] flex flex-col md:flex-row"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Image */}
-              <div className="flex-1 flex items-center justify-center bg-black/20">
-                <img
+              {/* Preview */}
+              <div className="flex-1 flex items-center justify-center">
+                {
+                  selectedPost.reel_url
+                    ? (
+                      <video
+                        src={selectedPost.reel_url}
+                        className="max-w-full object-contain"
+                        autoPlay
+                        loop
+                        playsInline
+                      />
+                    )
+                    : (
+                      <img
                   src={selectedPost.post_url}
                   alt={selectedPost.caption}
                   className="max-w-full max-h-[60vh] md:max-h-[80vh] object-contain"
                 />
+                    )
+                }
               </div>
 
               {/* Details */}
