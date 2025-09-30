@@ -19,7 +19,7 @@ const Page = () => {
 
   // Mouse parallax
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({
         x: (e.clientX / window.innerWidth - 0.5) * 40,
         y: (e.clientY / window.innerHeight - 0.5) * 40,
@@ -77,21 +77,21 @@ const Page = () => {
       <main className="relative z-10">
         {/* HERO */}
         <section ref={heroRef} className="min-h-[120vh] flex flex-col items-center justify-center text-center px-4">
-          <h1 ref={titleRef} className="text-7xl md:text-9xl font-black tracking-tighter mb-8 leading-none" style={{ perspective: 1000 }}>
+          <h1 ref={titleRef} className="text-4xl md:text-9xl font-black tracking-tighter mb-8 leading-none" style={{ perspective: 1000 }}>
             {"MELLVITTA AI".split("").map((char, i) => <span key={i} className={char === " " ? "w-4 md:w-8 inline-block" : "inline-block"}>{char}</span>)}
           </h1>
-          <p ref={subtitleRef} className="text-xl md:text-2xl text-amber-100/60 max-w-4xl mx-auto font-light tracking-wide mb-12">
+          <p ref={subtitleRef} className="md:text-xl md:text-2xl text-amber-100/60 max-w-4xl mx-auto font-light tracking-wide mb-12">
             Where creativity meets intelligence. The future of social media for visionary creators.
           </p>
         </section>
 
         {/* CARDS */}
         <section ref={cardsContainerRef} className="h-screen flex items-center justify-center">
-          <div className="relative w-[340px] md:w-[400px] h-[480px]">
+          <div className="relative w-[340px] md:w-[400px] h-[300px] md:h-[480px]">
             {/* Left Card */}
             <div
               ref={card1Ref}
-              className="absolute w-[320px] h-[420px] bg-white/5 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl left-1/2 -translate-x-[130%] top-1/2 -translate-y-1/2"
+              className="absolute w-[320px] h-full bg-white/5 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl left-1/2 -translate-x-[130%] top-1/2 -translate-y-1/2"
               style={{
                 transform: `translateX(calc(-130% + ${mousePosition.x * 0.5}px)) translateY(calc(-50% + ${mousePosition.y * 0.5}px))`,
                 transition: 'transform 0.3s ease-out',
@@ -115,7 +115,7 @@ const Page = () => {
             {/* Right Card */}
             <div
               ref={card3Ref}
-              className="absolute w-[320px] h-[420px] bg-white/5 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl left-1/2 translate-x-[30%] top-1/2 -translate-y-1/2"
+              className="absolute w-[320px] h-full bg-white/5 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl left-1/2 translate-x-[30%] top-1/2 -translate-y-1/2"
               style={{
                 transform: `translateX(calc(30% + ${mousePosition.x * -0.5}px)) translateY(calc(-50% + ${mousePosition.y * 0.5}px))`,
                 transition: 'transform 0.3s ease-out',
@@ -129,8 +129,8 @@ const Page = () => {
         {/* NEXT SECTION */}
         <section className="h-screen flex items-center justify-center">
           <div className="text-center">
-            <h2 className="text-5xl md:text-7xl font-bold text-amber-100/90 mb-4">The Next Chapter</h2>
-            <p className="text-xl md:text-2xl text-amber-100/60">Your journey continues here.</p>
+            <h2 className="text-3xl md:text-7xl font-bold text-amber-100/90 mb-4 whitespace-nowrap">The Next Chapter</h2>
+            <p className=" md:text-2xl text-amber-100/60">Your journey continues here.</p>
           </div>
         </section>
       </main>
