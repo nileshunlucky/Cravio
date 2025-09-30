@@ -7,13 +7,13 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 const Page = () => {
-  const titleRef = useRef(null);
-  const subtitleRef = useRef(null);
-  const heroRef = useRef(null);
-  const cardsContainerRef = useRef(null);
-  const card1Ref = useRef(null);
-  const card2Ref = useRef(null);
-  const card3Ref = useRef(null);
+  const titleRef = useRef<HTMLHeadingElement | null>(null);
+  const subtitleRef = useRef<HTMLParagraphElement | null>(null);
+  const heroRef = useRef<HTMLElement | null>(null);
+  const cardsContainerRef = useRef<HTMLElement | null>(null);
+  const card1Ref = useRef<HTMLDivElement | null>(null);
+  const card2Ref = useRef<HTMLDivElement | null>(null);
+  const card3Ref = useRef<HTMLDivElement | null>(null);
 
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
@@ -31,8 +31,19 @@ const Page = () => {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
+      const titleEl = titleRef.current;
+      const subtitleEl = subtitleRef.current;
+      const cardsContainerEl = cardsContainerRef.current;
+      const c1 = card1Ref.current;
+      const c2 = card2Ref.current;
+      const c3 = card3Ref.current;
+
+      if (!titleEl || !subtitleEl || !cardsContainerEl || !c1 || !c2 || !c3) {
+        return;
+      }
+
       // Hero text animation
-      const titleChars = titleRef.current.children;
+      const titleChars = titleEl.children;
       gsap.fromTo(
         titleChars,
         { opacity: 0, y: 120, rotationX: -90, perspective: 400 },
@@ -40,20 +51,20 @@ const Page = () => {
       );
 
       gsap.fromTo(
-        subtitleRef.current,
+        subtitleEl,
         { opacity: 0, y: 50 },
         { opacity: 1, y: 0, duration: 1.2, delay: 0.8, ease: "power3.out" }
       );
 
       // Floating cards animation
-      gsap.to(card1Ref.current, { y: -25, duration: 4, ease: "sine.inOut", yoyo: true, repeat: -1 });
-      gsap.to(card2Ref.current, { y: -35, duration: 5.5, ease: "sine.inOut", yoyo: true, repeat: -1 });
-      gsap.to(card3Ref.current, { y: -20, duration: 4.5, ease: "sine.inOut", yoyo: true, repeat: -1 });
+      gsap.to(c1, { y: -25, duration: 4, ease: "sine.inOut", yoyo: true, repeat: -1 });
+      gsap.to(c2, { y: -35, duration: 5.5, ease: "sine.inOut", yoyo: true, repeat: -1 });
+      gsap.to(c3, { y: -20, duration: 4.5, ease: "sine.inOut", yoyo: true, repeat: -1 });
 
       // Scroll-triggered card spread
       const tl = gsap.timeline({
         scrollTrigger: {
-          trigger: cardsContainerRef.current,
+          trigger: cardsContainerEl,
           pin: true,
           scrub: 1,
           start: "top top",
@@ -61,9 +72,9 @@ const Page = () => {
         },
       });
 
-      tl.from(card1Ref.current, { x: "-220%", ease: "power2.inOut" }, "align")
-        .from(card3Ref.current, { x: "110%", ease: "power2.inOut" }, "align")
-        .from(card2Ref.current, { scale: 0.9, ease: "power2.inOut" }, "align");
+      tl.from(c1, { x: "-220%", ease: "power2.inOut" }, "align")
+        .from(c3, { x: "110%", ease: "power2.inOut" }, "align")
+        .from(c2, { scale: 0.9, ease: "power2.inOut" }, "align");
     });
 
     return () => {
