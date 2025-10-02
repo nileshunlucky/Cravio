@@ -313,7 +313,7 @@ const Page = () => {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setShowCreateNew(true)}
-                            className="px-6 py-3 bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] text-black hover:text-black shadow-md font-light rounded-lg flex items-center gap-2 hover:shadow-lg hover:shadow-[#B08D57]/20 transition-all duration-300"
+                            className="px-6 py-3 bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black p-3 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20 group cursor-pointer flex items-center gap-2"
                         >
                             <span>New Persona</span>
                         </motion.button>
@@ -350,7 +350,7 @@ const Page = () => {
                                         transition={{ delay: index * 0.05 }}
                                         className="group cursor-pointer"
                                     >
-                                        <div className="aspect-square relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900/50 to-zinc-800/30 backdrop-blur-xl border-3 border-zinc-700/30 hover:border-[#B08D57] transition-all duration-500">
+                                        <div className="aspect-square relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900/50 to-zinc-800/30 backdrop-blur-xl border-zinc-700/30 hover:border-[#B08D57] transition-all duration-500">
                                             <img
                                                 src={persona.image_url}
                                                 alt={persona.persona_name}
@@ -392,7 +392,7 @@ const Page = () => {
                             exit={{ opacity: 0, y: -20 }}
                             className="max-w-2xl mx-auto"
                         >
-                            <Card className="bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] backdrop-blur-2xl rounded-3xl overflow-hidden">
+                            <Card className="bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] backdrop-blur-2xl rounded-3xl overflow-hidden">
                                 <CardContent className="p-8">
 
                                     {/* Name Input */}
@@ -411,12 +411,12 @@ const Page = () => {
                                     <div className="mb-8">
                                         <motion.label
                                             whileHover={{ scale: 1.005 }}
-                                            className="relative block w-full aspect-[3/2] bg-gradient-to-br from-[#000000] via-[#111111] to-[#000000] border-2 border-[#B08D57] rounded-2xl cursor-pointer group overflow-hidden hover:border-[#B08D57]/50 transition-colors duration-500"
+                                            className="relative block w-full aspect-[3/2] bg-gradient-to-br from-[#000000] via-[#111111] to-[#000000] border-[#B08D57] rounded-2xl cursor-pointer group overflow-hidden hover:border-[#B08D57]/50 transition-colors duration-500"
                                         >
                                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                                 <motion.div
                                                     whileHover={{ scale: 1.1 }}
-                                                    className="w-12 h-12 rounded-full bg-gradient-to-br from-[#B08D57]/10 to-[#4e3c20]/10 backdrop-blur-xl flex items-center justify-center mb-4"
+                                                    className="w-15 h-15 rounded-full flex items-center justify-center mb-4"
                                                 >
                                                     <Upload className="w-5 h-5 text-[#B08D57]" />
                                                 </motion.div>
@@ -482,7 +482,7 @@ const Page = () => {
                                     {/* Submit Button */}
                                     <motion.button
                                         onClick={handleSubmit}
-                                        className="w-full bg-gradient-to-br from-[#000000] via-[#111111] to-[#000000] text-[#B08D57] hover:shadow-lg hover:shadow-[#B08D57]/20 font-light py-3 text-lg disabled:opacity-30 rounded-2xl transition-all duration-500 flex justify-center items-center cursor-pointer"
+                                        className="w-full bg-black p-3 rounded-2xl font-medium text-lg shadow-2xl  transform transition-all duration-300  group flex justify-center items-center cursor-pointer"
                                     >
                                         {isSubmitting ? (
                                             <div className="flex items-center justify-center gap-3">
@@ -527,7 +527,7 @@ const Page = () => {
                                         exit={{ opacity: 0, y: -20 }}
                                         className="mt-6"
                                     >
-                                        <Card className="bg-gradient-to-br from-zinc-900/40 to-zinc-800/20 border-zinc-700/50 backdrop-blur-2xl rounded-2xl">
+                                        <Card className="bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black p-3 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20">
                                             <CardContent className="p-6">
                                                 <div className="flex items-center justify-between mb-4">
                                                     <div className="flex items-center gap-3">

@@ -4,7 +4,7 @@ from typing import Optional
 import os
 import boto3
 from db import users_collection
-from tasks.opus_task import veo3, kling2_1master, hailuo_02_pro, wan_2_1
+from tasks.opus_task import veo3, kling2_1master, hailuo_02_pro, wan_2_5
 
 router = APIRouter()
 
@@ -17,7 +17,7 @@ s3_client = boto3.client(
     region_name=os.getenv("AWS_REGION", "us-east-1"),
 )
 
-AURA_COSTS = {"veo3": 400, "kling 2.1 master": 250, "hailuo 02 pro": 250, "wan 2.1": 100}
+    AURA_COSTS = {"veo3": 400, "kling 2.1 master": 250, "hailuo 02 pro": 250, "wan 2.5": 100}
 
 def deduct_aura_by_model(email: str, model: str):
     # Ensure model exists in pricing
@@ -85,8 +85,8 @@ async def persona_image(
         if model == "hailuo 02 pro":
             task = hailuo_02_pro.delay(prompt=prompt, image_url=image_url, email=email, aspect_ratio=aspect_ratio)
 
-        if model == "wan 2.1":
-            task = wan_2_1.delay(prompt=prompt, image_url=image_url, email=email, aspect_ratio=aspect_ratio)
+        if model == "wan 2.5":
+            task = wan_2_5.delay(prompt=prompt, image_url=image_url, email=email, aspect_ratio=aspect_ratio)
 
         return {
             "status": "success",

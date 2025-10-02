@@ -468,7 +468,7 @@ function CanvasContent() {
                                     {/* Create New Button */}
                                     <motion.button
                                         onClick={handleCreateNew}
-                                        className="flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-br from-black via-zinc-900 to-black backdrop-blur-sm text-white rounded-2xl font-medium tracking-wide transition-all duration-300 group"
+                                        className="bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black p-3 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20 group"
                                     >
                                         Create New
                                     </motion.button>
@@ -525,7 +525,7 @@ function CanvasContent() {
                                                     exit={{ opacity: 0, y: -20 }}
                                                     className="py-12 flex flex-col justify-center items-center h-64"
                                                 >
-                                                    <div className="w-16 h-16 mx-auto mb-6 border border-[#B08D57]/30 rounded-full flex items-center justify-center">
+                                                    <div className="w-16 h-16 mx-auto mb-6  rounded-full flex items-center justify-center">
                                                         <Upload className="w-6 h-6 text-[#B08D57]" />
                                                     </div>
                                                     <p className="text-white/70 font-light mb-2">Drop your reference image here (optional)</p>
@@ -570,7 +570,7 @@ function CanvasContent() {
                                         onClick={handleGenerate}
                                         key="generate"
                                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                                        className="w-full bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] transition-all duration-300 text-black py-4 rounded-xl font-medium tracking-wide disabled:opacity-50 relative overflow-hidden group h-16 flex items-center justify-center cursor-pointer"
+                                        className="w-full bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black p-3 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20 group cursor-pointer"
                                     >
                                         <span>Craft Masterpiece</span>
                                     </motion.button>
@@ -630,7 +630,7 @@ function CanvasContent() {
                                         className="flex flex-col items-center justify-center py-16 px-6 text-center space-y-6"
                                     >
                                         {/* Icon */}
-                                        <div className="w-20 h-20 rounded-full border-3 border-[#B08D57]/50 flex items-center justify-center">
+                                        <div className="w-20 h-20 rounded-full border-[#B08D57]/50 flex items-center justify-center">
                                             <User className='w-10 h-10 text-[#B08D57]' />
                                         </div>
 
@@ -646,7 +646,7 @@ function CanvasContent() {
                                         >
                                             <button
                                                 onClick={() => router.push('/admin/personas')}
-                                                className="px-8 py-3 bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] transition-all duration-300 text-black rounded-xl font-medium tracking-wide shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+                                                className="px-8 py-3 bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black p-3 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20 group cursor-pointer flex items-center gap-2"
                                             >
                                                 Create Persona
                                             </button>

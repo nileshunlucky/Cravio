@@ -27,7 +27,7 @@ const Page = () => {
     const [prompt, setPrompt] = useState('');
     const [image, setImage] = useState<File | null>(null);
     const [videoPreview, setvideoPreview] = useState<string | null>(null);
-    const [model, setModel] = useState('veo3');
+    const [model, setModel] = useState('wan 2.5');
     const [aspectRatio, setAspectRatio] = useState('9:16');
     const [taskId, setTaskId] = useState<string | null>(null)
     const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null)
@@ -40,7 +40,7 @@ const Page = () => {
         { model: "veo3", cost: 400 },
         { model: "kling 2.1 master", cost: 250 },
         { model: "hailuo 02 pro", cost: 250 },
-        { model: "wan 2.1", cost: 100 },]
+        { model: "wan 2.5", cost: 100 },]
 
     
     useEffect(() => {
@@ -435,7 +435,7 @@ const Page = () => {
                             </motion.div>
                         </motion.div>
                     ) : (
-                        <Card className="w-full max-w-xl mx-auto rounded-2xl shadow-xl bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black my-5">
+                        <Card className="w-full max-w-xl mx-auto bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black px-8 py-4 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20">
                             <CardContent className="md:p-8 p-4 space-y-6">
                                 <motion.h1
                                     initial={{ opacity: 0, y: -20 }}
@@ -459,11 +459,11 @@ const Page = () => {
                                         <SelectTrigger className="w-full">
                                             <SelectValue placeholder="Select Model" />
                                         </SelectTrigger>
-                                        <SelectContent className="bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black">
-                                            <SelectItem value="veo3">Veo 3</SelectItem>
+                                        <SelectContent className="bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black p-3 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20">
+                                            <SelectItem value="wan 2.5">Wan 2.5 (audio included)</SelectItem>
+                                            <SelectItem value="veo3">Veo 3 </SelectItem>
                                             <SelectItem value="hailuo 02 pro">Hailuo 02 Pro</SelectItem>
                                             <SelectItem value="kling 2.1 master">Kling 2.1 Master</SelectItem>
-                                            <SelectItem value="wan 2.1">Wan 2.1</SelectItem>
                                         </SelectContent>
                                     </Select>
 
@@ -471,7 +471,7 @@ const Page = () => {
                                         <SelectTrigger className="w-full">
                                             <SelectValue placeholder="Select Model" />
                                         </SelectTrigger>
-                                        <SelectContent className="bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black">
+                                        <SelectContent className="bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black p-3 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20">
                                             <SelectItem value="9:16">9:16</SelectItem>
                                             <SelectItem value="16:9">16:9</SelectItem>
                                         </SelectContent>
@@ -511,8 +511,8 @@ const Page = () => {
                                                     exit={{ opacity: 0, y: -20 }}
                                                     className="py-12 flex flex-col justify-center items-center h-64 "
                                                 >
-                                                    <div className="w-16 h-16 mx-auto mb-6 border border-[#B08D57]/30 rounded-full flex items-center justify-center">
-                                                        <Upload className="w-6 h-6 text-[#B08D57]" />
+                                                    <div className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center">
+                                                        <Upload className="w-7 h-7 text-[#B08D57]" />
                                                     </div>
                                                     <p className="text-white/70 font-light mb-2">Drop your reference image here (optional)</p>
                                                 </motion.div>

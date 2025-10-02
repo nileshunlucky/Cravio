@@ -48,7 +48,7 @@ const steps = [
   },
 ];
 
-export default function PlaybookPage(): JSX.Element {
+export default function PlaybookPage() {
   return (
     <main className="min-h-screen text-surface-1 relative overflow-hidden bg-[#060606] text-zinc-100 p-8">
       {/* prime glow */}
