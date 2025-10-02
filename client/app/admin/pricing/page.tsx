@@ -320,7 +320,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                                     </div>
                                 ) : (
                                     <div className="w-5 h-5 rounded-full bg-zinc-700 flex items-center justify-center">
-                                        <X className="w-3 h-3 text-zinc-400" />
+                                       <Check className="w-3 h-3 text-black" />
                                     </div>
                                 )}
                             </div>
@@ -381,10 +381,10 @@ const Page = () => {
                     yearly: 12000
                 },
                 list: [
-                    { name: "Canvas", included: true },
-                    { name: "Opus (veo3, Kling, Hailuo, Wan)", included: true },
-                    { name: "Persona", included: true },
-                    { name: "Upto 4 persona's + 10 videos + 200 images", included: true },
+                    { name: "Canvas", included: false },
+                    { name: "Opus (veo3, Kling, Hailuo, Wan)", included: false },
+                    { name: "Persona", included: false },
+                    { name: "Upto 4 persona's + 10 videos + 200 images", included: false },
                     { name: "Standard Support", included: false },
                 ]
             }
@@ -433,11 +433,11 @@ const Page = () => {
                     yearly: 42000
                 },
                 list: [
-                    { name: "Canvas", included: true },
-                    { name: "Opus (veo3, Kling, Hailuo, Wan)", included: true },
-                    { name: "Persona", included: true },
-                    { name: "Upto 14 persona's + 35 videos + 700 images", included: true },
-                    { name: "Exclusive Support", included: true },
+                    { name: "Canvas", included: false },
+                    { name: "Opus (veo3, Kling, Hailuo, Wan)", included: false },
+                    { name: "Persona", included: false },
+                    { name: "Upto 14 persona's + 35 videos + 700 images", included: false },
+                    { name: "Exclusive Support", included: false },
                 ]
             }
         }
