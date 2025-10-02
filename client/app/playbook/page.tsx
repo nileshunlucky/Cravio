@@ -8,7 +8,6 @@ import { Sparkles, Camera, Video, Users, TrendingUp, DollarSign } from "lucide-r
 // shadcn/ui imports (adjust paths if your project uses different locations)
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 const steps = [
   {

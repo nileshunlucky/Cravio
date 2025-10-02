@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, X } from 'lucide-react';
+import { Check} from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 
 interface FeatureItem {
