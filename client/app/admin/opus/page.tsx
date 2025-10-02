@@ -320,7 +320,7 @@ const Page = () => {
 
 
     return (
-        <div className="min-h-screen overflow-hidden relative flex items-center justify-center p-4 sm:p-6 lg:p-8">
+        <div className="min-h-screen overflow-hidden relative flex items-center justify-center p-4 sm:p-6 lg:p-8 my-5">
             <main className="w-full max-w-7xl mx-auto">
                 {
                     isProcessing ? (
@@ -435,8 +435,8 @@ const Page = () => {
                             </motion.div>
                         </motion.div>
                     ) : (
-                        <Card className="w-full max-w-xl mx-auto bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black px-8 py-4 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20">
-                            <CardContent className="md:p-8 p-4 space-y-6">
+                        <Card className="w-full max-w-xl mx-auto bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black  rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20">
+                            <CardContent className="p-2 md:p-4 space-y-6">
                                 <motion.h1
                                     initial={{ opacity: 0, y: -20 }}
                                     animate={{ opacity: 1, y: 0 }}

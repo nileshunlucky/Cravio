@@ -119,7 +119,7 @@ export default function PlaybookPage() {
 
         {/* PEU quick how-to */}
         <section className="mt-10">
-          <Card className="p-6 border border-neutral-800/40 backdrop-blur">
+          <Card className="p-2 py-5 md:p-6 border border-neutral-800/40 backdrop-blur">
             <CardHeader>
               <CardTitle>Quick Guide</CardTitle>
               <CardDescription>Simple, repeatable offer structure that converts.</CardDescription>
@@ -134,7 +134,7 @@ export default function PlaybookPage() {
               </ol>
 
               <div className="mt-4 flex flex-wrap gap-3">
-              <Button variant="outline" className="bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black px-8 py-4 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 border border-amber-400/20">
+              <Button variant="outline" className="bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black p-3 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20">
                 <Link href="/admin/pricing">Redeem MELL50 — 50% OFF</Link>
               </Button>
               </div>
