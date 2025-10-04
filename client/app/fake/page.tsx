@@ -6,17 +6,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Upload } from 'lucide-react';
-import { useUser } from "@clerk/nextjs"
-
-interface TaskStatus {
-    state: string
-    status?: string
-    current?: number
-    total?: number
-    progress?: number
-    result?: TaskResult
-    error?: string
-}
 
 interface TaskResult {
     message: string
@@ -89,7 +78,6 @@ const Page = () => {
         }
     }, [isProcessing])
 
-    const { user } = useUser()
 
     const handleImageUpload = (file: File) => {
         if (file && file.type.startsWith('image/')) {
