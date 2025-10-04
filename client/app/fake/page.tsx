@@ -7,9 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Upload } from 'lucide-react';
 
-interface TaskResult {
-    message: string
-}
 
 const Page = () => {
     const [prompt, setPrompt] = useState('');
