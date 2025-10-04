@@ -6,7 +6,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Upload } from 'lucide-react';
-import { useRouter } from 'next/navigation'
 import { useUser } from "@clerk/nextjs"
 
 interface TaskStatus {
@@ -25,12 +24,9 @@ interface TaskResult {
 
 const Page = () => {
     const [prompt, setPrompt] = useState('');
-    const [image, setImage] = useState<File | null>(null);
     const [videoPreview, setvideoPreview] = useState<string | null>(null);
     const [model, setModel] = useState('wan 2.5');
     const [aspectRatio, setAspectRatio] = useState('9:16');
-    const [taskId, setTaskId] = useState<string | null>(null)
-    const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null)
     const [progress, setProgress] = useState(0)
@@ -93,13 +89,10 @@ const Page = () => {
         }
     }, [isProcessing])
 
-    const router = useRouter()
     const { user } = useUser()
-    const email = user?.emailAddresses?.[0]?.emailAddress || ''
 
     const handleImageUpload = (file: File) => {
         if (file && file.type.startsWith('image/')) {
-            setImage(file)
             const reader = new FileReader()
             reader.onload = (e) => {
                 const result = e.target?.result
@@ -178,13 +171,9 @@ const Page = () => {
     }
 
     const handleCreateNew = () => {
-        setTaskId(null);
-        setTaskStatus(null);
         setPrompt('');
-        setImage(null);
         setvideoPreview(null);
         setGeneratedVideoUrl(null);
-
     };
 
 
