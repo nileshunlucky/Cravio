@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Home, Search, Play } from "lucide-react"
+import { Home, UserRound, Play } from "lucide-react"
 
 const Nav = () => {
   const [aura, setAura] = useState<number | null>(null)
@@ -41,9 +41,9 @@ const Nav = () => {
 
   const dashLinks = [
     { href: "/", label: "Home", icon: Home },
-    { href: "/explore", label: "Explore", icon: Search },
-    { href: "/create", label: "Create", icon: null },
-    { href: "/mells", label: "Mells", icon: Play },
+    { href: "/admin/personas", label: "admin/personas", icon: UserRound },
+    { href: "/admin/canvas", label: "canvas", icon: null },
+    { href: "/admin/opus", label: "opus", icon: Play },
   ]
 
   return (
@@ -137,6 +137,8 @@ const Nav = () => {
               </Button>
             </SignUpButton>
           </SignedOut>
+
+              <Link href="/admin/portfolio"><div className="h-7 w-7 rounded-full bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544]" /></Link>
         </div>
       </motion.nav>
 
@@ -154,21 +156,21 @@ const Nav = () => {
             />
           </Link>
 
-          <Link href="/explore" className="flex items-center">
-            <Search
+          <Link href="/admin/personas" className="flex items-center">
+            <UserRound
               size={24}
               className={
-                pathname.startsWith("/explore")
+                pathname.startsWith("/admin/personas")
                   ? "text-zinc-100"
                   : "text-zinc-500"
               }
             />
           </Link>
 
-          <Link href="/create" className="flex items-center">
+          <Link href="/admin/canvas" className="flex items-center">
             <h1
               className={
-                (pathname.startsWith("/create") ? "text-zinc-100" : "text-zinc-500") +
+                (pathname.startsWith("/admin/canvas") ? "text-zinc-100" : "text-zinc-500") +
                 " text-2xl"
               }
             >
@@ -176,18 +178,18 @@ const Nav = () => {
             </h1>
           </Link>
 
-          <Link href="/mells" className="flex items-center">
+          <Link href="/admin/opus" className="flex items-center">
             <Play
               size={24}
               className={
-                pathname.startsWith("/mells") ? "text-zinc-100" : "text-zinc-500"
+                pathname.startsWith("/admin/opus") ? "text-zinc-100" : "text-zinc-500"
               }
             />
           </Link>
 
           {
             user ? (
-              <UserButton />
+              <Link href="/admin/portfolio"><div className="h-7 w-7 rounded-full bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544]" /></Link>
             ) : (
               <SignedOut>
             <SignInButton mode="modal">

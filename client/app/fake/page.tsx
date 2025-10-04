@@ -112,67 +112,15 @@ const Page = () => {
     }
 
     const handleSubmit = async () => {
-        if (!prompt) {
-            toast.error("Please enter a prompt", {
-                style: {
-                    background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
-                    color: "white",
-                    border: "0px"
-                }
-            })
-            return;
-        }
-        setProgress(0)
-        setIsProcessing(true)
-        setGeneratedVideoUrl(null) // Reset previous generated image
-        setTaskStatus(null)
+
+    setIsProcessing(true);
+    setProgress(0);
+
+    // 5 seconds of fake progress before continuing
+    await new Promise((resolve) => setTimeout(resolve, 5000));
         try {
-            const formData = new FormData()
-            formData.append('model', model)
-            formData.append('email', email)
-            formData.append('prompt', prompt)
-            formData.append('aspect_ratio', aspectRatio)
 
-            if (image) {
-                formData.append('image', image)
-            }
-
-            const res = await fetch('https://cravio-ai.onrender.com/api/opus', {
-                method: 'POST',
-                body: formData,
-            })
-
-            const data = await res.json()
-
-            if (res.ok) {
-                setTaskId(data.task_id)
-                toast.success('Video generation started!', {
-                    style: {
-                        background: "linear-gradient(to bottom right, #4e3c20, #B08D57, #4e3c20)",
-                        color: "black",
-                        border: "0px"
-                    }
-                })
-            }
-            if (res.status === 403) {
-                toast.error('Not enough aura', {
-                    style: {
-                        background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
-                        color: "white",
-                        border: "0px"
-                    }
-                });
-                router.push('/admin/pricing')
-            } else if (!res.ok) {
-                console.error("Error from server:", data)
-                toast.error("Failed to generate image", {
-                    style: {
-                        background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
-                        color: "white",
-                        border: "0px"
-                    }
-                })
-            }
+        setGeneratedVideoUrl("https://res.cloudinary.com/dxpydoteo/video/upload/v1759574847/e1c87aea8d5d77bc45182338838ca4bd_720w_rcsjdm.mp4");
 
         } catch (error) {
             toast.error("Failed to generate Video", {
@@ -240,64 +188,6 @@ const Page = () => {
     };
 
 
-    useEffect(() => {
-        if (!taskId) return;
-
-        const pollStatus = async () => {
-            try {
-                const response = await fetch(`https://cravio-ai.onrender.com/api/task-status/${taskId}`);
-                const status = await response.json();
-                setTaskStatus(status);
-
-                if (status.state === 'SUCCESS' || status.state === 'FAILURE') {
-                    setIsProcessing(false);
-                    if (status.state === 'SUCCESS') {
-                        setGeneratedVideoUrl(status.result.fal_url);
-                        toast.success('Training completed', {
-                            style: {
-                                background: "linear-gradient(to bottom right, #4e3c20, #B08D57, #4e3c20)",
-                                color: "black",
-                                border: "0px"
-                            }
-                        });
-                        setTimeout(() => window.location.reload(), 2000);
-                    } else {
-                        toast.error(`Training failed: ${status.error}`, {
-                            style: {
-                                background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
-                                color: "white",
-                                border: "0px"
-                            }
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error('Error polling:', error);
-                toast.error('Status check failed', {
-                    style: {
-                        background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
-                        color: "white",
-                        border: "0px"
-                    }
-                });
-            }
-        };
-
-        const interval = setInterval(pollStatus, 5000);
-        pollStatus();
-
-        return () => clearInterval(interval);
-    }, [taskId]);
-
-    useEffect(() => {
-        if (taskStatus) {
-            // Use real progress from API if available
-            if (taskStatus.progress !== undefined) {
-                setProgress(taskStatus.progress)
-            }
-        }
-    }, [taskStatus])
-
     const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault()
         e.stopPropagation()
@@ -320,7 +210,7 @@ const Page = () => {
 
 
     return (
-        <div className="min-h-screen overflow-hidden relative flex items-center justify-center p-2 md:p-8 my-5">
+        <div className="min-h-screen overflow-hidden relative flex items-center justify-center p-2 md:p-8 my-5 mb-10 md:mb-0">
             <main className="w-full max-w-7xl mx-auto">
                 {
                     isProcessing ? (
@@ -392,17 +282,18 @@ const Page = () => {
                             >
                                 {/* Main Image Display */}
                                 <div className="relative rounded-3xl overflow-hidden shadow-2xl p-2 backdrop-blur-sm border-3 border-[#B08D57]">
-                                    <motion.video
-                                        initial={{ opacity: 0, scale: 1.1 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ duration: 1, delay: 0.6 }}
-                                        src={generatedVideoUrl}
-                                        autoPlay
-                                        loop
-                                        muted
-                                        playsInline
-                                        className="w-full h-auto rounded-2xl shadow-lg"
-                                    />
+                                   <motion.video
+    initial={{ opacity: 0, scale: 1.1 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 1, delay: 0.6 }}
+    src={generatedVideoUrl}
+    autoPlay
+    loop
+    muted
+    playsInline
+    className="w-full h-auto max-h-[600px] mx-auto rounded-2xl shadow-lg object-contain"
+/>
+
 
                                     {/* Premium Overlay Gradient */}
                                     <div className="absolute inset-2 rounded-2xl bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
@@ -418,7 +309,7 @@ const Page = () => {
                                     {/* Download Button */}
                                     <motion.button
                                         onClick={() => downloadVideo(generatedVideoUrl)}
-                                        className="flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-black rounded-2xl font-medium tracking-wide shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer"
+                                        className="bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black  rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20 p-2"
                                     >
                                         Download Masterpiece
                                     </motion.button>
@@ -426,7 +317,7 @@ const Page = () => {
                                     {/* Create New Button */}
                                     <motion.button
                                         onClick={handleCreateNew}
-                                        className="flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-br from-black via-zinc-900 to-black backdrop-blur-sm text-white rounded-2xl font-medium tracking-wide transition-all duration-300 group cursor-pointer"
+                                        className="flex items-center justify-center gap-3 px-8 py-4 bg-black backdrop-blur-sm text-white rounded-2xl font-medium tracking-wide transition-all duration-300 group cursor-pointer"
                                     >
                                         Create New
                                     </motion.button>
