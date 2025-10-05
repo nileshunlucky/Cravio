@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from 'next/link'
-import Navbar from '@/components/navbar'
 
 const HeroSection = () => {
   const [creators, setCreators] = useState<number | null>(null);

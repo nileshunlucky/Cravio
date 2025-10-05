@@ -48,7 +48,7 @@ const Footer = () => {
             ELEVATING AI CREATIVITY <br /> FOR MODERN INFLUENCER
           </h2>
           <p className="text-lg">
-            Inspiration for {creators}+ visionary Influencer's <br /> and tastemakers
+            Inspiration for {creators}+ visionary Influencers <br /> and tastemakers
           </p>
         </div>
         <div className="flex md:hidden">
