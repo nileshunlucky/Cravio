@@ -3,15 +3,15 @@
 import React, { useState } from "react";
 
 const MonetizationCalculator = () => {
-  const [influencers, setInfluencers] = useState(1);
-  const [audience, setAudience] = useState(1000);
-  const [price, setPrice] = useState(9.99);
-  const [conversion, setConversion] = useState(2);
-  const [tips, setTips] = useState(5);
+  const [influencers, setInfluencers] = useState<number | "">(1);
+  const [audience, setAudience] = useState<number | "">(1000);
+  const [price, setPrice] = useState<number | "">(9.99);
+  const [conversion, setConversion] = useState<number | "">(2);
+  const [tips, setTips] = useState<number | "">(5);
 
-  const payingCustomers = audience && conversion ? Math.floor((audience * conversion) / 100) : 0;
-  const contentRevenue = payingCustomers && influencers && price ? payingCustomers * influencers * price : 0;
-  const tipsRevenue = payingCustomers && influencers && tips ? payingCustomers * influencers * tips : 0;
+  const payingCustomers = (audience !== "" && conversion !== "") ? Math.floor((Number(audience) * Number(conversion)) / 100) : 0;
+  const contentRevenue = (payingCustomers && influencers !== "" && price !== "") ? payingCustomers * Number(influencers) * Number(price) : 0;
+  const tipsRevenue = (payingCustomers && influencers !== "" && tips !== "") ? payingCustomers * Number(influencers) * Number(tips) : 0;
   const totalRevenue = contentRevenue + tipsRevenue;
 
   const handleClear = () => {
