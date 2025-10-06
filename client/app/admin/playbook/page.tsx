@@ -2,8 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Sparkles, Camera, Video, Users, TrendingUp, DollarSign } from "lucide-react";
 
 // shadcn/ui imports (adjust paths if your project uses different locations)
 import { Button } from "@/components/ui/button";
