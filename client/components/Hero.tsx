@@ -45,7 +45,7 @@ const HeroSection = () => {
 
           <div className="flex gap-4 mt-6">
             <Link
-              href="/playbook"
+              href="/admin/playbook"
               className="px-6 py-3 rounded-full font-semibold bg-gradient-to-r from-[#B08D57] to-[#d4b98b] text-black shadow-[0_0_20px_#B08D57]"
             >
               Free Playbook + 50% Discount
