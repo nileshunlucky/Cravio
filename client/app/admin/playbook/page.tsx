@@ -55,7 +55,7 @@ export default function PlaybookPage() {
 
               <div className="mt-4 flex flex-wrap gap-3">
               <Button variant="outline" className="bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black p-4 rounded-xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20">
-                <a href="/Mellvitta AI Playbook.pdf">Redeem Playbook + 50% Discount</a>
+                <a href="/Mellvitta AI Playbook.pdf">FREE Playbook + 50% Discount</a>
               </Button>
               </div>
             </CardContent>
