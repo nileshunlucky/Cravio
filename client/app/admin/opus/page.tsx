@@ -27,7 +27,7 @@ const Page = () => {
     const [prompt, setPrompt] = useState('');
     const [image, setImage] = useState<File | null>(null);
     const [videoPreview, setvideoPreview] = useState<string | null>(null);
-    const [model, setModel] = useState('wan 2.5');
+    const [model, setModel] = useState('sora 2');
     const [aspectRatio, setAspectRatio] = useState('9:16');
     const [taskId, setTaskId] = useState<string | null>(null)
     const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null)
@@ -40,7 +40,8 @@ const Page = () => {
         { model: "veo3", cost: 400 },
         { model: "kling 2.1 master", cost: 250 },
         { model: "hailuo 02 pro", cost: 250 },
-        { model: "wan 2.5", cost: 100 },]
+        { model: "wan 2.5", cost: 100 },
+        { model: "sora 2", cost: 100 },]
 
     
     useEffect(() => {
@@ -460,7 +461,8 @@ const Page = () => {
                                             <SelectValue placeholder="Select Model" />
                                         </SelectTrigger>
                                         <SelectContent className="bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black p-3 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20">
-                                            <SelectItem value="wan 2.5">Wan 2.5 (audio included)</SelectItem>
+                                            <SelectItem value="sora 2">Sora 2</SelectItem>
+                                            <SelectItem value="wan 2.5">Wan 2.5 </SelectItem>
                                             <SelectItem value="veo3">Veo 3 </SelectItem>
                                             <SelectItem value="hailuo 02 pro">Hailuo 02 Pro</SelectItem>
                                             <SelectItem value="kling 2.1 master">Kling 2.1 Master</SelectItem>
