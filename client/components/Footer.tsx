@@ -45,10 +45,10 @@ const Footer = () => {
       >
         <div className="max-w-7xl mx-auto space-y-6">
           <h2 className="text-3xl md:text-4xl font-bold leading-snug max-w-4xl">
-            ELEVATING AI CREATIVITY <br /> FOR MODERN INFLUENCER
+            ELEVATING AI CREATIVITY <br /> FOR MODERN CREATORS
           </h2>
           <p className="text-lg">
-            Inspiration for {creators}+ visionary Influencers <br /> and tastemakers
+            Inspiration for {creators}+ visionary Creators <br /> and tastemakers
           </p>
         </div>
         <div className="flex md:hidden">

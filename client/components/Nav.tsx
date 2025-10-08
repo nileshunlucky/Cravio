@@ -15,10 +15,12 @@ import { motion } from "framer-motion"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { Home, UserRound, Play } from "lucide-react"
+import { Menu , X} from 'lucide-react'
 
 const Nav = () => {
   const [aura, setAura] = useState<number | null>(null)
   const { user } = useUser()
+   const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname()
 
   // Fetch user aura value
@@ -40,7 +42,7 @@ const Nav = () => {
   }, [user])
 
   const dashLinks = [
-    { href: "/", label: "Home", icon: Home },
+    { href: "/admin/dashboard", label: "Dashboard", icon: Home },
     { href: "/admin/personas", label: "admin/personas", icon: UserRound },
     { href: "/admin/canvas", label: "canvas", icon: null },
     { href: "/admin/opus", label: "opus", icon: Play },
@@ -142,63 +144,131 @@ const Nav = () => {
         </div>
       </motion.nav>
 
-      {/* ===== Mobile Bottom Bar (unchanged) ===== */}
-        <div
-          className="fixed bottom-0 left-0 z-50 md:hidden
-                     flex justify-around items-center
-                     w-full px-3 py-3 rounded-t-2xl
-                     bg-black/80 backdrop-blur-md"
-        >
+      {/* ===== Mobile Bottom Bar ===== */}
+        <motion.nav
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className="w-full px-6 py-2 flex justify-between items-center border-b shadow-sm md:hidden relative"
+    >
+      {/* Left side */}
+      <div className="flex items-center gap-6">
+        <SignedOut>
           <Link href="/" className="flex items-center">
-            <Home
-              size={24}
-              className={pathname === "/" ? "text-zinc-100" : "text-zinc-500"}
-            />
+            <Image src="/logo.png" alt="Logo" width={45} height={45} />
           </Link>
+        </SignedOut>
 
-          <Link href="/admin/personas" className="flex items-center">
-            <UserRound
-              size={24}
-              className={
-                pathname.startsWith("/admin/personas")
-                  ? "text-zinc-100"
-                  : "text-zinc-500"
-              }
-            />
-          </Link>
+        <SignedIn>
+          <button
+            onClick={() => setMenuOpen(prev => !prev)}
+            className="p-2 rounded-md hover:bg-zinc-800 transition"
+          >
+          {menuOpen ? (<X className="w-6 h-6 text-zinc-300"/>) : ( <Menu className="w-6 h-6 text-zinc-300" />)}
+           
+          </button>
 
-          <Link href="/admin/canvas" className="flex items-center">
-            <h1
-              className={
-                (pathname.startsWith("/admin/canvas") ? "text-zinc-100" : "text-zinc-500") +
-                " text-2xl"
-              }
+          {menuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute top-14 left-4 w-48 bg-zinc-950 border border-zinc-900 rounded-xl shadow-lg flex flex-col z-50 px-4 py-2 text-zinc-300 gap-3"
             >
-              ✦
-            </h1>
+              <Link
+                href="/admin/dashboard"
+                onClick={() => setMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/admin/persona"
+                onClick={() => setMenuOpen(false)}
+              >
+                Persona
+              </Link>
+              <Link
+                href="/admin/canvas"
+                onClick={() => setMenuOpen(false)}
+              >
+                Canvas
+              </Link>
+              <Link
+                href="/admin/opus"
+                onClick={() => setMenuOpen(false)}
+              >
+                Opus
+              </Link>
+              <Link
+                href="/admin/portfolio"
+                onClick={() => setMenuOpen(false)}
+              >
+                Portfolio
+              </Link>
+              <UserButton />
+            </motion.div>
+          )}
+        </SignedIn>
+      </div>
+
+      {/* Right side */}
+      <div className="flex items-center gap-4">
+        <SignedIn>
+          <Link href="/admin/pricing">
+            <span className="text-zinc-300 hover:text-zinc-100 text-lg">
+              Pricing
+            </span>
           </Link>
 
-          <Link href="/admin/opus" className="flex items-center">
-            <Play
-              size={24}
-              className={
-                pathname.startsWith("/admin/opus") ? "text-zinc-100" : "text-zinc-500"
-              }
-            />
-          </Link>
+          <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 400 400"
+                  className="w-8 h-8 flex-shrink-0"
+                  style={{ minWidth: '32px', minHeight: '32px' }}
+                >
+                  <defs>
+                    <linearGradient id="gold-mobile" cx="50%" cy="50%" r="60%">
+                      <stop offset="0%" stopColor="#F4E4BC" />
+                      <stop offset="50%" stopColor="#E6C878" />
+                      <stop offset="100%" stopColor="#C9A96E" />
+                    </linearGradient>
+                  </defs>
+                  <path
+                    d="M200 40 Q220 160 240 180 Q290 190 340 200 
+                         Q290 210 240 220 Q220 240 200 360 
+                         Q180 240 160 220 Q110 210 60 200 
+                         Q110 190 160 180 Q180 160 200 40 Z"
+                    fill="url(#gold-mobile)"
+                    stroke="#C9A96E"
+                    strokeWidth="2"
+                  />
+                </svg>
+              </div>
+              <span className="font-bold text-[#C9A96E] text-base">
+                {aura}
+              </span>
+            </div>
+          </div>
+        </SignedIn>
 
-          {
-            user ? (
-              <Link href="/admin/portfolio"><div className="h-7 w-7 rounded-full bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544]" /></Link>
-            ) : (
-              <SignedOut>
-            <SignInButton mode="modal">
-              <div className="h-7 w-7 rounded-full bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544]" />
-            </SignInButton>
-          </SignedOut>
-            )
-          }
-        </div>
+        <SignedOut>
+          <SignInButton mode="modal">
+            <Button className="bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] text-black">
+              Sign In
+            </Button>
+          </SignInButton>
+          <SignUpButton mode="modal">
+            <Button className="bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] text-black">
+              Sign Up
+            </Button>
+          </SignUpButton>
+        </SignedOut>
+      </div>
+    </motion.nav>
     </>
   )
 }
