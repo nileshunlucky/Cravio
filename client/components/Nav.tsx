@@ -182,7 +182,7 @@ const Nav = () => {
                 Dashboard
               </Link>
               <Link
-                href="/admin/persona"
+                href="/admin/personas"
                 onClick={() => setMenuOpen(false)}
               >
                 Persona

@@ -4,9 +4,6 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Instagram } from 'lucide-react'
 import { motion } from 'framer-motion' // Import Framer Motion
-import {
-UserButton
-} from '@clerk/nextjs'
 
 const Footer = () => {
   const [creators, setCreators] = useState<number | null>(null)
@@ -50,9 +47,6 @@ const Footer = () => {
           <p className="text-lg">
             Inspiration for {creators}+ visionary Creators <br /> and tastemakers
           </p>
-        </div>
-        <div className="flex md:hidden">
-            <UserButton />
         </div>
       </motion.div>
 

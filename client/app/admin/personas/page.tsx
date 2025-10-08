@@ -418,7 +418,7 @@ const Page = () => {
                                                     whileHover={{ scale: 1.1 }}
                                                     className="w-15 h-15 rounded-full flex items-center justify-center mb-4"
                                                 >
-                                                    <Upload className="w-5 h-5 text-[#B08D57]" />
+                                                    <Upload className="w-5 h-5" />
                                                 </motion.div>
                                                 <p className="text-white/70 font-light mb-1">Upload Images</p>
                                                 <p className="text-zinc-500 text-sm font-light">10-20 high quality photos</p>

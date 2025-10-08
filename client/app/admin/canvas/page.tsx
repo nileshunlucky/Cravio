@@ -436,7 +436,7 @@ function CanvasContent() {
                                 className="relative"
                             >
                                 {/* Main Image Display */}
-                                <div className="relative rounded-3xl overflow-hidden shadow-2xl p-2 backdrop-blur-sm border-3 border-[#B08D57]">
+                                <div className="relative rounded-3xl overflow-hidden shadow-2xl p-2 backdrop-blur-sm border-3">
                                     <motion.img
                                         initial={{ opacity: 0, scale: 1.1 }}
                                         animate={{ opacity: 1, scale: 1 }}
@@ -468,7 +468,7 @@ function CanvasContent() {
                                     {/* Create New Button */}
                                     <motion.button
                                         onClick={handleCreateNew}
-                                        className="bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black p-3 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20 group"
+                                        className="bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black p-3 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border group"
                                     >
                                         Create New
                                     </motion.button>
@@ -489,8 +489,7 @@ function CanvasContent() {
                                 >
                                     <motion.div
                                         className={`relative border-3 transition-all duration-500 rounded-2xl p-2 text-center cursor-pointer group
-                                ${dragActive ? 'border-[#B08D57] bg-[#B08D57]/5' : 'border-[#B08D57]/50'}
-                                ${imagePreview ? 'border-[#B08D57]/50' : ''}
+                               
                             `}
                                         onDragEnter={handleDrag}
                                         onDragLeave={handleDrag}
@@ -526,9 +525,9 @@ function CanvasContent() {
                                                     className="py-12 flex flex-col justify-center items-center h-64"
                                                 >
                                                     <div className="w-16 h-16 mx-auto mb-6  rounded-full flex items-center justify-center">
-                                                        <Upload className="w-6 h-6 text-[#B08D57]" />
+                                                        <Upload className="w-6 h-6 " />
                                                     </div>
-                                                    <p className="text-white/70 font-light mb-2">Drop your reference image here (optional)</p>
+                                                    <p className="text-white/50 font-light mb-2">Drop your reference image here (optional)</p>
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>
@@ -555,7 +554,7 @@ function CanvasContent() {
                                                 value={prompt}
                                                 onChange={(e) => setPrompt(e.target.value)}
                                                 placeholder="Describe your vision..."
-                                                className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 placeholder-white/40 resize-none focus:outline-none focus:border-[#B08D57]/50 transition-all duration-300 font-light scroll-hidden"
+                                                className="w-full h-32 bg-white/5 border border-white rounded-xl p-4 placeholder-white/40 resize-none focus:outline-none transition-all duration-300 font-light scroll-hidden"
                                             />
                                             <motion.div
                                                 className="absolute bottom-3 right-3 text-white/30 text-xs font-light"
@@ -570,7 +569,7 @@ function CanvasContent() {
                                         onClick={handleGenerate}
                                         key="generate"
                                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                                        className="w-full bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black p-3 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20 group cursor-pointer"
+                                        className="w-full bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black p-3 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border group cursor-pointer"
                                     >
                                         <span>Craft Masterpiece</span>
                                     </motion.button>
@@ -630,8 +629,8 @@ function CanvasContent() {
                                         className="flex flex-col items-center justify-center py-16 px-6 text-center space-y-6"
                                     >
                                         {/* Icon */}
-                                        <div className="w-20 h-20 rounded-full border-[#B08D57]/50 flex items-center justify-center">
-                                            <User className='w-10 h-10 text-[#B08D57]' />
+                                        <div className="w-20 h-20 rounded-full flex items-center justify-center">
+                                            <User className='w-10 h-10' />
                                         </div>
 
                                         {/* Message */}
@@ -646,7 +645,7 @@ function CanvasContent() {
                                         >
                                             <button
                                                 onClick={() => router.push('/admin/personas')}
-                                                className="px-8 py-3 bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black p-3 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border border-amber-400/20 group cursor-pointer flex items-center gap-2"
+                                                className="px-8 py-3 bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black p-3 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform transition-all duration-300 border group cursor-pointer flex items-center gap-2"
                                             >
                                                 Create Persona
                                             </button>
