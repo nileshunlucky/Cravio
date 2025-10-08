@@ -44,7 +44,6 @@ function CanvasContent() {
 
     const [uploadedImage, setUploadedImage] = useState<File | null>(null)
     const [prompt, setPrompt] = useState('')
-    const [dragActive, setDragActive] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [imagePreview, setImagePreview] = useState<string | null>(null)
     const [taskId, setTaskId] = useState<string | null>(null)
@@ -156,17 +155,11 @@ function CanvasContent() {
     const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault()
         e.stopPropagation()
-        if (e.type === "dragenter" || e.type === "dragover") {
-            setDragActive(true)
-        } else if (e.type === "dragleave") {
-            setDragActive(false)
-        }
     }
 
     const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault()
         e.stopPropagation()
-        setDragActive(false)
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
             handleImageUpload(e.dataTransfer.files[0])
         }
