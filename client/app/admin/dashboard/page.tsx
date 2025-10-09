@@ -168,7 +168,7 @@ const Page = () => {
                 router.push('/admin/pricing')
             } else if (!res.ok) {
                 console.error("Error from server:", data)
-                toast.error("Failed to generate Content",data, {
+                toast.error(`Failed to generate Content: ${JSON.stringify(data)}`, {
                     style: {
                         background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
                         color: "white",
