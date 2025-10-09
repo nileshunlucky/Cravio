@@ -11,7 +11,7 @@ celery_app = Celery(
     "reddit_story_app",
     broker="rediss://default:Ae3dAAIjcDE1ODgwYTk0MjZlOWY0ZTIzOGY1ZTJlY2EzODYyYTZlYXAxMA@rested-chow-60893.upstash.io:6379",
     backend="rediss://default:Ae3dAAIjcDE1ODgwYTk0MjZlOWY0ZTIzOGY1ZTJlY2EzODYyYTZlYXAxMA@rested-chow-60893.upstash.io:6379",
-    include=["tasks.persona_task", "tasks.image_task", "tasks.opus_task"],
+    include=["tasks.persona_task", "tasks.image_task", "tasks.opus_task", "tasks.content_task"],
 )
 
 celery_app.conf.update(

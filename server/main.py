@@ -8,6 +8,7 @@ from api.lemon_webhook import router as lemon_webhook_router
 from api.persona import router as persona_router
 from api.persona2img import router as img2img_router
 from api.opus import router as opus_router
+from api.content import router as content_router
 
 app = FastAPI()
 
@@ -25,6 +26,7 @@ app.include_router(lemon_webhook_router)
 app.include_router(persona_router)
 app.include_router(img2img_router)
 app.include_router(opus_router)
+app.include_router(content_router)
 
 # Get user by email
 @app.get("/user/{email}")

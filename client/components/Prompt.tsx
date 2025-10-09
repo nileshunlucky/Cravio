@@ -29,7 +29,7 @@ const Prompt = () => {
     console.log("Prompt submitted:", prompt);
     setPrompt("");
   };
-
+  
   return (
     <motion.div
       initial={{ y: 50, opacity: 0 }}
