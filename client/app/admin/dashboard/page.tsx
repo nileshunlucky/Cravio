@@ -23,7 +23,7 @@ interface TaskStatus {
     error?: string
 }
 
-const page = () => {
+const Page = () => {
   const router = useRouter();
   const { user } = useUser();
   const email = user?.emailAddresses?.[0]?.emailAddress || '';
@@ -433,4 +433,4 @@ const page = () => {
   )
 }
 
-export default page
+export default Page

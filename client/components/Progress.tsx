@@ -1,8 +1,18 @@
 "use client";
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from "framer-motion"
 
-const page = () => {
+interface TaskStatus {
+    progress?: number
+}
+
+interface ProgressProps {
+    isProcessing?: boolean
+    taskStatus?: TaskStatus | null
+}
+
+const Progress = ({ isProcessing = false, taskStatus = null }: ProgressProps) => {
         const [progress, setProgress] = useState(0)
 
         useEffect(() => {
@@ -23,12 +33,10 @@ const page = () => {
     }, [isProcessing])
 
      useEffect(() => {
-        if (taskStatus) {
-            if (taskStatus.progress !== undefined) {
-                setProgress(taskStatus.progress)
-            }
+        if (taskStatus?.progress !== undefined) {
+            setProgress(taskStatus.progress)
         }
-    }, [taskStatus])
+    }, [taskStatus?.progress])
   return (
     <div >
     <AnimatePresence>
@@ -74,4 +82,4 @@ const page = () => {
   )
 }
 
-export default page
+export default Progress
