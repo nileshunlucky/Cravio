@@ -99,7 +99,7 @@ def generate_viral_script(prompt: str) -> str:
     """
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-5",
             messages=[
                 {
                     "role": "system",
@@ -207,20 +207,59 @@ def upload_file_to_s3(file_path: str, email: str, prefix: str = "shorts") -> str
         logger.error(f"S3 upload failed: {e}")
         raise Exception("Failed to upload converted video to S3")
 
-
-def save_content_to_db(email: str, prompt: str, content_url: str, script: str = None):
-    """Save content generation details to database"""
+def generate_caption_and_score(script: str):
+    """
+    Generate a short social media caption and a virality score (0-100)
+    for the given script using GPT-5.
+    """
     try:
-        doc = {
-            "id": uuid.uuid4().hex,
-            "prompt": prompt,
-            "script": script,
-            "content_url": content_url,
-            "created_at": datetime.utcnow(),
-        }
-        users_collection.update_one({"email": email}, {"$push": {"content": doc}})
+        response = openai_client.chat.completions.create(
+            model="gpt-5",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a social media growth strategist. Generate catchy captions and predict virality of video scripts."
+                },
+                {
+                    "role": "user",
+                    "content": f"""Given this short-form video script:
+{script}
+
+1. Generate a punchy, 1-line caption suitable for TikTok, Shorts, or Reels without # and emojis.
+2. Provide a virality score (0-100) predicting its potential to go viral.
+
+Return as JSON: {{ "caption": "...", "virality_score": 85 }}"""
+                }
+            ],
+            temperature=0.7,
+            max_tokens=100,
+        )
+
+        result_text = response.choices[0].message.content.strip()
+        # Try to parse JSON from GPT response
+        import json
+        try:
+            result_json = json.loads(result_text)
+            return result_json.get("caption"), result_json.get("virality_score")
+        except:
+            logger.warning(f"Failed to parse caption/score JSON: {result_text}")
+            return result_text, None
+
     except Exception as e:
-        raise Exception(f"Failed to save video to database: {str(e)}")
+        logger.error(f"Caption/virality generation failed: {e}")
+        return None, None
+
+def save_content_to_db(email: str, prompt: str, content_url: str, script: str = None, caption: str = None, virality_score: int = None):
+    doc = {
+        "id": uuid.uuid4().hex,
+        "prompt": prompt,
+        "script": script,
+        "caption": caption,
+        "virality_score": virality_score,
+        "content_url": content_url,
+        "created_at": datetime.utcnow(),
+    }
+    users_collection.update_one({"email": email}, {"$push": {"content": doc}})
 
 
 @celery_app.task(bind=True)
@@ -235,6 +274,10 @@ def content(self, prompt: str, email: str, persona: str):
         )
         viral_script = generate_viral_script(prompt)
         logger.info(f"Generated script: {viral_script}")
+
+        caption, virality_score = generate_caption_and_score(viral_script)
+        logger.info(f"Caption: {caption}, Virality Score: {virality_score}")
+
 
         # STEP 2: Convert Script to Audio using persona voice
         self.update_state(
@@ -313,7 +356,8 @@ def content(self, prompt: str, email: str, persona: str):
             os.remove(converted_video_path)
 
         # STEP 6: Save everything in DB
-        save_content_to_db(email, prompt, final_content_url, viral_script)
+        save_content_to_db(email, prompt, final_content_url, viral_script, caption, virality_score)
+
 
         return {"status": "SUCCESS", "fal_url": final_content_url}
 

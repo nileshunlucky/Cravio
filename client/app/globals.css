@@ -125,12 +125,6 @@
   display: none; 
 }
 
-/* when selected add #B08D57 color */
-::selection {
-  background-color: #B08D57;
-  color: black;
-}
-
 @font-face {
   font-family: 'Futura';
   src: url('/fonts/Futura.ttf') format('truetype');

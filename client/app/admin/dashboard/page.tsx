@@ -35,6 +35,10 @@ const Page = () => {
   const [isTall, setIsTall] = useState(false);
     const [generatedContentUrl, setGeneratedContentUrl] = useState("")
     const [taskId, setTaskId] = useState<string | null>(null)
+const [showMenu, setShowMenu] = useState(false);
+const [activeOption, setActiveOption] = useState<string | null>(null);
+
+const options = ["Script"];
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -393,41 +397,85 @@ const Page = () => {
     </div>
   </motion.div>
 </motion.div>
+      ) : persona ? (
+       <motion.div
+  initial={{ y: 50, opacity: 0 }}
+  animate={{ y: 0, opacity: 1 }}
+  transition={{ duration: 0.2 }}
+  className="fixed bottom-4 left-0 right-0 flex justify-center px-4 sm:px-0"
+>
+  <div
+    className={`relative flex bg-zinc-900 shadow-lg px-4 w-full max-w-[95%] md:max-w-3xl transition-all duration-200 items-end ${
+      isTall ? "rounded-2xl" : "rounded-full"
+    }`}
+  >
+    {/* + Menu Button on the left */}
+    <div className="relative mr-3 mb-2">
+      <Button
+        onClick={() => setShowMenu(!showMenu)}
+        className="bg-zinc-900 p-3 md:p-4 rounded-full hover:bg-zinc-700 transition-all duration-200"
+      >
+        <Plus className="w-5 h-5 md:w-6 md:h-6 text-white" />
+      </Button>
 
-
-      ) : !persona ? (
-        <Starter/>
-      ) : (
+      {/* Dropdown menu */}
+      {showMenu && (
         <motion.div
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.2 }}
-          className="fixed bottom-4 left-0 right-0 flex justify-center px-4 sm:px-0"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="absolute bottom-full left-0 mb-2 bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden shadow-lg z-50"
         >
-          <div
-            className={`relative flex bg-zinc-900 shadow-lg px-4 w-full max-w-[95%] md:max-w-3xl transition-all duration-200 ${
-              isTall ? "rounded-2xl" : "rounded-full"
-            }`}
-          >
-            <textarea
-              ref={textareaRef}
-              placeholder="Describe your idea..."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              className="flex-1 resize-none border-none focus:ring-0 bg-transparent placeholder:text-zinc-500 py-3 md:py-4 text-base sm:text-lg md:text-xl focus:outline-none  leading-[24px]"
-              rows={1}
-            />
-            <Button
-              onClick={handleSend}
-              disabled={!prompt.trim()} 
-              className={`absolute right-2 md:right-3 bg-white p-3 md:p-4 rounded-full hover:opacity-90 transition-all duration-200 ${
-                isTall ? "bottom-2" : "top-1/2 -translate-y-1/2"
+          {options.map((option) => (
+            <button
+              key={option}
+              onClick={() => {
+                setActiveOption((prev) => (prev === option ? null : option));
+                setShowMenu(false);
+              }}
+              className={`block w-full text-left px-4 py-2 hover:bg-zinc-800 ${
+                activeOption === option ? "bg-zinc-800 font-bold" : ""
               }`}
             >
-              <ArrowUp className="w-5 h-5 md:w-6 md:h-6 text-black" />
-            </Button>
-          </div>
+              {option}
+            </button>
+          ))}
         </motion.div>
+      )}
+    </div>
+
+    {/* Active option badge (optional) */}
+    {activeOption && (
+      <span className="absolute top-[-40px] left-2 bg-zinc-900 text-white px-2 py-1 rounded-full">
+        {activeOption}
+      </span>
+    )}
+
+    {/* Textarea */}
+    <textarea
+      ref={textareaRef}
+      placeholder="Describe your idea..."
+      value={prompt}
+      onChange={(e) => setPrompt(e.target.value)}
+      className="flex-1 resize-none border-none focus:ring-0 bg-transparent placeholder:text-zinc-500 py-3 md:py-4 text-base sm:text-lg md:text-xl focus:outline-none leading-[24px]"
+      rows={1}
+    />
+
+    {/* Send button */}
+    <Button
+      onClick={handleSend}
+      disabled={!prompt.trim()}
+      className={`absolute right-2 md:right-3 bg-white p-3 md:p-4 rounded-full hover:opacity-90 transition-all duration-200 ${
+        isTall ? "bottom-2" : "top-1/2 -translate-y-1/2"
+      }`}
+    >
+      <ArrowUp className="w-5 h-5 md:w-6 md:h-6 text-black" />
+    </Button>
+  </div>
+</motion.div>
+
+      ) : (
+        <Starter/>
       )}
     </div>
   )
