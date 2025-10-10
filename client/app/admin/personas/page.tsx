@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { useRouter } from "next/navigation";
+
 
 interface Persona {
   _id: string;
@@ -17,12 +19,14 @@ interface Persona {
 const PersonaPage = () => {
   const { user } = useUser();
   const email = user?.emailAddresses?.[0]?.emailAddress || "";
-
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [personaName, setPersonaName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+
+  const router = useRouter();
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
