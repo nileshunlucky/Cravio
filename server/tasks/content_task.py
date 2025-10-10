@@ -10,6 +10,7 @@ import logging
 import subprocess
 import tempfile
 from openai import OpenAI
+from typing import Optional
 
 # Setup logging
 logging.basicConfig(
@@ -263,17 +264,23 @@ def save_content_to_db(email: str, prompt: str, content_url: str, script: str = 
 
 
 @celery_app.task(bind=True)
-def content(self, prompt: str, email: str, persona: str):
+def content(self, prompt: str, email: str, persona: str, option: Optional[str] = None):
     """Generate Content using fal.ai"""
     try:
 
+        # if option == "Script" the skip idea to script part
+        if option == "Script":
+            viral_script = prompt
+        else:
         # STEP 1: Convert idea to Viral Script using GPT-5
-        self.update_state(
+            self.update_state(
             state="PROGRESS",
             meta={"status": "Scripting", "progress": 10},
-        )
-        viral_script = generate_viral_script(prompt)
-        logger.info(f"Generated script: {viral_script}")
+            )
+
+            viral_script = generate_viral_script(prompt)
+            logger.info(f"Generated script: {viral_script}")
+
 
         caption, virality_score = generate_caption_and_score(viral_script)
         logger.info(f"Caption: {caption}, Virality Score: {virality_score}")

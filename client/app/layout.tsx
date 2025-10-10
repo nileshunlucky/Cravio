@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mellvitta AI",
+  title: "Mellvitta - A Clone AI for Creators",
   description: "Mellvitta AI is a platform for creating consistent content with AI-powered tools.",
   icons: {
     icon: "/logo.png",

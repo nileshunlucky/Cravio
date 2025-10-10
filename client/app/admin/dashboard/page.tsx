@@ -60,7 +60,7 @@ const options = ["Script"];
           const personasData = data.personas;
           if (personasData && personasData.length > 0) {
             // Use the first persona's video URL
-            setPersona(personasData[0].video_url || "");
+            setPersona(personasData[0].url || "");
           }
         } else {
           console.error("Error from server:", data);
@@ -134,6 +134,11 @@ const options = ["Script"];
             })
             return;
         }
+
+        if (prompt){
+          console.log(prompt,email,persona,activeOption) 
+          return;
+        }
         setProgress(0)
         setLoading(true)
         setGeneratedContentUrl("") // Reset previous generated content
@@ -143,6 +148,9 @@ const options = ["Script"];
             formData.append('email', email)
             formData.append('prompt', prompt)
             formData.append('persona', persona)
+            if (activeOption) {
+              formData.append('option', activeOption);
+            }
 
             const res = await fetch('https://cravio-ai.onrender.com/api/content', {
                 method: 'POST',

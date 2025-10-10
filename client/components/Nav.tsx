@@ -19,17 +19,18 @@ import { Menu , X} from 'lucide-react'
 
 const Nav = () => {
   const [aura, setAura] = useState<number | null>(null)
-  const { user } = useUser()
+    const { user } = useUser();
+  const email = user?.emailAddresses?.[0]?.emailAddress || '';
    const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname()
 
   // Fetch user aura value
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!user?.emailAddresses?.[0]?.emailAddress) return
+      if (!email) return;
       try {
         const res = await fetch(
-          `https://cravio-ai.onrender.com/user/${user.emailAddresses[0].emailAddress}`
+          `https://cravio-ai.onrender.com/user/${email}`
         )
         if (!res.ok) return
         const data = await res.json()
@@ -44,8 +45,7 @@ const Nav = () => {
   const dashLinks = [
     { href: "/admin/dashboard", label: "Dashboard", icon: Home },
     { href: "/admin/personas", label: "admin/personas", icon: UserRound },
-    { href: "/admin/canvas", label: "canvas", icon: null },
-    { href: "/admin/opus", label: "opus", icon: Play },
+    { href: "/admin/portfolio", label: "portfolio", icon: null },
   ]
 
   return (
@@ -139,8 +139,6 @@ const Nav = () => {
               </Button>
             </SignUpButton>
           </SignedOut>
-
-              <Link href="/admin/portfolio"><div className="h-7 w-7 rounded-full bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544]" /></Link>
         </div>
       </motion.nav>
 
@@ -186,18 +184,6 @@ const Nav = () => {
                 onClick={() => setMenuOpen(false)}
               >
                 Persona
-              </Link>
-              <Link
-                href="/admin/canvas"
-                onClick={() => setMenuOpen(false)}
-              >
-                Canvas
-              </Link>
-              <Link
-                href="/admin/opus"
-                onClick={() => setMenuOpen(false)}
-              >
-                Opus
               </Link>
               <Link
                 href="/admin/portfolio"

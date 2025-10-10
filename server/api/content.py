@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Form, HTTPException
 from db import users_collection
 from tasks.content_task import content
-
+from typing import Optional
 router = APIRouter()
 
 
@@ -26,13 +26,14 @@ async def persona_image(
     email: str = Form(...),
     prompt: str = Form(...),
     persona: str = Form(...),
+    option: Optional[str] = Form(None),
 ):
     # Check if user has enough aura
     deduct_aura_by_model(email)
 
     try:
 
-        task = content.delay(prompt=prompt, email=email, persona=persona)
+        task = content.delay(prompt=prompt, email=email, persona=persona, option=option)
 
         return {
             "status": "success",
