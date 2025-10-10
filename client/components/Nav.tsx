@@ -89,6 +89,7 @@ const Nav = () => {
                 )}
               </Link>
             ))}
+            <UserButton afterSignOutUrl="/" />
           </SignedIn>
         </div>
 
@@ -123,7 +124,6 @@ const Nav = () => {
                   {aura}
                 </span>
               </div>
-              <UserButton afterSignOutUrl="/" />
             </div>
           </SignedIn>
 

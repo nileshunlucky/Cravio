@@ -20,18 +20,13 @@ const page = () => {
         <div className="space-y-4">
           <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">
             <span className="bg-gradient-to-b from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent">
-              Create your first
+              Clone your first
             </span>
             <br />
             <span className="bg-gradient-to-r from-zinc-300 to-zinc-500 bg-clip-text text-transparent font-light">
               masterpiece
             </span>
           </h1>
-          
-            <p className="text-zinc-400 text-lg md:text-xl max-w-lg mx-auto leading-relaxed font-light">
-              Turn ideas into viral content 
-              <span className="text-zinc-300"> without recording twice.</span>
-            </p>
         </div>
 
         {/* Action Button */}
@@ -45,7 +40,7 @@ const page = () => {
             {/* Button Surface */}
             <div className="relative bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black px-8 py-4 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 border border-amber-400/20">
               <span className="flex items-center gap-3">
-                Get Started
+                Create Persona
                 <svg 
                   className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" 
                   fill="none" 
@@ -63,11 +58,6 @@ const page = () => {
             </div>
           </button></Link>
         </div>
-
-        {/* Subtle hint text */}
-        <p className="text-zinc-600 text-sm font-light">
-          Tired of doing it all yourself, but that&rsquo;s about to change
-        </p>
       </div>
     </div>
   )

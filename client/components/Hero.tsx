@@ -1,14 +1,80 @@
 "use client";
 
-import React from "react";
+import React from 'react'
+import Link from 'next/link'
 
-const HeroSection = () => {
 
+const page = () => {
   return (
-    <div>
-    
-    </div>
-  );
-};
+    <div className="min-h-screen flex flex-col gap-10 items-center justify-center p-8 bg-black relative overflow-hidden">
+      {/* Subtle background gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-zinc-900/20 via-transparent to-zinc-800/10 pointer-events-none" />
+      
+      {/* Floating orbs for ambient lighting */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-amber-500/3 to-orange-500/3 rounded-full blur-3xl animate-pulse delay-1000" />
+      
+      <div className="relative z-10 text-center space-y-8 max-w-2xl mx-auto">
 
-export default HeroSection;
+        {/* Heading with refined typography */}
+        <div className="space-y-4">
+          <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">
+            <span className="bg-gradient-to-b from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent">
+              Clone Yourself Once
+            </span>
+            <br />
+            <span className="bg-gradient-to-r from-zinc-300 to-zinc-500 bg-clip-text text-transparent font-light">
+              Create Viral Content Forever
+            </span>
+          </h1>
+          
+            <p className="text-zinc-400 text-lg md:text-xl max-w-lg mx-auto leading-relaxed font-light">
+              from ideas to content 
+              <span className="text-zinc-300"> without recording twice.</span>
+            </p>
+        </div>
+
+        {/* Action Button */}
+        <div className="pt-4">
+          <Link href="/admin/personas"><button
+            className="group relative inline-flex items-center justify-center"
+          >
+            {/* Button Background */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] rounded-2xl blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
+            
+            {/* Button Surface */}
+            <div className="relative bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black px-8 py-4 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 border border-amber-400/20">
+              <span className="flex items-center gap-3">
+                Get Started
+                <svg 
+                  className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M17 8l4 4m0 0l-4 4m4-4H3" 
+                  />
+                </svg>
+              </span>
+            </div>
+          </button></Link>
+        </div>
+
+        {/* Subtle hint text */}
+        <p className="text-zinc-600 text-sm font-light">
+          Tired of doing it all yourself, but that&rsquo;s about to change
+        </p>
+      </div>
+
+      <div className="flex justify-center items-center">
+     
+      </div>
+    </div>
+  )
+}
+
+export default page
