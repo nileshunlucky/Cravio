@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, X , Info} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
@@ -53,7 +53,7 @@ const PersonaPage = () => {
                 body: formData,
             })
 
-            const data = await res.json()
+            await res.json()
 
             if (res.status === 403) {
     toast.error('Paid feature. Subscribe to continue.', {
