@@ -33,15 +33,15 @@ const RefundPolicyPage = () => {
             >
               &lt; Back
             </button>
-            <h1 className="text-3xl font-bold text-[#B08D57] underline">Refund Policy</h1>
+            <h1 className="text-3xl font-bold underline">Refund Policy</h1>
             <p className="text-muted-foreground text-lg">
-              At Mellvitta, we are committed to delivering high-performance AI tools for consistent content creation. Due to the nature of our digital SaaS offering and the immediate access granted upon purchase, <span className="font-semibold ">we do not offer refunds once a subscription is completed</span>.
+              At Auraiser, we are committed to delivering high-performance AI tools for rating the user physics by scanning it. Due to the nature of our digital SaaS offering and the immediate access granted upon purchase, <span className="font-semibold ">we do not offer refunds once a subscription is completed</span>.
             </p>
             <p className="text-muted-foreground text-lg">
               We encourage all Clients to review our features and ask questions prior to subscribing. If you experience any technical issues or need help using the platform, our support team is available to assist you promptly.
             </p>
             <p className="text-muted-foreground text-lg">
-              By proceeding with a purchase, you agree to this refund policy. We appreciate your understanding and thank you for being part of the Mellvitta community.
+              By proceeding with a purchase, you agree to this refund policy. We appreciate your understanding and thank you for being part of the Auraiser community.
             </p>
             <p>
                 Support - <span className='font-semibold'>mellvitta.ai@gmail.com</span>

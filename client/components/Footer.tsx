@@ -21,7 +21,7 @@ const Footer = () => {
           {/* Social Section */}
           <div className="space-y-3">
             <h4 className="text-lg font-semibold">Follow Us</h4>
-            <Link href="https://www.instagram.com/mellvitta.ai" target="_blank">
+            <Link href="https://www.instagram.com/auraiser.ai" target="_blank">
               <Instagram className="text-zinc-300"/>
             </Link>
           </div>
@@ -38,7 +38,7 @@ const Footer = () => {
         </div>
         {/* Copyright */}
         <div className="flex items-center justify-center py-3">
-          <p className="text-sm text-zinc-400">© 2025 Mellvitta, All rights reserved.</p>
+          <p className="text-sm text-zinc-400">© 2025 Auraiser, All rights reserved.</p>
         </div>
       </motion.div>
     </footer>

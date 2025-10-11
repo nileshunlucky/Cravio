@@ -18,34 +18,6 @@ s3_client = boto3.client(
     region_name=os.getenv("AWS_REGION", "us-east-1"),
 )
 
-
-def delete_persona_assets_from_s3(personas):
-    deleted_count = 0
-    for persona in personas:
-        # Delete model file
-        model_url = persona.get("model")
-        if model_url and model_url.startswith(f"https://{S3_BUCKET}.s3.amazonaws.com/"):
-            s3_key = model_url.replace(f"https://{S3_BUCKET}.s3.amazonaws.com/", "")
-            try:
-                s3_client.delete_object(Bucket=S3_BUCKET, Key=s3_key)
-                deleted_count += 1
-                print(f"Deleted model from S3: {s3_key}")
-            except Exception as e:
-                print(f"Failed to delete model from S3: {s3_key}, Error: {str(e)}")
-
-        # Delete training image file (image_url)
-        image_url = persona.get("image_url")
-        if image_url and image_url.startswith(f"https://{S3_BUCKET}.s3.amazonaws.com/"):
-            s3_key = image_url.replace(f"https://{S3_BUCKET}.s3.amazonaws.com/", "")
-            try:
-                s3_client.delete_object(Bucket=S3_BUCKET, Key=s3_key)
-                deleted_count += 1
-                print(f"Deleted training image from S3: {s3_key}")
-            except Exception as e:
-                print(f"Failed to delete image from S3: {s3_key}, Error: {str(e)}")
-
-    return deleted_count
-
 # Ensure you have your webhook secret in your environment variables
 LEMON_SQUEEZING_WEBHOOK_SECRET = os.getenv("LEMON_SQUEEZING_WEBHOOK_SECRET")
 
@@ -53,12 +25,8 @@ LEMON_SQUEEZING_WEBHOOK_SECRET = os.getenv("LEMON_SQUEEZING_WEBHOOK_SECRET")
 
 # Map your Lemon Squeezy plan variant IDs to the number of aura
 PLANS = {
-    908443: 1000,  # Classic /m
-    908458: 2000,  # Premium /m
-    908445: 3500,  # Platinum /m
-    908463: 12000,  # Classic /y
-    908475: 24000,  # Premium /y
-    908476: 42000,  # Platinum /y
+    971466: 300, 
+    971468: 3600, 
 }
 
 # --- Helper Functions ---

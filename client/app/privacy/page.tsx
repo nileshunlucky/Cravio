@@ -21,14 +21,14 @@ const PrivacyPage = () => {
               &larr; Back
             </Button>
 
-            <h1 className="text-3xl font-bold text-[#B08D57] underline">Privacy Policy</h1>
+            <h1 className="text-3xl font-bold underline">Privacy Policy</h1>
             <p className="text-muted-foreground text-lg">
-              Welcome to Mellvitta! We respect your privacy and are committed to protecting your personal data. This Privacy Policy outlines how we collect, use, and protect your information when using our AI-powered tools.
+              Welcome to Auraiser! We respect your privacy and are committed to protecting your personal data. This Privacy Policy outlines how we collect, use, and protect your information when using our AI-powered tools.
             </p>
 
             <h2 className="text-xl font-semibold ">1. Information We Collect</h2>
             <p className="text-muted-foreground text-lg">
-              We collect personal data when you use Mellvitta services. This may include your name, email address, payment information, and usage data. We only collect information that is necessary for providing our services.
+              We collect personal data when you use Auraiser services. This may include your name, email address, payment information, and usage data. We only collect information that is necessary for providing our services.
             </p>
 
             <h2 className="text-xl font-semibold ">2. How We Use Your Information</h2>
@@ -53,7 +53,7 @@ const PrivacyPage = () => {
 
             <h2 className="text-xl font-semibold ">6. Cookies</h2>
             <p className="text-muted-foreground text-lg">
-              We use cookies to improve your experience on Mellvitta. Cookies are small data files stored on your device to remember your preferences and enhance functionality. You can manage your cookie preferences through your browser settings.
+              We use cookies to improve your experience on Auraiser. Cookies are small data files stored on your device to remember your preferences and enhance functionality. You can manage your cookie preferences through your browser settings.
             </p>
 
             <h2 className="text-xl font-semibold ">7. Changes to This Privacy Policy</h2>
@@ -67,7 +67,7 @@ const PrivacyPage = () => {
             </p>
 
             <footer className="mt-8 text-center text-sm text-muted-foreground">
-              <p>Last updated: April 2025</p>
+              <p>Last updated: Oct 2025</p>
             </footer>
           </CardContent>
         </Card>

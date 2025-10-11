@@ -28,24 +28,24 @@ const page = () => {
               &larr; Back
             </Button>
 
-            <h1 className="text-3xl font-bold text-[#B08D57] underline">Terms and Conditions</h1>
+            <h1 className="text-3xl font-bold underline">Terms and Conditions</h1>
             <p className="text-muted-foreground text-lg">
-              Welcome to Mellvitta! By using our AI-powered tools for consistent content creation, you agree to the following terms and conditions. Please read them carefully.
+              Welcome to Auraiser! By using our AI-powered tools for rating users physics by scnning thier fitness, you agree to the following terms and conditions. Please read them carefully.
             </p>
 
             <h2 className="text-xl font-semibold">1. Introduction</h2>
             <p className="text-muted-foreground text-lg">
-              Mellvitta provides AI-powered tools that help models, influencers, and creators produce consistent content, such as images, videos, and other digital media. By using our platform, you agree to comply with these Terms and Conditions, which govern your use of the Mellvitta service.
+              Auraiser provides AI-powered tools that help athelets produce rate their physics, such as images. By using our platform, you agree to comply with these Terms and Conditions, which govern your use of the Auraiser service.
             </p>
 
             <h2 className="text-xl font-semibold ">2. Use of Service</h2>
             <p className="text-muted-foreground text-lg">
-              You may only use Mellvitta for lawful purposes and in accordance with these terms. You are responsible for ensuring that your use of the platform complies with all applicable laws and regulations.
+              You may only use Auraiser for lawful purposes and in accordance with these terms. You are responsible for ensuring that your use of the platform complies with all applicable laws and regulations.
             </p>
 
             <h2 className="text-xl font-semibold ">3. Payment and Subscription</h2>
             <p className="text-muted-foreground text-lg">
-              Mellvitta offers subscription-based access to its AI tools. All payments are processed securely via <span className="font-semibold">Lemon Squeezing</span>, a trusted third-party payment gateway. By subscribing, you agree to pay the specified fees for the plan you select. Payment is processed upon confirmation of your subscription.
+              Auraiser offers subscription-based access to its AI tools. All payments are processed securely via <span className="font-semibold">Lemon Squeezing</span>, a trusted third-party payment gateway. By subscribing, you agree to pay the specified fees for the plan you select. Payment is processed upon confirmation of your subscription.
             </p>
             <p className="text-muted-foreground text-lg">
               Lemon Squeezing ensures that your payment details are processed securely. We do not store any sensitive payment information on our servers. Please refer to Lemon Squeezing privacy policy for more details.
@@ -58,7 +58,7 @@ const page = () => {
 
             <h2 className="text-xl font-semibold ">5. User Responsibilities</h2>
             <p className="text-muted-foreground text-lg">
-              You are responsible for all content that you create and share using Mellvitta. You agree not to use the platform to create or distribute any illegal, harmful, or offensive content. Mellvitta reserves the right to suspend or terminate your account if you violate these terms.
+              You are responsible for all content that you create and share using Auraiser. You agree not to use the platform to create or distribute any illegal, harmful, or offensive content. Auraiser reserves the right to suspend or terminate your account if you violate these terms.
             </p>
 
             <h2 className="text-xl font-semibold ">6. Privacy and Data Security</h2>
@@ -68,17 +68,17 @@ const page = () => {
 
             <h2 className="text-xl font-semibold ">7. Termination</h2>
             <p className="text-muted-foreground text-lg">
-              Mellvitta reserves the right to suspend or terminate your account at any time, without notice, for any reason, including violation of these Terms and Conditions.
+              Auraiser reserves the right to suspend or terminate your account at any time, without notice, for any reason, including violation of these Terms and Conditions.
             </p>
 
             <h2 className="text-xl font-semibold ">8. Limitation of Liability</h2>
             <p className="text-muted-foreground text-lg">
-              To the fullest extent permitted by law, Mellvitta is not liable for any damages arising out of your use of the platform. This includes any direct, indirect, incidental, or consequential damages.
+              To the fullest extent permitted by law, Auraiser is not liable for any damages arising out of your use of the platform. This includes any direct, indirect, incidental, or consequential damages.
             </p>
 
             <h2 className="text-xl font-semibold ">9. Changes to Terms</h2>
             <p className="text-muted-foreground text-lg">
-              Mellvitta reserves the right to update or change these Terms and Conditions at any time. Any updates will be posted on this page, and the date of the last revision will be noted at the bottom of this page.
+              Auraiser reserves the right to update or change these Terms and Conditions at any time. Any updates will be posted on this page, and the date of the last revision will be noted at the bottom of this page.
             </p>
 
             <h2 className="text-xl font-semibold ">10. Contact Us</h2>
@@ -87,7 +87,7 @@ const page = () => {
             </p>
 
             <footer className="mt-8 text-center text-sm text-muted-foreground">
-              <p>Last updated: July 2025</p>
+              <p>Last updated: Oct 2025</p>
             </footer>
           </CardContent>
         </Card>

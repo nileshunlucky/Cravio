@@ -44,8 +44,6 @@ const Nav = () => {
 
   const dashLinks = [
     { href: "/admin/dashboard", label: "Dashboard", icon: Home },
-    { href: "/admin/personas", label: "admin/personas", icon: UserRound },
-    { href: "/admin/portfolio", label: "portfolio", icon: null },
   ]
 
   return (
@@ -179,18 +177,6 @@ const Nav = () => {
                 onClick={() => setMenuOpen(false)}
               >
                 Dashboard
-              </Link>
-              <Link
-                href="/admin/personas"
-                onClick={() => setMenuOpen(false)}
-              >
-                Persona
-              </Link>
-              <Link
-                href="/admin/portfolio"
-                onClick={() => setMenuOpen(false)}
-              >
-                Portfolio
               </Link>
               <UserButton />
             </motion.div>

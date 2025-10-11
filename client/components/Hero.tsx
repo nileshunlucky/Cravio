@@ -41,8 +41,8 @@ useEffect(() => {
           </h1>
 
           <p className="text-zinc-400 text-lg md:text-xl max-w-lg mx-auto leading-relaxed font-light">
-            One Rep. Infinite Gains {athletes}+ 
-<span className="text-zinc-300"> Train once. Transform forever.</span>
+            One Rep. Infinite Gains {athletes}+ Athletes 
+<span className="text-zinc-300"> Trained. Transform forever.</span>
           </p>
         </div>
 

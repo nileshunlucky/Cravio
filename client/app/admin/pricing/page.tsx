@@ -94,7 +94,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
             variants={cardVariants}
             initial="hidden"
             animate="visible"
-            className="relative h-full"
+            className="relative h-full "
             style={{ pointerEvents: 'auto' }}
         >
             {/* Most Popular Badge */}
@@ -107,24 +107,15 @@ const PricingCard: React.FC<PricingCardProps> = ({
                         duration: 0.8,
                         ease: [0.23, 1, 0.32, 1] // Custom luxury easing
                     }}
-                    className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-30"
+                    className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-30 border"
                     style={{ pointerEvents: 'none' }}
                 >
                     <div className="relative group">
                         {/* Subtle glow effect */}
                         <div className="absolute inset-0 bg-gradient-to-br from-amber-200/20 via-yellow-100/30 to-amber-200/20 rounded-full blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-700"></div>
 
-                        {/* Main badge */}
-                        <div className="relative bg-gradient-to-br from-[#1a1a1a] via-[#2d2d2d] to-[#1a1a1a] border-2 border-[#B08D57] text-[#B08D57] px-8 py-3 rounded-full font-light tracking-[0.05em] flex items-center gap-3 shadow-2xl backdrop-blur-sm ">
-
-                            {/* Premium typography */}
-                            <span className="text-sm uppercase tracking-widest whitespace-nowrap ">
-                                Most Popular
-                            </span>
-                        </div>
-
                         {/* Subtle accent line */}
-                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-px bg-gradient-to-br from-transparent via-[#B08D57]/50 to-transparent"></div>
+                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-px bg-gradient-to-br from-transparent via-[#BC2120]/50 to-transparent"></div>
                     </div>
                 </motion.div>
             )}
@@ -135,7 +126,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                 initial="initial"
                 animate="animate"
                 className={`relative rounded-2xl p-6 sm:p-8 h-full backdrop-blur-sm border-2 overflow-hidden ${isPopular
-                    ? 'border-[#B08D57] bg-black/80'
+                    ? 'border-[#BC2120] bg-black/80'
                     : 'border-zinc-700 bg-zinc-900/80'
                     }`}
                 style={{ pointerEvents: 'auto' }}
@@ -145,7 +136,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                     className="absolute inset-0 opacity-5"
                     style={{ pointerEvents: 'none' }}
                 >
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#B08D57] via-transparent to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#BC2120] via-transparent to-transparent"></div>
                 </div>
 
                 {/* Plan Name and Discount */}
@@ -154,8 +145,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: delay + 0.3, duration: 0.6 }}
-                        className={`text-2xl font-bold mb-2 ${isPopular ? 'bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-transparent bg-clip-text' : 'text-white'
-                            }`}
+                        className={`text-2xl font-bold mb-2 text-white`}
                         style={{
                             filter: isPopular
                                 ? '0 0 30px rgba(71, 255, 231, 0.1)'
@@ -176,7 +166,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             className="text-red-500 font-semibold text-xl sm:text-2xl select-text drop-shadow-[0_0_6px_red]"
                             style={{ pointerEvents: 'auto' }}
                         >
-                            -30%
+                            -70%
                         </motion.span>
                     )}
                 </div>
@@ -208,7 +198,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.5 }}
-                            className={`text-4xl sm:text-5xl font-bold ${isPopular ? 'bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-transparent bg-clip-text' : 'text-white'
+                            className={`text-4xl sm:text-5xl font-bold ${isPopular ? 'bg-gradient-to-r from-[#5C0A14] via-[#BC2120] to-[#9B111E]  text-transparent bg-clip-text' : 'text-white'
                                 }`}
                             style={isPopular ? { filter: '0 0 30px rgba(71, 255, 231, 0.1)' } : { filter: '0 0 30px rgba(255, 255, 255, 0.1)' }}
                         >
@@ -243,29 +233,24 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             key={`aura-${isYearly}`}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-transparent bg-clip-text font-bold flex items-center"
+                            className="bg-gradient-to-r from-[#5C0A14] via-[#BC2120] to-[#9B111E]  text-transparent bg-clip-text font-bold flex items-center"
                         >
-                            <svg width="30" height="30" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-                                <defs>
-                                    <linearGradient id="minimalistGold" cx="50%" cy="50%" r="60%">
-                                        <stop offset="0%" style={{ stopColor: "#F4E4BC", stopOpacity: 1 }} />
-                                        <stop offset="50%" style={{ stopColor: "#E6C878", stopOpacity: 1 }} />
-                                        <stop offset="100%" style={{ stopColor: "#C9A96E", stopOpacity: 1 }} />
-                                    </linearGradient>
-                                </defs>
-                                <path d="M 200 40 
-         Q 220 160 240 180 
-         Q 290 190 340 200 
-         Q 290 210 240 220 
-         Q 220 240 200 360 
-         Q 180 240 160 220 
-         Q 110 210 60 200 
-         Q 110 190 160 180 
-         Q 180 160 200 40 
-         Z"
-                                    fill="url(#minimalistGold)"
-                                    stroke="none" />
-                            </svg>
+                           <svg width="30" height="30" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="redGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stopColor="#5C0A14" />
+      <stop offset="50%" stopColor="#BC2120" />
+      <stop offset="100%" stopColor="#9B111E" />
+    </linearGradient>
+  </defs>
+  <path
+    d="M200 40 Q220 160 240 180 Q290 190 340 200 
+       Q290 210 240 220 Q220 240 200 360 
+       Q180 240 160 220 Q110 210 60 200 
+       Q110 190 160 180 Q180 160 200 40 Z"
+    fill="url(#redGradient)"
+  />
+</svg>
                             {currentAura.toLocaleString()} Aura
                         </motion.span>{' '}
                         per {isYearly ? 'year' : 'month'}.
@@ -282,9 +267,9 @@ const PricingCard: React.FC<PricingCardProps> = ({
                                     : "0 10px 30px rgba(176, 141, 87, 0.3)"
                             }}
                             whileTap={{ scale: 0.98 }}
-                            className={`group relative inline-flex items-center justify-center z-20 w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-center transition-all duration-300 cursor-pointer ${isPopular
-                                ? 'bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black hover:bg-[#B08D57]/80 shadow-lg'
-                                : 'bg-zinc-800 text-white hover:text-[#B08D57]  hover:bg-zinc-800 '
+                            className={`group relative inline-flex items-center justify-center z-20 w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-center transition-all duration-300 cursor-pointer text-white ${isPopular
+                                ? 'bg-gradient-to-r from-[#5C0A14] via-[#BC2120] to-[#9B111E]    hover:bg-[#BC2120]/80 shadow-lg'
+                                : 'bg-zinc-800 text-white   hover:bg-zinc-800 '
                                 }`}
                             type="button"
                             role="button"
@@ -292,7 +277,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             style={{ pointerEvents: 'auto' }}
                         >
                             {/* Button Background */}
-                            {isPopular && <div className="absolute inset-0 bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] rounded-2xl blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-500" />}
+                            {isPopular && <div className="absolute inset-0 bg-gradient-to-r from-[#5C0A14] via-[#BC2120] to-[#9B111E]  rounded-2xl blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-500" />}
                             {buttonText}
                         </motion.button>
                     </a>
@@ -315,12 +300,12 @@ const PricingCard: React.FC<PricingCardProps> = ({
                         >
                             <div className="flex-shrink-0">
                                 {feature.included ? (
-                                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-[#B08D57] to-[#4e3c20] flex items-center justify-center">
-                                        <Check className="w-3 h-3 text-black" />
+                                    <div className="w-5 h-5 rounded-full bg-gradient-to-r from-[#5C0A14] via-[#BC2120] to-[#9B111E] flex items-center justify-center">
+                                        <Check className="w-3 h-3 text-white" />
                                     </div>
                                 ) : (
                                     <div className="w-5 h-5 rounded-full bg-zinc-700 flex items-center justify-center">
-                                       <Check className="w-3 h-3 text-black" />
+                                       <Check className="w-3 h-3 text-white" />
                                     </div>
                                 )}
                             </div>
@@ -342,7 +327,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             repeat: Infinity,
                             ease: "easeInOut"
                         }}
-                        className="absolute inset-0 bg-gradient-to-br from-[#B08D57]/10 via-transparent to-[#B08D57]/10 rounded-2xl"
+                        className="absolute inset-0 bg-gradient-to-br from-[#BC2120]/10 via-transparent to-[#BC2120]/10 rounded-2xl"
                         style={{ pointerEvents: 'none' }}
                     />
                 )}
@@ -364,80 +349,30 @@ const Page = () => {
 
     const plans = [
         {
-            plan: "Classic",
+            plan: "Auraiser",
             price: {
-                monthly: 29,
-                yearly: 243
-            },
-            urls: {
-                monthly: `https://mellvitta.lemonsqueezy.com/buy/097976f3-ffdf-4693-bab8-3b3bd0be6637?checkout[email]=${encodeURIComponent(email)}`,
-                yearly: `https://mellvitta.lemonsqueezy.com/buy/75d2f287-595b-4e7e-81e5-ab82271ef121?checkout[email]=${encodeURIComponent(email)}`
-            },
-            isPopular: false,
-            buttonText: "Elevate Your Signature",
-            features: {
-                aura: {
-                    monthly: 1000,
-                    yearly: 12000
-                },
-                list: [
-                    { name: "25 Short Content", included: false },
-                    { name: "Persona", included: false },
-                    { name: "Cloned Voice", included: false },
-                    { name: "Standard Support", included: false },
-                ]
-            }
-        },
-        {
-            plan: "Premium",
-            price: {
-                monthly: 59,
-                yearly: 495
+                monthly: 9.99,
+                yearly: 36
             },
             urls: {
                 monthly: `https://mellvitta.lemonsqueezy.com/buy/1e69aebb-1eaf-4c10-be06-ff479ab4137f?checkout[email]=${encodeURIComponent(email)}`,
                 yearly: `https://mellvitta.lemonsqueezy.com/buy/7a5edd94-7fef-4006-ad70-33bbb7ee26ee?checkout[email]=${encodeURIComponent(email)}`
             },
             isPopular: true,
-            buttonText: "Elevate Your Signature",
+            buttonText: "Arise",
             features: {
                 aura: {
-                    monthly: 2000,
-                    yearly: 24000
+                    monthly: 300,
+                    yearly: 3600
                 },
                     list: [
-                    { name: "50 Short Content", included: true },
-                    { name: "Persona", included: true },
-                    { name: "Cloned Voice", included: true },
-                    { name: "Exclusive Support", included: true },
+                    { name: "Scan Your Physics", included: true },
+                    { name: "Rates", included: true },
+                    { name: "Analytics", included: true },
+                    { name: "Guild", included: true },
                 ]
             }
         },
-        {
-            plan: "Platinum",
-            price: {
-                monthly: 99,
-                yearly: 831
-            },
-            urls: {
-                monthly: `https://mellvitta.lemonsqueezy.com/buy/14fb5888-bca6-4bbf-971e-492a7e133e43?checkout[email]=${encodeURIComponent(email)}`,
-                yearly: `https://mellvitta.lemonsqueezy.com/buy/417677ef-a16e-4077-8f01-e61b3d401dda?checkout[email]=${encodeURIComponent(email)}`
-            },
-            isPopular: false,
-            buttonText: "Elevate Your Signature",
-            features: {
-                aura: {
-                    monthly: 3500,
-                    yearly: 42000
-                },
-                    list: [
-                    { name: "87 Short Content", included: false },
-                    { name: "Persona", included: false },
-                    { name: "Cloned Voice", included: false },
-                    { name: "Exclusive Support", included: false },
-                ]
-            }
-        }
     ];
 
     const containerVariants = {
@@ -508,19 +443,16 @@ const Page = () => {
                     variants={titleVariants}
                     className="text-center mb-8 sm:mb-12"
                 >
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-br from-[#4e3c20] via-[#B08D57] to-[#4e3c20] text-transparent bg-clip-text drop-shadow-lg select-text">
-                        Select Your Collection
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-white drop-shadow-lg select-text">
+                        Select Your Strength
                     </h1>
-                    <p className="text-base sm:text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed select-text">
-                        Empower your vision with bespoke AI artistry made for creators like you.
-                    </p>
                 </motion.div>
 
                 {/* Premium Toggle */}
                 <motion.div variants={toggleVariants} className="flex justify-center mb-12">
-                    <div className="relative bg-[#0f0f0f] border-2 border-[#B08D57]/50 p-2 rounded-xl">
+                    <div className="relative bg-[#0f0f0f] border-2 border-[#BC2120]/50 p-2 rounded-xl">
                         <motion.div
-                            className="absolute inset-y-2 bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black rounded-lg"
+                            className="absolute inset-y-2 bg-gradient-to-r from-[#5C0A14] via-[#BC2120] to-[#9B111E]  text-white rounded-lg"
                             animate={{
                                 x: isYearly ? "calc(100% - 8px)" : "8px",
                                 width: "calc(50% - 8px)"
@@ -530,15 +462,13 @@ const Page = () => {
                         <div className="relative flex">
                             <button
                                 onClick={() => setIsYearly(false)}
-                                className={`relative z-10 px-12 py-4 font-light tracking-[0.08em] transition-all duration-400 uppercase text-xs ${!isYearly ? 'text-black' : 'text-[#B08D57]/60'
-                                    }`}
+                                className={`relative z-10 px-12 py-4 font-light tracking-[0.08em] transition-all duration-400 uppercase text-xs text-white`}
                             >
                                 Monthly
                             </button>
                             <button
                                 onClick={() => setIsYearly(true)}
-                                className={`relative z-10 px-12 py-4 font-light tracking-[0.08em] transition-all duration-400 uppercase text-xs ${isYearly ? 'text-black' : 'text-[#B08D57]/60'
-                                    }`}
+                                className={`relative z-10 px-12 py-4 font-light tracking-[0.08em] transition-all duration-400 uppercase text-xs text-white`}
                             >
                                 Yearly
                             </button>
@@ -569,7 +499,7 @@ const Page = () => {
                     {particlePositions.map((position, i) => (
                         <motion.div
                             key={i}
-                            className="absolute w-1 h-1 bg-[#B08D57] rounded-full opacity-60"
+                            className="absolute w-1 h-1 bg-[#BC2120] rounded-full opacity-60"
                             style={{
                                 left: `${position.left}%`,
                                 top: `${position.top}%`,
