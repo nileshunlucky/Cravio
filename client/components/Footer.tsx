@@ -1,26 +1,11 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import Link from 'next/link'
 import { Instagram } from 'lucide-react'
 import { motion } from 'framer-motion' // Import Framer Motion
 
 const Footer = () => {
-  const [creators, setCreators] = useState<number | null>(null)
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const res = await fetch(`https://cravio-ai.onrender.com/users-emails`)
-        if (!res.ok) return
-        const data = await res.json()
-        setCreators(data.length)
-      } catch (err) {
-        console.error('Failed to fetch user data:', err)
-      }
-    }
-    fetchUserData()
-  }, [])
 
   // Framer Motion variants for smooth fade-in
   const fadeUp = {
@@ -30,25 +15,6 @@ const Footer = () => {
 
   return (
     <footer className="w-full">
-      {/* --- Top Banner --- */}
-      <motion.div
-        className="w-full py-16 px-6 text-black flex items-start"
-        style={{
-          background: 'linear-gradient(135deg, #b08D57 0%, #d6bfa3 100%)',
-        }}
-        initial="hidden"
-        animate="visible"
-        variants={fadeUp}
-      >
-        <div className="max-w-7xl mx-auto space-y-6">
-          <h2 className="text-3xl md:text-4xl font-bold leading-snug max-w-4xl">
-            ELEVATING AI CREATIVITY <br /> FOR MODERN CREATORS
-          </h2>
-          <p className="text-lg">
-            Inspiration for {creators}+ visionary Creators <br /> and tastemakers
-          </p>
-        </div>
-      </motion.div>
 
       {/* --- Bottom Footer --- */}
       <motion.div

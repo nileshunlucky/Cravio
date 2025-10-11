@@ -1,9 +1,23 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from 'react'
 import Link from "next/link";
 
 const Page = () => {
+  const [athletes, setAthletes] = useState<number | null>(null)
+useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const res = await fetch(`https://cravio-ai.onrender.com/users-emails`)
+        if (!res.ok) return
+        const data = await res.json()
+        setAthletes(data.length)
+      } catch (err) {
+        console.error('Failed to fetch user data:', err)
+      }
+    }
+    fetchUserData()
+  }, [])
   return (
     <div className="min-h-screen flex flex-col gap-14 items-center justify-center p-6 md:p-10 bg-black relative overflow-hidden">
       {/* Background gradient overlay */}
@@ -11,35 +25,36 @@ const Page = () => {
 
       {/* Ambient floating lights */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-amber-500/3 to-orange-500/3 rounded-full blur-3xl animate-pulse delay-1000" />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-red-500/3 to-orange-500/3 rounded-full blur-3xl animate-pulse delay-1000" />
 
       {/* Text content */}
       <div className="relative z-10 text-center space-y-8 max-w-2xl mx-auto">
         <div className="space-y-4">
           <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">
             <span className="bg-gradient-to-b from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent">
-              Clone Yourself Once
+             Built in Silence. Shown Through Strength.
             </span>
             <br />
-            <span className="bg-gradient-to-r from-zinc-300 to-zinc-500 bg-clip-text text-transparent font-light">
-              Create Viral Content Forever
+            <span className="bg-gradient-to-r from-zinc-300 to-zinc-500 bg-clip-text text-transparent font-light text-2xl md:text-6xl">
+              Aesthetic is earned, not gifted.
             </span>
           </h1>
 
           <p className="text-zinc-400 text-lg md:text-xl max-w-lg mx-auto leading-relaxed font-light">
-            from ideas to content{" "}
-            <span className="text-zinc-300">without recording twice.</span>
+            One Rep. Infinite Gains {athletes}+ 
+<span className="text-zinc-300"> Train once. Transform forever.</span>
           </p>
         </div>
 
         {/* CTA */}
         <div className="pt-4">
           <Link href="/admin/dashboard">
+
             <button className="group relative inline-flex items-center justify-center">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] rounded-2xl blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
-              <div className="relative bg-gradient-to-r from-[#E5C88C] via-[#B08D57] to-[#A47A3E] text-black px-8 py-4 rounded-2xl font-medium text-lg shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 border border-amber-400/20">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#5C0A14] via-[#BC2120] to-[#9B111E] rounded-2xl blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
+              <div className="relative bg-gradient-to-r from-[#5C0A14] via-[#BC2120] to-[#9B111E] text-white px-8 py-4 rounded-2xl font-medium text-lg shadow-2xl shadow-red-500/25 hover:shadow-red-500/40 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 border border-red-400/20">
                 <span className="flex items-center gap-3">
-                  Get Started
+                  LOCK IN
                   <svg
                     className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300"
                     fill="none"
@@ -60,22 +75,8 @@ const Page = () => {
         </div>
 
         <p className="text-zinc-600 text-sm font-light">
-          Tired of doing it all yourself, but that’s about to change
+          No more doing it all yourself. It’s your time to rise.
         </p>
-      </div>
-
-      {/* Video section */}
-      <div className="relative z-10 w-full max-w-5xl px-4">
-        <div className="backdrop-blur-2xl bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-2xl shadow-black/30">
-          <video
-            className="w-full h-auto object-cover rounded-3xl"
-            autoPlay
-            muted
-            loop
-            playsInline
-            src="https://res.cloudinary.com/dxpydoteo/video/upload/v1760111530/New_Project_2_BC9CA1F_auspe9.mp4"
-          />
-        </div>
       </div>
     </div>
   );

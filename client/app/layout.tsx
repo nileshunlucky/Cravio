@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mellvitta - A Clone AI for Creators",
-  description: "Mellvitta AI is a platform for creating consistent content with AI-powered tools.",
+  title: "Auraiser AI",
+  description: "Auraiser AI is a powerfull ai for fitness members to grow thier strenght fast with scan your pysyics and get rated.",
   icons: {
     icon: "/logo.png",
   },

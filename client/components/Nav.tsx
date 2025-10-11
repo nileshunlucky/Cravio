@@ -105,22 +105,23 @@ const Nav = () => {
             <div className="flex flex-col items-center gap-2">
               <div className="flex items-center gap-1">
                 <svg width="30" height="30" viewBox="0 0 400 400">
-                  <defs>
-                    <linearGradient id="gold" cx="50%" cy="50%" r="60%">
-                      <stop offset="0%" stopColor="#F4E4BC" />
-                      <stop offset="50%" stopColor="#E6C878" />
-                      <stop offset="100%" stopColor="#C9A96E" />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d="M200 40 Q220 160 240 180 Q290 190 340 200 
-                       Q290 210 240 220 Q220 240 200 360 
-                       Q180 240 160 220 Q110 210 60 200 
-                       Q110 190 160 180 Q180 160 200 40 Z"
-                    fill="url(#gold)"
-                  />
-                </svg>
-                <span className="font-bold bg-gradient-to-br from-[#C9A96E] via-[#B08D57] to-[#ad8544] text-transparent bg-clip-text">
+  <defs>
+    <linearGradient id="redGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stopColor="#5C0A14" />
+      <stop offset="50%" stopColor="#BC2120" />
+      <stop offset="100%" stopColor="#9B111E" />
+    </linearGradient>
+  </defs>
+  <path
+    d="M200 40 Q220 160 240 180 Q290 190 340 200 
+       Q290 210 240 220 Q220 240 200 360 
+       Q180 240 160 220 Q110 210 60 200 
+       Q110 190 160 180 Q180 160 200 40 Z"
+    fill="url(#redGradient)"
+  />
+</svg>
+
+                <span className="font-bold">
                   {aura}
                 </span>
               </div>
@@ -129,12 +130,12 @@ const Nav = () => {
 
           <SignedOut>
             <SignInButton mode="modal">
-              <Button className="bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] text-black">
+              <Button>
                 Sign In
               </Button>
             </SignInButton>
             <SignUpButton mode="modal">
-              <Button className="bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] text-black">
+              <Button>
                 Sign Up
               </Button>
             </SignUpButton>
@@ -210,31 +211,32 @@ const Nav = () => {
             <div className="flex items-center gap-2">
               <div className="relative">
                 <svg
-                  width="32"
-                  height="32"
-                  viewBox="0 0 400 400"
-                  className="w-8 h-8 flex-shrink-0"
-                  style={{ minWidth: '32px', minHeight: '32px' }}
-                >
-                  <defs>
-                    <linearGradient id="gold-mobile" cx="50%" cy="50%" r="60%">
-                      <stop offset="0%" stopColor="#F4E4BC" />
-                      <stop offset="50%" stopColor="#E6C878" />
-                      <stop offset="100%" stopColor="#C9A96E" />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d="M200 40 Q220 160 240 180 Q290 190 340 200 
-                         Q290 210 240 220 Q220 240 200 360 
-                         Q180 240 160 220 Q110 210 60 200 
-                         Q110 190 160 180 Q180 160 200 40 Z"
-                    fill="url(#gold-mobile)"
-                    stroke="#C9A96E"
-                    strokeWidth="2"
-                  />
-                </svg>
+  width="32"
+  height="32"
+  viewBox="0 0 400 400"
+  className="w-8 h-8 flex-shrink-0"
+  style={{ minWidth: '32px', minHeight: '32px' }}
+>
+  <defs>
+    <linearGradient id="redGradient-mobile" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stopColor="#5C0A14" />
+      <stop offset="50%" stopColor="#BC2120" />
+      <stop offset="100%" stopColor="#9B111E" />
+    </linearGradient>
+  </defs>
+  <path
+    d="M200 40 Q220 160 240 180 Q290 190 340 200 
+       Q290 210 240 220 Q220 240 200 360 
+       Q180 240 160 220 Q110 210 60 200 
+       Q110 190 160 180 Q180 160 200 40 Z"
+    fill="url(#redGradient-mobile)"
+    stroke="#BC2120"
+    strokeWidth="2"
+  />
+</svg>
+
               </div>
-              <span className="font-bold text-[#C9A96E] text-base">
+              <span className="font-bold">
                 {aura}
               </span>
             </div>
@@ -243,12 +245,12 @@ const Nav = () => {
 
         <SignedOut>
           <SignInButton mode="modal">
-            <Button className="bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] text-black">
+            <Button >
               Sign In
             </Button>
           </SignInButton>
           <SignUpButton mode="modal">
-            <Button className="bg-gradient-to-r from-[#C9A96E] via-[#B08D57] to-[#ad8544] text-black">
+            <Button >
               Sign Up
             </Button>
           </SignUpButton>
