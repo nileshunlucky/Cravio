@@ -7,12 +7,6 @@ import { motion } from 'framer-motion' // Import Framer Motion
 
 const Footer = () => {
 
-  // Framer Motion variants for smooth fade-in
-  const fadeUp = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' } },
-  }
-
   return (
     <footer className="w-full">
 
