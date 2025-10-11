@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Home, UserRound } from "lucide-react"
+import { Home } from "lucide-react"
 import { Menu , X} from 'lucide-react'
 
 const Nav = () => {
