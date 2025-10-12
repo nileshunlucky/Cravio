@@ -112,6 +112,7 @@ const Page = () => {
   return (
     <div className="relative min-h-screen bg-black p-4">
       {/* Hidden file input */}
+
       <input
         type="file"
         accept="image/*"
@@ -122,6 +123,7 @@ const Page = () => {
       />
 
       {/* + Button */}
+      
       <button
         onClick={handlePlusClick}
         className="fixed bottom-6 right-6 bg-white text-black rounded-full w-14 h-14 flex items-center justify-center text-3xl shadow-lg hover:scale-105 transition z-50"
@@ -136,7 +138,7 @@ const Page = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="absolute bottom-20 right-6 bg-zinc-900 text-white rounded-xl shadow-lg overflow-hidden z-50"
+            className="fixed bottom-22 right-6 bg-zinc-900 text-white rounded-xl shadow-lg overflow-hidden z-50"
           >
             <button
               onClick={() => handleOption(true)}
@@ -153,6 +155,7 @@ const Page = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
 
       {/* Your grid of cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6">
