@@ -17,7 +17,7 @@ s3_client = boto3.client(
     region_name=os.getenv("AWS_REGION", "us-east-1")
 )
 
-@router.post("/api/persona-image")
+@router.post("/io")
 async def persona_image(
     lora_url: str = Form(...),
     email: str = Form(...),
