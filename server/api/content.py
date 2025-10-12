@@ -7,6 +7,7 @@ import os
 import base64
 import json
 import uuid
+import re
 
 router = APIRouter()
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -30,6 +31,14 @@ def deduct_aura(email: str):
     users_collection.update_one({"email": email}, {"$inc": {"aura": -1}})
 
 
+def safe_json_parse(text: str):
+    """Extract JSON object from GPT text and parse."""
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        raise HTTPException(status_code=500, detail="GPT did not return valid JSON.")
+    return json.loads(match.group())
+
+
 @router.post("/api/image")
 async def analyze_image(
     email: str = Form(...),
@@ -44,7 +53,12 @@ async def analyze_image(
         # Upload to S3
         file_ext = image.filename.split(".")[-1]
         file_key = f"fitness/{uuid.uuid4()}.{file_ext}"
-        s3_client.put_object(Bucket=S3_BUCKET, Key=file_key, Body=image_bytes, ContentType=image.content_type)
+        s3_client.put_object(
+            Bucket=S3_BUCKET,
+            Key=file_key,
+            Body=image_bytes,
+            ContentType=image.content_type,
+        )
         image_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{file_key}"
 
         # Prepare image for GPT
@@ -54,11 +68,11 @@ async def analyze_image(
         # === STEP 1: Analyze physique ===
         analysis_prompt = (
             "You are a professional fitness coach. Analyze this fitness image "
-            "and identify which body part it shows (e.g., chest, back, biceps, shoulders, legs, abs - and if only 1 part is shown for ex. legs then go in detail to cover labels, like squats, calves like that). "
-            "Then return a valid JSON with 5 labels relevant to that body part, each with a percentage score out of 100. "
-            "Always include a fixed 'AURA' score at the end that represents aesthetic physique quality. "
-            "For example, for a chest image:\n"
-            "{ \"Upper Chest\": 94, \"Lower Chest\": 84,  \"Middel Chest\": 81,  \"Chest Density\": 90, \"AURA\": 87 }"
+            "and identify which body part it shows (chest, back, biceps, shoulders, legs, abs). "
+            "Return a JSON with 5 labels relevant to that body part, each with a percentage 0-100. "
+            "Always include 'AURA' at the end. ONLY return JSON, no extra text.\n"
+            "Example:\n"
+            "{ \"Upper Chest\": 94, \"Lower Chest\": 84, \"Middle Chest\": 81, \"Chest Density\": 90, \"AURA\": 87 }"
         )
 
         analysis_response = openai_client.responses.create(
@@ -72,16 +86,15 @@ async def analyze_image(
             ],
         )
 
-        analysis_text = analysis_response.output_text.strip()
-        labels = json.loads(analysis_text)
+        labels = safe_json_parse(analysis_response.output_text.strip())
 
         # === STEP 2: Generate title + note ===
         title_note_prompt = (
             "You are a fitness content writer. Generate:\n"
-            "1. A short, clean title (max 7 words) describing the physique in the image. "
-            "No hashtags, emojis, or fluff. Style: fitness + aesthetic.\n"
-            "2. A short practical note (1-2 sentences) giving real feedback about the physique.\n\n"
-            "Return JSON:\n"
+            "1. A short, clean title (max 7 words) describing the physique in the image. No hashtags, emojis, fluff.\n"
+            "2. A short practical note (1-2 sentences) giving real feedback about the physique.\n"
+            "ONLY return JSON.\n"
+            "Format:\n"
             "{ \"title\": \"...\", \"note\": \"...\" }"
         )
 
@@ -96,8 +109,7 @@ async def analyze_image(
             ],
         )
 
-        title_note_text = title_note_response.output_text.strip()
-        title_note = json.loads(title_note_text)
+        title_note = safe_json_parse(title_note_response.output_text.strip())
 
         # === STEP 3: Save to DB ===
         entry = {
@@ -113,10 +125,7 @@ async def analyze_image(
             {"$push": {"image_analysis": entry}}
         )
 
-        return {
-            "status": "success",
-            "data": entry
-        }
+        return {"status": "success", "data": entry}
 
     except Exception as e:
         # Refund aura if something fails
