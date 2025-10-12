@@ -79,9 +79,9 @@ const AchievementsPage = () => {
                 className="w-full h-48 object-cover rounded-xl mb-4"
               />
               <CardDescription>
-                <p className="mb-2"><span className="font-semibold">Workout Plan:</span> {ach.summary.workout_plan}</p>
-                <p className="mb-2"><span className="font-semibold">Diet:</span> {ach.summary.diet}</p>
-                <p className="mb-2"><span className="font-semibold">Routine:</span> {ach.summary.routine}</p>
+                <p className="mb-2"><span className="font-semibold text-white">Workout Plan:</span> {ach.summary.workout_plan}</p>
+                <p className="mb-2"><span className="font-semibold text-white">Diet:</span> {ach.summary.diet}</p>
+                <p className="mb-2"><span className="font-semibold text-white">Routine:</span> {ach.summary.routine}</p>
               </CardDescription>
             </CardContent>
           </Card>

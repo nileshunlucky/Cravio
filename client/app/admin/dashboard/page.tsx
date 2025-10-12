@@ -90,7 +90,7 @@ const Page = () => {
         const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`);
         const data = await res.json();
         if (res.ok && Array.isArray(data.image_analysis)) {
-          setAnalyses(data.image_analysis);
+           setAnalyses(data.image_analysis.slice().reverse());
         } else {
           toast.error("Failed to load user data");
         }

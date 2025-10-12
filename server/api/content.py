@@ -67,6 +67,7 @@ async def analyze_image(
             "Always include 'AURA' at the end. ONLY return JSON, no extra text.\n"
             "Example:\n"
             "{ \"Chest\": 94, \"Shoulder\": 84, \"Abs\": 81, \"Arms\": 90, \"AURA\": 87 }"
+            "Do not include body parts that are not visible in the image."
         )
 
         analysis_response = openai_client.responses.create(
