@@ -30,10 +30,16 @@ const Page = () => {
   const handlePlusClick = () => setShowOptions(prev => !prev);
 
   const handleOption = (camera: boolean) => {
-    setUseCamera(camera);
-    setShowOptions(false);
-    fileInputRef.current?.click();
-  };
+  setUseCamera(camera);
+  setShowOptions(false);
+
+  // Reset the file input first
+  if (fileInputRef.current) fileInputRef.current.value = "";
+
+  // Then trigger file selection
+  fileInputRef.current?.click();
+};
+
 
   const handleChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
