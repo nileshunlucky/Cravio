@@ -19,6 +19,11 @@ const Page = () => {
 
     setImage(file);
 
+    if (!image) {
+      console.error("no image")
+      return
+    }
+
     // Create form data
     const formData = new FormData();
     formData.append("email", email);
