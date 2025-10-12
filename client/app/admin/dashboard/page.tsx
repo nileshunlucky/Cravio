@@ -31,8 +31,6 @@ const Page = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // create fake card
-    const fakeId = `fake-${Date.now()}`;
     const fakeCard: ImageAnalysis = {
       image_url: "",
       title: "Analyzing...",
