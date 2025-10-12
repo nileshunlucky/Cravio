@@ -15,7 +15,7 @@ import { motion } from "framer-motion"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { Home } from "lucide-react"
-import { Menu , X} from 'lucide-react'
+import { Menu , X, Goal} from 'lucide-react'
 
 const Nav = () => {
   const [aura, setAura] = useState<number | null>(null)
@@ -44,6 +44,7 @@ const Nav = () => {
 
   const dashLinks = [
     { href: "/admin/dashboard", label: "Dashboard", icon: Home },
+    { href: "/admin/achievement", label: "Acievement", icon: Goal  },
   ]
 
   return (
@@ -177,6 +178,12 @@ const Nav = () => {
                 onClick={() => setMenuOpen(false)}
               >
                 Dashboard
+              </Link>
+              <Link
+                href="/admin/achievement"
+                onClick={() => setMenuOpen(false)}
+              >
+               Achievement
               </Link>
               <UserButton />
             </motion.div>
