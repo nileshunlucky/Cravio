@@ -33,7 +33,7 @@ const AchievementsPage = () => {
         const data = await res.json();
 
         if (res.ok) {
-          setAchievements(data.achievements || []);
+          setAchievements(data.achievements.slice().reverse() || []);
         } else {
           toast.error("Failed to load user data");
         }
@@ -50,7 +50,7 @@ const AchievementsPage = () => {
 
   if (loading) {
     return (
-      <div className="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {[...Array(3)].map((_, idx) => (
           <Skeleton key={idx} className="h-64 w-full rounded-xl" />
         ))}
