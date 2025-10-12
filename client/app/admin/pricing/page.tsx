@@ -235,9 +235,15 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             animate={{ opacity: 1 }}
                             className="bg-gradient-to-r from-[#5C0A14] via-[#BC2120] to-[#9B111E]  text-transparent bg-clip-text font-bold flex items-center"
                         >
-                           <svg width="30" height="30" viewBox="0 0 400 400">
+                        <svg
+  width="32"
+  height="32"
+  viewBox="0 0 400 400"
+  className="w-8 h-8 flex-shrink-0"
+  style={{ minWidth: '32px', minHeight: '32px' }}
+>
   <defs>
-    <linearGradient id="redGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+    <linearGradient id="redGradient-mobile" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stopColor="#5C0A14" />
       <stop offset="50%" stopColor="#BC2120" />
       <stop offset="100%" stopColor="#9B111E" />
@@ -248,9 +254,12 @@ const PricingCard: React.FC<PricingCardProps> = ({
        Q290 210 240 220 Q220 240 200 360 
        Q180 240 160 220 Q110 210 60 200 
        Q110 190 160 180 Q180 160 200 40 Z"
-    fill="url(#redGradient)"
+    fill="url(#redGradient-mobile)"
+    stroke="#BC2120"
+    strokeWidth="2"
   />
 </svg>
+
                             {currentAura.toLocaleString()} Aura
                         </motion.span>{' '}
                         per {isYearly ? 'year' : 'month'}.
