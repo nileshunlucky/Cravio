@@ -68,7 +68,7 @@ async def analyze_image(
         # === STEP 1: Analyze physique ===
         analysis_prompt = (
             "You are a professional fitness coach. Analyze this fitness image "
-            "and identify which body part it shows (chest, back, biceps, shoulders, legs, abs). "
+            "and identify which body part it shows (chest, back, biceps, shoulders, legs, abs, veins). "
             "Return a JSON with 5 labels relevant to that body part, each with a percentage 0-100. "
             "Always include 'AURA' at the end. ONLY return JSON, no extra text.\n"
             "Example:\n"

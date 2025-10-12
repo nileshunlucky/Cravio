@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useRef, ChangeEvent } from "react";
+import React, { useState, useRef, ChangeEvent, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
+import { toast } from 'sonner'
 
 const Page = () => {
   const { user } = useUser();
@@ -38,6 +39,43 @@ const Page = () => {
       console.error("Upload failed:", err);
     }
   };
+
+  useEffect(() => {
+        const fetchUserData = async () => {
+            if (!email) {
+                return
+            }
+
+            try {
+                const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`)
+                const data = await res.json()
+
+                if (res.ok) {
+                  console.log("Data", data)
+                } else {
+                    console.error("Error from server:", data)
+                    toast.error("Failed to load user data", {
+                        style: {
+                            background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
+                            color: "white",
+                            border: "0px"
+                        }
+                    })
+                }
+            } catch (error) {
+                console.error("Failed to fetch user data:", error)
+                toast.error("An error occurred while fetching data.", {
+                    style: {
+                        background: "linear-gradient(to bottom right, #5C0A14, #BC2120, #9B111E)",
+                        color: "white",
+                        border: "0px"
+                    }
+                })
+            }
+        }
+
+        fetchUserData()
+    }, [email])
 
   return (
     <div className="relative min-h-screen bg-black">
