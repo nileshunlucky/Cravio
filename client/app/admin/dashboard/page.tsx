@@ -261,7 +261,7 @@ const Page = () => {
                     ))}
                 </div>
               </div>
-              <p className="mt-6 text-zinc-500 text-xs md:text-lg text-start">{selected.note}</p>
+              <p className="mt-3 text-zinc-500 text-xs md:text-lg text-center">AURAISER</p>
             </motion.div>
           </motion.div>
         )}
