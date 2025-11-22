@@ -163,7 +163,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: delay + 0.4, duration: 0.6 }}
-                            className="text-blue-500 font-semibold text-xl sm:text-2xl select-text drop-shadow-[0_0_6px_blue]"
+                            className="text-red-700 font-semibold text-xl sm:text-2xl select-text drop-shadow-[0_0_6px_red]"
                             style={{ pointerEvents: 'auto' }}
                         >
                             -40%

@@ -4,12 +4,13 @@ import httpx
 from pydantic import BaseModel, EmailStr
 from db import users_collection
 from flow import flow_collection
+from api.vibe import router as vibe_router
 from api.lemon_webhook import router as lemon_webhook_router
 from api.persona import router as persona_router
 from api.persona2img import router as img2img_router
 from api.opus import router as opus_router
 from api.content import router as content_router
-from api.vibe import router as vibe_router
+from binance.client import Client
 
 app = FastAPI()
 
@@ -23,12 +24,74 @@ app.add_middleware(
 )
 
 # add routers
+app.include_router(vibe_router)
 app.include_router(lemon_webhook_router)
 app.include_router(persona_router)
 app.include_router(img2img_router)
 app.include_router(opus_router)
 app.include_router(content_router)
-app.include_router(vibe_router)
+
+@app.get("/api/balance/{email}")
+async def get_balance(email: str):
+    """
+    If email is 'nileshinde001@gmail.com' -> return DB balance
+    Else -> return Binance balance in USDT
+    """
+    try:
+        # ✅ SPECIAL CASE: Use DB balance
+        if email == "nileshinde001@gmail.com":
+            user = users_collection.find_one({"email": email})
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            db_balance = float(user.get("balance", 0))
+            return { "balance": round(db_balance, 2) }
+
+        # ✅ DEFAULT: Binance balance
+        user = users_collection.find_one({"email": email})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        api_key = user.get("apiKey")
+        api_secret = user.get("apiSecret")
+
+        if not api_key or not api_secret:
+            raise HTTPException(
+                status_code=400,
+                detail="Binance API credentials missing. Please add them in settings."
+            )
+
+        client = Client(api_key, api_secret)
+        account = client.get_account()
+
+        total = 0.0
+
+        for b in account.get("balances", []):
+            amount = float(b.get("free", 0)) + float(b.get("locked", 0))
+            if amount <= 0:
+                continue
+
+            asset = b.get("asset")
+
+            # ✅ Direct USDT
+            if asset == "USDT":
+                total += amount
+            else:
+                try:
+                    ticker = client.get_symbol_ticker(symbol=f"{asset}USDT")
+                    price = float(ticker["price"])
+                    total += amount * price
+                except:
+                    pass
+
+        return { "balance": round(total, 2) }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== END OF FILE ====================
 
 # Get user by email
 @app.get("/user/{email}")
