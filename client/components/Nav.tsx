@@ -51,7 +51,6 @@ const Nav = () => {
 
   const dashLinks = [
     { href: "/admin/dashboard", label: "Dashboard", icon: Home },
-    { href: "/admin/insights", label: "Acievement", icon: Goal },
   ]
 
   return (
@@ -59,7 +58,7 @@ const Nav = () => {
       <motion.nav
         initial={{ x: -50, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        transition={{ duration: 0.5, ease: [0.42, 0, 0.58, 1] }}
         className="hidden md:flex fixed top-0 left-0 h-screen w-20 flex-col justify-between border-r bg-black px-2 py-6 shadow-lg z-50"
       >
         <Link href="/" className="mb-10 flex justify-center">
