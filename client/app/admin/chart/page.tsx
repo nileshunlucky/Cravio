@@ -12,7 +12,7 @@ import {
   LineStyle,
 } from "lightweight-charts";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, TrendingUp, TrendingDown, Loader2, DollarSign, X } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Loader2, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@clerk/nextjs";
 import { Progress } from "@/components/ui/progress";
@@ -289,7 +289,7 @@ export default function AppleStyleTradingChart() {
         if (formatted.length > 0) {
           latestTime = formatted[formatted.length - 1].time as number;
           const close = formatted[formatted.length - 1].close;
-          setPreviousPrice((prev) => prev === null ? close : currentPrice);
+          setPreviousPrice(currentPrice);
           setCurrentPrice(close);
 
           // Cache time data for price levels
@@ -305,35 +305,34 @@ export default function AppleStyleTradingChart() {
           `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`
         );
 
-        ws.onmessage = (event: MessageEvent) => {
-          const message = JSON.parse(event.data);
-          const k = message.k;
-          if (!k) return;
-          
-          const pointTime = Math.floor(Number(k.t) / 1000) as UTCTimestamp;
-          if (pointTime < latestTime) return;
-          latestTime = pointTime;
+          ws.onmessage = (event: MessageEvent) => {
+            const message = JSON.parse(event.data);
+            const k = message.k;
+            if (!k) return;
 
-          const point: Candle = {
-            time: pointTime,
-            open: +k.o,
-            high: +k.h,
-            low: +k.l,
-            close: +k.c,
+            const pointTime = Math.floor(Number(k.t) / 1000) as UTCTimestamp;
+            if (pointTime < latestTime) return;
+            latestTime = pointTime;
+
+            const point: Candle = {
+              time: pointTime,
+              open: +k.o,
+              high: +k.h,
+              low: +k.l,
+              close: +k.c,
+            };
+
+            seriesRef.current?.update(point);
+
+            setPreviousPrice(() => currentPrice);
+            setCurrentPrice(point.close);
+
+            checkPriceTargets(point.close);
+
+            if (orderPlaced) {
+              updatePriceLevels(pointTime);
+            }
           };
-
-          seriesRef.current?.update(point);
-          setPreviousPrice(currentPrice);
-          setCurrentPrice(point.close);
-
-          // NEW: Check if price hits target or stop loss
-          checkPriceTargets(point.close);
-
-          // Update price level lines if order is placed
-          if (orderPlaced) {
-            updatePriceLevels(pointTime);
-          }
-        };
       } catch (e) {
         console.error("Error fetching data", e);
         toast.error("Failed to load chart data");
@@ -349,16 +348,101 @@ export default function AppleStyleTradingChart() {
   // 4. Draw price levels ONLY when order is placed
   useEffect(() => {
     if (orderPlaced && prediction.Target && prediction.StopLoss && seriesRef.current) {
-      // Get current time data from chart
       const data = seriesRef.current.data();
       if (data && data.length > 0) {
-        const times = (data as any[]).map((d: any) => d.time);
+        type CandleDataPoint = { time: UTCTimestamp };
+        const times = (data as CandleDataPoint[]).map(d => d.time);
         drawPriceLevels(prediction.Target, prediction.StopLoss, times);
       }
     } else if (!orderPlaced) {
       removePriceLevels();
     }
   }, [orderPlaced, prediction.Target, prediction.StopLoss]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!symbol || !interval || !seriesRef.current) return;
+
+    let ws: WebSocket | null = null;
+    let latestTime = 0;
+    let timeDataCache: UTCTimestamp[] = [];
+
+    async function fetchData() {
+      try {
+        const res = await fetch(
+          `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=200`
+        );
+        const json = (await res.json()) as Kline[];
+
+        const formatted: Candle[] = json.map((d) => ({
+          time: Math.floor(Number(d[0]) / 1000) as UTCTimestamp,
+          open: +d[1],
+          high: +d[2],
+          low: +d[3],
+          close: +d[4],
+        }));
+
+        seriesRef.current?.setData(formatted as unknown as CandlestickData[]);
+
+        if (formatted.length > 0) {
+          latestTime = formatted[formatted.length - 1].time as number;
+          const close = formatted[formatted.length - 1].close;
+          setPreviousPrice(currentPrice);
+          setCurrentPrice(close);
+
+          // Cache time data for price levels
+          timeDataCache = formatted.map(c => c.time);
+
+          // Redraw lines if order is placed
+          if (orderPlaced && prediction.Target && prediction.StopLoss) {
+            drawPriceLevels(prediction.Target, prediction.StopLoss, timeDataCache);
+          }
+        }
+
+        ws = new WebSocket(
+          `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`
+        );
+
+        ws.onmessage = (event: MessageEvent) => {
+          const message = JSON.parse(event.data);
+          const k = message.k;
+          if (!k) return;
+
+          const pointTime = Math.floor(Number(k.t) / 1000) as UTCTimestamp;
+          if (pointTime < latestTime) return;
+          latestTime = pointTime;
+
+          const point: Candle = {
+            time: pointTime,
+            open: +k.o,
+            high: +k.h,
+            low: +k.l,
+            close: +k.c,
+          };
+
+          seriesRef.current?.update(point);
+
+          setPreviousPrice(() => currentPrice);
+          setCurrentPrice(point.close);
+
+          checkPriceTargets(point.close);
+
+          if (orderPlaced) {
+            updatePriceLevels(pointTime);
+          }
+        };
+      } catch (e) {
+        console.error("Error fetching data", e);
+        toast.error("Failed to load chart data");
+      }
+    }
+
+    fetchData();
+
+    return () => {
+      ws && ws.close();
+    };
+  }, [symbol, interval, orderPlaced, prediction.Target, prediction.StopLoss]);
 
   // 5. Prediction Logic
   const handlePredict = async () => {

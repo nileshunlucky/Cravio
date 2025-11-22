@@ -12,12 +12,21 @@ import {
   LineStyle,
 } from "lightweight-charts";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, TrendingUp, TrendingDown, Loader2, DollarSign, X } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Loader2, DollarSign} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@clerk/nextjs";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+
+type Candle = {
+  time: UTCTimestamp;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+};
+
 
 
 // Types
@@ -342,8 +351,10 @@ export default function AppleStyleTradingChart() {
 
     fetchData();
     return () => {
-      ws && ws.close();
-    };
+          if (ws) {
+    ws.close();
+  }
+        };
   }, [symbol, interval, orderPlaced, prediction.Target, prediction.StopLoss]);
 
   // 4. Draw price levels ONLY when order is placed
@@ -352,7 +363,9 @@ export default function AppleStyleTradingChart() {
       // Get current time data from chart
       const data = seriesRef.current.data();
       if (data && data.length > 0) {
-        const times = (data as any[]).map((d: any) => d.time);
+        const dataTyped = data as Candle[];
+const times = dataTyped.map((d) => d.time);
+
         drawPriceLevels(prediction.Target, prediction.StopLoss, times);
       }
     } else if (!orderPlaced) {

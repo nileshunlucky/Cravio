@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Home, Menu, X, Goal, Wallet } from "lucide-react"
+import { Home, Menu, X, Wallet } from "lucide-react"
 
 const Nav = () => {
   const [aura, setAura] = useState<number | null>(null)
