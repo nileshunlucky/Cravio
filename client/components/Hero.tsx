@@ -21,7 +21,7 @@ const Page = () => {
     };
     fetchUserData();
 
-    const timer = setTimeout(() => setShowLogo(false), 5000);
+    const timer = setTimeout(() => setShowLogo(false), 3000);
     return () => clearTimeout(timer);
   }, []);
 
