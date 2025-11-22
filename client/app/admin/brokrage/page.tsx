@@ -40,7 +40,7 @@ export default function BinanceBrokeragePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      let res = await fetch("https://cravio-ai.onrender.com/api/save-brokerage", {
+      const res = await fetch("https://cravio-ai.onrender.com/api/save-brokerage", {
         method: "POST",
         body: JSON.stringify({
           brokerId,
