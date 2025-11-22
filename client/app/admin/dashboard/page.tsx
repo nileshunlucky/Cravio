@@ -19,16 +19,6 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-type Candle = {
-  time: UTCTimestamp;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-};
-
-
-
 // Types
 type BinanceExchangeInfo = { symbols: { symbol: string }[] };
 type Kline = (number | string)[];
