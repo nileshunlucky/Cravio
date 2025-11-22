@@ -1,145 +1,469 @@
-from fastapi import APIRouter, Form, HTTPException, UploadFile, File
-from db import users_collection
+from fastapi import APIRouter, Form, HTTPException
 from openai import OpenAI
-from datetime import datetime
-import boto3
+from binance.client import Client
+from db import users_collection, positions_collection
 import os
 import json
-import uuid
 import re
+import math
+from datetime import datetime
+from typing import Tuple, Dict, Any
 
 router = APIRouter()
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
-def deduct_aura(email: str):
+# ==================== AURA MANAGEMENT ====================
+
+def deduct_aura(email: str) -> None:
+    """Deducts 1 aura credit from user. Raises HTTPException if insufficient."""
     user = users_collection.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if user.get("aura", 0) < 1:
-        raise HTTPException(status_code=403, detail="Not enough Aura")
+        raise HTTPException(status_code=403, detail="Insufficient Aura credits")
     users_collection.update_one({"email": email}, {"$inc": {"aura": -1}})
 
 
-def safe_json_parse(text: str):
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if not match:
-        raise HTTPException(status_code=500, detail="GPT did not return valid JSON.")
-    return json.loads(match.group())
+def refund_aura(email: str) -> None:
+    """Refunds 1 aura credit to user."""
+    users_collection.update_one({"email": email}, {"$inc": {"aura": 1}})
 
+
+# ==================== JSON PARSING ====================
+
+def safe_json_parse(text: str) -> dict:
+    """Extracts and parses JSON from AI response, handling markdown code blocks."""
+    try:
+        # Remove markdown code blocks
+        clean_text = re.sub(r"```json\n?|\n?```", "", text).strip()
+        # Find JSON object
+        match = re.search(r"\{.*\}", clean_text, re.DOTALL)
+        if not match:
+            raise ValueError("No JSON object found in response")
+        return json.loads(match.group())
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=500, detail=f"Invalid JSON from AI: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"JSON parsing error: {str(e)}")
+
+
+# ==================== BINANCE CLIENT ====================
+
+def get_binance_client(email: str) -> Client:
+    """Returns authenticated Binance client for user."""
+    user = users_collection.find_one({"email": email})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    api_key = user.get("apiKey")
+    api_secret = user.get("apiSecret")
+    
+    if not api_key or not api_secret:
+        raise HTTPException(
+            status_code=400, 
+            detail="Binance API credentials not configured. Please add them in settings."
+        )
+    
+    return Client(api_key, api_secret)
+
+
+# ==================== SYMBOL INFO & PRECISION ====================
+
+def get_symbol_info(client: Client, symbol: str) -> Dict[str, Any]:
+    """Fetches symbol information from Binance."""
+    try:
+        info = client.get_symbol_info(symbol)
+        if not info:
+            raise HTTPException(status_code=400, detail=f"Symbol {symbol} not found")
+        return info
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid symbol {symbol}: {str(e)}")
+
+
+def get_lot_size_filter(symbol_info: Dict[str, Any]) -> dict:
+    """Extracts LOT_SIZE filter from symbol info."""
+    for f in symbol_info.get("filters", []):
+        if f["filterType"] == "LOT_SIZE":
+            return f
+    return {"stepSize": "0.00001", "minQty": "0.00001"}
+
+
+def round_step_size(quantity: float, step_size: str) -> float:
+    """Rounds quantity down to match Binance step size precision."""
+    step = float(step_size)
+    if step == 0:
+        return quantity
+    decimals = max(0, int(round(-math.log10(step))))
+    return float(f"{math.floor(quantity / step) * step:.{decimals}f}")
+
+
+def format_price(price: float, tick_size: str = "0.01") -> str:
+    """Formats price according to tick size without scientific notation."""
+    tick = float(tick_size)
+    decimals = max(0, int(round(-math.log10(tick))))
+    return f"{price:.{decimals}f}"
+
+
+def validate_tp_sl(entry_price: float, target: float, stop_loss: float) -> None:
+    """Validates TP and SL levels for a LONG (BUY) position."""
+    if not (stop_loss < entry_price < target):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid levels: Stop Loss ({stop_loss}) must be < Entry ({entry_price}) < Target ({target})"
+        )
+
+
+# ==================== PREDICTION ENDPOINT ====================
 
 @router.post("/api/vibe-prediction")
-async def prediction(
-    email: str = Form(...),
-    data: str = Form(...),
-):
+async def prediction(email: str = Form(...), data: str = Form(...)):
+    """
+    Analyzes trading data using AI and returns prediction with TP/SL levels.
+    Deducts 1 aura credit per call.
+    """
     deduct_aura(email)
-
+    
     try:
+        analysis_prompt = """You are a professional trading analyst. Analyze the provided trading data and:
 
-        # === STEP 1: Analyze trading ===
-        analysis_prompt = (
-        "You are a professional trading analyst. Analyze this trading data "
-        "and identify the current market condition to predict a trading decision (BUY or SELL) "
-        "with a probability percentage. Then provide the following details:\n"
-        "- Stop Loss level\n"
-        "Return ONLY JSON in the exact format below (no extra text or explanation):\n"
-        "{ \"Prediction\": \"BUY\", \"Probability\": 87, \"Current Price\": 22600,  \"Stop Loss\": 22455, "
-        "\"Target\": 22505 }\n"
-        "Ensure all values are realistic and consistent with the detected trend in the data."
-        )
+1. Determine market condition (bullish/bearish/ranging)
+2. Predict trading decision: BUY
+3. Provide probability percentage (0-97)
+4. Calculate Stop Loss level
+5. Calculate Take Profit Target
 
-        analysis_response = openai_client.responses.create(
-            model="gpt-5-mini",
-            input=[
-                {"role": "system", "content": "You are a precise trading data evaluator who analyzes market structures and predicts trades accurately."},
-                {"role": "user", "content": [
-                    {"type": "input_text", "text": analysis_prompt},
-                    {"type": "input_text", "text": data}
-                ]}
+Return ONLY valid JSON in this exact format:
+{
+  "Prediction": "BUY",
+  "Probability": 75,
+  "StopLoss": 42500.50,
+  "Target": 43500.75
+}
+
+Rules:
+- Prediction: ALWAYS "BUY"
+- Use realistic percentages for TP/SL (1-3% typical)
+- No extra text, only JSON"""
+
+        response = openai_client.responses.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system", 
+                    "content": "You are a precise trading analyst. Always return valid JSON only."
+                },
+                {
+                    "role": "user", 
+                    "content": f"{analysis_prompt}\n\nTrading Data:\n{data}"
+                }
             ],
+            temperature=0.7
         )
+        
+        ai_content = response.choices[0].message.content
+        labels = safe_json_parse(ai_content)
+        
+        # Validate response structure
+        required_keys = ["Prediction", "Probability", "StopLoss", "Target"]
+        if not all(k in labels for k in required_keys):
+            raise HTTPException(
+                status_code=500, 
+                detail=f"AI response missing required fields: {required_keys}"
+            )
+        
+        return {"status": "success", "data": labels}
+    
+    except HTTPException:
+        refund_aura(email)
+        raise
+    except Exception as e:
+        refund_aura(email)
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
-        labels = safe_json_parse(analysis_response.output_text.strip())
 
-        # === STEP 2: Title + note ===
-        title_note_prompt = (
-        "You are a professional trading analyst and content writer. Generate:\n"
-        "1. A short, clear title (max 7 words) describing the market condition or setup seen in the data. No hashtags, emojis, or fluff.\n"
-        "2. A short practical note (1-2 sentences) giving real insight or feedback about the current trading setup.\n"
-        "ONLY return JSON.\n"
-        "Format:\n"
-        "{ \"title\": \"...\", \"note\": \"...\" }"
+# ==================== PLACE ORDER ENDPOINT ====================
+
+@router.post("/api/vibe-place-order")
+async def place_order(email: str = Form(...), data: str = Form(...)):
+    """
+    Places SPOT market order with OCO exit (TP + SL).
+    Only supports BUY entries (long positions).
+    """
+    try:
+        trade_data = json.loads(data)
+        
+        # Extract and validate fields
+        current_price = float(trade_data.get("currentPrice"))
+        symbol = str(trade_data.get("symbol")).upper()
+        amount = float(trade_data.get("amount"))
+        prediction = str(trade_data.get("prediction")).upper()
+        target = float(trade_data.get("target"))
+        stop_loss = float(trade_data.get("stopLoss"))
+        
+        if not all([current_price, symbol, amount, prediction, target, stop_loss]):
+            raise HTTPException(status_code=400, detail="Missing required fields")
+        
+        # Validate prediction type
+        if prediction not in ["BUY"]:
+            raise HTTPException(status_code=400, detail="Prediction must be BUY")
+        
+        # Validate TP/SL levels
+        validate_tp_sl(current_price, target, stop_loss)
+        
+        # Get Binance client
+        client = get_binance_client(email)
+        
+        # Get symbol info and precision
+        symbol_info = get_symbol_info(client, symbol)
+        base_asset = symbol_info.get("baseAsset")
+        lot_filter = get_lot_size_filter(symbol_info)
+        step_size = lot_filter.get("stepSize", "0.00001")
+        min_qty = float(lot_filter.get("minQty", "0.00001"))
+        
+        # Calculate quantity
+        raw_qty = amount / current_price
+        qty = round_step_size(raw_qty, step_size)
+        
+        if qty < min_qty:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Quantity {qty} below minimum {min_qty} for {symbol}"
+            )
+        
+        print(f"📊 Placing {prediction} order: {symbol} | Qty: {qty} | Entry: ~{current_price}")
+        
+        # Step 1: Place Market Entry Order
+        entry_order = client.create_order(
+            symbol=symbol,
+            side="BUY",
+            type="MARKET",
+            quantity=qty
         )
-
-        title_note_response = openai_client.responses.create(
-            model="gpt-5-nano",
-            input=[
-                {"role": "system", "content": "You are a professional trading analyst and content writer."},
-                {"role": "user", "content": [
-                    {"type": "input_text", "text": title_note_prompt},
-                    {"type": "input_text", "text": data}
-                ]}
-            ],
-        )
-
-        title_note = safe_json_parse(title_note_response.output_text.strip())
-
-        # === STEP 3: Generate trading Summary & Save as Achievement ===
-
-        summary_prompt = (
-        "You are a professional trading analyst. Based on the trading data, "
-        "create a clear, concise, long detailed summary including:\n"
-        "1. Market Overview (trend, key levels, volume insights)\n"
-        "2. Potential Trade Setups (entry, stop loss, target zones)\n"
-        "3. Risk Management & Suggestions\n"
-        "Format it in a clean, valuable, human-readable style (no fluff). "
-        "ONLY return JSON in the format:\n"
-        "{ \"market_overview\": \"...\", \"trade_setups\": \"...\", \"risk_management\": \"...\" }"
-        )
-
-        summary_response = openai_client.responses.create(
-            model="gpt-5-nano",
-            input=[
-                {"role": "system", "content": "You are a professional trading analyst who summarizes plans from images."},
-                {"role": "user", "content": [
-                    {"type": "input_text", "text": summary_prompt},
-                    {"type": "input_text", "text": data}
-                ]}
-            ],
-        )
-
-        summary = safe_json_parse(summary_response.output_text.strip())
-
-        # Save achievement separately
-        achievement_entry = {
-            "title": f"{title_note.get('title', '').strip()}",
-            "summary": summary,
-            "created_at": datetime.utcnow().isoformat()
+        
+        print(f"✅ Entry order placed: {entry_order.get('orderId')}")
+        
+        # Step 2: Save position to database
+        position_doc = {
+            "user_email": email,
+            "symbol": symbol,
+            "side": "BUY",
+            "entry_price": current_price,
+            "qty": qty,
+            "target": target,
+            "stop_loss": stop_loss,
+            "entry_order_id": entry_order.get("orderId"),
+            "status": "open",
+            "created_at": datetime.utcnow()
         }
+        
+        try:
+            positions_collection.insert_one(position_doc)
+        except Exception as e:
+            print(f"⚠️ Failed to save position to DB: {e}")
+        
+        # Step 3: Place OCO Exit Order (TP + SL)
+        try:
+            oco_order = client.create_oco_order(
+                symbol=symbol,
+                side="SELL",  # Exit by selling
+                quantity=qty,
+                price=format_price(target),
+                stopPrice=format_price(stop_loss),
+                stopLimitPrice=format_price(stop_loss * 0.995),  # Slightly below to ensure fill
+                stopLimitTimeInForce="GTC"
+            )
+            print(f"✅ OCO exit order placed: TP={target}, SL={stop_loss}")
+            
+            return {
+                "status": "success",
+                "message": "Order placed successfully",
+                "entry_order": entry_order,
+                "oco_order": oco_order,
+                "qty": qty,
+                "symbol": symbol
+            }
+            
+        except Exception as oco_error:
+            print(f"⚠️ OCO placement failed: {oco_error}")
+            return {
+                "status": "partial_success",
+                "message": "Entry placed but OCO failed. Please set manual exit.",
+                "entry_order": entry_order,
+                "oco_error": str(oco_error),
+                "qty": qty,
+                "symbol": symbol
+            }
+    
+    except HTTPException:
+        raise
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON in data parameter")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid number format: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Order placement failed: {str(e)}")
 
-        users_collection.update_one(
-            {"email": email},
-            {"$push": {"achievements": achievement_entry}}
+
+# ==================== CLOSE ORDER ENDPOINT ====================
+
+@router.post("/api/close-order")
+async def close_order(email: str = Form(...), data: str = Form(...)):
+    """
+    Closes open SPOT position:
+    1. Cancels all open orders for symbol
+    2. Sells entire position at market price
+    """
+    try:
+        trade_data = json.loads(data)
+        symbol = str(trade_data.get("symbol")).upper()
+        original_side = str(trade_data.get("side", "BUY")).upper()
+        
+        if not symbol:
+            raise HTTPException(status_code=400, detail="Symbol is required")
+        
+        client = get_binance_client(email)
+        
+        # Step 1: Cancel all open orders
+        print(f"📊 Closing position for {symbol}")
+        try:
+            open_orders = client.get_open_orders(symbol=symbol)
+            for order in open_orders:
+                try:
+                    client.cancel_order(symbol=symbol, orderId=order["orderId"])
+                    print(f"❌ Cancelled order: {order['orderId']}")
+                except Exception as e:
+                    print(f"⚠️ Failed to cancel order {order['orderId']}: {e}")
+        except Exception as e:
+            print(f"⚠️ Error fetching open orders: {e}")
+        
+        # Step 2: Get symbol info
+        symbol_info = get_symbol_info(client, symbol)
+        base_asset = symbol_info.get("baseAsset")
+        lot_filter = get_lot_size_filter(symbol_info)
+        step_size = lot_filter.get("stepSize", "0.00001")
+        
+        # Step 3: Determine quantity to close
+        qty = None
+        
+        # Try to get qty from saved position
+        try:
+            position = positions_collection.find_one(
+                {"user_email": email, "symbol": symbol, "status": "open"},
+                sort=[("created_at", -1)]
+            )
+            if position:
+                qty = float(position.get("qty", 0))
+                print(f"📦 Found saved position: {qty} {base_asset}")
+        except Exception as e:
+            print(f"⚠️ Error reading position from DB: {e}")
+        
+        # Fallback: get qty from wallet balance
+        if not qty or qty <= 0:
+            try:
+                balance = client.get_asset_balance(asset=base_asset)
+                qty = float(balance.get("free", 0))
+                print(f"💰 Using wallet balance: {qty} {base_asset}")
+            except Exception as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to get balance for {base_asset}: {str(e)}"
+                )
+        
+        if qty <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"No {base_asset} balance to close. Position may be already closed."
+            )
+        
+        # Step 4: Apply precision
+        qty = round_step_size(qty, step_size)
+        
+        if qty <= 0:
+            raise HTTPException(status_code=400, detail="Quantity too small after rounding")
+        
+        # Step 5: Close position with market order
+        close_side = "SELL" if original_side == "BUY" else "BUY"
+        
+        close_order_result = client.create_order(
+            symbol=symbol,
+            side=close_side,
+            type="MARKET",
+            quantity=qty
         )
-
-
-        # === STEP 3: Save to DB ===
-        entry = {
-            "title": title_note.get("title", "").strip(),
-            "note": title_note.get("note", "").strip(),
-            "labels": labels,
-            "created_at": datetime.utcnow().isoformat()
+        
+        print(f"✅ Position closed: {close_side} {qty} {symbol}")
+        
+        # Step 6: Update position status in DB
+        try:
+            positions_collection.update_many(
+                {"user_email": email, "symbol": symbol, "status": "open"},
+                {
+                    "$set": {
+                        "status": "closed",
+                        "closed_at": datetime.utcnow(),
+                        "close_order_id": close_order_result.get("orderId")
+                    }
+                }
+            )
+        except Exception as e:
+            print(f"⚠️ Failed to update position status: {e}")
+        
+        return {
+            "status": "success",
+            "message": f"Position closed successfully",
+            "symbol": symbol,
+            "closed_qty": qty,
+            "action": close_side,
+            "details": close_order_result
         }
+    
+    except HTTPException:
+        raise
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON in data parameter")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to close order: {str(e)}")
+    
+# ==================== BALANCE ENDPOINT ====================
+@router.get("/api/balance/{email}")
+async def get_balance(email: str):
+    """
+    If email is 'nileshinde001@gmail.com' -> return DB balance
+    Else -> return Binance balance in USDT
+    """
+    try:
+        # ✅ SPECIAL CASE
+        if email == "nileshinde001@gmail.com":
+            user = users_collection.find_one({"email": email})
+            db_balance = float(user.get("balance", 0))
+            return { "balance": round(db_balance, 2) }
 
-        users_collection.update_one(
-            {"email": email},
-            {"$push": {"prediction": entry}}
-        )
+        # ✅ DEFAULT: Binance balance
+        client = get_binance_client(email)
+        account = client.get_account()
 
-        return {"status": "success", "data": entry}
+        total = 0.0
+
+        for b in account.get("balances", []):
+            amount = float(b.get("free", 0)) + float(b.get("locked", 0))
+            if amount <= 0:
+                continue
+
+            asset = b.get("asset")
+
+            if asset == "USDT":
+                total += amount
+            else:
+                try:
+                    price = float(client.get_symbol_ticker(symbol=f"{asset}USDT")["price"])
+                    total += amount * price
+                except:
+                    pass
+
+        return { "balance": round(total, 2) }
 
     except Exception as e:
-        # Refund aura if something fails
-        users_collection.update_one({"email": email}, {"$inc": {"aura": 1}})
-        raise HTTPException(status_code=500, detail=f"Image analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== END OF FILE ====================

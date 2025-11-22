@@ -1,250 +1,756 @@
 "use client";
 
-import React, { useState, useRef, ChangeEvent, useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
-import { toast } from "sonner";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  createChart,
+  ColorType,
+  IChartApi,
+  ISeriesApi,
+  CandlestickData,
+  UTCTimestamp,
+  CrosshairMode,
+  LineStyle,
+} from "lightweight-charts";
 import { motion, AnimatePresence } from "framer-motion";
+import { Search, TrendingUp, TrendingDown, Loader2, DollarSign, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useUser } from "@clerk/nextjs";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-interface TradeAnalysis {
-  image_url: string;
-  title: string;
-  note: string;
-  labels: Record<string, number | string>;
-  created_at: string;
-  _loading?: boolean;
-}
 
-const Page = () => {
-  const { user } = useUser();
-  const email = user?.emailAddresses?.[0]?.emailAddress || "";
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [analyses, setAnalyses] = useState<TradeAnalysis[]>([]);
-  const [selected, setSelected] = useState<TradeAnalysis | null>(null);
+// Types
+type BinanceExchangeInfo = { symbols: { symbol: string }[] };
+type Kline = (number | string)[];
+type Candle = {
+  time: UTCTimestamp;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+};
+
+type PredictionData = {
+  Prediction?: string;
+  Probability?: number;
+  StopLoss?: number;
+  Target?: number;
+};
+
+export default function AppleStyleTradingChart() {
+  const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const targetLineRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const stopLossLineRef = useRef<ISeriesApi<"Line"> | null>(null);
   const router = useRouter();
 
-  const handleChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // State
+  const [symbol, setSymbol] = useState("BTCUSDT");
+  const [interval, setInterval] = useState("1m");
+  const [search, setSearch] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const [previousPrice, setPreviousPrice] = useState<number | null>(null);
+  const [amount, setAmount] = useState<string>("10");
+  const [symbolsList, setSymbolsList] = useState<string[]>([]);
+  const [prediction, setPrediction] = useState<PredictionData>({});
+  const [showPrediction, setShowPrediction] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [orderPlacing, setOrderPlacing] = useState(false);
+  
+  // NEW: Order tracking state
+  const [orderPlaced, setOrderPlaced] = useState(false);
 
-    const fakeCard: TradeAnalysis = {
-      image_url: "",
-      title: "Analyzing Trade...",
-      note: "",
-      labels: {},
-      created_at: new Date().toISOString(),
-      _loading: true,
+  const { user } = useUser();
+  const email = user?.emailAddresses?.[0]?.emailAddress || "";
+
+  // 1. Fetch Symbols
+  useEffect(() => {
+    async function fetchSymbols() {
+      try {
+        const res = await fetch("https://api.binance.com/api/v3/exchangeInfo");
+        const data = (await res.json()) as BinanceExchangeInfo;
+        const usdtPairs = data.symbols
+          .filter((s) => s.symbol.endsWith("USDT"))
+          .map((s) => s.symbol);
+        setSymbolsList(usdtPairs);
+      } catch (e) {
+        console.error("Failed to fetch symbols", e);
+      }
+    }
+    fetchSymbols();
+  }, []);
+
+  // 2. Initialize Chart
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+
+    const chart = createChart(chartContainerRef.current, {
+      layout: {
+        background: { type: ColorType.Solid, color: "transparent" },
+        textColor: "#a1a1aa",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+      },
+      grid: {
+        vertLines: { color: "rgba(255, 255, 255, 0.05)" },
+        horzLines: { color: "rgba(255, 255, 255, 0.05)" },
+      },
+      width: chartContainerRef.current.clientWidth,
+      height: chartContainerRef.current.clientHeight,
+      timeScale: {
+        borderColor: "rgba(255, 255, 255, 0.1)",
+        timeVisible: true,
+      },
+      rightPriceScale: {
+        borderColor: "rgba(255, 255, 255, 0.1)",
+      },
+      crosshair: {
+        mode: CrosshairMode.Normal,
+        vertLine: {
+          width: 1,
+          color: "rgba(255, 255, 255, 0.4)",
+          style: 3,
+        },
+        horzLine: {
+          width: 1,
+          color: "rgba(255, 255, 255, 0.4)",
+          style: 3,
+        },
+      },
+    });
+
+    const series = chart.addCandlestickSeries({
+      upColor: "#34d399",
+      borderUpColor: "#34d399",
+      wickUpColor: "#34d399",
+      downColor: "#f87171",
+      borderDownColor: "#f87171",
+      wickDownColor: "#f87171",
+    });
+
+    chartRef.current = chart;
+    seriesRef.current = series;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      if (entries.length === 0 || !entries[0].target) return;
+      const newRect = entries[0].contentRect;
+      chart.applyOptions({ width: newRect.width, height: newRect.height });
+    });
+
+    resizeObserver.observe(chartContainerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+      chart.remove();
     };
-    setAnalyses(prev => [fakeCard, ...prev]);
+  }, []);
 
-    const formData = new FormData();
-    formData.append("email", email);
-    formData.append("image", file);
+  // Helper function to draw TP/SL lines
+  const drawPriceLevels = (target: number, stopLoss: number, timeData: UTCTimestamp[]) => {
+    if (!chartRef.current || timeData.length === 0) return;
 
-    try {
-      const res = await fetch("https://cravio-ai.onrender.com/api/image", {
-        method: "POST",
-        body: formData,
+    // Remove existing lines
+    if (targetLineRef.current) {
+      chartRef.current.removeSeries(targetLineRef.current);
+    }
+    if (stopLossLineRef.current) {
+      chartRef.current.removeSeries(stopLossLineRef.current);
+    }
+
+    // Create target line (green)
+    const targetLine = chartRef.current.addLineSeries({
+      color: "#10b981",
+      lineWidth: 2,
+      lineStyle: LineStyle.Dashed,
+      title: "Target",
+      priceLineVisible: true,
+      lastValueVisible: true,
+    });
+
+    // Create stop loss line (red)
+    const stopLossLine = chartRef.current.addLineSeries({
+      color: "#ef4444",
+      lineWidth: 2,
+      lineStyle: LineStyle.Dashed,
+      title: "Stop Loss",
+      priceLineVisible: true,
+      lastValueVisible: true,
+    });
+
+    // Set data for both lines (horizontal lines across time)
+    const targetData = timeData.map(time => ({
+      time,
+      value: target,
+    }));
+
+    const stopLossData = timeData.map(time => ({
+      time,
+      value: stopLoss,
+    }));
+
+    targetLine.setData(targetData);
+    stopLossLine.setData(stopLossData);
+
+    targetLineRef.current = targetLine;
+    stopLossLineRef.current = stopLossLine;
+  };
+
+  // Helper to update lines with new candle
+  const updatePriceLevels = (newTime: UTCTimestamp) => {
+    if (!prediction.Target || !prediction.StopLoss) return;
+
+    if (targetLineRef.current) {
+      targetLineRef.current.update({
+        time: newTime,
+        value: prediction.Target,
       });
+    }
 
-      if (res.status === 403) {
-        toast.error("Paid feature. Subscribe to continue.");
-        router.push("/admin/pricing");
-        setAnalyses(prev => prev.filter(c => c !== fakeCard));
-        return;
-      }
-
-      const data = await res.json();
-      if (res.ok && data?.data?.image_url) {
-        setAnalyses(prev => [data.data, ...prev.filter(c => c !== fakeCard)]);
-      } else {
-        toast.error("Something went wrong. Try again.");
-        setAnalyses(prev => prev.filter(c => c !== fakeCard));
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed! Try again.");
-      setAnalyses(prev => prev.filter(c => c !== fakeCard));
-    } finally {
-      if (fileInputRef.current) fileInputRef.current.value = "";
+    if (stopLossLineRef.current) {
+      stopLossLineRef.current.update({
+        time: newTime,
+        value: prediction.StopLoss,
+      });
     }
   };
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!email) return;
-      try {
-        const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`);
-        const data = await res.json();
-
-        if (res.ok) {
-          if (Array.isArray(data.image_analysis)) {
-            setAnalyses(data.image_analysis.slice().reverse());
-          }
-
-        } else {
-          toast.error("Failed to fetch user data.");
-        }
-      } catch (err) {
-        console.error(err);
-        toast.error("Error fetching data.");
+  // Helper to remove price level lines
+  const removePriceLevels = () => {
+    if (chartRef.current) {
+      if (targetLineRef.current) {
+        chartRef.current.removeSeries(targetLineRef.current);
+        targetLineRef.current = null;
       }
-    };
+      if (stopLossLineRef.current) {
+        chartRef.current.removeSeries(stopLossLineRef.current);
+        stopLossLineRef.current = null;
+      }
+    }
+  };
 
-    fetchUserData();
-  }, [email]);
+  // Helper to reset everything to step 1
+  const resetToInitialState = () => {
+    setShowPrediction(false);
+    setPrediction({});
+    setOrderPlaced(false);
+    removePriceLevels();
+  };
+
+  // NEW: Check if target or stop loss is hit
+  const checkPriceTargets = (price: number) => {
+    if (!orderPlaced || !prediction.Target || !prediction.StopLoss) return;
+
+    const target = prediction.Target;
+    const stopLoss = prediction.StopLoss;
+
+    // Check if target is hit (profit)
+    if (price >= target) {
+      toast.success("✅ Target Hit - Profit!", {
+        description: `Order closed at $${price.toFixed(2)}`,
+      });
+      resetToInitialState();
+    }
+    // Check if stop loss is hit (loss)
+    else if (price <= stopLoss) {
+      toast.error("❌ Stop Loss Hit - Order Failed", {
+        description: `Order closed at $${price.toFixed(2)}`,
+      });
+      resetToInitialState();
+    }
+  };
+
+  // 3. Fetch Data & WebSocket
+  useEffect(() => {
+    if (!symbol || !interval || !seriesRef.current) return;
+
+    let ws: WebSocket | null = null;
+    let latestTime = 0;
+    let timeDataCache: UTCTimestamp[] = [];
+
+    async function fetchData() {
+      try {
+        const res = await fetch(
+          `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=200`
+        );
+        const json = (await res.json()) as Kline[];
+
+        const formatted: Candle[] = json.map((d) => ({
+          time: Math.floor(Number(d[0]) / 1000) as UTCTimestamp,
+          open: +d[1],
+          high: +d[2],
+          low: +d[3],
+          close: +d[4],
+        }));
+
+        seriesRef.current?.setData(formatted as unknown as CandlestickData[]);
+        
+        if (formatted.length > 0) {
+          latestTime = formatted[formatted.length - 1].time as number;
+          const close = formatted[formatted.length - 1].close;
+          setPreviousPrice((prev) => prev === null ? close : currentPrice);
+          setCurrentPrice(close);
+
+          // Cache time data for price levels
+          timeDataCache = formatted.map(c => c.time);
+          
+          // Redraw lines if order is placed
+          if (orderPlaced && prediction.Target && prediction.StopLoss) {
+            drawPriceLevels(prediction.Target, prediction.StopLoss, timeDataCache);
+          }
+        }
+
+        ws = new WebSocket(
+          `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`
+        );
+
+        ws.onmessage = (event: MessageEvent) => {
+          const message = JSON.parse(event.data);
+          const k = message.k;
+          if (!k) return;
+          
+          const pointTime = Math.floor(Number(k.t) / 1000) as UTCTimestamp;
+          if (pointTime < latestTime) return;
+          latestTime = pointTime;
+
+          const point: Candle = {
+            time: pointTime,
+            open: +k.o,
+            high: +k.h,
+            low: +k.l,
+            close: +k.c,
+          };
+
+          seriesRef.current?.update(point);
+          setPreviousPrice(currentPrice);
+          setCurrentPrice(point.close);
+
+          // NEW: Check if price hits target or stop loss
+          checkPriceTargets(point.close);
+
+          // Update price level lines if order is placed
+          if (orderPlaced) {
+            updatePriceLevels(pointTime);
+          }
+        };
+      } catch (e) {
+        console.error("Error fetching data", e);
+        toast.error("Failed to load chart data");
+      }
+    }
+
+    fetchData();
+    return () => {
+      ws && ws.close();
+    };
+  }, [symbol, interval, orderPlaced, prediction.Target, prediction.StopLoss]);
+
+  // 4. Draw price levels ONLY when order is placed
+  useEffect(() => {
+    if (orderPlaced && prediction.Target && prediction.StopLoss && seriesRef.current) {
+      // Get current time data from chart
+      const data = seriesRef.current.data();
+      if (data && data.length > 0) {
+        const times = (data as any[]).map((d: any) => d.time);
+        drawPriceLevels(prediction.Target, prediction.StopLoss, times);
+      }
+    } else if (!orderPlaced) {
+      removePriceLevels();
+    }
+  }, [orderPlaced, prediction.Target, prediction.StopLoss]);
+
+  // 5. Prediction Logic
+  const handlePredict = async () => {
+    if (!email) {
+      toast.error("Please sign in to use predictions");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const form = new FormData();
+      form.append("email", email);
+      form.append(
+        "data",
+        JSON.stringify({
+          symbol,
+          interval,
+          currentPrice,
+        })
+      );
+
+      const res = await fetch("https://cravio-ai.onrender.com/api/vibe-prediction", {
+        method: "POST",
+        body: form,
+      });
+
+      const data = await res.json();
+      
+      if (res.ok) {
+        setPrediction(data.data);
+        setShowPrediction(true);
+        toast.success("Prediction generated successfully!");
+      } else {
+        toast.error(data.detail || "Prediction failed");
+      }
+    } catch (e) {
+      console.error("Error during prediction:", e);
+      toast.error("Network error during prediction");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!email) {
+      toast.error("Please sign in to place orders");
+      return;
+    }
+
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+
+    setOrderPlacing(true);
+    try {
+      const form = new FormData();
+      form.append("email", email);
+      form.append(
+        "data",
+        JSON.stringify({
+          currentPrice,
+          symbol,
+          amount: amountNum,
+          prediction: prediction.Prediction,
+          target: prediction.Target,
+          stopLoss: prediction.StopLoss,
+        })
+      );
+
+      const res = await fetch("https://cravio-ai.onrender.com/api/vibe-place-order", {
+        method: "POST",
+        body: form,
+      });
+
+      const data = await res.json();
+
+      if (res.status === 400){
+        toast.error("Add Brokrage")
+        router.push("/admin/brokrage");
+      }
+      
+      if (res.ok) {
+        toast.success("Order placed successfully!");
+        // NEW: Set order as placed
+        setOrderPlaced(true);
+      } else {
+        toast.error(data.detail || "Order placement failed");
+      }
+    } catch (e) {
+      console.error("Error placing order:", e);
+      toast.error("Network error during order placement");
+    } finally {
+      setOrderPlacing(false);
+    }
+  };
+
+  const handleCancel = () => {
+    resetToInitialState();
+    toast.info("Order cancelled");
+  };
+
+  const filteredSymbols = symbolsList.filter((s) =>
+    s.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const priceColor = !currentPrice || !previousPrice 
+    ? "text-white" 
+    : currentPrice >= previousPrice 
+      ? "text-emerald-400" 
+      : "text-red-400";
+
+  const priceChange = currentPrice && previousPrice 
+    ? ((currentPrice - previousPrice) / previousPrice) * 100 
+    : 0;
+
+  // UI is locked when order is placed
+  const isLocked = orderPlaced;
 
   return (
-    <div className="relative min-h-screen bg-black p-4 md:ml-20 ml-0">
-      <input
-        type="file"
-        accept="image/*"
-        ref={fileInputRef}
-        onChange={handleChange}
-        className="hidden"
-      />
+    <div className="flex flex-col min-h-screen w-full bg-zinc-950 text-zinc-100 overflow-hidden font-sans selection:bg-blue-500/30 ml-0 md:ml-20">
+      
+      {/* HEADER */}
+      <header className="flex-none px-4 py-4 flex flex-col gap-4 z-30 bg-zinc-950/80 backdrop-blur-md border-b border-white/5">
+        
+        {/* Top Row: Symbol & Price */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-white">
+              {symbol.replace("USDT", "")}
+              <span className="text-zinc-500 text-lg font-normal ml-1">/ USDT</span>
+            </h1>
+            <div className="flex items-center gap-2 mt-1">
+              <span className={`text-sm font-mono ${priceColor}`}>
+                {currentPrice ? `$${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "Loading..."}
+              </span>
+              {priceChange !== 0 && (
+                <span className={`text-xs flex items-center gap-1 ${priceChange >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                  {priceChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {Math.abs(priceChange).toFixed(2)}%
+                </span>
+              )}
+            </div>
+          </div>
 
-      <button
-        onClick={() => fileInputRef.current?.click()}
-        className="fixed bottom-6 right-6 bg-white text-black rounded-full w-14 h-14 flex items-center justify-center text-3xl shadow-lg hover:scale-105 transition z-50"
-      >
-        +
-      </button>
+          {/* Interval Selector */}
+          <div className="flex bg-zinc-900 rounded-full p-1 border border-white/5">
+            {["1m", "15m", "1h", "4h"].map((t) => (
+              <button
+                key={t}
+                onClick={() => {
+                  if (!isLocked) {
+                    setInterval(t);
+                    resetToInitialState();
+                  }
+                }}
+                disabled={isLocked}
+                className={`px-3 py-1 text-xs rounded-full transition-all ${
+                  interval === t 
+                    ? "bg-white text-black font-medium shadow-sm" 
+                    : "text-zinc-400 hover:text-white"
+                } ${isLocked ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6">
-        {analyses.map((a, idx) => (
-          <motion.div
-            key={idx}
-            layout
-            whileHover={{ scale: 1.02 }}
-            onClick={() => setSelected(a)}
-            className="relative"
-          >
-            <Card className="cursor-pointer overflow-hidden h-64 relative">
-              {a._loading ? (
-                <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-zinc-800 to-zinc-700 flex flex-col justify-end p-4">
-                  <div className="h-5 bg-zinc-600 rounded w-1/2 mb-3"></div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                      <div key={i} className="h-3 bg-zinc-600 rounded"></div>
-                    ))}
+        {/* Search Bar */}
+        <div className="relative w-full">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <input 
+              type="text"
+              placeholder="Search Asset..."
+              value={search}
+              onClick={() => !isLocked && setIsSearchOpen(true)}
+              onChange={(e) => {
+                if (!isLocked) {
+                  setSearch(e.target.value);
+                  setIsSearchOpen(true);
+                }
+              }}
+              disabled={isLocked}
+              className={`w-full bg-zinc-900/50 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-white/20 transition-all ${isLocked ? "opacity-50 cursor-not-allowed" : ""}`}
+            />
+          </div>
+
+          {/* Dropdown Results */}
+          <AnimatePresence>
+            {isSearchOpen && search && !isLocked && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute top-full left-0 right-0 mt-2 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-50 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent"
+              >
+                {filteredSymbols.slice(0, 20).map((s) => (
+                  <div
+                    key={s}
+                    onClick={() => {
+                      setSymbol(s);
+                      setIsSearchOpen(false);
+                      setSearch("");
+                      resetToInitialState();
+                    }}
+                    className="px-4 py-3 text-sm text-zinc-300 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 flex justify-between transition-colors"
+                  >
+                    <span className="font-medium">{s.replace("USDT", "")}</span>
+                    <span className="text-zinc-600 text-xs">USDT</span>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          {isSearchOpen && (
+            <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsSearchOpen(false)} />
+          )}
+        </div>
+
+        {/* Lock Indicator */}
+        {isLocked && (
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg px-3 py-2 text-xs text-blue-400">
+            🔒 Order Active - UI Locked
+          </div>
+        )}
+      </header>
+
+      {/* CHART AREA */}
+      <main className="flex-1 relative w-full h-full z-0">
+        <div ref={chartContainerRef} className="absolute inset-0 w-full h-full" />
+        
+        {/* Price Level Labels - ONLY shown when order is placed */}
+        {orderPlaced && prediction.Target && prediction.StopLoss && (
+          <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
+            <div className="bg-green-500/20 backdrop-blur-sm border border-green-500/30 px-3 py-2 rounded-lg">
+              <div className="text-xs text-green-400 font-medium">Target</div>
+              <div className="text-sm text-white font-mono">
+                ${prediction.Target.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+            <div className="bg-red-500/20 backdrop-blur-sm border border-red-500/30 px-3 py-2 rounded-lg">
+              <div className="text-xs text-red-400 font-medium">Stop Loss</div>
+              <div className="text-sm text-white font-mono">
+                ${prediction.StopLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* PREDICTION/ORDER SECTION */}
+      <div className="flex-none bg-zinc-950/80 backdrop-blur-md border-t border-white/5">
+        <AnimatePresence mode="wait">
+          {/* PHASE 1: Before Prediction */}
+          {!showPrediction && (
+            <motion.div
+              key="predict-button"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="p-4"
+            >
+              <Button
+                onClick={handlePredict}
+                disabled={loading || !email}
+                className="w-full py-6 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all text-lg"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  </>
+                ) : (
+                  "Predict"
+                )}
+              </Button>
+            </motion.div>
+          )}
+
+          {/* PHASE 2: After Prediction, Before Order */}
+          {showPrediction && (
+            <motion.div
+              key="prediction-panel"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="p-4 flex flex-col gap-3"
+            >
+              {/* Probability & Amount */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 bg-zinc-900/50 rounded-xl p-4 border border-white/10">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-zinc-400 uppercase tracking-wide">Win Probability</span>
+                    <span className="text-lg font-bold text-white">{prediction.Probability}%</span>
+                  </div>
+                  <Progress value={Number(prediction.Probability)} className="h-2" />
+                </div>
+
+                <div className="sm:w-1/3 bg-zinc-900/50 rounded-xl p-4 border border-white/10">
+                  <label className="text-xs text-zinc-400 uppercase tracking-wide block mb-2">Amount (USDT)</label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <input
+                      type="number"
+                      placeholder="10"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      min="1"
+                      step="0.01"
+                      className="w-full bg-zinc-800/50 border border-white/10 rounded-lg py-2 pl-9 pr-3 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                    />
                   </div>
                 </div>
-              ) : (
-                <>
-                  <img
-                    src={a.image_url}
-                    alt={a.title}
-                    className="w-full h-full object-cover absolute inset-0"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
-                  <CardContent className="absolute bottom-4 left-4 right-4 text-white space-y-2 p-0">
-                    <CardTitle className="text-xl font-bold">{a.title}</CardTitle>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      {Object.entries(a.labels).map(([key, value]) => (
-                        <div key={key} className="flex justify-between">
-                          <span>{key.toLowerCase().includes("probability") ? 'Winning Probability' : key}</span>
-                          <span>{key.toLowerCase().includes("probability") ? `${value}%` : value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </>
-              )}
-            </Card>
-          </motion.div>
-        ))}
-      </div>
+              </div>
 
-      <AnimatePresence>
-        {selected && (
-          <motion.div
-            className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-3 md:p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSelected(null)}
-          >
-            <motion.div
-              className="bg-zinc-900 text-white rounded-xl max-w-xl w-full p-4 md:p-6 overflow-y-auto"
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.8 }}
-              onClick={e => e.stopPropagation()}
-            >
-              <img
-                src={selected.image_url}
-                alt={selected.title}
-                className="w-full h-64 object-cover rounded-md mb-4"
-              />
-              <h2 className="text-xl font-semibold mb-4">{selected.title}</h2>
+              {/* Stop Loss & Target */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gradient-to-br from-red-950/50 via-red-900/30 to-transparent p-4 rounded-xl border border-red-500/20">
+                  <p className="text-xs text-red-400/80 uppercase tracking-wide mb-1">Stop Loss</p>
+                  <p className="text-lg font-bold text-red-400">
+                    ${prediction.StopLoss?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    {currentPrice && prediction.StopLoss 
+                      ? `${(((prediction.StopLoss - currentPrice) / currentPrice) * 100).toFixed(2)}%`
+                      : "-"}
+                  </p>
+                </div>
 
-              <div className="grid grid-cols-1 gap-4">
-  {Object.entries(selected.labels)
-    .filter(([key]) => 
-      !["Stop Loss", "Profit Trade 1", "Profit Trade 2"].includes(key)
-    )
-          .map(([key, value]) => (
-      <div key={key}>
-        <div className="flex justify-between mb-1">
-          <span>{key.toLowerCase().includes("probability") ? 'Winning Probability' : key}</span>
-          <span
-            className={
-              key.toLowerCase().includes("prediction")
-                ? value.toString().toLowerCase() === "buy"
-                  ? "text-green-500 font-semibold"
-                  : value.toString().toLowerCase() === "sell"
-                  ? "text-red-500 font-semibold"
-                  : ""
-                : ""
-            }
-          >
-            {key.toLowerCase().includes("probability")
-              ? `${value}%`
-              : value}
-          </span>
-        </div>
-        {key.toLowerCase().includes("probability") && (
-          <Progress  value={Number(value)} />
-        )}
-      </div>
-    ))}
-</div>
+                <div className="bg-gradient-to-br from-green-950/50 via-green-900/30 to-transparent p-4 rounded-xl border border-green-500/20">
+                  <p className="text-xs text-green-400/80 uppercase tracking-wide mb-1">Target</p>
+                  <p className="text-lg font-bold text-green-400">
+                    ${prediction.Target?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    {currentPrice && prediction.Target 
+                      ? `+${(((prediction.Target - currentPrice) / currentPrice) * 100).toFixed(2)}%`
+                      : "-"}
+                  </p>
+                </div>
+              </div>
 
+              {/* Place Order Button */}
+              <Button
+                onClick={handlePlaceOrder}
+                disabled={orderPlacing}
+                className="w-full bg-gradient-to-r from-green-600 to-green-800 hover:from-green-700 hover:to-green-900 text-white font-bold py-6 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all text-lg"
+              >
+                {orderPlacing ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  </>
+                ) : (
+                  "BUY"
+                )}
+              </Button>
 
-
-        <div className="grid grid-cols-3 gap-4 text-center text-sm md:text-base mb-6">
-          <div className="bg-gradient-to-t from-red-600 via-red-900 to-zinc-900 p-3 rounded-lg">
-            <p className="text-red-400">Stop Loss</p>
-            <p className="font-semibold">
-              {selected.labels["Stop Loss"] || "-"}
-            </p>
-          </div>
-          <div className="bg-gradient-to-t from-green-600 via-green-900 to-zinc-900 p-3 rounded-lg">
-            <p className="text-green-400 whitespace-nowrap">Profit Trade 1</p>
-            <p className="font-semibold">
-              {selected.labels["Profit Trade 1"] || "-"}
-            </p>
-          </div>
-          <div className="bg-gradient-to-t from-green-600 via-green-900 to-zinc-900 p-3 rounded-lg">
-            <p className="text-green-400 whitespace-nowrap">Profit Trade 2</p>
-            <p className="font-semibold">
-              {selected.labels["Profit Trade 2"] || "-"}
-            </p>
-          </div>
-        </div>
-
-              <p className="mt-3 text-zinc-500 text-xs md:text-lg">
-                <span className="text-zinc-100">Analysis:</span> {selected.note}
-              </p>
+              {/* Cancel Prediction */}
+              <button
+                onClick={() => {
+                  setShowPrediction(false);
+                  setPrediction({});
+                }}
+                className="text-sm text-zinc-400 hover:text-white transition-colors py-2 flex items-center justify-center gap-2"
+              >
+                Cancel Prediction
+              </button>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+
+          {/* PHASE 3: After Order Placed */}
+          {orderPlaced && (
+            <motion.div
+              key="order-active"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="p-4"
+            >
+              <button
+                onClick={handleCancel}
+                className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-medium py-6 rounded-xl transition-all text-lg flex items-center justify-center gap-2"
+              >
+                Close Order
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
-};
-
-export default Page;
+}

@@ -19,3 +19,4 @@ apscheduler
 httpx
 pydantic[email]
 fal_client
+python-binance

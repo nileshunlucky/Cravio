@@ -115,11 +115,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                     <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-white/30 to-white/20 rounded-full blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-700"></div>
 
                         {/* Subtle accent line */}
-<<<<<<< HEAD
-                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-px bg-gradient-to-br from-transparent via-[#3B82F6]/50 to-transparent"></div>
-=======
                         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-px bg-gradient-to-br from-transparent via-white/50 to-transparent"></div>
->>>>>>> b78e91e0cc939734ae08fa872a4de2265290df28
                     </div>
                 </motion.div>
             )}
@@ -130,11 +126,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                 initial="initial"
                 animate="animate"
                 className={`relative rounded-2xl p-6 sm:p-8 h-full backdrop-blur-sm border-2 overflow-hidden ${isPopular
-<<<<<<< HEAD
-                    ? 'border-[#3B82F6] bg-black/80'
-=======
                     ? 'border-white/20 bg-black/80'
->>>>>>> b78e91e0cc939734ae08fa872a4de2265290df28
                     : 'border-zinc-700 bg-zinc-900/80'
                     }`}
                 style={{ pointerEvents: 'auto' }}
@@ -144,11 +136,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                     className="absolute inset-0 opacity-5"
                     style={{ pointerEvents: 'none' }}
                 >
-<<<<<<< HEAD
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#3B82F6] via-transparent to-transparent"></div>
-=======
                     <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent"></div>
->>>>>>> b78e91e0cc939734ae08fa872a4de2265290df28
                 </div>
 
                 {/* Plan Name and Discount */}
@@ -210,13 +198,8 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.5 }}
-<<<<<<< HEAD
-                            className={`text-4xl sm:text-5xl font-bold ${isPopular ? 'bg-gradient-to-r from-[#1E3A8A] via-[#3B82F6] to-[#1E40AF]  text-transparent bg-clip-text' : 'text-white'
-                                }`}
-=======
                 className={`text-4xl sm:text-5xl font-bold ${isPopular ? 'text-white' : 'text-white'
                     }`}
->>>>>>> b78e91e0cc939734ae08fa872a4de2265290df28
                             style={isPopular ? { filter: '0 0 30px rgba(71, 255, 231, 0.1)' } : { filter: '0 0 30px rgba(255, 255, 255, 0.1)' }}
                         >
                             ${monthlyPrice}
@@ -250,11 +233,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             key={`aura-${isYearly}`}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-<<<<<<< HEAD
-                            className="bg-gradient-to-r from-[#1E3A8A] via-[#3B82F6] to-[#1E40AF]  text-transparent bg-clip-text font-bold flex items-center"
-=======
                             className="text-white font-bold flex items-center"
->>>>>>> b78e91e0cc939734ae08fa872a4de2265290df28
                         >
                                                 <svg
     width="32"
@@ -263,24 +242,6 @@ const PricingCard: React.FC<PricingCardProps> = ({
     className="w-8 h-8 flex-shrink-0"
     style={{ minWidth: '32px', minHeight: '32px' }}
 >
-<<<<<<< HEAD
-  <defs>
-    <linearGradient id="redGradient-mobile" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stopColor="#1E3A8A" />
-      <stop offset="50%" stopColor="#3B82F6" />
-      <stop offset="100%" stopColor="#1E40AF" />
-    </linearGradient>
-  </defs>
-  <path
-    d="M200 40 Q220 160 240 180 Q290 190 340 200 
-       Q290 210 240 220 Q220 240 200 360 
-       Q180 240 160 220 Q110 210 60 200 
-       Q110 190 160 180 Q180 160 200 40 Z"
-    fill="url(#redGradient-mobile)"
-    stroke="#3B82F6"
-    strokeWidth="2"
-  />
-=======
     <path
         d="M200 40 Q220 160 240 180 Q290 190 340 200 
              Q290 210 240 220 Q220 240 200 360 
@@ -290,10 +251,9 @@ const PricingCard: React.FC<PricingCardProps> = ({
         stroke="#FFFFFF"
         strokeWidth="2"
     />
->>>>>>> b78e91e0cc939734ae08fa872a4de2265290df28
 </svg>
 
-                            {currentAura.toLocaleString()} Credit
+                            {currentAura.toLocaleString()} Trades
                         </motion.span>{' '}
                         per {isYearly ? 'year' : 'month'}.
                     </div>
@@ -309,13 +269,8 @@ const PricingCard: React.FC<PricingCardProps> = ({
                                     : "0 10px 30px rgba(176, 141, 87, 0.3)"
                             }}
                             whileTap={{ scale: 0.98 }}
-<<<<<<< HEAD
-                            className={`group relative inline-flex items-center justify-center z-20 w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-center transition-all duration-300 cursor-pointer text-white ${isPopular
-                                ? 'bg-gradient-to-r from-[#1E3A8A] via-[#3B82F6] to-[#1E40AF]    hover:bg-[#3B82F6]/80 shadow-lg'
-=======
                             className={`group relative inline-flex items-center justify-center z-20 w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-center transition-all duration-300 cursor-pointer ${isPopular
                                 ? 'bg-white text-black hover:bg-white/90 shadow-lg'
->>>>>>> b78e91e0cc939734ae08fa872a4de2265290df28
                                 : 'bg-zinc-800 text-white   hover:bg-zinc-800 '
                                 }`}
                             type="button"
@@ -324,11 +279,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             style={{ pointerEvents: 'auto' }}
                         >
                             {/* Button Background */}
-<<<<<<< HEAD
-                            {isPopular && <div className="absolute inset-0 bg-gradient-to-r from-[#1E3A8A] via-[#3B82F6] to-[#1E40AF]  rounded-2xl blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-500" />}
-=======
                             {isPopular && <div className="absolute inset-0 bg-white/20 rounded-2xl blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-500" />}
->>>>>>> b78e91e0cc939734ae08fa872a4de2265290df28
                             {buttonText}
                         </motion.button>
                     </a>
@@ -351,13 +302,8 @@ const PricingCard: React.FC<PricingCardProps> = ({
                         >
                             <div className="flex-shrink-0">
                                 {feature.included ? (
-<<<<<<< HEAD
-                                    <div className="w-5 h-5 rounded-full bg-gradient-to-r from-[#1E3A8A] via-[#3B82F6] to-[#1E40AF] flex items-center justify-center">
-                                        <Check className="w-3 h-3 text-white" />
-=======
                                     <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center">
                                         <Check className="w-3 h-3 text-black" />
->>>>>>> b78e91e0cc939734ae08fa872a4de2265290df28
                                     </div>
                                 ) : (
                                     <div className="w-5 h-5 rounded-full bg-zinc-700 flex items-center justify-center">
@@ -383,11 +329,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             repeat: Infinity,
                             ease: "easeInOut"
                         }}
-<<<<<<< HEAD
-                        className="absolute inset-0 bg-gradient-to-br from-[#3B82F6]/10 via-transparent to-[#3B82F6]/10 rounded-2xl"
-=======
                         className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-white/10 rounded-2xl"
->>>>>>> b78e91e0cc939734ae08fa872a4de2265290df28
                         style={{ pointerEvents: 'none' }}
                     />
                 )}
@@ -422,11 +364,11 @@ const Page = () => {
             buttonText: "Subscribe",
             features: {
                 aura: {
-                    monthly: 250,
-                    yearly: 3000
+                    monthly: 1000,
+                    yearly: 12000
                 },
                     list: [
-                    { name: "Upload Chart", included: true },
+                    { name: "Prediction", included: true },
                     { name: "Winning Probability", included: true },
                     { name: "Predicts P&L (BUY/SELL, Stop Loss, Target)", included: true },
                     { name: "Risk Management", included: true },
@@ -512,15 +454,9 @@ const Page = () => {
 
                 {/* Premium Toggle */}
                 <motion.div variants={toggleVariants} className="flex justify-center mb-12">
-<<<<<<< HEAD
-                    <div className="relative bg-[#0f0f0f] border-2 border-[#3B82F6]/50 p-2 rounded-xl">
-                        <motion.div
-                            className="absolute inset-y-2 bg-gradient-to-r from-[#1E3A8A] via-[#3B82F6] to-[#1E40AF]  text-white rounded-lg"
-=======
                     <div className="relative bg-[#0f0f0f] border-2 border-white/10 p-2 rounded-xl">
                         <motion.div
                             className="absolute inset-y-2 bg-white/20 text-black rounded-lg"
->>>>>>> b78e91e0cc939734ae08fa872a4de2265290df28
                             animate={{
                                 x: isYearly ? "calc(100% - 8px)" : "8px",
                                 width: "calc(50% - 8px)"
@@ -567,11 +503,7 @@ const Page = () => {
                     {particlePositions.map((position, i) => (
                         <motion.div
                             key={i}
-<<<<<<< HEAD
-                            className="absolute w-1 h-1 bg-[#3B82F6] rounded-full opacity-60"
-=======
                             className="absolute w-1 h-1 bg-white/60 rounded-full opacity-60"
->>>>>>> b78e91e0cc939734ae08fa872a4de2265290df28
                             style={{
                                 left: `${position.left}%`,
                                 top: `${position.top}%`,

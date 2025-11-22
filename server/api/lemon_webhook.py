@@ -9,14 +9,6 @@ import boto3
 
 router = APIRouter()
 
-# Configure AWS S3
-S3_BUCKET = os.getenv("S3_BUCKET_NAME", "my-video-bucket")
-s3_client = boto3.client(
-    "s3",
-    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-    region_name=os.getenv("AWS_REGION", "us-east-1"),
-)
 
 # Ensure you have your webhook secret in your environment variables
 LEMON_SQUEEZING_WEBHOOK_SECRET = os.getenv("LEMON_SQUEEZING_WEBHOOK_SECRET")
@@ -25,8 +17,8 @@ LEMON_SQUEEZING_WEBHOOK_SECRET = os.getenv("LEMON_SQUEEZING_WEBHOOK_SECRET")
 
 # Map your Lemon Squeezy plan variant IDs to the number of aura
 PLANS = {
-    971466: 250, 
-    971468: 3000, 
+    971466: 1000, 
+    971468: 12000, 
 }
 
 # --- Helper Functions ---

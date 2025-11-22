@@ -21,7 +21,6 @@ const Page = () => {
     };
     fetchUserData();
 
-    // hide logo after 5 seconds
     const timer = setTimeout(() => setShowLogo(false), 5000);
     return () => clearTimeout(timer);
   }, []);
@@ -44,12 +43,9 @@ const Page = () => {
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden relative">
 
-
-      {/* Ambient floating lights */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-full blur-3xl animate-pulse" />
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-500/3 to-cyan-500/3 rounded-full blur-3xl animate-pulse delay-1000" />
 
-      {/* --- Fullscreen 5s Logo Intro --- */}
       <AnimatePresence>
         {showLogo && (
           <motion.div
@@ -65,30 +61,28 @@ const Page = () => {
               exit={{ scale: 1.1, opacity: 0 }}
               transition={{ duration: 2, ease: "easeInOut" }}
             >
-              {/* Glowing ring */}
               <motion.div
                 className="absolute"
                 animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               />
-              {/* Logo */}
+
               <img
                 src="/logo.png"
                 alt="Logo"
-                className=" md:w-64 md:h-64  w-32 h-32"
+                className="md:w-64 md:h-64 w-32 h-32"
               />
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* --- Main Page Content --- */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: showLogo ? 0 : 1 }}
         transition={{ delay: 0.3, duration: 1 }}
       >
-        {/* Animated gradient background */}
+
         <motion.div
           className="absolute inset-0 opacity-30"
           animate={{
@@ -102,21 +96,20 @@ const Page = () => {
           transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
         />
 
-        {/* Floating orbs */}
         <motion.div
           className="absolute top-20 left-10 w-72 h-72 bg-blue-500 rounded-full filter blur-[120px] opacity-20"
           animate={{ x: [0, 100, 0], y: [0, 50, 0] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         />
+
         <motion.div
           className="absolute bottom-20 right-10 w-96 h-96 bg-blue-600 rounded-full filter blur-[120px] opacity-20"
           animate={{ x: [0, -80, 0], y: [0, -60, 0] }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
         />
 
-        {/* Content */}
         <div className="relative z-10">
-          {/* Hero Section */}
+
           <div className="container mx-auto px-6 pt-20 pb-32 text-center max-w-5xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -131,9 +124,6 @@ const Page = () => {
               >
                 <span className="text-blue-400 font-medium">AI-Powered Trading Intelligence</span>
               </motion.div>
-
-
-
 
               <h1 className="text-4xl md:text-7xl lg:text-8xl font-bold mb-8 leading-tight">
                 <span className="bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 bg-clip-text text-transparent">
@@ -159,7 +149,9 @@ const Page = () => {
                   </div>
                   <div className="text-gray-400 mt-2">Traders Mentored</div>
                 </div>
+
                 <div className="h-16 w-px bg-blue-500/30" />
+
                 <div className="text-center">
                   <div className="text-5xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
                     95%
@@ -179,17 +171,13 @@ const Page = () => {
                     whileHover={{ scale: 1.06 }}
                     whileTap={{ scale: 0.96 }}
                   >
-                    {/* Animated gradient glow background */}
                     <motion.div
                       className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-700 via-blue-500 to-cyan-400 opacity-90 blur-[2px]"
-                      animate={{
-                        backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-                      }}
+                      animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
                       transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                       style={{ backgroundSize: "200% 200%" }}
                     />
 
-                    {/* Shimmer overlay */}
                     <motion.div
                       className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-2xl"
                       initial={{ x: "-100%" }}
@@ -204,14 +192,12 @@ const Page = () => {
 
                     <motion.div
                       className="absolute inset-0 rounded-2xl border border-blue-400/40"
-                      animate={{
-                        opacity: [0.4, 0.7, 0.4],
-                        scale: [1, 1.02, 1],
-                      }}
+                      animate={{ opacity: [0.4, 0.7, 0.4], scale: [1, 1.02, 1] }}
                       transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
                     />
                   </motion.button>
                 </Link>
+
                 <p className="text-gray-500 mt-4">
                   No more doing it all yourself. Its your time to rise.
                 </p>
@@ -219,7 +205,6 @@ const Page = () => {
             </motion.div>
           </div>
 
-          {/* Steps Section */}
           <div className="container mx-auto px-6 py-24">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -259,7 +244,6 @@ const Page = () => {
             </div>
           </div>
 
-          {/* Features Section */}
           <div className="container mx-auto px-6 py-24">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -299,6 +283,7 @@ const Page = () => {
               ))}
             </div>
           </div>
+
         </div>
       </motion.div>
     </div>
