@@ -14,11 +14,10 @@ import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Home, Menu, X, Wallet } from "lucide-react"
+import { Home, Menu, X, Goal } from "lucide-react"
 
 const Nav = () => {
   const [aura, setAura] = useState<number | null>(null)
-  const [balance, setBalance] = useState<number | null>(null)
   const { user } = useUser()
   const email = user?.emailAddresses?.[0]?.emailAddress || ""
   const [menuOpen, setMenuOpen] = useState(false)
@@ -37,20 +36,9 @@ const Nav = () => {
     fetchUserData()
   }, [user])
 
-  useEffect(() => {
-    if (!email) return
-    const fetchUserBalance = async () => {
-      try {
-          const res = await fetch(`https://cravio-ai.onrender.com/api/balance/${email}`);
-          const data = await res.json();
-        setBalance(data.balance)
-      } catch {}
-    }
-    fetchUserBalance()
-  }, [user])
-
   const dashLinks = [
     { href: "/admin/dashboard", label: "Dashboard", icon: Home },
+    { href: "/admin/insights", label: "Acievement", icon: Goal },
   ]
 
   return (
@@ -58,7 +46,7 @@ const Nav = () => {
       <motion.nav
         initial={{ x: -50, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: [0.42, 0, 0.58, 1] }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
         className="hidden md:flex fixed top-0 left-0 h-screen w-20 flex-col justify-between border-r bg-black px-2 py-6 shadow-lg z-50"
       >
         <Link href="/" className="mb-10 flex justify-center">
@@ -152,11 +140,25 @@ const Nav = () => {
                 <Link href="/admin/dashboard" onClick={() => setMenuOpen(false)}>
                   Dashboard
                 </Link>
-                <Link href="/admin/pricing" onClick={() => setMenuOpen(false)}>
-                  Pricing
+                <Link href="/admin/insights" onClick={() => setMenuOpen(false)}>
+                  Insights
                 </Link>
-                <div className="flex items-center gap-2">
-                <svg
+                <UserButton />
+              </motion.div>
+            )}
+          </SignedIn>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <SignedIn>
+            <Link href="/admin/pricing">
+              <span className="text-zinc-300 hover:text-zinc-100 text-lg">
+                Pricing
+              </span>
+            </Link>
+
+            <div className="flex items-center gap-2 text-sm">
+              <svg
                 width="32"
                 height="32"
                 viewBox="0 0 400 400"
@@ -174,24 +176,7 @@ const Nav = () => {
                 />
               </svg>
               <span className="font-bold">{aura}</span>
-                </div>
-                <UserButton />
-              </motion.div>
-            )}
-          </SignedIn>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <SignedIn>
-            <Link href="/admin/pricing">
-              <span className="text-zinc-300 hover:text-zinc-100 text-lg">
-                <Wallet />
-              </span>
-            </Link>
-
-            <h1 className="flex items-center gap-2 text-xl font-bold">
-              ${balance}
-            </h1>
+            </div>
           </SignedIn>
 
           <SignedOut>

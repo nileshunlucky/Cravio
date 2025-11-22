@@ -163,7 +163,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: delay + 0.4, duration: 0.6 }}
-                            className="text-red-700 font-semibold text-xl sm:text-2xl select-text drop-shadow-[0_0_6px_red]"
+                            className="text-red-600 font-semibold text-xl sm:text-2xl select-text drop-shadow-[0_0_6px_red]"
                             style={{ pointerEvents: 'auto' }}
                         >
                             -40%
@@ -253,7 +253,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
     />
 </svg>
 
-                            {currentAura.toLocaleString()} Trades
+                            {currentAura.toLocaleString()} Credit
                         </motion.span>{' '}
                         per {isYearly ? 'year' : 'month'}.
                     </div>
@@ -364,11 +364,11 @@ const Page = () => {
             buttonText: "Subscribe",
             features: {
                 aura: {
-                    monthly: 1000,
-                    yearly: 12000
+                    monthly: 250,
+                    yearly: 3000
                 },
                     list: [
-                    { name: "Prediction", included: true },
+                    { name: "Upload Chart", included: true },
                     { name: "Winning Probability", included: true },
                     { name: "Predicts P&L (BUY/SELL, Stop Loss, Target)", included: true },
                     { name: "Risk Management", included: true },
@@ -456,13 +456,14 @@ const Page = () => {
                 <motion.div variants={toggleVariants} className="flex justify-center mb-12">
                     <div className="relative bg-[#0f0f0f] border-2 border-white/10 p-2 rounded-xl">
                         <motion.div
-                            className="absolute inset-y-2 bg-white/20 text-black rounded-lg"
-                            animate={{
-                                x: isYearly ? "calc(100% - 8px)" : "8px",
-                                width: "calc(50% - 8px)"
-                            }}
-                            transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                        />
+    className="absolute inset-y-2 bg-gradient-to-r from-[#1E3A8A] via-[#3B82F6] to-[#1E40AF] text-white rounded-lg"
+    animate={{
+        x: isYearly ? "calc(100% - 8px)" : "8px",
+        width: "calc(50% - 8px)"
+    }}
+    transition={{ type: "spring", stiffness: 450, damping: 32 }}
+/>
+
                         <div className="relative flex">
                             <button
                                 onClick={() => setIsYearly(false)}

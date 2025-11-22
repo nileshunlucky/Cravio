@@ -26,18 +26,18 @@ const Page = () => {
   }, []);
 
   const features = [
-    { icon: <Upload className="w-6 h-6" />, title: "Predict Market", description: "Simply Predict chart using GPT-5" },
+    { icon: <Upload className="w-6 h-6" />, title: "Upload Chart", description: "Simply upload your trading chart screenshot" },
     { icon: <Brain className="w-6 h-6" />, title: "AI Analysis", description: "Advanced AI analyzes patterns instantly" },
-    { icon: <TrendingUp className="w-6 h-6" />, title: "BUY/SELL", description: "Get clear actionable trading signals" },
+    { icon: <TrendingUp className="w-6 h-6" />, title: "BUY/SELL Signal", description: "Get clear actionable trading signals" },
     { icon: <Shield className="w-6 h-6" />, title: "Stop Loss", description: "Precise risk management levels" },
     { icon: <Target className="w-6 h-6" />, title: "Target Price", description: "Multiple profit target recommendations" },
     { icon: <BarChart3 className="w-6 h-6" />, title: "Win Probability", description: "Data-driven success rate prediction" },
   ];
 
   const steps = [
-    { number: "01", title: "Predict The Market", description: "Predict Using The Most Powerfull GPT-5 model Quant Trading" },
-    { number: "02", title: "GPT-5 Predicting", description: "GPT advanced AI model analyzes technical patterns, support/resistance, and market sentiment" },
-    { number: "03", title: "Place Order Auto", description: "Receive BUY/SELL signals with stop loss, targets, and winning probability percentage auto setup" },
+    { number: "01", title: "Upload Your Chart", description: "Upload any trading chart from your platform" },
+    { number: "02", title: "AI Processing", description: "Our advanced AI analyzes technical patterns, support/resistance, and market sentiment" },
+    { number: "03", title: "Get Predictions", description: "Receive BUY/SELL signals with stop loss, targets, and winning probability percentage" },
   ];
 
   return (
