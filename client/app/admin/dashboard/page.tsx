@@ -322,7 +322,7 @@ useEffect(() => {
 
     const data = series.data();
     const latestCandle = data[data.length - 1];
-    const price = latestCandle?.close || 1;
+    const price = (latestCandle && 'close' in latestCandle) ? latestCandle.close : 1;
 
     const qty = amtNum / price;
       form.append("qty", qty);
