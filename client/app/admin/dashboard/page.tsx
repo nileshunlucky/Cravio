@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { createChart, ColorType, CandlestickData, UTCTimestamp } from "lightweight-charts";
+import { createChart, ColorType, CandlestickData, UTCTimestamp, IPriceLine } from "lightweight-charts";
 import { Button } from "@/components/ui/button";
 import { LoaderCircle } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
@@ -211,8 +211,8 @@ if (stopLoss && !Number.isNaN(stopLossValue) && price <= stopLossValue && !notif
       });
   }, [symbol, timeframe]);
 
-  const targetLineRef = useRef(null);
-const stopLossLineRef = useRef(null);
+  const targetLineRef = useRef<IPriceLine | null>(null);
+const stopLossLineRef = useRef<IPriceLine | null>(null);
 useEffect(() => {
   const series = candleSeriesRef.current;
   if (!series) return;
