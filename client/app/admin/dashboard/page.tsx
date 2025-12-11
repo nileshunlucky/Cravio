@@ -48,15 +48,19 @@ export default function CryptoTradingChart() {
   const email = user?.emailAddresses?.[0]?.emailAddress || "";
 
 
-  function transformKlines(raw) {
-    return raw.map((c) => ({
-      time: c[0] / 1000,
-      open: parseFloat(c[1]),
-      high: parseFloat(c[2]),
-      low: parseFloat(c[3]),
-      close: parseFloat(c[4]),
-    }));
-  }
+ type Kline = [number, string, string, string, string, ...any[]];
+
+function transformKlines(raw: Kline[]) {
+  return raw.map((c) => ({
+    time: c[0] / 1000,
+    open: parseFloat(c[1]),
+    high: parseFloat(c[2]),
+    low: parseFloat(c[3]),
+    close: parseFloat(c[4]),
+  }));
+}
+
+
 
   useEffect(() => {
     const chart = createChart(chartRef.current, {
