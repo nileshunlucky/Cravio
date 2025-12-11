@@ -32,7 +32,7 @@ const TIMEFRAMES = [
 export default function CryptoTradingChart() {
   // container ref also carries the created chart instance for easy access
   const chartRef = useRef<(HTMLDivElement & { chart?: ReturnType<typeof createChart> }) | null>(null);
-  const candleSeriesRef = useRef(null);
+  const candleSeriesRef = useRef<ReturnType<ReturnType<typeof createChart>["addCandlestickSeries"]> | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const router = useRouter();
 
