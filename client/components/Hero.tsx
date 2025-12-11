@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Zap, Target, MousePointerClick, TrendingUp, ArrowRight, Sparkles } from "lucide-react";
+import { Target, MousePointerClick, TrendingUp, ArrowRight } from "lucide-react";
 
 // --- Modern Premium Utility Components ---
 
@@ -65,18 +65,6 @@ const Card = ({ children, className }) => (
   </motion.div>
 );
 
-// Floating Badge Component
-const Badge = ({ children, icon: Icon }) => (
-  <motion.div
-    initial={{ opacity: 0, y: -10 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.6 }}
-    className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 backdrop-blur-md border border-white/10 rounded-full"
-  >
-    {Icon && <Icon className="w-4 h-4 text-white" />}
-    <span className="text-sm font-medium tracking-wide">{children}</span>
-  </motion.div>
-);
 
 // --- Main Landing Page Component ---
 
