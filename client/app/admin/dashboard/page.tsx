@@ -166,9 +166,11 @@ function transformKlines(raw: Kline[]): CandlePoint[] {
           series.update(live);
 
 const price = live.close;
+const targetValue = parseFloat(target);
+const stopLossValue = parseFloat(stopLoss);
 
 
-if (target && price >= target && !notifiedRef.current.target) {
+if (target && !Number.isNaN(targetValue) && price >= targetValue && !notifiedRef.current.target) {
   toast.success(`Target hit! ${target}`);
   notifiedRef.current.target = true;
   // remove lines instantly
@@ -187,7 +189,7 @@ if (target && price >= target && !notifiedRef.current.target) {
 }
 
 // ---- ONE-TIME STOPLOSS HIT ----
-if (stopLoss && price <= stopLoss && !notifiedRef.current.stopLoss) {
+if (stopLoss && !Number.isNaN(stopLossValue) && price <= stopLossValue && !notifiedRef.current.stopLoss) {
   toast.error(`Stop Loss hit! ${stopLoss}`);
   notifiedRef.current.stopLoss = true;
   // remove lines instantly
