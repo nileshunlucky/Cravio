@@ -6,9 +6,14 @@ import Link from "next/link";
 import { Target, MousePointerClick, TrendingUp, ArrowRight } from "lucide-react";
 
 // --- Modern Premium Utility Components ---
-
 // Custom Button Component (Modern glassmorphism with magnetic hover)
-const Button = ({ children, className, variant = "primary", ...props }) => {
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  children: React.ReactNode;
+  className?: string;
+  variant?: "primary" | "secondary";
+};
+
+const Button = ({ children, className = "", variant = "primary", ...props }: ButtonProps) => {
   const variants = {
     primary: `
       bg-gradient-to-r from-white to-neutral-100 text-black 
@@ -42,8 +47,14 @@ const Button = ({ children, className, variant = "primary", ...props }) => {
   );
 };
 
+
 // Custom Card Component (Modern glassmorphism)
-const Card = ({ children, className }) => (
+type CardProps = {
+  children: React.ReactNode;
+  className?: string;
+};
+
+const Card = ({ children, className = "" }: CardProps) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
@@ -59,11 +70,11 @@ const Card = ({ children, className }) => (
       ${className}
     `}
   >
-    {/* Subtle shine effect on hover */}
     <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
     <div className="relative z-10">{children}</div>
   </motion.div>
 );
+
 
 
 // --- Main Landing Page Component ---
