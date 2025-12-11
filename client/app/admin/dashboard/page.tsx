@@ -260,7 +260,7 @@ useEffect(() => {
     setLoading(true);
     try {
       const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${timeframe}&limit=100`;
-      const raw = await fetch(url).then((r) => r.json());
+      const raw: Kline[] = await fetch(url).then((r) => r.json());
 
       const candles: CandlePoint[] = raw.map((c) => ({
         time: (c[0] / 1000) as UTCTimestamp,
