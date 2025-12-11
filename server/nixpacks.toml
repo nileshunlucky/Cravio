@@ -1,0 +1,5 @@
+[phases.setup]
+nixPkgs = ["python312", "libGL", "mesa"]
+
+[phases.build]
+cmds = ["pip install --no-cache-dir -r requirements.txt"]

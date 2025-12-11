@@ -1,0 +1,8 @@
+# Next.js
+.next/
+dist/
+node_modules/
+.env.local
+.env
+# clerk configuration (can include secrets)
+/.clerk/
