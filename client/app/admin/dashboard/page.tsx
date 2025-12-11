@@ -30,9 +30,10 @@ const TIMEFRAMES = [
 ];
 
 export default function CryptoTradingChart() {
-  const chartRef = useRef(null);
+  // container ref also carries the created chart instance for easy access
+  const chartRef = useRef<(HTMLDivElement & { chart?: ReturnType<typeof createChart> }) | null>(null);
   const candleSeriesRef = useRef(null);
-  const wsRef = useRef(null);
+  const wsRef = useRef<WebSocket | null>(null);
   const router = useRouter();
 
   const [symbol, setSymbol] = useState("BTCUSDT");
@@ -76,6 +77,8 @@ function transformKlines(raw: Kline[]) {
 
 
   useEffect(() => {
+    if (!chartRef.current) return;
+
     const chart = createChart(chartRef.current, {
       layout: { background: { type: ColorType.Solid, color: "#000" }, textColor: "#DDD" },
       grid: {
@@ -102,6 +105,7 @@ function transformKlines(raw: Kline[]) {
     candleSeriesRef.current = candleSeries;
 
     const resizeChart = () => {
+      if (!chartRef.current) return;
       chart.applyOptions({
         width: chartRef.current.clientWidth,
         height: chartRef.current.clientHeight,
@@ -121,8 +125,9 @@ function transformKlines(raw: Kline[]) {
   useEffect(() => {
     if (!candleSeriesRef.current) return;
 
-    const chart = chartRef.current.chart;
+    const chart = chartRef.current?.chart;
     const series = candleSeriesRef.current;
+    if (!chart) return;
 
     if (wsRef.current) {
       wsRef.current.close();
