@@ -48,7 +48,20 @@ export default function CryptoTradingChart() {
   const email = user?.emailAddresses?.[0]?.emailAddress || "";
 
 
- type Kline = [number, string, string, string, string, ...any[]];
+ type Kline = [
+   openTime: number,
+   open: string,
+   high: string,
+   low: string,
+   close: string,
+   volume: string,
+   closeTime: number,
+   quoteAssetVolume: string,
+   trades: number,
+   takerBuyBaseVolume: string,
+   takerBuyQuoteVolume: string,
+   ignore: string
+ ];
 
 function transformKlines(raw: Kline[]) {
   return raw.map((c) => ({
@@ -254,7 +267,7 @@ useEffect(() => {
       form.append("timeframe", timeframe);
       form.append("candles", JSON.stringify(candles));
 
-      const res = await fetch("http://127.0.0.1:8000/api/predict", {
+      const res = await fetch("https://cravio-ai.onrender.com/api/predict", {
         method: "POST",
         body: form,
       });
@@ -274,6 +287,7 @@ useEffect(() => {
         setTarget(data.data.target);
         setTrade(true);
       }
+      console.log(data)
     } catch (e) {
       console.error(e);
     } finally {
@@ -299,7 +313,7 @@ useEffect(() => {
       form.append("target", target);
       form.append("email", email);
 
-      const res = await fetch("http://127.0.0.1:8000/api/trade", { 
+      const res = await fetch("https://cravio-ai.onrender.com/api/trade", { 
         method: "POST",
          body: form
          });
@@ -331,7 +345,7 @@ useEffect(() => {
   form.append("symbol", symbol);
   form.append("email", email);
 
-  const res = await fetch("http://127.0.0.1:8000/api/exit", {
+  const res = await fetch("https://cravio-ai.onrender.com/api/exit", {
     method: "POST",
     body: form,
   });
