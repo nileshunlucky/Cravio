@@ -313,8 +313,16 @@ useEffect(() => {
       form.append("side", side);
     const amtNum = parseFloat(amt);
 
-    const latestCandle = candleSeriesRef.current.data().slice(-1)[0];
-    const price = latestCandle?.close || 1
+    const series = candleSeriesRef.current;
+    if (!series) {
+      setLoading(false);
+      toast.error("Chart not ready yet");
+      return;
+    }
+
+    const data = series.data();
+    const latestCandle = data[data.length - 1];
+    const price = latestCandle?.close || 1;
 
     const qty = amtNum / price;
       form.append("qty", qty);
@@ -326,8 +334,8 @@ useEffect(() => {
         method: "POST",
          body: form
          });
-      const data = await res.json();
-      console.log(data)
+      const meta = await res.json();
+      console.log(meta)
       if (res.status === 403) {
       toast.error("Binance Creditinal not found!")
       router.push("/brokrage");
