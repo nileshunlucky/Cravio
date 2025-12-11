@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
@@ -105,7 +105,7 @@ export default function Home() {
           animate="visible"
           className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10"
         >
-          {plans.map((plan, index) => (
+          {plans.map((plan) => (
             <motion.div
               key={plan.name}
               variants={cardVariants}
