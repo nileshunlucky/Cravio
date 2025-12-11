@@ -300,6 +300,7 @@ useEffect(() => {
          body: form
          });
       const data = await res.json();
+      console.log(data)
       if (res.status === 403) {
       toast.error("Binance Creditinal not found!")
       router.push("/brokrage");
