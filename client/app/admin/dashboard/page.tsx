@@ -325,7 +325,7 @@ useEffect(() => {
     const price = (latestCandle && 'close' in latestCandle) ? latestCandle.close : 1;
 
     const qty = amtNum / price;
-      form.append("qty", qty);
+      form.append("qty", qty.toString());
       form.append("stopLoss", stopLoss);
       form.append("target", target);
       form.append("email", email);
