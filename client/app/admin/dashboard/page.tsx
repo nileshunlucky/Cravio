@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { createChart, ColorType } from "lightweight-charts";
+import { createChart, ColorType, CandlestickData, UTCTimestamp } from "lightweight-charts";
 import { Button } from "@/components/ui/button";
 import { LoaderCircle } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
@@ -64,9 +64,11 @@ export default function CryptoTradingChart() {
    ignore: string
  ];
 
-function transformKlines(raw: Kline[]) {
+type CandlePoint = CandlestickData<UTCTimestamp>;
+
+function transformKlines(raw: Kline[]): CandlePoint[] {
   return raw.map((c) => ({
-    time: c[0] / 1000,
+    time: (c[0] / 1000) as UTCTimestamp,
     open: parseFloat(c[1]),
     high: parseFloat(c[2]),
     low: parseFloat(c[3]),
@@ -153,8 +155,8 @@ function transformKlines(raw: Kline[]) {
           const msg = JSON.parse(event.data);
           const k = msg.k;
 
-          const live = {
-            time: k.t / 1000,
+          const live: CandlePoint = {
+            time: (k.t / 1000) as UTCTimestamp,
             open: parseFloat(k.o),
             high: parseFloat(k.h),
             low: parseFloat(k.l),
@@ -258,8 +260,8 @@ useEffect(() => {
       const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${timeframe}&limit=100`;
       const raw = await fetch(url).then((r) => r.json());
 
-      const candles = raw.map((c) => ({
-        time: c[0] / 1000,
+      const candles: CandlePoint[] = raw.map((c) => ({
+        time: (c[0] / 1000) as UTCTimestamp,
         open: parseFloat(c[1]),
         high: parseFloat(c[2]),
         low: parseFloat(c[3]),
