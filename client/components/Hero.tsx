@@ -5,15 +5,15 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { Target, MousePointerClick, TrendingUp, ArrowRight } from "lucide-react";
 
-// --- Modern Premium Utility Components ---
 // Custom Button Component (Modern glassmorphism with magnetic hover)
-type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+type ButtonProps = {
   children: React.ReactNode;
   className?: string;
   variant?: "primary" | "secondary";
+  onClick?: () => void;
 };
 
-const Button = ({ children, className = "", variant = "primary", ...props }: ButtonProps) => {
+const Button = ({ children, className = "", variant = "primary", onClick }: ButtonProps) => {
   const variants = {
     primary: `
       bg-gradient-to-r from-white to-neutral-100 text-black 
@@ -29,6 +29,7 @@ const Button = ({ children, className = "", variant = "primary", ...props }: But
     <motion.button
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
+      onClick={onClick}
       className={`
         px-10 py-5 text-lg font-bold 
         backdrop-blur-sm
@@ -39,7 +40,6 @@ const Button = ({ children, className = "", variant = "primary", ...props }: But
         ${variants[variant]}
         ${className}
       `}
-      {...props}
     >
       <span className="relative z-10 flex items-center gap-2">{children}</span>
       <div className="absolute inset-0 bg-gradient-to-r from-neutral-100 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
