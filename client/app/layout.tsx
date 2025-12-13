@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Auraiser AI",
-  description: "Auraiser AI is a powerfull ai for fitness members to grow thier strenght fast with scan your pysyics and get rated.",
+  title: "Mellvitta",
+  description: "Mellvitta AI is a powerfull ai for trading to get fast BUY/SELL, Target and Stop loss Suggestion.",
   icons: {
     icon: "/logo.png",
   },
