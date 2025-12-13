@@ -57,7 +57,7 @@ Instructions:
   (Risk = distance between entry and stop loss, Reward = distance between entry and target)
 - Ensure target distance is at least 2x the stop loss distance
 - Return ONLY JSON in this exact format:
-{{"side": "BUY", "stopLoss": 0.0, "target": 0.0}}
+{{"side": "BUY", "stopLoss": 23000, "target": 23300}}
 Do not add any extra text or explanation.
 """
 
@@ -70,7 +70,18 @@ Do not add any extra text or explanation.
         )
 
         # The actual text output from GPT
-        result_text = response.output_text.strip()
+        result_text = ""
+
+        for item in response.output:
+            if item["type"] == "message":
+                for content in item["content"]:
+                    if content["type"] == "output_text":
+                        result_text += content["text"]
+
+        result_text = result_text.strip()
+
+        if not result_text:
+          raise Exception("AI returned empty response")
 
         # Convert GPT's JSON string into Python dict
         trade_data = json.loads(result_text)
@@ -79,6 +90,7 @@ Do not add any extra text or explanation.
         return {"status": "success", "data": trade_data}
 
     except Exception as e:
+        users_collection.update_one({"email": email}, {"$inc": {"aura": 1}})
         raise HTTPException(status_code=500, detail=f"Trade prediction failed: {str(e)}")
 
 @router.post("/api/trade")
