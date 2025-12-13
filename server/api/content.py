@@ -31,10 +31,17 @@ def deduct_aura(email: str):
 
 
 def safe_json_parse(text: str):
+    """
+    Extract the first JSON object in a string and parse it.
+    Raises HTTPException if parsing fails.
+    """
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if not match:
         raise HTTPException(status_code=500, detail="GPT did not return valid JSON.")
-    return json.loads(match.group())
+    try:
+        return json.loads(match.group())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to parse JSON from GPT response: {e}")
 
 
 @router.post("/api/image")
@@ -42,13 +49,31 @@ async def analyze_image(
     email: str = Form(...),
     image: UploadFile = File(...),
 ):
+    """
+    Analyze a trading chart image and return/save a prediction entry.
+    Saves the entry in the user's document under 'image_analysis' in this format:
+    {
+      "image_url": "...",
+      "title": "...",
+      "note": "...",
+      "labels": {
+        "Prediction": "BUY",
+        "Probability": 87,
+        "Current Price": 5845.48,
+        "Stop Loss": 5845.2,
+        "Profit Trade 1": 5845.7,
+        "Profit Trade 2": 5846
+      },
+      "created_at": "2025-11-24T18:05:26.061854"
+    }
+    """
     deduct_aura(email)
 
     try:
-        # Read file and upload to S3
+        # Read file and upload to S3 (store under trade/ prefix)
         image_bytes = await image.read()
         file_ext = image.filename.split(".")[-1]
-        file_key = f"fitness/{uuid.uuid4()}.{file_ext}"
+        file_key = f"trade/{uuid.uuid4()}.{file_ext}"
 
         s3_client.put_object(
             Bucket=S3_BUCKET,
@@ -59,21 +84,26 @@ async def analyze_image(
 
         image_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{file_key}"
 
-        # === STEP 1: Analyze physique ===
+        # === STEP 1: Analyze chart image and return prediction labels ===
         analysis_prompt = (
-            "You are a professional fitness coach. Analyze this fitness image "
-            "and identify which body part it shows (chest, back, biceps, shoulders, legs, abs, veins). "
-            "Return a JSON with 5 labels relevant to that body part, each with a percentage 0-100. "
-            "Always include 'AURA' at the end. ONLY return JSON, no extra text.\n"
+            "You are an expert market analyst who interprets trading chart images (candlesticks, line charts, indicators). "
+            "Identify the dominant market structure/pattern (e.g., consolidation, breakout, uptrend, downtrend, head and shoulders, support/resistance). "
+            "Return a JSON object with these keys exactly: "
+            "\"Prediction\" (one of BUY, SELL), "
+            "\"Probability\" (integer 0-100), "
+            "\"Current Price\" (float), "
+            "\"Stop Loss\" (float), "
+            "\"Profit Trade 1\" (float), "
+            "\"Profit Trade 2\" (float). "
+            "All numeric values should be numbers (not strings). ONLY return the JSON object and no extra text.\n\n"
             "Example:\n"
-            "{ \"Chest\": 94, \"Shoulder\": 84, \"Abs\": 81, \"Arms\": 90, \"AURA\": 87 }"
-            "Do not include body parts that are not visible in the image."
+            "{ \"Prediction\": \"BUY\", \"Probability\": 87, \"Current Price\": 5845.48, \"Stop Loss\": 5845.2, \"Profit Trade 1\": 5845.7, \"Profit Trade 2\": 5846 }"
         )
 
         analysis_response = openai_client.responses.create(
             model="gpt-4o-mini",
             input=[
-                {"role": "system", "content": "You are a precise fitness image evaluator."},
+                {"role": "system", "content": "You are a precise trading chart analyst."},
                 {"role": "user", "content": [
                     {"type": "input_text", "text": analysis_prompt},
                     {"type": "input_image", "image_url": image_url}
@@ -85,18 +115,17 @@ async def analyze_image(
 
         # === STEP 2: Title + note ===
         title_note_prompt = (
-            "You are a fitness content writer. Generate:\n"
-            "1. A short, clean title (max 7 words) describing the physique in the image. No hashtags, emojis, fluff.\n"
-            "2. A short practical note (1-2 sentences) giving real feedback about the physique.\n"
-            "ONLY return JSON.\n"
-            "Format:\n"
+            "You are a trading content writer. Based on the chart image, generate:\n"
+            "1) A short, clean title (max 7 words) describing the chart/pattern (no hashtags, emojis, or fluff).\n"
+            "2) A concise practical note (1-2 sentences) that explains the actionable insight.\n"
+            "ONLY return JSON in this format:\n"
             "{ \"title\": \"...\", \"note\": \"...\" }"
         )
 
         title_note_response = openai_client.responses.create(
             model="gpt-4o-mini",
             input=[
-                {"role": "system", "content": "You are a fitness content writer."},
+                {"role": "system", "content": "You are a trading content writer."},
                 {"role": "user", "content": [
                     {"type": "input_text", "text": title_note_prompt},
                     {"type": "input_image", "image_url": image_url}
@@ -106,22 +135,20 @@ async def analyze_image(
 
         title_note = safe_json_parse(title_note_response.output_text.strip())
 
-        # === STEP 3: Generate Workout/Diet/Routine Summary & Save as Achievement ===
+        # === STEP 3: Optional detailed summary/plan saved as an achievement ===
         summary_prompt = (
-            "You are a professional fitness coach. Based on the uploaded fitness image, "
-            "create a clear, concise long detail summary including:\n"
-            "1. Recommended Workout Plan\n"
-            "2. Diet suggestions\n"
-            "3. Daily Routine/Timing\n"
-            "Format it in a clean, valuable, human-readable style (no fluff)."
-            "ONLY return JSON in the format:\n"
-            "{ \"workout_plan\": \"...\", \"diet\": \"...\", \"routine\": \"...\" }"
+            "You are a trading strategist. Provide a concise trade plan based on the chart image including:\n"
+            "1) market_overview Summary (1-3 sentences)\n"
+            "2) trade_setups\n"
+            "3) risk_management\n"
+            "ONLY return JSON in this format:\n"
+            "{ \"market_overview\": \"...\", \"trade_setups\": \"...\", \"risk_management\": \"...\" }"
         )
 
         summary_response = openai_client.responses.create(
             model="gpt-4o-mini",
             input=[
-                {"role": "system", "content": "You are a fitness coach who summarizes plans from images."},
+                {"role": "system", "content": "You are a trading strategist who writes concise trade plans."},
                 {"role": "user", "content": [
                     {"type": "input_text", "text": summary_prompt},
                     {"type": "input_image", "image_url": image_url}
@@ -131,9 +158,9 @@ async def analyze_image(
 
         summary = safe_json_parse(summary_response.output_text.strip())
 
-        # Save achievement separately
+        # Save achievement separately (keeps user's achievements of analyses)
         achievement_entry = {
-            "title": f"Achievement: {title_note.get('title', '').strip()}",
+            "title": f"Analysis: {title_note.get('title', '').strip()}",
             "summary": summary,
             "image_url": image_url,
             "created_at": datetime.utcnow().isoformat()
@@ -144,8 +171,7 @@ async def analyze_image(
             {"$push": {"achievements": achievement_entry}}
         )
 
-
-        # === STEP 3: Save to DB ===
+        # === STEP 4: Save analysis entry to DB in the requested format ===
         entry = {
             "image_url": image_url,
             "title": title_note.get("title", "").strip(),
@@ -164,4 +190,4 @@ async def analyze_image(
     except Exception as e:
         # Refund aura if something fails
         users_collection.update_one({"email": email}, {"$inc": {"aura": 1}})
-        raise HTTPException(status_code=500, detail=f"Image analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Chart analysis failed: {str(e)}")
