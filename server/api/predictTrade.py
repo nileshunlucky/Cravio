@@ -25,18 +25,18 @@ async def predict_trade(
         if not user:
          raise HTTPException(status_code=404, detail="User not found")
 
-        credit = user.get("credit", 0)
+        aura = user.get("aura", 0)
 
-        # If user has no credit
-        if credit < 1:
-            raise HTTPException(status_code=403, detail="Insufficient credits")
+        # If user has no aura
+        if aura < 1:
+            raise HTTPException(status_code=403, detail="Insufficient auras")
 
-        # Deduct 1 credit
-        new_credit = credit - 1
+        # Deduct 1 aura
+        new_aura = aura - 1
 
         users_collection.update_one(
             {"email": email},
-            {"$set": {"credit": new_credit}}
+            {"$set": {"aura": new_aura}}
         )
 
         candles_data = json.loads(candles)
@@ -53,6 +53,9 @@ Instructions:
 - Predict only one action: "BUY" or "SELL"
 - Suggest a realistic Stop Loss
 - Suggest a realistic Target price
+- The trade MUST follow a minimum Risk–Reward ratio of 1:2 or preferably 1:3
+  (Risk = distance between entry and stop loss, Reward = distance between entry and target)
+- Ensure target distance is at least 2x the stop loss distance
 - Return ONLY JSON in this exact format:
 {{"side": "BUY", "stopLoss": 0.0, "target": 0.0}}
 Do not add any extra text or explanation.
