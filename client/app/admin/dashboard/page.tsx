@@ -244,7 +244,7 @@ useEffect(() => {
     stopLossLineRef.current = series.createPriceLine({
       price: parseFloat(stopLoss),
       color: "#ff0033",
-      lineWidth: 2,
+      lineWidth: 2, 
       lineStyle: 2,
       axisLabelVisible: true,
       title: "STOP LOSS",
