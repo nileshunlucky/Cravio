@@ -69,7 +69,7 @@ Do not add any extra text or explanation.
             ],
         )
 
-        result_text = result_text.strip()
+        result_text = response.output_text.strip()
 
         if not result_text:
           raise Exception("AI returned empty response")
