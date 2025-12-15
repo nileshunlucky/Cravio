@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Mellvitta",
-  description: "Mellvitta AI is a powerfull ai for trading to get fast BUY/SELL, Target and Stop loss Suggestion.",
+  description: "Mellvitta AI  is a powerfull ai for trading to get fast BUY/SELL, Target and Stop loss Suggestion.",
   icons: {
     icon: "/logo.png",
   },
