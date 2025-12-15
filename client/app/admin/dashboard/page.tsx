@@ -255,7 +255,8 @@ useEffect(() => {
 
   async function handlePredict() {
     if(!email){
-      toast.error("user not found")
+       toast.error("user not found")
+       return
     }
     setLoading(true);
     try {
@@ -307,6 +308,10 @@ useEffect(() => {
 
   async function handlePlaceTrade() {
     setLoading(true);
+      if(!email){
+       toast.error("user not found")
+       return
+    }
     try {
       const form = new FormData();
       form.append("symbol", symbol);
@@ -356,7 +361,10 @@ useEffect(() => {
 
   async function handleExit() {
     setLoading(true);
-
+      if(!email){
+      toast.error("user not found")
+      return
+    }
     try{
         const form = new FormData();
   form.append("symbol", symbol);
@@ -476,6 +484,7 @@ useEffect(() => {
         {exitUI ? (
           <Button
             onClick={handleExit}
+            disabled={loading}
             className="w-full h-10 rounded-lg bg-zinc-200 font-semibold text-sm shadow-xl"
           >
             {loading ? (
@@ -521,6 +530,7 @@ useEffect(() => {
 
             <Button
               onClick={handlePlaceTrade}
+              disabled={loading}
               className="w-full h-10 rounded-lg bg-zinc-200 font-semibold text-sm shadow-xl"
             >
               {loading ? (
@@ -533,6 +543,7 @@ useEffect(() => {
         ) : (
           <Button
             onClick={handlePredict}
+            disabled={loading}
             className="w-full h-10 rounded-lg bg-zinc-200 font-semibold text-sm shadow-xl"
           >
             {loading ? (
@@ -551,6 +562,7 @@ useEffect(() => {
         {exitUI ? (
           <Button
             onClick={handleExit}
+            disabled={loading}
             className="w-full h-10 rounded-lg bg-zinc-200 font-semibold text-sm shadow-xl"
           >
            {loading ? (
@@ -596,6 +608,7 @@ useEffect(() => {
 
             <Button
               onClick={handlePlaceTrade}
+              disabled={loading}
               className="w-full h-10 rounded-lg bg-zinc-200 font-semibold text-sm shadow-xl"
             >
               {loading ? (
@@ -608,6 +621,7 @@ useEffect(() => {
         ) : (
           <Button
             onClick={handlePredict}
+            disabled={loading}
             className="w-full h-10 rounded-lg bg-zinc-200 font-semibold text-sm shadow-xl"
           >
             {loading ? (

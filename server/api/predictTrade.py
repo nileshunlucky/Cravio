@@ -6,12 +6,27 @@ import json
 from binance.client import Client
 from binance.enums import *
 from db import users_collection
+import re
+
 
 
 load_dotenv()
 
 router = APIRouter()
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def safe_json_parse(text: str):
+    """
+    Extract the first JSON object in a string and parse it.
+    Raises HTTPException if parsing fails.
+    """
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        raise HTTPException(status_code=500, detail="GPT did not return valid JSON.")
+    try:
+        return json.loads(match.group())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to parse JSON from GPT response: {e}")
 
 @router.post("/api/predict")
 async def predict_trade(
@@ -56,11 +71,9 @@ Instructions:
 - The trade MUST follow a minimum Risk–Reward ratio of 1:2 or preferably 1:3
   (Risk = distance between entry and stop loss, Reward = distance between entry and target)
 - Ensure target distance is at least 2x the stop loss distance
-- Return ONLY JSON in this exact format:
+- All numeric values should be numbers (not strings). ONLY return the JSON object and no extra text.
 {{"side": "BUY", "stopLoss": 23000, "target": 23300}}
-Do not add any extra text or explanation.
 """
-
         response = openai_client.responses.create(
             model="gpt-4o-mini",
             input=[
@@ -69,16 +82,10 @@ Do not add any extra text or explanation.
             ],
         )
 
-        result_text = response.output_text.strip()
-
-        if not result_text:
-          raise Exception("AI returned empty response")
-
-        # Convert GPT's JSON string into Python dict
-        trade_data = json.loads(result_text)
+        labels = safe_json_parse(response.output_text.strip())
 
         # Only return the prediction info
-        return {"status": "success", "data": trade_data}
+        return {"status": "success", "data": labels}
 
     except Exception as e:
         users_collection.update_one({"email": email}, {"$inc": {"aura": 1}})
