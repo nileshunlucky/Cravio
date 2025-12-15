@@ -15,8 +15,8 @@ LEMON_SQUEEZING_WEBHOOK_SECRET = os.getenv("LEMON_SQUEEZING_WEBHOOK_SECRET")
 
 # Map your Lemon Squeezy plan variant IDs to the number of aura
 PLANS = {
-    971466: 250, 
-    971468: 3000, 
+    1126909: 250, 
+    1126913: 3000, 
 }
 
 # --- Helper Functions ---

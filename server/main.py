@@ -90,10 +90,10 @@ def save_referral(data: UserReferral = Body(...)):
     if user:
         return {"message": "User already exists"}
 
-    # 3. If user doesn't exist, insert as new user and give 3 aura
+    # 3. If user doesn't exist, insert as new user and give 10 aura
     user_data = {
         "email": data.email,
-        "aura": 3,
+        "aura": 10,
         "is_paid": False,
     }
 

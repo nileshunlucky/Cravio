@@ -69,15 +69,6 @@ Do not add any extra text or explanation.
             ],
         )
 
-        # The actual text output from GPT
-        result_text = ""
-
-        for item in response.output:
-            if item["type"] == "message":
-                for content in item["content"]:
-                    if content["type"] == "output_text":
-                        result_text += content["text"]
-
         result_text = result_text.strip()
 
         if not result_text:
