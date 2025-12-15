@@ -1,11 +1,15 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Form
 from db import users_collection
 from binance.client import Client
 
 router = APIRouter()
 
 @router.post("/api/binance/connect")
-async def connect_binance(apiKey: str, apiSecret: str, email: str):
+async def connect_binance(
+    apiKey: str = Form(...),
+    apiSecret: str = Form(...),
+    email: str = Form(...)
+):
     # Find user by email
     user = users_collection.find_one({"email": email})
 

@@ -1,87 +1,127 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
+import { Lock, Key, ShieldCheck } from "lucide-react";
 
 export default function Home() {
   const { user } = useUser();
   const email = user?.emailAddresses?.[0]?.emailAddress || "";
+
   const [apiKey, setApiKey] = useState("");
   const [apiSecret, setApiSecret] = useState("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!email) return;
+    fetch(`https://cravio-ai.onrender.com/user/${email}`)
+      .then(res => res.ok && res.json())
+      .then(data => {
+        if (!data) return;
+        setApiKey(data?.binance_api_key ?? "");
+        setApiSecret(data?.binance_api_secret ?? "");
+      })
+      .catch(console.error);
+  }, [email]);
 
   const handleConnect = async () => {
-    if (!email) {
-      toast("You must be logged in.");
-      return;
-    }
-
+    if (!email) return toast("Login required");
     setLoading(true);
 
     try {
-      const res = await fetch("https://cravio-ai.onrender.com/api/binance/connect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey, apiSecret, email }),
-      });
+      const form = new FormData();
+      form.append("apiKey", apiKey);
+      form.append("apiSecret", apiSecret);
+      form.append("email", email);
+
+      const res = await fetch(
+        "https://cravio-ai.onrender.com/api/binance/connect",
+        { method: "POST", body: form }
+      );
 
       const data = await res.json();
       toast(data.message);
-    } catch (err) {
-      console.error(err);
-      toast("Something went wrong");
+    } catch {
+      toast("Connection failed");
     } finally {
-        setLoading(true);
-        setApiKey("")
-        setApiSecret("")
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen w-full bg-black flex items-center justify-center p-4">
+    <div className="min-h-dvh flex items-center justify-center bg-black px-4 sm:px-6 relative overflow-hidden">
+      {/* background glow */}
+      <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 via-transparent to-amber-500/5" />
+
       <motion.div
-        initial={{ opacity: 0, y: 40 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.45, ease: "easeOut" }}
+        className="relative z-10 w-full flex justify-center"
       >
-        <Card className="md:w-[400px] bg-black border-0">
-          <CardHeader>
-            <CardTitle className="text-center text-zinc-100 text-xl tracking-wide">
-              Binance Brokerage
-            </CardTitle>
+        <Card className="w-full max-w-[420px] bg-zinc-950/85 backdrop-blur-xl border border-zinc-800 rounded-2xl shadow-2xl">
+          <CardHeader className="space-y-3 px-5 sm:px-6 pt-6">
+            <div className="flex items-center justify-center gap-2 text-yellow-400">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/5/57/Binance_Logo.png"
+                alt="Binance"
+                className="w-6 h-6 object-contain"
+              />
+              <h1 className="text-lg sm:text-xl font-semibold">
+                Binance Secure Connect
+              </h1>
+            </div>
+
+            <p className="text-center text-xs sm:text-sm text-zinc-400 leading-relaxed">
+              Securely connect your Binance account.  
+              <br className="hidden sm:block" />
+              We never withdraw funds.
+            </p>
           </CardHeader>
 
-          <CardContent className="space-y-4">
-            <Input
-              placeholder="API Key"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              className="text-zinc-200 placeholder:text-zinc-500"
-            />
+          <CardContent className="px-5 sm:px-6 pb-6 space-y-4">
+            {/* API KEY */}
+            <div className="relative">
+              <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <Input
+                placeholder="Binance API Key"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="h-11 sm:h-12 pl-10 bg-zinc-900 border-zinc-800 text-zinc-200 rounded-xl"
+              />
+            </div>
 
-            <Input
-              placeholder="API Secret"
-              value={apiSecret}
-              onChange={(e) => setApiSecret(e.target.value)}
-              type="password"
-              className="text-zinc-200 placeholder:text-zinc-500"
-            />
+            {/* API SECRET */}
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <Input
+                placeholder="Binance API Secret"
+                type="password"
+                value={apiSecret}
+                onChange={(e) => setApiSecret(e.target.value)}
+                className="h-11 sm:h-12 pl-10 bg-zinc-900 border-zinc-800 text-zinc-200 rounded-xl"
+              />
+            </div>
 
+            {/* BUTTON */}
             <Button
-              className="w-full bg-zinc-200 text-black font-semibold rounded-xl hover:bg-white transition"
               onClick={handleConnect}
               disabled={loading}
+              className="w-full h-11 sm:h-12 rounded-xl font-semibold text-black bg-gradient-to-r from-yellow-400 to-amber-400 hover:opacity-90 active:scale-[0.99] transition"
             >
-              {loading ? "Connecting..." : "Connect"}
+              {loading ? "Connecting…" : "Connect Binance"}
             </Button>
+
+            {/* FOOTER */}
+            <div className="flex items-center justify-center gap-2 pt-1 text-xs text-zinc-500">
+              <ShieldCheck className="w-4 h-4" />
+              Encrypted & Read-Only Access
+            </div>
           </CardContent>
         </Card>
       </motion.div>
