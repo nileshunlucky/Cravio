@@ -4,7 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from '@clerk/nextjs';
 import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider"
-import Nav from '@/components/Nav'
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -61,7 +61,7 @@ export default function RootLayout({
             enableSystem={false}
             disableTransitionOnChange
           >
-          <Nav/>
+        
             {children}
           </ThemeProvider>
         </body>
