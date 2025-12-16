@@ -63,6 +63,23 @@ export default function CryptoTradingChart() {
   const { user } = useUser();
   const email = user?.emailAddresses?.[0]?.emailAddress || "";
 
+  const sideRef = useRef("");
+const targetRef = useRef("");
+const stopLossRef = useRef("");
+const tradeRef = useRef(false);
+
+useEffect(() => {
+  sideRef.current = side;
+  targetRef.current = target;
+  stopLossRef.current = stopLoss;
+  tradeRef.current = trade;
+}, [side, target, stopLoss, trade]);
+
+useEffect(() => {
+  notifiedRef.current = { target: false, stopLoss: false };
+}, [target, stopLoss, side]);
+
+
   type Kline = [
     openTime: number,
     open: string,
@@ -169,6 +186,8 @@ export default function CryptoTradingChart() {
           const msg = JSON.parse(event.data);
           const k = msg.k;
 
+          const currentPrice = parseFloat(k.c);
+
           const live: CandlePoint = {
             time: (k.t / 1000) as UTCTimestamp,
             open: parseFloat(k.o),
@@ -178,24 +197,23 @@ export default function CryptoTradingChart() {
           };
 
           series.update(live);
+          
+          const targetValue = parseFloat(targetRef.current);
+          const stopLossValue = parseFloat(stopLossRef.current);
+          const sideValue = sideRef.current;
 
+          const hitTarget = sideValue === "BUY" ? currentPrice >= targetValue : currentPrice <= targetValue;
 
-          const targetValue = parseFloat(target);
-          const stopLossValue = parseFloat(stopLoss);
-  
-
-          const hitTarget = side === "BUY" ? live.high >= targetValue : live.low <= targetValue;
-
-          const hitStop = side === "BUY" ? live.low <= stopLossValue : live.high >= stopLossValue;
+          const hitStop = sideValue === "BUY" ? currentPrice <= stopLossValue : currentPrice >= stopLossValue;
 
           if (
-            trade &&
-            target &&
+            tradeRef.current &&
+            targetRef.current &&
             !Number.isNaN(targetValue) &&
             hitTarget &&
             !notifiedRef.current.target
           ) {
-            toast.success(`Target hit! ${target}`);
+            toast.success(`Target hit! ${targetRef.current}`);
             notifiedRef.current.target = true;
 
             if (targetLineRef.current) {
@@ -214,13 +232,13 @@ export default function CryptoTradingChart() {
           }
 
           if (
-            trade &&
-            stopLoss &&
+            tradeRef.current &&
+            stopLossRef.current &&
             !Number.isNaN(stopLossValue) &&
             hitStop &&
             !notifiedRef.current.stopLoss
           ) {
-            toast.error(`Stop Loss hit! ${stopLoss}`);
+            toast.error(`Stop Loss hit! ${stopLossRef.current}`);
             notifiedRef.current.stopLoss = true;
 
             if (targetLineRef.current) {
@@ -321,6 +339,7 @@ export default function CryptoTradingChart() {
       }
 
       if (res.ok) {
+        notifiedRef.current = { target: false, stopLoss: false };
         setSide(data.data.side);
         setStopLoss(data.data.stopLoss);
         setTarget(data.data.target);
