@@ -17,7 +17,7 @@ export default function Home() {
       period: "forever",
       features: [
         "One-week Pro trial",
-        "10 Credits (limited)",
+        "Limited Credits",
         "Binance Intergration",
         "Community support",
       ],

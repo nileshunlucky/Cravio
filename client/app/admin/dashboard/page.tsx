@@ -1,14 +1,25 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { createChart, ColorType, CandlestickData, UTCTimestamp, IPriceLine } from "lightweight-charts";
+import {
+  createChart,
+  ColorType,
+  CandlestickData,
+  UTCTimestamp,
+  IPriceLine,
+} from "lightweight-charts";
 import { Button } from "@/components/ui/button";
 import { LoaderCircle } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
-import { useRouter } from 'next/navigation'
-
-
+import { useRouter } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const MARKETS = [
   { name: "Bitcoin", symbol: "BTCUSDT" },
@@ -31,8 +42,12 @@ const TIMEFRAMES = [
 
 export default function CryptoTradingChart() {
   // container ref also carries the created chart instance for easy access
-  const chartRef = useRef<(HTMLDivElement & { chart?: ReturnType<typeof createChart> }) | null>(null);
-  const candleSeriesRef = useRef<ReturnType<ReturnType<typeof createChart>["addCandlestickSeries"]> | null>(null);
+  const chartRef = useRef<
+    (HTMLDivElement & { chart?: ReturnType<typeof createChart> }) | null
+  >(null);
+  const candleSeriesRef = useRef<ReturnType<
+    ReturnType<typeof createChart>["addCandlestickSeries"]
+  > | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const router = useRouter();
 
@@ -48,41 +63,41 @@ export default function CryptoTradingChart() {
   const { user } = useUser();
   const email = user?.emailAddresses?.[0]?.emailAddress || "";
 
+  type Kline = [
+    openTime: number,
+    open: string,
+    high: string,
+    low: string,
+    close: string,
+    volume: string,
+    closeTime: number,
+    quoteAssetVolume: string,
+    trades: number,
+    takerBuyBaseVolume: string,
+    takerBuyQuoteVolume: string,
+    ignore: string
+  ];
 
- type Kline = [
-   openTime: number,
-   open: string,
-   high: string,
-   low: string,
-   close: string,
-   volume: string,
-   closeTime: number,
-   quoteAssetVolume: string,
-   trades: number,
-   takerBuyBaseVolume: string,
-   takerBuyQuoteVolume: string,
-   ignore: string
- ];
+  type CandlePoint = CandlestickData<UTCTimestamp>;
 
-type CandlePoint = CandlestickData<UTCTimestamp>;
-
-function transformKlines(raw: Kline[]): CandlePoint[] {
-  return raw.map((c) => ({
-    time: (c[0] / 1000) as UTCTimestamp,
-    open: parseFloat(c[1]),
-    high: parseFloat(c[2]),
-    low: parseFloat(c[3]),
-    close: parseFloat(c[4]),
-  }));
-}
-
-
+  function transformKlines(raw: Kline[]): CandlePoint[] {
+    return raw.map((c) => ({
+      time: (c[0] / 1000) as UTCTimestamp,
+      open: parseFloat(c[1]),
+      high: parseFloat(c[2]),
+      low: parseFloat(c[3]),
+      close: parseFloat(c[4]),
+    }));
+  }
 
   useEffect(() => {
     if (!chartRef.current) return;
 
     const chart = createChart(chartRef.current, {
-      layout: { background: { type: ColorType.Solid, color: "#000" }, textColor: "#DDD" },
+      layout: {
+        background: { type: ColorType.Solid, color: "#000" },
+        textColor: "#DDD",
+      },
       grid: {
         vertLines: { color: "rgba(255,255,255,0.05)" },
         horzLines: { color: "rgba(255,255,255,0.05)" },
@@ -99,8 +114,8 @@ function transformKlines(raw: Kline[]): CandlePoint[] {
       borderDownColor: "#FF1744",
       wickDownColor: "#FF1744",
 
-      priceLineColor: "#FFF", // gold, pick whatever
-  priceLineWidth: 2,
+      priceLineColor: "#FFF",
+      priceLineWidth: 2,
     });
 
     chartRef.current.chart = chart;
@@ -119,10 +134,9 @@ function transformKlines(raw: Kline[]): CandlePoint[] {
   }, []);
 
   const notifiedRef = useRef({
-  target: false,
-  stopLoss: false,
-});
-
+    target: false,
+    stopLoss: false,
+  });
 
   useEffect(() => {
     if (!candleSeriesRef.current) return;
@@ -143,7 +157,7 @@ function transformKlines(raw: Kline[]): CandlePoint[] {
       .then((data) => {
         const candles = transformKlines(data);
         series.setData(candles);
-        chart.timeScale().fitContent();
+        chart.timeScale().scrollToRealTime();
 
         const socket = new WebSocket(
           `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${timeframe}`
@@ -165,98 +179,113 @@ function transformKlines(raw: Kline[]): CandlePoint[] {
 
           series.update(live);
 
-const price = live.close;
-const targetValue = parseFloat(target);
-const stopLossValue = parseFloat(stopLoss);
+          const price = live.close;
+          const targetValue = parseFloat(target);
+          const stopLossValue = parseFloat(stopLoss);
+          const hitTarget =
+            side === "BUY" ? price >= targetValue : price <= targetValue;
 
+          const hitStop =
+            side === "BUY" ? price <= stopLossValue : price >= stopLossValue;
 
-if (target && !Number.isNaN(targetValue) && price >= targetValue && !notifiedRef.current.target) {
-  toast.success(`Target hit! ${target}`);
-  notifiedRef.current.target = true;
-  // remove lines instantly
-  if (targetLineRef.current) {
-    series.removePriceLine(targetLineRef.current);
-    targetLineRef.current = null;
-  }
-  if (stopLossLineRef.current) {
-    series.removePriceLine(stopLossLineRef.current);
-    stopLossLineRef.current = null;
-  }
-  setTarget("");
-  setStopLoss("");
-  setTrade(false);
-  setExitUI(false)
-}
+          if (
+            trade &&
+            target &&
+            !Number.isNaN(targetValue) &&
+            hitTarget &&
+            !notifiedRef.current.target
+          ) {
+            toast.success(`Target hit! ${target}`);
+            notifiedRef.current.target = true;
 
-// ---- ONE-TIME STOPLOSS HIT ----
-if (stopLoss && !Number.isNaN(stopLossValue) && price <= stopLossValue && !notifiedRef.current.stopLoss) {
-  toast.error(`Stop Loss hit! ${stopLoss}`);
-  notifiedRef.current.stopLoss = true;
-  // remove lines instantly
-  if (targetLineRef.current) {
-    series.removePriceLine(targetLineRef.current);
-    targetLineRef.current = null;
-  }
-  if (stopLossLineRef.current) {
-    series.removePriceLine(stopLossLineRef.current);
-    stopLossLineRef.current = null;
-  }
-    setTarget("");
-    setStopLoss("");
-  setTrade(false);
-  setExitUI(false)
-}
+            if (targetLineRef.current) {
+              series.removePriceLine(targetLineRef.current);
+              targetLineRef.current = null;
+            }
+            if (stopLossLineRef.current) {
+              series.removePriceLine(stopLossLineRef.current);
+              stopLossLineRef.current = null;
+            }
 
+            setTarget("");
+            setStopLoss("");
+            setTrade(false);
+            setExitUI(false);
+          }
+
+          if (
+            trade &&
+            stopLoss &&
+            !Number.isNaN(stopLossValue) &&
+            hitStop &&
+            !notifiedRef.current.stopLoss
+          ) {
+            toast.error(`Stop Loss hit! ${stopLoss}`);
+            notifiedRef.current.stopLoss = true;
+
+            if (targetLineRef.current) {
+              series.removePriceLine(targetLineRef.current);
+              targetLineRef.current = null;
+            }
+            if (stopLossLineRef.current) {
+              series.removePriceLine(stopLossLineRef.current);
+              stopLossLineRef.current = null;
+            }
+
+            setTarget("");
+            setStopLoss("");
+            setTrade(false);
+            setExitUI(false);
+          }
         };
       });
   }, [symbol, timeframe]);
 
   const targetLineRef = useRef<IPriceLine | null>(null);
-const stopLossLineRef = useRef<IPriceLine | null>(null);
-useEffect(() => {
-  const series = candleSeriesRef.current;
-  if (!series) return;
+  const stopLossLineRef = useRef<IPriceLine | null>(null);
+  useEffect(() => {
+    const series = candleSeriesRef.current;
+    if (!series) return;
 
-  // ----- TARGET LINE -----
-  if (target) {
-    // remove old line
-    if (targetLineRef.current) {
-      series.removePriceLine(targetLineRef.current);
+    // ----- TARGET LINE -----
+    if (target) {
+      // remove old line
+      if (targetLineRef.current) {
+        series.removePriceLine(targetLineRef.current);
+      }
+
+      // create new line
+      targetLineRef.current = series.createPriceLine({
+        price: parseFloat(target),
+        color: "#00ff6a",
+        lineWidth: 2,
+        lineStyle: 2, // dashed
+        axisLabelVisible: true,
+        title: "TARGET",
+      });
     }
 
-    // create new line
-    targetLineRef.current = series.createPriceLine({
-      price: parseFloat(target),
-      color: "#00ff6a",
-      lineWidth: 2,
-      lineStyle: 2, // dashed
-      axisLabelVisible: true,
-      title: "TARGET",
-    });
-  }
+    // ----- STOPLOSS LINE -----
+    if (stopLoss) {
+      if (stopLossLineRef.current) {
+        series.removePriceLine(stopLossLineRef.current);
+      }
 
-  // ----- STOPLOSS LINE -----
-  if (stopLoss) {
-    if (stopLossLineRef.current) {
-      series.removePriceLine(stopLossLineRef.current);
+      stopLossLineRef.current = series.createPriceLine({
+        price: parseFloat(stopLoss),
+        color: "#ff0033",
+        lineWidth: 2,
+        lineStyle: 2,
+        axisLabelVisible: true,
+        title: "STOP LOSS",
+      });
     }
-
-    stopLossLineRef.current = series.createPriceLine({
-      price: parseFloat(stopLoss),
-      color: "#ff0033",
-      lineWidth: 2, 
-      lineStyle: 2,
-      axisLabelVisible: true,
-      title: "STOP LOSS",
-    });
-  }
-}, [target, stopLoss]);
-
+  }, [target, stopLoss]);
 
   async function handlePredict() {
-    if(!email){
-       toast.error("user not found")
-       return
+    if (!email) {
+      toast.error("user not found");
+      return;
     }
     setLoading(true);
     try {
@@ -285,11 +314,11 @@ useEffect(() => {
       const data = await res.json();
 
       // if user has no credits
-    if (res.status === 403) {
-      toast.error("Insufficient credits")
-      router.push("/pricing");
-      return;
-    }
+      if (res.status === 403) {
+        toast.error("Insufficient credits");
+        router.push("/pricing");
+        return;
+      }
 
       if (res.ok) {
         setSide(data.data.side);
@@ -297,7 +326,7 @@ useEffect(() => {
         setTarget(data.data.target);
         setTrade(true);
       }
-      console.log(data)
+      console.log(data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -305,336 +334,335 @@ useEffect(() => {
     }
   }
 
-
   async function handlePlaceTrade() {
     setLoading(true);
-      if(!email){
-       toast.error("user not found")
-       return
+    if (!email) {
+      toast.error("user not found");
+      return;
     }
     try {
       const form = new FormData();
       form.append("symbol", symbol);
       form.append("side", side);
-    const amtNum = parseFloat(amt);
+      const amtNum = parseFloat(amt);
 
-    const series = candleSeriesRef.current;
-    if (!series) {
-      setLoading(false);
-      toast.error("Chart not ready yet");
-      return;
-    }
+      const series = candleSeriesRef.current;
+      if (!series) {
+        setLoading(false);
+        toast.error("Chart not ready yet");
+        return;
+      }
 
-    const data = series.data();
-    const latestCandle = data[data.length - 1];
-    const price = (latestCandle && 'close' in latestCandle) ? latestCandle.close : 1;
+      const data = series.data();
+      const latestCandle = data[data.length - 1];
+      const price =
+        latestCandle && "close" in latestCandle ? latestCandle.close : 1;
 
-    const qty = amtNum / price;
+      const qty = amtNum / price;
       form.append("qty", qty.toString());
       form.append("stopLoss", stopLoss);
       form.append("target", target);
       form.append("email", email);
 
-      const res = await fetch("https://cravio-ai.onrender.com/api/trade", { 
+      const res = await fetch("https://cravio-ai.onrender.com/api/trade", {
         method: "POST",
-         body: form
-         });
+        body: form,
+      });
       const meta = await res.json();
-      console.log(meta)
+      console.log(meta);
       if (res.status === 403) {
-      toast.error("Binance Creditinal not found!")
-      router.push("/brokrage");
-      return;
-    }
+        toast.error("Binance Creditinal not found!");
+        router.push("/brokrage");
+        return;
+      }
       if (res.ok) {
         setTrade(false);
-        setExitUI(true)
+        setExitUI(true);
       }
     } catch (e) {
       console.error(e);
-
     } finally {
-    setLoading(false);
-
+      setLoading(false);
     }
   }
 
   async function handleExit() {
     setLoading(true);
-      if(!email){
-      toast.error("user not found")
-      return
+    if (!email) {
+      toast.error("user not found");
+      return;
     }
-    try{
-        const form = new FormData();
-  form.append("symbol", symbol);
-  form.append("email", email);
-
-  const res = await fetch("https://cravio-ai.onrender.com/api/exit", {
-    method: "POST",
-    body: form,
-  });
-
-  const data = await res.json();
-  toast("Order Exit")
-  setTarget("")
-  setSide("")
-  setStopLoss("")
-  setExitUI(false)
-  console.log(data)
-    } catch (e) {
-      console.error(e)
-    } finally {
-    setLoading(false);
-    }
-}
-
-const [priceMap, setPriceMap] = useState<{ [key: string]: number }>({});
-
-useEffect(() => {
-  const fetchPrices = async () => {
     try {
-      const symbols = MARKETS.map((m) => m.symbol);
-      const data = await Promise.all(
-        symbols.map(async (s) => {
-          const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${s}`);
-          const json = await res.json();
-          return { symbol: s, price: parseFloat(json.price) };
-        })
-      );
-      const map: { [key: string]: number } = {};
-      data.forEach((d) => (map[d.symbol] = d.price));
-      setPriceMap(map);
+      const form = new FormData();
+      form.append("symbol", symbol);
+      form.append("email", email);
+
+      const res = await fetch("https://cravio-ai.onrender.com/api/exit", {
+        method: "POST",
+        body: form,
+      });
+
+      const data = await res.json();
+      toast("Order Exit");
+      setTarget("");
+      setSide("");
+      setStopLoss("");
+      setExitUI(false);
+      console.log(data);
     } catch (e) {
       console.error(e);
+    } finally {
+      setLoading(false);
     }
-  };
+  }
 
-  fetchPrices();
-  const interval = setInterval(fetchPrices, 5000); // refresh every 5s
-  return () => clearInterval(interval);
-}, []);
+  const [priceMap, setPriceMap] = useState<{ [key: string]: number }>({});
 
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        const symbols = MARKETS.map((m) => m.symbol);
+        const data = await Promise.all(
+          symbols.map(async (s) => {
+            const res = await fetch(
+              `https://api.binance.com/api/v3/ticker/price?symbol=${s}`
+            );
+            const json = await res.json();
+            return { symbol: s, price: parseFloat(json.price) };
+          })
+        );
+        const map: { [key: string]: number } = {};
+        data.forEach((d) => (map[d.symbol] = d.price));
+        setPriceMap(map);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    fetchPrices();
+    const interval = setInterval(fetchPrices, 5000); // refresh every 5s
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-  <div className="w-full h-screen flex flex-col md:flex-row bg-black">
+    <div className="w-full h-full flex flex-col md:flex-row bg-black">
+      {/* LEFT SECTION → chart + selectors */}
+      <div className="flex-1 relative flex flex-col">
+        <div className="absolute top-4 left-4 z-40 flex gap-2">
+          {/* Market */}
+          <Select value={symbol} onValueChange={setSymbol}>
+            <SelectTrigger className="h-9 w-[140px] rounded-xl bg-zinc-900/80 backdrop-blur border border-white/10 text-xs text-white">
+              <SelectValue placeholder="Market" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-white/10 text-white">
+              {MARKETS.map((m) => (
+                <SelectItem key={m.symbol} value={m.symbol}>
+                  {m.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-    {/* LEFT SECTION → chart + selectors */}
-    <div className="flex-1 relative flex flex-col">
+          {/* Timeframe */}
+          <Select value={timeframe} onValueChange={setTimeframe}>
+            <SelectTrigger className="h-9 w-[110px] rounded-xl bg-zinc-900/80 backdrop-blur border border-white/10 text-xs text-white">
+              <SelectValue placeholder="TF" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border border-white/10 text-white">
+              {TIMEFRAMES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>
+                  {t.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      {/* selectors */}
-      <div className="absolute top-4 left-4 z-40 flex gap-2">
-        <select
-          value={symbol}
-          onChange={(e) => setSymbol(e.target.value)}
-          className="px-3 py-2 text-xs rounded-xl bg-zinc-900/80 backdrop-blur border border-white/10 text-white"
-        >
-          {MARKETS.map((m) => (
-            <option key={m.symbol} value={m.symbol}>
-              {m.name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={timeframe}
-          onChange={(e) => setTimeframe(e.target.value)}
-          className="px-3 py-2 text-xs rounded-xl bg-zinc-900/80 backdrop-blur border border-white/10 text-white"
-        >
-          {TIMEFRAMES.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
+        {/* chart */}
+        <div
+          ref={chartRef}
+          className={`w-full transition-all duration-300 ${
+            trade ? "h-[45vh]" : "h-[60vh]"
+          } md:h-full`}
+        />
       </div>
 
-      {/* chart */}
-      <div
-        ref={chartRef}
-        className={`w-full transition-all duration-300 ${
-          trade ? "h-[60vh] md:h-full" : "h-full"
-        }`}
-      />
-    </div>
-
-    {/* RIGHT PANEL — ONLY md+ */}
-    <div className="hidden md:flex md:w-80 border-l border-white/10 p-4">
-      <div className="flex-1 flex flex-col justify-end">
-      <div className="h-full flex flex-col gap-2 overflow-y-auto">
-  {MARKETS.map((m) => (
-    <div
-      key={m.symbol}
-      onClick={() => setSymbol(m.symbol)}
-      className={`cursor-pointer p-2 rounded-lg flex justify-between items-center 
-        ${m.symbol === symbol ? "bg-zinc-300 text-black" : "bg-zinc-900 text-zinc-300"} 
+      {/* RIGHT PANEL — ONLY md+ */}
+      <div className="hidden md:flex md:w-80 border-l border-white/10 p-4">
+        <div className="flex-1 flex flex-col justify-end">
+          <div className="h-full flex flex-col gap-2 overflow-y-auto">
+            {MARKETS.map((m) => (
+              <div
+                key={m.symbol}
+                onClick={() => setSymbol(m.symbol)}
+                className={`cursor-pointer p-2 rounded-lg flex justify-between items-center 
+        ${
+          m.symbol === symbol
+            ? "bg-zinc-300 text-black"
+            : "bg-zinc-900 text-zinc-300"
+        } 
         hover:bg-zinc-200 hover:text-zinc-950 transition-colors`}
-    >
-      <span className="font-medium">{m.name}</span>
-      <span className="text-sm">
-        {/* Show price dynamically */}
-        {priceMap[m.symbol] ? `$${priceMap[m.symbol].toFixed(2)}` : "--"}
-      </span>
-    </div>
-  ))}
-</div>
-
-
-        {/* SAME UI as mobile bottom panel */}
-        {exitUI ? (
-          <Button
-            onClick={handleExit}
-            disabled={loading}
-            className="w-full h-10 rounded-lg bg-zinc-200 font-semibold text-sm shadow-xl"
-          >
-            {loading ? (
-              <LoaderCircle className="w-4 h-4 animate-spin" />
-            ) : (
-              <h1>EXIT</h1>
-            )}
-          </Button>
-        ) : trade ? (
-          <div className="flex flex-col gap-3">
-
-            <div>
-              <label className="text-zinc-400 text-xs">Amount</label>
-              <input
-                value={amt}
-                onChange={(e) => setAmt(e.target.value)}
-                className="mt-1 w-full h-9 bg-zinc-900 border border-white/10 rounded-lg px-3 text-white text-sm"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-
-              <div className="rounded-lg p-2 bg-gradient-to-t from-green-600 via-green-800 to-black text-white text-center shadow-lg">
-                <span className="text-xs text-green-400">Take Profit</span>
-                <input
-                  type="number"
-                  value={target}
-                  onChange={(e) => setTarget(e.target.value)}
-                  className="mt-1 w-full bg-transparent text-base font-semibold text-center focus:outline-none"
-                />
+              >
+                <span className="font-medium">{m.name}</span>
+                <span className="text-sm">
+                  {/* Show price dynamically */}
+                  {priceMap[m.symbol]
+                    ? `$${priceMap[m.symbol].toFixed(2)}`
+                    : "--"}
+                </span>
               </div>
+            ))}
+          </div>
 
-              <div className="rounded-lg p-2 bg-gradient-to-t from-red-600 via-red-800 to-black text-white text-center shadow-lg">
-                <span className="text-xs text-red-400">Stop Loss</span>
-                <input
-                  type="number"
-                  value={stopLoss}
-                  onChange={(e) => setStopLoss(e.target.value)}
-                  className="mt-1 w-full bg-transparent text-base font-semibold text-center focus:outline-none"
-                />
-              </div>
-            </div>
-
+          {/* SAME UI as mobile bottom panel */}
+          {exitUI ? (
             <Button
-              onClick={handlePlaceTrade}
+              onClick={handleExit}
               disabled={loading}
               className="w-full h-10 rounded-lg bg-zinc-200 font-semibold text-sm shadow-xl"
             >
               {loading ? (
-              <LoaderCircle className="w-4 h-4 animate-spin" />
-            ) : (
-              side
-            )}
+                <LoaderCircle className="w-4 h-4 animate-spin" />
+              ) : (
+                <h1>EXIT</h1>
+              )}
             </Button>
-          </div>
-        ) : (
-          <Button
-            onClick={handlePredict}
-            disabled={loading}
-            className="w-full h-10 rounded-lg bg-zinc-200 font-semibold text-sm shadow-xl"
-          >
-            {loading ? (
-              <LoaderCircle className="w-4 h-4 animate-spin" />
-            ) : (
-              <h1>Predict</h1>
-            )}
-          </Button>
-        )}
-      </div>
-    </div>
-
-    {/* MOBILE BOTTOM PANEL — SAME AS BEFORE, NOT CHANGED */}
-    <div className="w-full border-t border-white/10 bg-black p-3 md:hidden">
-      <div className="max-w-xl mx-auto">
-        {exitUI ? (
-          <Button
-            onClick={handleExit}
-            disabled={loading}
-            className="w-full h-10 rounded-lg bg-zinc-200 font-semibold text-sm shadow-xl"
-          >
-           {loading ? (
-              <LoaderCircle className="w-4 h-4 animate-spin" />
-            ) : (
-              <h1>EXIT</h1>
-            )}
-          </Button>
-        ) : trade ? (
-          <div className="flex flex-col gap-3">
-
-            <div>
-              <label className="text-zinc-400 text-xs">Amount</label>
-              <input
-                value={amt}
-                onChange={(e) => setAmt(e.target.value)}
-                className="mt-1 w-full h-9 bg-zinc-900 border border-white/10 rounded-lg px-3 text-white text-sm"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-
-              <div className="rounded-lg p-2 bg-gradient-to-t from-green-600 via-green-800 to-black text-white text-center shadow-lg">
-                <span className="text-xs text-green-400">Take Profit</span>
+          ) : trade ? (
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="text-zinc-400 text-xs">Amount</label>
                 <input
-                  type="number"
-                  value={target}
-                  onChange={(e) => setTarget(e.target.value)}
-                  className="mt-1 w-full bg-transparent text-base font-semibold text-center focus:outline-none"
+                  value={amt}
+                  onChange={(e) => setAmt(e.target.value)}
+                  className="mt-1 w-full h-9 bg-zinc-900 border border-white/10 rounded-lg px-3 text-white text-sm"
                 />
               </div>
 
-              <div className="rounded-lg p-2 bg-gradient-to-t from-red-600 via-red-800 to-black text-white text-center shadow-lg">
-                <span className="text-xs text-red-400">Stop Loss</span>
-                <input
-                  type="number"
-                  value={stopLoss}
-                  onChange={(e) => setStopLoss(e.target.value)}
-                  className="mt-1 w-full bg-transparent text-base font-semibold text-center focus:outline-none"
-                />
-              </div>
-            </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg p-2 bg-gradient-to-t from-green-600 via-green-800 to-black text-white text-center shadow-lg">
+                  <span className="text-xs text-green-400">Take Profit</span>
+                  <input
+                    type="number"
+                    value={target}
+                    onChange={(e) => setTarget(e.target.value)}
+                    className="mt-1 w-full bg-transparent text-base font-semibold text-center focus:outline-none"
+                  />
+                </div>
 
+                <div className="rounded-lg p-2 bg-gradient-to-t from-red-600 via-red-800 to-black text-white text-center shadow-lg">
+                  <span className="text-xs text-red-400">Stop Loss</span>
+                  <input
+                    type="number"
+                    value={stopLoss}
+                    onChange={(e) => setStopLoss(e.target.value)}
+                    className="mt-1 w-full bg-transparent text-base font-semibold text-center focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={handlePlaceTrade}
+                disabled={loading}
+                className="w-full h-10 rounded-lg bg-zinc-200 font-semibold text-sm shadow-xl"
+              >
+                {loading ? (
+                  <LoaderCircle className="w-4 h-4 animate-spin" />
+                ) : (
+                  side
+                )}
+              </Button>
+            </div>
+          ) : (
             <Button
-              onClick={handlePlaceTrade}
+              onClick={handlePredict}
               disabled={loading}
               className="w-full h-10 rounded-lg bg-zinc-200 font-semibold text-sm shadow-xl"
             >
               {loading ? (
-              <LoaderCircle className="w-4 h-4 animate-spin" />
-            ) : (
-              side
-            )}
+                <LoaderCircle className="w-4 h-4 animate-spin" />
+              ) : (
+                <h1>Predict</h1>
+              )}
             </Button>
-          </div>
-        ) : (
-          <Button
-            onClick={handlePredict}
-            disabled={loading}
-            className="w-full h-10 rounded-lg bg-zinc-200 font-semibold text-sm shadow-xl"
-          >
-            {loading ? (
-              <LoaderCircle className="w-4 h-4 animate-spin" />
-            ) : (
-              <h1>Predict</h1>
-            )}
-          </Button>
-        )}
+          )}
+        </div>
+      </div>
+
+      {/* MOBILE BOTTOM PANEL — SAME AS BEFORE, NOT CHANGED */}
+      <div className="w-full fixed bottom-0 border-t border-white/10 bg-black p-3 md:hidden z-50">
+        <div className="max-w-xl mx-auto">
+          {exitUI ? (
+            <Button
+              onClick={handleExit}
+              disabled={loading}
+              className="w-full h-10 rounded-lg bg-zinc-200 font-semibold text-sm shadow-xl"
+            >
+              {loading ? (
+                <LoaderCircle className="w-4 h-4 animate-spin" />
+              ) : (
+                <h1>EXIT</h1>
+              )}
+            </Button>
+          ) : trade ? (
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="text-zinc-400 text-xs">Amount</label>
+                <input
+                  value={amt}
+                  onChange={(e) => setAmt(e.target.value)}
+                  className="mt-1 w-full h-9 bg-zinc-900 border border-white/10 rounded-lg px-3 text-white text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg p-2 bg-gradient-to-t from-green-600 via-green-800 to-black text-white text-center shadow-lg">
+                  <span className="text-xs text-green-400">Take Profit</span>
+                  <input
+                    type="number"
+                    value={target}
+                    onChange={(e) => setTarget(e.target.value)}
+                    className="mt-1 w-full bg-transparent text-base font-semibold text-center focus:outline-none"
+                  />
+                </div>
+
+                <div className="rounded-lg p-2 bg-gradient-to-t from-red-600 via-red-800 to-black text-white text-center shadow-lg">
+                  <span className="text-xs text-red-400">Stop Loss</span>
+                  <input
+                    type="number"
+                    value={stopLoss}
+                    onChange={(e) => setStopLoss(e.target.value)}
+                    className="mt-1 w-full bg-transparent text-base font-semibold text-center focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={handlePlaceTrade}
+                disabled={loading}
+                className="w-full h-10 rounded-lg bg-zinc-200 font-semibold text-sm shadow-xl"
+              >
+                {loading ? (
+                  <LoaderCircle className="w-4 h-4 animate-spin" />
+                ) : (
+                  side
+                )}
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={handlePredict}
+              disabled={loading}
+              className="w-full h-10 rounded-lg bg-zinc-200 font-semibold text-sm shadow-xl"
+            >
+              {loading ? (
+                <LoaderCircle className="w-4 h-4 animate-spin" />
+              ) : (
+                <h1>Predict</h1>
+              )}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
-  </div>
-);
-
+  );
 }
-

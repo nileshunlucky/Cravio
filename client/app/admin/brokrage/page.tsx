@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
-import { Lock, Key, ShieldCheck } from "lucide-react";
+import { Lock, Key, ShieldCheck, LoaderCircle } from "lucide-react";
 
 export default function Home() {
   const { user } = useUser();
@@ -20,8 +20,8 @@ export default function Home() {
   useEffect(() => {
     if (!email) return;
     fetch(`https://cravio-ai.onrender.com/user/${email}`)
-      .then(res => res.ok && res.json())
-      .then(data => {
+      .then((res) => res.ok && res.json())
+      .then((data) => {
         if (!data) return;
         setApiKey(data?.binance_api_key ?? "");
         setApiSecret(data?.binance_api_secret ?? "");
@@ -30,10 +30,24 @@ export default function Home() {
   }, [email]);
 
   const handleConnect = async () => {
-    if (!email) return toast("Login required");
-    setLoading(true);
 
+    setLoading(true);
     try {
+    if (!email) {
+      toast.error("Login required");
+      return;
+    }
+
+    if (!apiKey || !apiSecret) {
+      if (!apiKey && !apiSecret) {
+        toast.error("API Key and Secret are required");
+      } else if (!apiKey) {
+        toast.error("API Key is missing");
+      } else {
+        toast.error("API Secret is missing");
+      }
+      return;
+    }
       const form = new FormData();
       form.append("apiKey", apiKey);
       form.append("apiSecret", apiSecret);
@@ -47,7 +61,7 @@ export default function Home() {
       const data = await res.json();
       toast(data.message);
     } catch {
-      toast("Connection failed");
+      toast.error("Connection failed");
     } finally {
       setLoading(false);
     }
@@ -78,7 +92,7 @@ export default function Home() {
             </div>
 
             <p className="text-center text-xs sm:text-sm text-zinc-400 leading-relaxed">
-              Securely connect your Binance account.  
+              Securely connect your Binance account.
               <br className="hidden sm:block" />
               We never withdraw funds.
             </p>
@@ -114,7 +128,11 @@ export default function Home() {
               disabled={loading}
               className="w-full h-11 sm:h-12 rounded-xl font-semibold text-black bg-gradient-to-r from-yellow-400 to-amber-400 hover:opacity-90 active:scale-[0.99] transition"
             >
-              {loading ? "Connecting…" : "Connect Binance"}
+              {loading ? (
+                <LoaderCircle className="w-4 h-4 animate-spin" />
+              ) : (
+                "Connect Binance"
+              )}
             </Button>
 
             {/* FOOTER */}

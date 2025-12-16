@@ -69,8 +69,6 @@ Instructions:
 - Suggest a realistic Stop Loss
 - Suggest a realistic Target price
 - The trade MUST follow a minimum Risk–Reward ratio of 1:2 or preferably 1:3
-  (Risk = distance between entry and stop loss, Reward = distance between entry and target)
-- Ensure target distance is at least 2x the stop loss distance
 - All numeric values should be numbers (not strings). ONLY return the JSON object and no extra text.
 {{"side": "BUY", "stopLoss": 23000, "target": 23300}}
 """

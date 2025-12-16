@@ -1,9 +1,15 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Target, MousePointerClick, TrendingUp, ArrowRight } from "lucide-react";
+import {
+  Target,
+  MousePointerClick,
+  TrendingUp,
+  ArrowRight,
+} from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 
 // Custom Button Component (Modern glassmorphism with magnetic hover)
 type ButtonProps = {
@@ -13,7 +19,12 @@ type ButtonProps = {
   onClick?: () => void;
 };
 
-const Button = ({ children, className = "", variant = "primary", onClick }: ButtonProps) => {
+const Button = ({
+  children,
+  className = "",
+  variant = "primary",
+  onClick,
+}: ButtonProps) => {
   const variants = {
     primary: `
       bg-gradient-to-r from-white to-neutral-100 text-black 
@@ -22,9 +33,10 @@ const Button = ({ children, className = "", variant = "primary", onClick }: Butt
     secondary: `
       bg-white/5 backdrop-blur-md text-white border border-white/20
       hover:bg-white/10 hover:border-white/40
-    `
+    `,
   };
 
+  
   return (
     <motion.button
       whileHover={{ scale: 1.05 }}
@@ -46,7 +58,6 @@ const Button = ({ children, className = "", variant = "primary", onClick }: Butt
     </motion.button>
   );
 };
-
 
 // Custom Card Component (Modern glassmorphism)
 type CardProps = {
@@ -75,42 +86,65 @@ const Card = ({ children, className = "" }: CardProps) => (
   </motion.div>
 );
 
-
-
 // --- Main Landing Page Component ---
 
 export default function AIVibeTradingLanding() {
+  const { user } = useUser();
+  const email = user?.emailAddresses?.[0]?.emailAddress || "";
+  const [users, setUsers] = useState<number>(10000);
+
+useEffect(() => {
+  const fetchUserData = async () => {
+    try {
+      const res = await fetch("https://cravio-ai.onrender.com/users-emails");
+      if (!res.ok) return;
+
+      const data: { email: string }[] = await res.json();
+
+      setUsers(data.length);
+    } catch (err) {
+      console.error("Failed to fetch user data:", err);
+    }
+  };
+
+  fetchUserData();
+}, []);
+
+
   const fadeInUp = {
     initial: { opacity: 0, y: 40 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6, ease: "easeOut" }
+    transition: { duration: 0.6, ease: "easeOut" },
   };
 
   const staggerContainer = {
     animate: {
-      transition: { staggerChildren: 0.15 }
-    }
+      transition: { staggerChildren: 0.15 },
+    },
   };
 
   const features = [
     {
       icon: TrendingUp,
       title: "AI Prediction: BUY/SELL",
-      description: "Our high-accuracy AI delivers a clear directional call, setting the optimal target price and stop-loss. Confidence built on pure data.",
-      step: "STEP ONE"
+      description:
+        "Our high-accuracy AI delivers a clear directional call, setting the optimal target price and stop-loss. Confidence built on pure data.",
+      step: "STEP ONE",
     },
     {
       icon: MousePointerClick,
       title: "1-Click Execution",
-      description: "Execute the trade instantly. Target and Stop-Loss parameters are auto-applied by the system. Zero friction, maximal efficiency.",
-      step: "STEP TWO"
+      description:
+        "Execute the trade instantly. Target and Stop-Loss parameters are auto-applied by the system. Zero friction, maximal efficiency.",
+      step: "STEP TWO",
     },
     {
       icon: Target,
       title: "Take Profit",
-      description: "Your targets execute with precision. The system tracks market movement in real time and closes your trade at the optimal point.",
-      step: "STEP THREE"
-    }
+      description:
+        "Your targets execute with precision. The system tracks market movement in real time and closes your trade at the optimal point.",
+      step: "STEP THREE",
+    },
   ];
 
   const statItems = [
@@ -122,40 +156,39 @@ export default function AIVibeTradingLanding() {
   const trustIndicators = [
     "Real-time execution",
     "24/7 AI monitoring",
-    "Institutional algorithms"
+    "Institutional algorithms",
   ];
 
   return (
     <div className="min-h-screen bg-black text-white font-['Inter'] overflow-hidden relative">
-      
       {/* Animated mesh gradient background */}
       <div className="fixed inset-0 z-0">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-neutral-900 via-black to-black"></div>
-        <motion.div 
-          animate={{ 
+        <motion.div
+          animate={{
             scale: [1, 1.2, 1],
             rotate: [0, 90, 0],
           }}
-          transition={{ 
+          transition={{
             duration: 20,
             repeat: Infinity,
-            ease: "linear"
+            ease: "linear",
           }}
           className="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-to-br from-neutral-800/20 to-transparent rounded-full blur-3xl"
         ></motion.div>
-        <motion.div 
-          animate={{ 
+        <motion.div
+          animate={{
             scale: [1, 1.3, 1],
             rotate: [0, -90, 0],
           }}
-          transition={{ 
+          transition={{
             duration: 25,
             repeat: Infinity,
-            ease: "linear"
+            ease: "linear",
           }}
           className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-neutral-700/20 to-transparent rounded-full blur-3xl"
         ></motion.div>
-        
+
         {/* Grid overlay for depth */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]"></div>
       </div>
@@ -163,7 +196,6 @@ export default function AIVibeTradingLanding() {
       {/* HERO SECTION */}
       <section className="min-h-screen flex items-center justify-center px-4 py-32 relative z-10">
         <div className="max-w-7xl mx-auto text-center relative z-10">
-
           {/* Main Headline with gradient text */}
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
@@ -171,13 +203,13 @@ export default function AIVibeTradingLanding() {
             transition={{ duration: 0.7 }}
             className="text-6xl md:text-8xl lg:text-9xl font-black mb-8 leading-[0.9] tracking-tighter"
           >
-            <motion.span 
+            <motion.span
               className="inline-block bg-white bg-clip-text text-transparent"
-              animate={{ backgroundPosition: ['0%', '100%', '0%'] }}
+              animate={{ backgroundPosition: ["0%", "100%", "0%"] }}
               transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-              style={{ backgroundSize: '200%' }}
+              style={{ backgroundSize: "200%" }}
             >
-            Predictive AI.
+              Predictive AI.
             </motion.span>
             <br />
             <span className="text-white">In 1 CLick.</span>
@@ -192,9 +224,11 @@ export default function AIVibeTradingLanding() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.15 }}
-            className="text-xl md:text-2xl text-neutral-400 mb-12 max-w-3xl mx-auto font-light leading-relaxed"
+            className="text-xs md:text-2xl text-neutral-400 mb-12 max-w-3xl mx-auto font-light leading-relaxed"
           >
-            Receive clear <span className="text-white font-semibold">BUY/SELL signals</span> with auto Target/Stop Loss setup. 
+            Receive clear{" "}
+            <span className="text-white font-semibold">BUY/SELL signals</span>{" "}
+            with auto Target/Stop Loss setup.
             <br className="hidden md:block" />
             The fastest path to confident execution.
           </motion.p>
@@ -228,14 +262,12 @@ export default function AIVibeTradingLanding() {
               </div>
             ))}
           </motion.div>
-          
         </div>
       </section>
 
       {/* CORE PROCESS SECTION */}
       <section className="py-32 px-4 relative z-10">
         <div className="max-w-7xl mx-auto">
-
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -267,13 +299,13 @@ export default function AIVibeTradingLanding() {
                 <Card className="h-full">
                   {/* Step indicator and icon */}
                   <div className="flex items-start justify-between mb-8">
-                    <motion.div 
+                    <motion.div
                       whileHover={{ scale: 1.1, rotate: 5 }}
                       className="p-4 bg-gradient-to-br from-white/10 to-white/5 rounded-2xl backdrop-blur-sm border border-white/10"
                     >
                       <feature.icon className="w-8 h-8 stroke-[1.5]" />
                     </motion.div>
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0.1 }}
                       whileInView={{ opacity: 0.2 }}
                       className="text-7xl font-black text-white"
@@ -281,24 +313,24 @@ export default function AIVibeTradingLanding() {
                       {i + 1}
                     </motion.div>
                   </div>
-                  
+
                   {/* Step label */}
                   <div className="text-xs font-bold mb-4 uppercase tracking-[0.2em] text-neutral-500">
                     {feature.step}
                   </div>
-                  
+
                   {/* Title */}
                   <h3 className="text-2xl md:text-3xl font-bold mb-4 tracking-tight text-white leading-tight">
                     {feature.title}
                   </h3>
-                  
+
                   {/* Description */}
                   <p className="text-neutral-400 text-base md:text-lg leading-relaxed">
                     {feature.description}
                   </p>
 
                   {/* Hover line accent */}
-                  <motion.div 
+                  <motion.div
                     className="h-1 bg-gradient-to-r from-white/50 to-transparent mt-6 rounded-full"
                     initial={{ width: 0 }}
                     whileInView={{ width: "100%" }}
@@ -309,7 +341,6 @@ export default function AIVibeTradingLanding() {
               </motion.div>
             ))}
           </motion.div>
-
         </div>
       </section>
 
@@ -317,19 +348,18 @@ export default function AIVibeTradingLanding() {
       <section className="py-32 px-4 relative z-10">
         <div className="max-w-6xl mx-auto">
           <Card className="bg-gradient-to-br from-neutral-900/80 via-black/80 to-neutral-950/80 backdrop-blur-2xl border-white/10 p-12 md:p-20 relative overflow-hidden">
-            
             {/* Animated accent lines */}
-            <motion.div 
+            <motion.div
               animate={{ x: ["-100%", "200%"] }}
               transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
               className="absolute top-0 left-0 w-1/3 h-[2px] bg-gradient-to-r from-transparent via-white/50 to-transparent"
             ></motion.div>
-            <motion.div 
+            <motion.div
               animate={{ x: ["200%", "-100%"] }}
               transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
               className="absolute bottom-0 right-0 w-1/3 h-[2px] bg-gradient-to-r from-transparent via-white/30 to-transparent"
             ></motion.div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 md:gap-16 text-center relative z-10">
               {statItems.map((stat, i) => (
                 <motion.div
@@ -341,23 +371,23 @@ export default function AIVibeTradingLanding() {
                   className="relative group"
                 >
                   {/* Hover glow */}
-                  <motion.div 
+                  <motion.div
                     className="absolute inset-0 bg-white/5 rounded-3xl blur-2xl"
                     initial={{ opacity: 0 }}
                     whileHover={{ opacity: 1 }}
                     transition={{ duration: 0.5 }}
                   ></motion.div>
-                  
+
                   <div className="relative">
-                    <motion.div 
+                    <motion.div
                       initial={{ scale: 0.5, opacity: 0 }}
                       whileInView={{ scale: 1, opacity: 1 }}
                       viewport={{ once: true }}
-                      transition={{ 
-                        duration: 0.7, 
-                        delay: i * 0.15, 
+                      transition={{
+                        duration: 0.7,
+                        delay: i * 0.15,
                         type: "spring",
-                        stiffness: 100
+                        stiffness: 100,
                       }}
                       className="mb-4"
                     >
@@ -394,11 +424,16 @@ export default function AIVibeTradingLanding() {
               Trusted by Professional Platforms
             </p>
             <div className="flex flex-wrap justify-center gap-8 items-center opacity-50">
-              {["BINANCE", "OPENAI", "CRYPTO", "LEMON SQUEEZY"].map((market, i) => (
-                <div key={i} className="text-2xl font-black tracking-tighter text-white/30">
-                  {market}
-                </div>
-              ))}
+              {["BINANCE", "OPENAI", "CRYPTO", "LEMON SQUEEZY"].map(
+                (market, i) => (
+                  <div
+                    key={i}
+                    className="text-2xl font-black tracking-tighter text-white/30"
+                  >
+                    {market}
+                  </div>
+                )
+              )}
             </div>
           </motion.div>
         </div>
@@ -407,10 +442,9 @@ export default function AIVibeTradingLanding() {
       {/* FOOTER CTA */}
       <section id="start-now" className="py-32 px-4 relative z-10">
         <div className="max-w-5xl mx-auto text-center relative">
-          
           {/* Massive glow effect behind CTA */}
           <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/10 to-white/5 blur-3xl rounded-full scale-150 -z-10"></div>
-          
+
           <div className="relative z-10">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -427,7 +461,7 @@ export default function AIVibeTradingLanding() {
               </h2>
 
               <p className="text-xl md:text-2xl text-neutral-400 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
-                Experience the next generation of AI-driven execution. 
+                Experience the next generation of AI-driven execution.
                 <br className="hidden md:block" />
                 Your competitive edge starts now.
               </p>
@@ -439,21 +473,19 @@ export default function AIVibeTradingLanding() {
                 </Button>
               </Link>
 
-              <motion.p 
+              <motion.p
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.3 }}
                 className="mt-8 text-sm text-neutral-600"
               >
-                Join 10,000+ traders already using our AI signals
+                Join {users}+ traders already using our AI signals
               </motion.p>
             </motion.div>
           </div>
         </div>
       </section>
-
-
     </div>
   );
 }

@@ -18,7 +18,7 @@ import { Home } from "lucide-react"
 import { Menu , X, Goal} from 'lucide-react'
 
 const Nav = () => {
-  const [credit, setcredit] = useState<number | null>(null)
+  const [aura, setAura] = useState<number | null>(0)
     const { user } = useUser();
   const email = user?.emailAddresses?.[0]?.emailAddress || '';
    const [menuOpen, setMenuOpen] = useState(false)
@@ -34,7 +34,7 @@ const Nav = () => {
         )
         if (!res.ok) return
         const data = await res.json()
-        setcredit(data?.credit)
+        setAura(data?.aura || 0)
       } catch (err) {
         console.error("Failed to fetch user data:", err)
       }
@@ -106,7 +106,7 @@ const Nav = () => {
       
 
                 <span className="font-bold">
-                  {credit}
+                  {aura}
                 </span>
               </div>
             </div>
@@ -192,7 +192,7 @@ const Nav = () => {
 
               </div>
               <span className="font-bold">
-                {credit}
+                {aura}
               </span>
             </div>
           </div>
