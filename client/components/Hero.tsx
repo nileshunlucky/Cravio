@@ -9,7 +9,6 @@ import {
   TrendingUp,
   ArrowRight,
 } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
 
 // Custom Button Component (Modern glassmorphism with magnetic hover)
 type ButtonProps = {
@@ -89,8 +88,6 @@ const Card = ({ children, className = "" }: CardProps) => (
 // --- Main Landing Page Component ---
 
 export default function AIVibeTradingLanding() {
-  const { user } = useUser();
-  const email = user?.emailAddresses?.[0]?.emailAddress || "";
   const [users, setUsers] = useState<number>(10000);
 
 useEffect(() => {
