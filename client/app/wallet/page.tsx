@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { TrendingUp, TrendingDown, Search, QrCode, Plus, Minus, ArrowUpDown, Grid3x3, User } from 'lucide-react';
+import { TrendingUp, TrendingDown, Search, QrCode } from 'lucide-react';
 import { ArrowUpRight, ArrowDownLeft, ArrowLeftRight, MoreHorizontal } from 'lucide-react';
 
 const Page = () => {
-  const [activeTab, setActiveTab] = useState('home');
 
   const cryptoAssets = [
     { name: 'BTC', fullName: 'Bitcoin', amount: '0.06', value: '+2,319', change: '+0.24%', trend: 'up', price: '$38,650.00', icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png' },
