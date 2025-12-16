@@ -81,14 +81,12 @@ async def predict_trade(
         4. If side == "SELL":
            - stopLoss MUST be strictly ABOVE entry price
            - target MUST be strictly BELOW entry price
-        5. Minimum Risk–Reward ratio is 1:2; use 1:3 only if setup probability is STRONG, never below 1:2
-        6. Prices must be realistic and derived from:
+        5. Prices must be realistic and derived from:
            - recent swing highs/lows
            - support/resistance
            - volatility (not random numbers)
-        7. All numeric values MUST be numbers (not strings).
-        8. If market conditions are unclear, still choose the MOST probable direction.
-        9. Never return invalid or inverted levels.
+        6. All numeric values MUST be numbers (not strings).
+        7. Never return invalid or inverted levels.
 
         OUTPUT FORMAT (JSON ONLY):
         {{

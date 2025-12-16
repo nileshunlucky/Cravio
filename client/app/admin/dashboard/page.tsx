@@ -182,11 +182,11 @@ export default function CryptoTradingChart() {
           const price = live.close;
           const targetValue = parseFloat(target);
           const stopLossValue = parseFloat(stopLoss);
-          const hitTarget =
-            side === "BUY" ? price >= targetValue : price <= targetValue;
+  
 
-          const hitStop =
-            side === "BUY" ? price <= stopLossValue : price >= stopLossValue;
+          const hitTarget = side === "BUY" ? live.high >= targetValue : live.low <= targetValue;
+
+          const hitStop = side === "BUY" ? live.low <= stopLossValue : live.high >= stopLossValue;
 
           if (
             trade &&
