@@ -56,22 +56,48 @@ async def predict_trade(
 
         candles_data = json.loads(candles)
 
+
+        # Compute entry price BEFORE prompt (important)
+        entry_price = candles_data[-1]["close"]
+
         prompt = f"""
-You are a professional trading analyst. Analyze the following candlestick data and provide a trading signal.
+        You are a professional quantitative trading analyst used in an automated trading system.
+        Your output will be executed live on Binance Futures. Accuracy and rule-compliance are mandatory.
 
-Token {symbol},
-Time Frame {timeframe},
-Candles (past 100):
-{json.dumps(candles_data, indent=2)}
+        MARKET CONTEXT:
+        - Symbol: {symbol}
+        - Timeframe: {timeframe}
+        - Current Entry Price: {entry_price}
 
-Instructions:
-- Predict only one action: "BUY" or "SELL"
-- Suggest a realistic Stop Loss
-- Suggest a realistic Target price
-- The trade MUST follow a minimum Risk–Reward ratio of 1:2 or preferably 1:3
-- All numeric values should be numbers (not strings). ONLY return the JSON object and no extra text.
-{{"side": "BUY", "stopLoss": 23000, "target": 23300}}
-"""
+        CANDLE DATA (last 100 candles, chronological):
+        {json.dumps(candles_data, indent=2)}
+
+        STRICT EXECUTION RULES (DO NOT VIOLATE):
+        1. Output ONLY a valid JSON object. No explanations, no text, no markdown.
+        2. "side" MUST be either "BUY" or "SELL".
+        3. If side == "BUY":
+           - stopLoss MUST be strictly BELOW entry price
+           - target MUST be strictly ABOVE entry price
+        4. If side == "SELL":
+           - stopLoss MUST be strictly ABOVE entry price
+           - target MUST be strictly BELOW entry price
+        5. Minimum Risk–Reward ratio is 1:2; use 1:3 only if setup probability is STRONG, never below 1:2
+        6. Prices must be realistic and derived from:
+           - recent swing highs/lows
+           - support/resistance
+           - volatility (not random numbers)
+        7. All numeric values MUST be numbers (not strings).
+        8. If market conditions are unclear, still choose the MOST probable direction.
+        9. Never return invalid or inverted levels.
+
+        OUTPUT FORMAT (JSON ONLY):
+        {{
+          "side": "BUY",
+          "stopLoss": number,
+          "target": number
+        }}
+        """
+
         response = openai_client.responses.create(
             model="gpt-4o-mini",
             input=[
