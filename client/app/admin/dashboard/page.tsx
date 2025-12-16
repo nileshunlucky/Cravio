@@ -179,7 +179,7 @@ export default function CryptoTradingChart() {
 
           series.update(live);
 
-          const price = live.close;
+
           const targetValue = parseFloat(target);
           const stopLossValue = parseFloat(stopLoss);
   
