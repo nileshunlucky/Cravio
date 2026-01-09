@@ -13,9 +13,9 @@ const PricingPage = () => {
     const [tier, setTier] = useState(1); // 1 = Starter, 2 = Pro, 3 = Premium
 
     const plans = {
-        1: { name: "Starter", price: 19, credits: "300", seats: 1, templates: 1, social: 3 },
-        2: { name: "Pro", price: 38, credits: "600", seats: 2, templates: 2, social: 6 },
-        3: { name: "Premium", price: 57, credits: "900", seats: 5, templates: 10, social: 15 },
+        1: { name: "Starter", price: 19, credits: 300, seats: 1, templates: 1, social: 3 },
+        2: { name: "Pro", price: 38, credits: 600, seats: 2, templates: 2, social: 6 },
+        3: { name: "Premium", price: 57, credits: 900, seats: 5, templates: 10, social: 15 },
     };
 
     const currentPlan = plans[tier as keyof typeof plans];
@@ -113,7 +113,7 @@ const PricingPage = () => {
                             <ul className="space-y-4">
                                 <li className="flex items-center gap-3">
                                     <Check className="w-5 h-5 text-zinc-400" />
-                                    <span className="text-sm font-bold">{isYearly ? ((currentPlan.credits * 12)) : (currentPlan.credits)} credits <Info className="inline w-3 h-3 text-zinc-500" /> per {isYearly ? "year" : "month"}, available instantly</span>
+                                    <span className="text-sm font-bold">{isYearly ? currentPlan.credits * 12 : currentPlan.credits} credits <Info className="inline w-3 h-3 text-zinc-500" /> per {isYearly ? "year" : "month"}, available instantly</span>
                                 </li>
                                 <li className="flex items-center gap-3">
                                     <Check className="w-5 h-5 text-zinc-400" />
