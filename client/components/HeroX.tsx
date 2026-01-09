@@ -21,7 +21,7 @@ const HeroX = () => {
                             <span className="block hero-text bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">Create 10x faster.</span>
                         </h1>
                         <p className="text-lg sm:text-xl md:text-2xl text-zinc-300 mb-8 md:mb-10 max-w-md mx-auto lg:mx-0 hero-subtext">
-                            Cravio ai turns long videos into short viral clips in secounds ✨
+                            Mellvitta ai turns long videos into short viral clips in secounds ✦
                         </p>
                          
                         {/* Responsive Input Section */}

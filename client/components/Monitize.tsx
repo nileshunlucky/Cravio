@@ -11,12 +11,11 @@ const Monitize = () => {
 
   // Sample video clips URLs - replace with your actual clip URLs
   const viralClips = [
-    "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576854/Video-252_f4rrxp.mp4",
-    "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576847/Video-563_b73y61.mp4",
-    "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576850/Video-288_wqhsdk.mp4",
-    "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576849/Video-654_sgfhha.mp4",
-    "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576850/Video-846_waesdk.mp4",
-    "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576849/Video-552_twvtsz.mp4",
+    "https://v1.pinimg.com/videos/iht/expMp4/3c/b6/1f/3cb61f785a600f8e313124117a4cc4e0_720w.mp4",
+    "https://v1.pinimg.com/videos/iht/720p/80/d2/cb/80d2cbb7d6ffb1f09fa27dc4a2bf1c3e.mp4",
+    "https://v1.pinimg.com/videos/mc/720p/a9/2b/c7/a92bc743b3454df7d7892039a7eeb485.mp4",
+    "https://v1.pinimg.com/videos/iht/720p/6d/b0/dd/6db0ddab56165dcee7a9f8038de7c5be.mp4",
+
   ]
 
   useEffect(() => {
@@ -113,11 +112,11 @@ const Monitize = () => {
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <span className="bg-gradient-to-r from-red-600 via-yellow-500 to-orange-500 bg-clip-text text-transparent">
+            <span className="bg-[#c3002b] bg-clip-text text-transparent">
               {userCount}+ Creators
             </span>
             <br />
-            <span className="text-white">Trust Cravio AI</span>
+            <span className="text-white">Trust Mellvitta AI</span>
           </motion.h2>
           
           <motion.p 
@@ -127,7 +126,7 @@ const Monitize = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
           >
             Our AI helps creators <br />
-            <span className="bg-gradient-to-r from-green-500 to-green-700 bg-clip-text text-transparent font-bold uppercase"> Go viral instantly</span> with professionally <br />
+            <span className="bg-green-500 bg-clip-text text-transparent font-bold uppercase"> Go viral instantly</span> with professionally <br />
             edited content adding subtitles and captions.
           </motion.p>
           
@@ -143,7 +142,7 @@ const Monitize = () => {
             </div>
             <div className="w-px h-12 bg-gray-600"></div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-white">1K+</div>
+              <div className="text-3xl font-bold text-white">10K+</div>
               <div className="text-sm">Clips Created</div>
             </div>
             <div className="w-px h-12 bg-gray-600"></div>

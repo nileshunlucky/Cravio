@@ -5,7 +5,7 @@ const Anything = () => {
         <div className="min-h-screen p-4 md:p-8">
             <div className="text-center mb-8 md:mb-16">
                 <div className="text-zinc-500 text-sm mb-4 flex items-center justify-center gap-2">
-                    <span>✨</span>
+                    <span>✦</span>
                     <span>AI EDITING MODELS</span>
                 </div>
                 <h1 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6 leading-tight">

@@ -24,11 +24,6 @@ const items = [
     url: "/admin/plan",
     icon: CircleFadingArrowUp ,
   },
-  {
-    title: "Affiliate",
-    url: "/admin/affiliate",
-    icon: Handshake ,
-  },
 ]
 
 export function AppSidebar() {
@@ -36,7 +31,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup className="gap-3">
-          <SidebarGroupLabel className="text-xl font-medium">Cravio Ai</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xl font-medium">Mellvitta Ai</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (

@@ -7,53 +7,29 @@ import Image from 'next/image'
 
 const testimonials = [
   {
-    name: 'Ash Allen',
-    role: 'Video Editor for Top Creators',
+    name: 'ishowspeed',
+    role: 'No.1 Streamer in the world',
     quote:
-      "I've clipped for some of the biggest creators on the internet. Cravio is the tool I wish I had when I started.",
-    avatar: '/review/ash-allen.jpeg',
-    subscribers: '2B',
+      "I clipped myself at begining at my prime, man. Seriously Mellvitta is the tool I wish I had when I started.",
+    avatar: '/review/ishowspeed.webp',
+    subscribers: '47.5M',
   },
   {
-    name: 'Alex george',
-    role: 'Channel Automation Expert',
+    name: 'MrBeast',
+    role: 'No.1 Youtuber in the world',
     quote:
-      'After running channels with over 1 million subscribers, I built Cravio to solve my own scaling problems.',
-    avatar: '/review/alex-george.webp',
-    subscribers: '2B',
+      'After running multiple channels with over 100+ million subscribers, I can Scale more viral content using Mellvitta.',
+    avatar: '/review/beast.jpg',
+    subscribers: '459M',
   },
   {
-    name: 'Laurence Vincent',
-    role: 'YT Clipping Strategist',
+    name: 'Iman Gadzhi',
+    role: 'No.1 Personal Brand in the world',
     quote:
-      "Cravio actually feels like a cheat code. I can legitimately make more videos in less time. You gotta try it.",
-    avatar: '/review/Laurence Vincent.jpg',
-    subscribers: '700K',
-  },
-  {
-    name: 'Ishan Sharma.',
-    role: 'Faceless Channel Creator',
-    quote:
-      "I was skeptical at first, but wow—this really works. Fast results, easy UI, and super reliable. Highly recommend!",
-    avatar: '/review/Ishan Sharma.jpg',
-    subscribers: '1.4M',
-  },
-  {
-    name: 'Louis Dershal.',
-    role: 'Online Business Couch',
-    quote:
-      "I'm honestly impressed! Cravio is probably the best investment I've made for growing my channels.",
-    avatar: '/review/Louis Dershal.png',
-    subscribers: '5.6M',
-  },
-  {
-    name: 'Rose Delvard.',
-    role: 'Content Repurposer',
-    quote:
-      'For real, Cravio made clipping so much easier. Now I feel like I could go viral every time I post.',
-    avatar: '/review/Rose Delvard..png',
-    subscribers: '850K',
-  },
+      "Mellvitta actually feels like a cheat code. I can legitimately make more clips in less time.",
+    avatar: '/review/iman.jpg',
+    subscribers: '5.87M',
+  }
 ]
 
 const Review = () => {
@@ -69,7 +45,7 @@ const Review = () => {
         className="max-w-6xl mx-auto space-y-12"
       >
         <div className="text-center space-y-4">
-          <h2 className="text-4xl font-bold">See why creators love <span className='underline'>Cravio</span></h2>
+          <h2 className="text-4xl font-bold">See why creators love <span className='underline'>Mellvitta</span></h2>
           <p className="text-muted-foreground text-lg">
             Built by creators, for creators. Real stories from real users.
           </p>
@@ -83,9 +59,9 @@ const Review = () => {
                   <Image
                     src={t.avatar}
                     alt={t.name}
-                    width={48}
-                    height={48}
-                    className="rounded-full object-cover"
+                    className="rounded-full object-cover w-10 h-10"
+                    width={40}
+                    height={40}
                   />
                   <div>
                     <p className="font-semibold">{t.name}</p>
