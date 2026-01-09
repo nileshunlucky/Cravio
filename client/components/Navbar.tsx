@@ -1,10 +1,9 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React from 'react'
 import { UserButton } from '@clerk/nextjs'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useUser } from '@clerk/nextjs';
 
 const Navbar = ({ credits = 0 }: { credits: number }) => {
 
