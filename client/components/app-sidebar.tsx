@@ -1,4 +1,4 @@
-import { LayoutDashboard, CircleFadingArrowUp, Handshake} from "lucide-react"
+import { LayoutDashboard, CircleFadingArrowUp} from "lucide-react"
 
 import {
   Sidebar,

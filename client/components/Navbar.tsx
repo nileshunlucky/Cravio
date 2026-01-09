@@ -1,50 +1,12 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { UserButton } from '@clerk/nextjs'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Button } from './ui/button'
 import { useUser } from '@clerk/nextjs';
 
-declare global {
-  interface Window {
-    fbq: (...args: unknown[]) => void;
-  }
-}
-declare const fbq: (...args: unknown[]) => void;
-
-
 const Navbar = ({ credits = 0 }: { credits: number }) => {
-  const { user } = useUser();
-
-  useEffect(() => {
-    const fetchVideos = async () => {
-
-      if (!user?.primaryEmailAddress?.emailAddress) {
-        return;
-      }
-      const email = user.primaryEmailAddress.emailAddress;
-
-      try {
-        const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`);
-        if (!res.ok) {
-          throw new Error(`Failed to fetch videos: ${res.status} ${res.statusText}`);
-        }
-        const data = await res.json();
-        console.log(data)
-
-
-      } catch (err) {
-        console.error('Error fetching videos:', err);
-      }
-    };
-    if (user) {
-      fetchVideos();
-    }
-  }, [user]);
-
-  
 
   return (
     <nav className="w-full  border-b shadow-sm py-2 px-4 flex items-center justify-between">

@@ -1,13 +1,12 @@
 "use client";
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Check, HelpCircle, MessageSquare, Info, ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const PricingPage = () => {
     const [isYearly, setIsYearly] = useState(true);
@@ -156,7 +155,7 @@ const PricingPage = () => {
 
                 <div className="mt-12 p-8 rounded-2xl border border-zinc-800 bg-zinc-950/50 text-center">
                     <h3 className="text-xl font-bold mb-2">Please chat to our friendly team</h3>
-                    <p className="text-zinc-400 mb-6">We're here to help with any questions you might have.</p>
+                    <p className="text-zinc-400 mb-6">We&apos;re here to help with any questions you might have.</p>
                     <a href="mailto:mellvitta.ai@gmail.com">
                         <Button className="bg-[#c3002b] hover:bg-[#a00024] text-white px-8">
                             <MessageSquare className="h-4 w-4 mr-2" />
