@@ -1,5 +1,3 @@
-import { LayoutDashboard, CircleFadingArrowUp} from "lucide-react"
-
 import {
   Sidebar,
   SidebarContent,
@@ -12,41 +10,48 @@ import {
 } from "@/components/ui/sidebar"
 import Link from "next/link"
 
-// Menu items.
 const items = [
   {
     title: "Dashboard",
     url: "/admin/dashboard",
-    icon: LayoutDashboard ,
   },
   {
-    title: "Plan",
+    title: "Pricing",
     url: "/admin/plan",
-    icon: CircleFadingArrowUp ,
   },
 ]
 
 export function AppSidebar() {
   return (
-    <Sidebar>
-      <SidebarContent>
-        <SidebarGroup className="gap-3">
-          <SidebarGroupLabel className="text-xl font-medium">Mellvitta Ai</SidebarGroupLabel>
+    <Sidebar className="border-r border-zinc-800 bg-black">
+      <SidebarContent className="bg-black">
+        <SidebarGroup className="px-4 pt-8">
+          {/* Brand Header */}
+          <SidebarGroupLabel className="text-xl font-semibold text-white tracking-tight mb-8 h-auto px-2">
+            Mellvitta
+          </SidebarGroupLabel>
+
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-2">
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
+                  <SidebarMenuButton 
+                    asChild 
+                    className="group relative h-10 px-3 transition-all duration-200 hover:bg-zinc-900 active:bg-zinc-800"
+                  >
+                    <Link href={item.url} className="flex items-center">
+                      <span className="text-[17px] font-medium text-zinc-400 group-hover:text-white transition-colors">
+                        {item.title}
+                      </span>
+                      
+                      {/* Subtle indicator that appears on hover */}
+                      <div className="absolute left-0 w-[2px] h-0 bg-white transition-all duration-200 group-hover:h-1/2" />
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
-
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
