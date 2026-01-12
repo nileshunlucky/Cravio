@@ -62,7 +62,7 @@ const Page = () => {
       formData.append('email', email);
       formData.append('input', currentInput);
 
-      const response = await fetch('https://cravio-ai.onrender.com/wormgpt', {
+      const response = await fetch('https://cravio-ai.onrender.com/chatbot', {
         method: 'POST',
         body: formData,
       });
