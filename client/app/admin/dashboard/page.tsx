@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowUp } from 'lucide-react'
 import { useUser } from '@clerk/nextjs';
 
-
 type Message = {
   id: string;
   role: 'user' | 'assistant';
@@ -17,7 +16,7 @@ const Page = () => {
     { id: '1', role: 'assistant', content: 'How can I help you today?' },
   ]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // Added loading state
+  const [isLoading, setIsLoading] = useState(false);
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
   
@@ -46,22 +45,23 @@ const Page = () => {
       return;
     }
 
-    const userMsg = { id: Date.now().toString(), role: 'user', content: input };
+    // FIXED: Variables moved inside and explicitly typed as Message
+    const userMsg: Message = { 
+      id: Date.now().toString(), 
+      role: 'user', 
+      content: input 
+    };
     
-    // 1. Update UI
     setMessages(prev => [...prev, userMsg]);
     const currentInput = input;
     setInput('');
     setIsLoading(true);
 
     try {
-      // 2. Prepare FormData
       const formData = new FormData();
       formData.append('email', email);
       formData.append('input', currentInput);
-      console.log(email, currentInput)
 
-      // 3. Connect to real API
       const response = await fetch('https://cravio-ai.onrender.com/chatbot', {
         method: 'POST',
         body: formData,
@@ -70,10 +70,9 @@ const Page = () => {
       if (!response.ok) throw new Error('Failed to fetch');
 
       const data = await response.json();
-      console.log(data)
 
-      // 4. Add assistant reply to state
-      const botMsg = { 
+      // FIXED: Assistant message typed as Message
+      const botMsg: Message = { 
         id: (Date.now() + 1).toString(), 
         role: 'assistant', 
         content: data.reply 
@@ -122,10 +121,10 @@ const Page = () => {
                 animate={{ opacity: 1 }} 
                 className="flex justify-start"
               >
-               <span className="relative flex size-4">
-  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c3002b] opacity-75"></span>
-  <span className="relative inline-flex size-4 rounded-full bg-[#c3002b]"></span>
-</span>
+                <span className="relative flex size-4">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c3002b] opacity-75"></span>
+                  <span className="relative inline-flex size-4 rounded-full bg-[#c3002b]"></span>
+                </span>
               </motion.div>
             )}
           </AnimatePresence>
