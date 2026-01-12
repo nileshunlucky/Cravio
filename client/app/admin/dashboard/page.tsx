@@ -62,7 +62,7 @@ const Page = () => {
       console.log(email, currentInput)
 
       // 3. Connect to real API
-      const response = await fetch('http://127.0.0.1:8000/chatbot', {
+      const response = await fetch('https://cravio-ai.onrender.com/chatbot', {
         method: 'POST',
         body: formData,
       });
@@ -146,7 +146,7 @@ const Page = () => {
                 handleSend();
               }
             }}
-            placeholder="Ask anything..."
+            placeholder="Ask Mellvitta"
             className="w-full bg-zinc-900 text-zinc-100 rounded-[26px] py-4 pl-6 pr-14 focus:outline-none focus:ring-1 focus:ring-zinc-700 transition-all placeholder:text-zinc-500 border border-zinc-800/50 resize-none min-h-[56px] overflow-y-auto no-scrollbar"
           />
           

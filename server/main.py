@@ -84,7 +84,7 @@ async def chatbot(
 
         # Use .get() to avoid KeyErrors if credits field is missing
         if user.get("credits", 0) < 1:
-            return {"reply": "You have run out of credits. Please top up."}
+            raise HTTPException(status_code=403, detail="You have run out of credits.")
 
         # Fixed OpenAI Completion syntax
         response = openai_client.chat.completions.create(
