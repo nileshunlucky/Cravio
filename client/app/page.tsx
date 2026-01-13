@@ -6,7 +6,6 @@ import Review from '@/components/Review'
 import Hero from '@/components/Hero'
 import React from 'react'
 import Features from '@/components/Features';
-import Packaged from '@/components/Packaged';
 
 const page = () => {
   return (
