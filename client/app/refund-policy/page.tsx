@@ -35,16 +35,16 @@ const RefundPolicyPage = () => {
             </button>
             <h1 className="text-3xl font-bold">Refund Policy</h1>
             <p className="text-muted-foreground text-lg">
-              At Mellvitta, we are committed to delivering high-performance AI tools for faceless content creation. Due to the nature of our digital SaaS offering and the immediate access granted upon purchase, <span className="font-semibold ">we do not offer refunds once a subscription or purchase is completed</span>.
+              At Cravio, we are committed to delivering high-performance AI tools for faceless content creation. Due to the nature of our digital SaaS offering and the immediate access granted upon purchase, <span className="font-semibold ">we do not offer refunds once a subscription or purchase is completed</span>.
             </p>
             <p className="text-muted-foreground text-lg">
               We encourage all users to review our features and ask questions prior to subscribing. If you experience any technical issues or need help using the platform, our support team is available to assist you promptly.
             </p>
             <p className="text-muted-foreground text-lg">
-              By proceeding with a purchase, you agree to this refund policy. We appreciate your understanding and thank you for being part of the Mellvitta community.
+              By proceeding with a purchase, you agree to this refund policy. We appreciate your understanding and thank you for being part of the Cravio community.
             </p>
             <p>
-                Support - <span className='font-semibold'>Mellvitta.ai@gmail.com</span>
+                Support - <span className='font-semibold'>cravio.ai@gmail.com</span>
             </p>
           </CardContent>
         </Card>

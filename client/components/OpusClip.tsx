@@ -665,7 +665,7 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-1 sm:p-6 gap-7">
       {/* Background text - Changed from OpusClip to CRAVIO */}
       <div className="absolute inset-0 md:flex items-center justify-center overflow-hidden pointer-events-none hidden">
-        <h1 className="text-[17vw] font-bold text-zinc-700/30 select-none">MELLVITTA</h1>
+        <h1 className="text-[23vw] font-bold text-zinc-700/30 select-none">CRAVIO</h1>
       </div>
 
       <motion.div
@@ -684,7 +684,7 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         {isLoading && (
           <div className="absolute inset-0 z-0">
             <motion.div
-              className="absolute inset-0 bg-[#c3002b] rounded-xl"
+              className="absolute inset-0 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 rounded-xl"
               initial={{ rotate: 0, scale: 1 }}
               animate={{
                 rotate: 360,

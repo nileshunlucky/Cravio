@@ -1,3 +1,9 @@
+"use client"
+
+import { usePathname } from "next/navigation"
+import Link from "next/link"
+import { LayoutDashboard, CircleFadingArrowUp, Handshake , TextSearch} from "lucide-react"
+
 import {
   Sidebar,
   SidebarContent,
@@ -8,48 +14,61 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import Link from "next/link"
 
 const items = [
   {
     title: "Dashboard",
     url: "/admin/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Title",
+    url: "/admin/title",
+    icon: TextSearch ,
   },
   {
     title: "Pricing",
-    url: "/admin/plan",
+    url: "/admin/pricing",
+    icon: CircleFadingArrowUp,
+  },
+  {
+    title: "Portfolio",
+    url: "/admin/portfolio",
+    icon: Handshake,
   },
 ]
 
 export function AppSidebar() {
-  return (
-    <Sidebar className="border-r border-zinc-800 bg-black">
-      <SidebarContent className="bg-black">
-        <SidebarGroup className="px-4 pt-8">
-          {/* Brand Header */}
-          <SidebarGroupLabel className="text-xl font-semibold text-white tracking-tight mb-8 h-auto px-2">
-            Mellvitta
-          </SidebarGroupLabel>
+  const pathname = usePathname()
 
+  return (
+    <Sidebar>
+      <SidebarContent>
+        <SidebarGroup className="gap-3">
+          <SidebarGroupLabel className="text-xl font-medium">Cravio Ai</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="gap-2">
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
-                    className="group relative h-10 px-3 transition-all duration-200 hover:bg-zinc-900 active:bg-zinc-800"
-                  >
-                    <Link href={item.url} className="flex items-center">
-                      <span className="text-[17px] font-medium text-zinc-400 group-hover:text-white transition-colors">
-                        {item.title}
-                      </span>
-                      
-                      {/* Subtle indicator that appears on hover */}
-                      <div className="absolute left-0 w-[2px] h-0 bg-white transition-all duration-200 group-hover:h-1/2" />
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+            <SidebarMenu>
+              {items.map((item) => {
+                const isActive = pathname === item.url
+
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition ${
+                        isActive
+                          ? "bg-[#47FFE7] text-black shadow-md"
+                          : "text-white hover:bg-white/10"
+                      }`}
+                    >
+                      <Link href={item.url}>
+                        <item.icon className="w-5 h-5" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
