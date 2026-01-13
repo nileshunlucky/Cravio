@@ -69,7 +69,6 @@ async def health_check():
 
 class UserReferral(BaseModel):
     email: EmailStr   
-    deviceId: str
 
 @app.post("/add-user")
 def save_referral(data: UserReferral = Body(...)):
@@ -78,22 +77,11 @@ def save_referral(data: UserReferral = Body(...)):
     user = users_collection.find_one({"email": data.email})
 
     if user:
-        # If user has no deviceId, update it
-        if "deviceId" not in user or not user["deviceId"]:
-            users_collection.update_one(
-                {"email": data.email},
-                {"$set": {"deviceId": data.deviceId}}
-            )
-            return {"message": "Device ID added to existing user"}
-        else:
-            return {"message": "User already exists"}
+        return {"message": "User already exists"}
 
     # 3. If user doesn't exist, insert as new user
     user_data = {
         "email": data.email,
-        "deviceId": data.deviceId,
-        "user_paid": False,
-        "trial_used": False,
     }
     users_collection.insert_one(user_data)
     return {"message": "User added successfully"}

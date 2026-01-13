@@ -4,6 +4,8 @@ import React, {useState, useEffect} from 'react';
 import { motion } from 'framer-motion';
 import { Star, Play, Sparkles } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import Link from "next/link"
+
 
 const thumbnails = [
   { id: 1, label: "The Unfathomable Wealth of Pablo Escobar", views: "900,000+", img: "https://pikzels.com/_next/image?url=%2Fthumbnails%2F014.webp&w=256&q=75" },
@@ -139,10 +141,10 @@ const LandingPage = () => {
             />
             
             <div className="flex flex-col items-center mt-6 gap-6">
-              <Button className="bg-teal-400 hover:bg-teal-300 text-black py-7 px-12 rounded-full transition-transform active:scale-95 flex gap-2 text-lg">
+              <Link href="/admin/dashboard"><Button className="bg-teal-400 hover:bg-teal-300 text-black py-7 px-12 rounded-full transition-transform active:scale-95 flex gap-2 text-lg">
                 <Star size={20} fill="currentColor" />
                 Generate My First Thumbnail
-              </Button>
+              </Button></Link>
               
               <button className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors text-sm font-bold">
                 <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center">

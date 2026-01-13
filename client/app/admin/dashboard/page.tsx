@@ -4,13 +4,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Upload, Link, Sparkles, Download, Plus } from 'lucide-react';
+import { Upload, Link, Star, Download, Plus, User, Pencil } from 'lucide-react';
 import { toast } from "sonner";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from 'next/navigation';
 
 const LoadingState = () => {
     const [percentage, setPercentage] = useState(0);
+ 
 
 
     // Simulate a realistic, non-linear progress animation
@@ -87,6 +88,28 @@ const Page = () => {
     const [animation, setAnimation] = useState(false);
     const [loading, setLoading] = useState(false);
     const [thumbnailUrl, setThumbnailUrl] = useState('');
+    const [prompt, setPrompt] = useState("");
+    // 1. Add this list above your Page component
+const PERSONAS = [
+  { id: '1', name: 'Alex', image: 'https://github.com/shadcn.png' },
+  { id: '2', name: 'Jordan', image: 'https://github.com/nutlope.png' },
+];
+const [selectedPersona, setSelectedPersona] = useState<{id: string, name: string, image: string} | null>(null);
+
+// 2. Inside your Page component, add these states
+const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+const dropdownRef = useRef<HTMLDivElement>(null);
+
+// 3. Add this useEffect to close dropdown when clicking outside
+useEffect(() => {
+  const handleClick = (e: MouseEvent) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      setIsDropdownOpen(false);
+    }
+  };
+  document.addEventListener("mousedown", handleClick);
+  return () => document.removeEventListener("mousedown", handleClick);
+}, []);
 
     const router = useRouter()
 
@@ -128,24 +151,29 @@ const Page = () => {
         try {
             setAnimation(true);
             setLoading(true);
-            if ((!youtubeUrl && !thumbnailImage) || !faceImage) {
-                toast.error('Please fill in all the fields.');
-                setAnimation(false); // Go back to form if validation fails
-                setLoading(false);
+           
+            const email = user?.primaryEmailAddress?.emailAddress
+             if(!email){
+                toast.error("User Not found");
                 return;
             }
 
-            const email = user?.primaryEmailAddress?.emailAddress
-
             const formData = new FormData();
-
-            if (activeTab === 'link') {
-                formData.append('youtubeUrl', youtubeUrl);
-            } else {
-                formData.append('thumbnailImage', thumbnailImage ? thumbnailImage.file : '');
+            formData.append('email', email);
+             if(!youtubeUrl){
+                toast.error("Select youtubeUrl");
+                return;
             }
-            formData.append('faceImage', faceImage ? faceImage.file : '');
-            formData.append('email', email || '');
+            formData.append('youtubeUrl', youtubeUrl);
+            if(!selectedPersona){
+                toast.error("Select Persona!");
+                return;
+            }
+            formData.append('persona', selectedPersona.image);
+            if(prompt){
+             formData.append('prompt', prompt);
+            }
+            
 
             const res = await fetch('https://cravio-ai.onrender.com/api/faceswap', {
                 method: 'POST',
@@ -178,6 +206,7 @@ const Page = () => {
                 duration: 4000,
             })
         } finally {
+            setAnimation(false);
             setLoading(false);
         }
     };
@@ -188,10 +217,10 @@ const Page = () => {
     };
 
     return (
-        <div className="min-h-screen my-5 flex items-center justify-center p-4">
+        <div className="min-h-screen my-5 flex items-center text-center justify-center p-4">
             <AnimatePresence mode="wait">
                 {
-                    !animation ?
+                    animation ?
                         (
                             <motion.div
                                 key="result"
@@ -201,7 +230,7 @@ const Page = () => {
                                 exit={{ opacity: 0, y: -20 }}
                                 transition={{ duration: 0.5 }}
                             >
-                                {!loading ? (
+                                {loading ? (
                                     <LoadingState />
                                 ) : thumbnailUrl ? (
                                     <motion.div
@@ -245,147 +274,116 @@ const Page = () => {
                         :
                         (
                             <motion.div
-                                key="form"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.5 }}
-                                className="w-full max-w-2xl rounded-lg p-6 space-y-7 border-2"
-                                style={{
-                                    borderColor: canSubmit() ? '#47FFE7' : 'rgba(255, 255, 255, 0.2)',
-                                    boxShadow: canSubmit() ? '0 0 20px rgba(71, 255, 231, 0.3)' : 'none'
-                                }}
-                            >
+  key="form"
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  // Adjusted: p-6 for mobile, p-10 for desktop. rounded-2xl for mobile.
+  className="relative w-full max-w-3xl bg-[#111111] rounded-[24px] md:rounded-[32px] p-6 md:p-10 pb-14 space-y-6 md:space-y-8 border border-white/10 shadow-2xl"
+>
+  {/* URL Input */}
+  <div className="relative">
+    <h1 className="text-[#47FFE7] text-lg md:text-xl text-left p-2">Get Started</h1>
+    <input
+      type="text"
+      placeholder="Enter YouTube Link"
+      value={youtubeUrl}
+      onChange={(e) => setYoutubeUrl(e.target.value)}
+      // Adjusted: py-4 for mobile, py-5 for desktop. text-sm for mobile.
+      className="w-full bg-black/20 border rounded-2xl py-4 md:py-5 px-6 text-sm md:text-base text-zinc-300 placeholder:text-zinc-600 focus:outline-none border-[#47FFE7]/30 transition-all text-center"
+    />
+  </div>
 
-                                {/* Tab Buttons */}
-                                <div className="flex rounded-lg gap-3 p-1 bg-zinc-900">
-                                    <motion.button
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={() => setActiveTab('link')}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-colors ${activeTab === 'link'
-                                            ? 'text-black'
-                                            : 'text-gray-300 hover:text-white hover:border hover:border-[#47FFE7]'
-                                            }`}
-                                        style={{
-                                            backgroundColor: activeTab === 'link' ? '#47FFE7' : 'transparent',
-                                            boxShadow: activeTab === 'link' ? '0 0 10px rgba(71, 255, 231, 0.5)' : 'none'
-                                        }}
-                                    >
-                                        <Link className="w-4 h-4" />
-                                        Link
-                                    </motion.button>
-                                    <motion.button
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={() => setActiveTab('upload')}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-colors ${activeTab === 'upload'
-                                            ? 'text-black'
-                                            : 'text-gray-300 hover:text-white hover:border hover:border-[#47FFE7]'
-                                            }`}
-                                        style={{
-                                            backgroundColor: activeTab === 'upload' ? '#47FFE7' : 'transparent',
-                                            boxShadow: activeTab === 'upload' ? '0 0 10px rgba(71, 255, 231, 0.5)' : 'none'
-                                        }}
-                                    >
-                                        <Upload className="w-4 h-4" />
-                                        Upload
-                                    </motion.button>
-                                </div>
+  <div className="flex justify-center -mt-4 mb-2 relative" ref={dropdownRef}>
+    <div className="flex items-center gap-1 bg-black/40 p-1.5 rounded-full border border-white/5">
+      <button 
+        type="button"
+        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+        className="flex cursor-pointer items-center gap-2 px-4 md:px-5 py-2 bg-[#1A1A1A] text-white rounded-full text-xs md:text-sm font-medium border border-white/10 shadow-lg transition-all hover:bg-[#222]"
+      >
+        {!selectedPersona ? (
+          <>
+            <User size={14} className="text-[#47FFE7] md:w-4 md:h-4" />
+            Personas
+          </>
+        ) : (
+          <>
+            <img 
+              src={selectedPersona.image} 
+              className="w-4 h-4 md:w-5 md:h-5 rounded-full object-cover border border-[#47FFE7]/30" 
+              alt="" 
+            />
+            <span className="text-zinc-200">{selectedPersona.name}</span>
+          </>
+        )}
+      </button>
+    </div>
 
-                                {/* Input Section */}
-                                <div className="space-y-4">
-                                    {activeTab === 'link' ? (
-                                        <Input
-                                            placeholder="Drop a YouTube link"
-                                            value={youtubeUrl}
-                                            onChange={(e) => setYoutubeUrl(e.target.value)}
-                                            className="bg-gray-700 border-2 border-[#47FFE7] text-[#47FFE7] placeholder-gray-400 focus:outline-none px-5"
-                                        />
-                                    ) : (
-                                        <motion.div
-                                            whileHover={{ scale: 1.02 }}
-                                            className="border-2 border-[#47FFE7] rounded-lg p-3 text-center cursor-pointer transition-colors hover:bg-zinc-800/50"
-                                            onClick={() => thumbnailRef.current?.click()}
-                                        >
-                                            <input
-                                                ref={thumbnailRef}
-                                                type="file"
-                                                accept="image/*"
-                                                className="hidden"
-                                                onChange={(e) => {
-                                                    if (e.target.files && e.target.files[0]) {
-                                                        handleFileUpload(e.target.files[0], 'thumbnail');
-                                                    }
-                                                }}
-                                            />
-                                            {thumbnailImage ? (
-                                                <img
-                                                    src={thumbnailImage.preview}
-                                                    alt="Thumbnail Preview"
-                                                    className="w-full h-auto mx-auto rounded object-contain"
-                                                />
-                                            ) : (
-                                                <div className="space-y-2 py-8">
-                                                    <Upload className="w-8 h-8 mx-auto text-gray-500" />
-                                                    <p className="text-gray-400 text-sm">Click to upload thumbnail</p>
-                                                </div>
-                                            )}
-                                        </motion.div>
-                                    )}
-                                </div>
+    {/* The Dropdown Menu */}
+    <AnimatePresence>
+      {isDropdownOpen && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+          className="absolute top-full mt-3 w-48 md:w-52 bg-[#1A1A1A] border border-white/10 rounded-2xl overflow-hidden z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2"
+        >
+          <p className="text-[9px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold px-3 py-2">Select Persona</p>
+          {PERSONAS.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => {
+                setSelectedPersona(p);
+                setIsDropdownOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all mb-1 ${
+                selectedPersona?.id === p.id 
+                ? "bg-[#47FFE7]/10 text-white" 
+                : "hover:bg-white/5 text-zinc-400 hover:text-white"
+              }`}
+            >
+              <div className="relative">
+                 <img src={p.image} className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover border border-white/10" alt="" />
+                 {selectedPersona?.id === p.id && (
+                   <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 bg-[#47FFE7] rounded-full border-2 border-[#1A1A1A]" />
+                 )}
+              </div>
+              <span className="text-xs md:text-sm font-medium">{p.name}</span>
+            </button>
+          ))}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
 
-                                {/* Face Image Upload */}
-                                <motion.div
-                                    whileHover={{ scale: 1.02 }}
-                                    className="border-2 border-[#47FFE7] rounded-lg p-3 text-center cursor-pointer transition-colors hover:bg-zinc-800/50"
-                                    onClick={() => faceRef.current?.click()}
-                                >
-                                    <input
-                                        ref={faceRef}
-                                        type="file"
-                                        accept="image/*"
-                                        className="hidden"
-                                        required
-                                        onChange={(e) => {
-                                            if (e.target.files && e.target.files[0]) {
-                                                handleFileUpload(e.target.files[0], 'face');
-                                            }
-                                        }}
-                                    />
-                                    {faceImage ? (
-                                        <img
-                                            src={faceImage.preview}
-                                            alt="Face Preview"
-                                            className="w-32 h-32 mx-auto rounded-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="space-y-2 py-5">
-                                            <Upload className="w-8 h-8 mx-auto text-gray-500" />
-                                            <p className="text-gray-400 text-sm">Upload face image</p>
-                                        </div>
-                                    )}
-                                </motion.div>
+  {/* Changes Textarea */}
+  <div className="space-y-3">
+    <div className="text-zinc-200 text-xs md:text-sm pl-1">
+      Changes <span className="opacity-50">(optional)</span>
+    </div>
+    <textarea
+      placeholder="Describe what you'd like to add, remove or replace."
+      value={prompt}
+      onChange={(e) => setPrompt(e.target.value)}
+      // Adjusted: h-24 for mobile, text-sm for mobile
+      className="w-full h-24 md:h-auto bg-black/40 border border-[#47FFE7]/40 rounded-[20px] md:rounded-[24px] p-4 text-sm md:text-base text-zinc-200 focus:outline-none focus:border-[#47FFE7] transition-all placeholder:text-zinc-600 text-center resize-none leading-relaxed"
+    />
+  </div>
 
-                                {/* Submit Button */}
-                                <motion.div
-                                    whileHover={{ scale: canSubmit() && !loading ? 1.02 : 1 }}
-                                    whileTap={{ scale: canSubmit() && !loading ? 0.98 : 1 }}
-                                >
-                                    <Button
-                                        onClick={handleSubmit}
-                                        disabled={loading}
-                                        className="w-full flex items-center gap-2 py-3 text-base font-bold rounded-lg transition-all text-black disabled:opacity-50 disabled:cursor-not-allowed"
-                                        style={{
-                                            backgroundColor: '#47FFE7',
-                                            boxShadow: '0 0 15px rgba(71, 255, 231, 0.4)'
-                                        }}
-                                    >
-                                        <Sparkles className='w-5 h-5' />
-                                        {loading ? 'Generating...' : 'Generate'}
-                                    </Button>
-                                </motion.div>
-                            </motion.div>)
+  {/* Generate Button */}
+  <div className="absolute -bottom-6 md:-bottom-7 left-1/2 -translate-x-1/2">
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={handleSubmit}
+      disabled={loading}
+      // Adjusted: px-6 for mobile, text-base for mobile
+      className="bg-[#47FFE7] cursor-pointer text-black md:px-10 md:py-3.5 px-6 py-2.5 rounded-full font-semibold text-base md:text-lg flex items-center gap-2 shadow-[0_10px_40px_rgba(71,255,231,0.3)] disabled:opacity-50 whitespace-nowrap"
+    >
+      <Star size={18} className="md:w-5 md:h-5" fill="black" />
+      {loading ? 'Generating...' : 'Generate'}
+    </motion.button>
+  </div>
+</motion.div>)
                 }
             </AnimatePresence>
         </div>

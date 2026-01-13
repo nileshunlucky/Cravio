@@ -19,22 +19,10 @@ const items = [
   {
     title: "Dashboard",
     url: "/admin/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Title",
-    url: "/admin/title",
-    icon: TextSearch ,
   },
   {
     title: "Pricing",
     url: "/admin/pricing",
-    icon: CircleFadingArrowUp,
-  },
-  {
-    title: "Portfolio",
-    url: "/admin/portfolio",
-    icon: Handshake,
   },
 ]
 
@@ -45,7 +33,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup className="gap-3">
-          <SidebarGroupLabel className="text-xl font-medium">Cravio Ai</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xl font-medium">MELLVITTA</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => {
@@ -62,7 +50,6 @@ export function AppSidebar() {
                       }`}
                     >
                       <Link href={item.url}>
-                        <item.icon className="w-5 h-5" />
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
