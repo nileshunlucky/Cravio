@@ -18,7 +18,7 @@ export default function SendEmailToBackend() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: email,
+          body: JSON.stringify({ email: email }),
         })
 
         const data = await res.json()

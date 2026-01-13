@@ -88,7 +88,7 @@ const Page = () => {
     // 1. Add this list above your Page component
 const PERSONAS = [
   { id: '1', name: 'Alex', image: 'https://github.com/shadcn.png' },
-  { id: '2', name: 'Jordan', image: 'https://github.com/nutlope.png' },
+  { id: '2', name: 'Cristiano Ronaldo', image: 'https://png.pngtree.com/png-vector/20251030/ourlarge/pngtree-cristiano-ronaldo-football-player-celebrating-goal-illustration-png-image_17856069.webp' },
 ];
 const [selectedPersona, setSelectedPersona] = useState<{id: string, name: string, image: string} | null>(null);
 
@@ -156,6 +156,7 @@ useEffect(() => {
             });
 
             const data = await res.json(); // Parse response once
+            console.log(data)
 
             if (res.ok) {
                 // Success case

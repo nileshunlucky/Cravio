@@ -26,23 +26,19 @@ s3_client = boto3.client(
 
 S3_BUCKET = os.getenv("S3_BUCKET_NAME")
 
-# Robust YouTube Regex
 YT_REGEX = r"(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})"
 
 async def get_valid_thumbnail_url(url: str) -> str:
-    """Extracts Video ID and returns the best available thumbnail URL."""
     match = re.search(YT_REGEX, url)
     if not match:
         return None
     
     video_id = match.group(1)
-    # FIXED: Added https:// and /vi/ path
     maxres_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
     hq_url = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
 
     async with httpx.AsyncClient() as client:
         try:
-            # Check if 1280x720 exists, else fallback to 480x360
             response = await client.head(maxres_url, timeout=2.0)
             return maxres_url if response.status_code == 200 else hq_url
         except:
@@ -69,25 +65,42 @@ async def faceswap_endpoint(
         if not yt_thumb_url:
             raise ValueError("Invalid YouTube URL format provided.")
 
-        # 3. Call OpenAI gpt-image-1
-        response = await openai_client.images.edit(
+        # 3. Call OpenAI Responses API (Multimodal Native)
+        # This replaces the old images.edit and accepts URLs directly
+        response = await openai_client.responses.create(
             model="gpt-image-1",
-            image=[persona, yt_thumb_url], 
-            prompt=(
-                f"Face swap: Take the person's face from the first image and "
-                f"seamlessly blend it onto the main person in the second YouTube thumbnail. "
-                f"Maintain skin tone, lighting, and the background of the original thumbnail. "
-                f"Style: {prompt if prompt else 'Viral 4K high-quality thumbnail.'}"
-            ),
-            input_fidelity="high",
-            size="1536x1024", # Best 3:2 landscape for YouTube
-            output_format="jpeg" # Match your S3 content type
+            input=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text", 
+                            "text": (
+                                f"Face swap: Take the person's face from the first image and "
+                                f"seamlessly blend it onto the main person in the second YouTube thumbnail. "
+                                f"Maintain skin tone and lighting. Style: {prompt if prompt else 'Viral 4K high-quality thumbnail.'}"
+                            )
+                        },
+                        {"type": "image_url", "image_url": {"url": persona}},
+                        {"type": "image_url", "image_url": {"url": yt_thumb_url}}
+                    ]
+                }
+            ],
+            tools=[{
+                "type": "image_generation",
+                "action": "edit",
+                "input_fidelity": "high",
+                "size": "1536x1024",
+                "output_format": "jpeg"
+            }]
         )
 
-        # 4. Extract and Upload to S3
-        b64_data = response.data[0].b64_json
+        # 4. Extract result from Tool Output
+        # The Responses API returns generated image data in the tool_outputs section
+        b64_data = response.output[0].image_generation_call.result.b64_json
+        
         if not b64_data:
-            raise Exception("AI failed to return image data.")
+            raise Exception("AI failed to return image data via Responses API.")
             
         image_bytes = base64.b64decode(b64_data)
         filename = f"{uuid.uuid4().hex}.jpg"
