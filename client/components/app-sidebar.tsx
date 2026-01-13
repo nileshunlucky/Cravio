@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { LayoutDashboard, CircleFadingArrowUp, Handshake , TextSearch} from "lucide-react"
 
 import {
   Sidebar,
