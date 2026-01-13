@@ -5,6 +5,7 @@ import base64
 import httpx
 import boto3
 import datetime
+import io
 from typing import Optional
 from fastapi import APIRouter, Form
 from fastapi.responses import JSONResponse
@@ -29,6 +30,7 @@ S3_BUCKET = os.getenv("S3_BUCKET_NAME")
 YT_REGEX = r"(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})"
 
 async def get_valid_thumbnail_url(url: str) -> str:
+    """Extracts Video ID and returns the best available thumbnail URL."""
     match = re.search(YT_REGEX, url)
     if not match:
         return None
@@ -43,6 +45,14 @@ async def get_valid_thumbnail_url(url: str) -> str:
             return maxres_url if response.status_code == 200 else hq_url
         except:
             return hq_url
+
+async def encode_image_from_url(url: str) -> str:
+    """Downloads an image and returns a base64 string."""
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, timeout=10.0)
+        if response.status_code != 200:
+            raise Exception(f"Failed to download image from {url}")
+        return base64.b64encode(response.content).decode("utf-8")
 
 @router.post("/api/faceswap")
 async def faceswap_endpoint(
@@ -60,29 +70,40 @@ async def faceswap_endpoint(
     users_collection.update_one({"email": email}, {"$inc": {"credits": -10}})
 
     try:
-        # 2. Extract Thumbnail
+        # 2. Extract Thumbnail URL
         yt_thumb_url = await get_valid_thumbnail_url(youtubeUrl)
         if not yt_thumb_url:
             raise ValueError("Invalid YouTube URL format provided.")
 
-        # 3. Call OpenAI Responses API (Multimodal Native)
-        # This replaces the old images.edit and accepts URLs directly
+        # 3. Convert both images to Base64 (Best for Responses API fidelity)
+        # Note: You can also pass the raw URLs, but Base64 is more reliable for "edit" actions
+        b64_persona = await encode_image_from_url(persona)
+        b64_thumb = await encode_image_from_url(yt_thumb_url)
+
+        # 4. Call OpenAI Responses API
         response = await openai_client.responses.create(
-            model="gpt-image-1",
+            model="gpt-4.1", # Ensure your API key has access to gpt-4.1 or gpt-image-1
             input=[
                 {
                     "role": "user",
                     "content": [
                         {
-                            "type": "text", 
+                            "type": "input_text", 
                             "text": (
                                 f"Face swap: Take the person's face from the first image and "
                                 f"seamlessly blend it onto the main person in the second YouTube thumbnail. "
-                                f"Maintain skin tone and lighting. Style: {prompt if prompt else 'Viral 4K high-quality thumbnail.'}"
+                                f"Maintain skin tone, lighting, and background. "
+                                f"Style: {prompt if prompt else 'Viral 4K high-quality thumbnail.'}"
                             )
                         },
-                        {"type": "image_url", "image_url": {"url": persona}},
-                        {"type": "image_url", "image_url": {"url": yt_thumb_url}}
+                        {
+                            "type": "input_image",
+                            "image_url": {"url": f"data:image/jpeg;base64,{b64_persona}"}
+                        },
+                        {
+                            "type": "input_image",
+                            "image_url": {"url": f"data:image/jpeg;base64,{b64_thumb}"}
+                        }
                     ]
                 }
             ],
@@ -90,19 +111,21 @@ async def faceswap_endpoint(
                 "type": "image_generation",
                 "action": "edit",
                 "input_fidelity": "high",
-                "size": "1536x1024",
-                "output_format": "jpeg"
+                "size": "1536x1024"
             }]
         )
 
-        # 4. Extract result from Tool Output
-        # The Responses API returns generated image data in the tool_outputs section
-        b64_data = response.output[0].image_generation_call.result.b64_json
+        # 5. Extract result from Tool Output
+        # Look for the 'image_generation_call' in the response output
+        image_call = next((o for o in response.output if o.type == "image_generation_call"), None)
         
-        if not b64_data:
-            raise Exception("AI failed to return image data via Responses API.")
+        if not image_call or not image_call.result:
+            raise Exception("AI failed to generate an image. Check prompt or image safety filters.")
             
-        image_bytes = base64.b64decode(b64_data)
+        # In the 2026 Responses API, the result is the base64 string
+        image_bytes = base64.b64decode(image_call.result)
+        
+        # 6. Upload to S3
         filename = f"{uuid.uuid4().hex}.jpg"
         s3_key = f"thumbnails/{filename}"
         
@@ -115,7 +138,7 @@ async def faceswap_endpoint(
         
         public_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{s3_key}"
 
-        # 5. Log to DB
+        # 7. Log to DB
         users_collection.update_one(
             {"email": email}, 
             {"$push": {"generated_thumbnails": {
