@@ -1,489 +1,175 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Check, X, Sparkles } from 'lucide-react';
-import { useUser } from '@clerk/nextjs';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Check, X, Info } from 'lucide-react';
+import Link from "next/link"
+import { useUser } from "@clerk/nextjs";
 
-interface FeatureItem {
-    name: string;
-    included: boolean;
-}
 
-interface Features {
-    thumbnails: number;
-    credits: number;
-    list: FeatureItem[];
-}
 
-interface PricingCardProps {
-    plan: string;
-    price: string;
-    originalPrice?: string;
-    discount?: string;
-    features: Features;
-    isPopular: boolean;
-    buttonText: string;
-    href: string;
-    delay: number;
-}
+const PricingPage = () => {
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('annually');
+  const { user } = useUser();
+  const email = user?.primaryEmailAddress?.emailAddress
 
-const PricingCard: React.FC<PricingCardProps> = ({
-    plan,
-    price,
-    originalPrice,
-    discount,
-    features,
-    isPopular,
-    buttonText,
-    href,
-    delay
-}) => {
-    const cardVariants = {
-        hidden: { opacity: 0, y: 50 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.8,
-                delay: delay,
-                ease: "easeOut"
-            }
-        }
-    };
+  // Pricing Logic
+  const monthlyPrice = 19;
+  const annualMonthlyPrice = 9.5; // 50% discount
+  
+  const currentPrice = billingCycle === 'annually' ? annualMonthlyPrice : monthlyPrice;
+  const originalPrice = monthlyPrice;
 
-    const glowVariants = {
-        initial: {
-            boxShadow: "0 0 0 rgba(71, 255, 231, 0)",
-            backgroundColor: "rgba(30, 30, 30, 0.8)"
-        },
-        animate: {
-            boxShadow: isPopular
-                ? [
-                    "0 0 20px rgba(71, 255, 231, 0.3)",
-                    "0 0 40px rgba(71, 255, 231, 0.5)",
-                    "0 0 20px rgba(71, 255, 231, 0.3)"
-                ]
-                : "0 0 0 rgba(71, 255, 231, 0)",
-            backgroundColor: isPopular
-                ? "rgba(0, 0, 0, 0.9)"
-                : "rgba(30, 30, 30, 0.8)",
-            transition: {
-                duration: 2,
-                repeat: Infinity,
-                repeatType: "reverse" as const,
-                ease: "easeInOut"
-            }
-        }
-    };
+  const features = [
+    { text: "Works in Any Language", included: true },
+    { text: "Prompt-to-Thumbnail", included: true },
+    { text: "Recreate", included: true },
+    { text: "Edit", included: true },
+    { text: "Personas", included: true },
+    { text: "FaceSwap", included: true },
+    { text: "Early Access to New Features", included: true },
+  ];
 
-    const popularDotVariants = {
-        initial: { scale: 0.8, opacity: 0.7 },
-        animate: {
-            scale: [0.8, 1.2, 0.8],
-            opacity: [0.7, 1, 0.7],
-            transition: {
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeInOut"
-            }
-        }
-    };
+  return (
+    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-teal-500/30 overflow-x-hidden">
+      {/* Background Glows - Changed to Teal */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-teal-500/50 blur-[120px] pointer-events-none" />
+      
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 flex flex-col items-center">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <motion.h1 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-4xl md:text-6xl font-bold mb-4 tracking-tight"
+          >
+            Start Creating <br /> with <span className="text-teal-400">Mellvitta</span> Today
+          </motion.h1>
+          <p className="text-gray-400 text-lg mb-8">
+            No surprises or hidden fees. Cancel anytime.
+          </p>
 
-    return (
-        <motion.div
-            variants={cardVariants}
-            initial="hidden"
-            animate="visible"
-            className="relative h-full"
-            style={{ pointerEvents: 'auto' }} // Ensure pointer events work
-        >
-            {/* Most Popular Badge - Moved outside the card */}
-            {isPopular && (
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ delay: delay + 0.4, duration: 0.6, ease: "backOut" }}
-                    className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-20"
-                    style={{ pointerEvents: 'none' }} // Badge shouldn't block interactions
-                >
-                    <div className="relative">
-                        <motion.div
-                            variants={popularDotVariants}
-                            initial="initial"
-                            animate="animate"
-                            className="absolute -left-2 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-[#47FFE7] rounded-full"
-                        />
-                        <div className="bg-[#47FFE7] text-black px-6 py-2 rounded-full  font-bold flex items-center gap-2 shadow-lg whitespace-nowrap">
-                            <Sparkles />
-                            MOST POPULAR
-                        </div>
-                    </div>
-                </motion.div>
-            )}
+          {/* Toggle */}
+          <div className="flex flex-col items-center gap-4">
+            <div className="bg-[#1a1a1a] p-1 rounded-full flex items-center border border-white/5">
+              <button
+                onClick={() => setBillingCycle('monthly')}
+                className={`px-8 py-2 rounded-full text-sm font-medium transition-all ${billingCycle === 'monthly' ? 'bg-[#2a2a2a] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingCycle('annually')}
+                className={`px-8 py-2 rounded-full text-sm font-medium transition-all ${billingCycle === 'annually' ? 'bg-teal-500/20 text-teal-400 border border-teal-500/30' : 'text-gray-500 hover:text-gray-300'}`}
+              >
+                Annually
+              </button>
+            </div>
+            <p className="text-teal-400 text-sm font-semibold uppercase tracking-wider h-6">
+              {billingCycle === 'annually' ? 'Save 50% with our annual plan' : ''}
+            </p>
+          </div>
+        </div>
 
-            <motion.div
-                variants={glowVariants}
-                initial="initial"
-                animate="animate"
-                className={`relative rounded-2xl p-6 sm:p-8 h-full backdrop-blur-sm border-2 overflow-hidden ${isPopular
-                    ? 'border-[#47FFE7] bg-black/80'
-                    : 'border-zinc-700 bg-zinc-900/80'
-                    }`}
-                style={{ pointerEvents: 'auto' }} // Ensure card content is interactive
-            >
-                {/* Background Pattern - Fixed pointer events */}
-                <div
-                    className="absolute inset-0 opacity-5"
-                    style={{ pointerEvents: 'none' }} // Background shouldn't block interactions
-                >
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#47FFE7] via-transparent to-transparent"></div>
-                </div>
+        {/* Pricing Card - Single Premium Plan */}
+        <div className="w-full max-w-md">
+          <motion.div
+            layout
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative rounded-[2.5rem] p-8 border bg-[#121212] border-teal-500/50 shadow-[0_0_50px_rgba(20,184,166,0.15)]"
+          >
+            <div className="absolute top-6 right-6 flex items-center gap-1.5 bg-teal-500/20 text-teal-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-teal-500/30">
+              <span className="relative flex size-2">
+  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-400 opacity-75"></span>
+  <span className="relative inline-flex size-2 rounded-full bg-teal-400"></span>
+</span>
 
-                {/* Plan Name and Discount */}
-                <div className={` flex justify-start items-center gap-3 mb-6 relative z-10 ${isPopular ? 'mt-6' : 'mt-4'}`}>
-                    <motion.h3
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: delay + 0.3, duration: 0.6 }}
-                        className={`text-2xl font-bold mb-2 ${isPopular ? 'text-[#47FFE7]' : 'text-white'
-                            }`}
-                        style={{
-                            filter: isPopular
-                                ? 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.3))'
-                                : 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.3))',
-                            pointerEvents: 'auto'
-                        }}
-
-                    >
-                        {plan}
-                    </motion.h3>
-
-                    {discount && (
-                        <motion.span
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: delay + 0.4, duration: 0.6 }}
-                            className="text-red-500 font-semibold text-xl sm:text-2xl select-text drop-shadow-[0_0_6px_red]"
-                            style={{ pointerEvents: 'auto' }} // Allow text selection
-                        >
-                            {discount}
-                        </motion.span>
-                    )}
-                </div>
-
-                {/* Pricing */}
-                <div className="text-left mb-6 relative z-10">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: delay + 0.5, duration: 0.8, ease: "backOut" }}
-                        className="flex items-baseline gap-2 mb-2"
-                        style={{ pointerEvents: 'auto' }} // Allow text selection
-                    >
-                        {originalPrice && (
-                            <span className="text-zinc-500 text-lg line-through select-text">
-                                ${originalPrice}
-                            </span>
-                        )}
-                        <span className={`text-4xl sm:text-5xl font-bold ${isPopular ? 'text-[#47FFE7]' : 'text-white'
-                            }`}
-                            style={isPopular ? { filter: 'drop-shadow(0 0 10px rgba(71, 255, 231, 0.3))' } : { filter: 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.3))' }}>
-                            ${price}
-                        </span>
-                        <span className=" text-base select-text">/mo</span>
-                    </motion.div>
-                </div>
-
-                {/* Thumbnail Generation Info */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: delay + 0.7, duration: 0.6 }}
-                    className="mb-6 relative z-10"
-                >
-                    <p className="text-zinc-300 text-sm mb-4 select-text" style={{ pointerEvents: 'auto' }}>
-                        Generate up to{' '}
-                        <span className="text-[#47FFE7] font-bold">
-                            {features.thumbnails} thumbnails
-                        </span>{' '}
-                        per month.
-                    </p>
-
-                    {/* Fixed Button */}
-                    <a href={href}>
-                        <motion.button
-                            whileHover={{
-                                scale: 1.02,
-                                y: -2,
-                                boxShadow: isPopular
-                                    ? "0 10px 25px rgba(71, 255, 231, 0.3)"
-                                    : "0 10px 25px rgba(0, 0, 0, 0.2)"
-                            }}
-                            whileTap={{ scale: 0.98 }}
-                            className={`relative z-20 w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-center transition-all duration-300 cursor-pointer ${isPopular
-                                ? 'bg-[#47FFE7] text-black hover:bg-[#3ee5d1] shadow-lg'
-                                : 'bg-zinc-800 text-white hover:text-[#47FFE7] select-text drop-shadow-[0_0_1px_#47FFE7] hover:bg-zinc-800 border border-zinc-700 hover:border-zinc-600'
-                                }`}
-                            type="button"
-                            role="button"
-                            aria-label={`${buttonText} for ${plan} plan`}
-                            style={{ pointerEvents: 'auto' }} // Ensure button is clickable
-                        >
-                            {buttonText}
-                        </motion.button></a>
-                </motion.div>
-
-                {/* Features List */}
-                <div className="space-y-3 relative z-10">
-                    {features.list.map((feature, index) => (
-                        <motion.div
-                            key={index}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{
-                                delay: delay + 0.8 + (index * 0.08),
-                                duration: 0.6,
-                                ease: "easeOut"
-                            }}
-                            className="flex items-center gap-3"
-                            style={{ pointerEvents: 'auto' }} // Allow text selection
-                        >
-                            <div className="flex-shrink-0">
-                                {feature.included ? (
-                                    <div className="w-5 h-5 rounded-full bg-[#47FFE7] flex items-center justify-center">
-                                        <Check className="w-3 h-3 text-black" />
-                                    </div>
-                                ) : (
-                                    <div className="w-5 h-5 rounded-full bg-zinc-700 flex items-center justify-center">
-                                        <X className="w-3 h-3 text-zinc-400" />
-                                    </div>
-                                )}
-                            </div>
-                            <span className={`text-sm flex-1 select-text ${feature.included ? 'text-zinc-200' : 'text-zinc-500'
-                                }`}>
-                                {feature.name}
-                            </span>
-                        </motion.div>
-                    ))}
-                </div>
-
-                {/* Glow Effect Overlay for Popular Card - Fixed pointer events */}
-                {isPopular && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: [0, 0.3, 0] }}
-                        transition={{
-                            duration: 3,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                        }}
-                        className="absolute inset-0 bg-gradient-to-r from-[#47FFE7]/10 via-transparent to-[#47FFE7]/10 rounded-2xl"
-                        style={{ pointerEvents: 'none' }} // Glow shouldn't block interactions
-                    />
-                )}
-            </motion.div>
-        </motion.div>
-    );
-};
-
-const Page = () => {
-    const [isClient, setIsClient] = useState(false);
-    const {user} = useUser()
-    const email = user?.primaryEmailAddress?.emailAddress
-
-    // Ensure particles only render on client
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
-
-    const plans = [
-        {
-            plan: "Starter",
-            price: "3.99",
-            originalPrice: "5.99",
-            discount: "-33%",
-            buttonText: "Start Free Trial",
-            href: `https://cravioai.lemonsqueezy.com/buy/4776476e-309d-4c69-b790-a8bcaab86565?checkout[email]=${encodeURIComponent(email || '')}`,
-            isPopular: false,
-            features: {
-                thumbnails: 8,
-                credits: 80,
-                list: [
-                    { name: "80 credits", included: true },
-                    { name: "AI Thumbnail Generator", included: true },
-                    { name: "Persona Feature", included: true },
-                    { name: "HD Export", included: true },
-                    { name: "Advanced Styles", included: false },
-                    { name: "Custom Branding", included: false },
-                    { name: "Priority Support", included: false },
-                    { name: "Bulk Generation", included: false }
-                ]
-            }
-        },
-        {
-            plan: "Pro",
-            price: "5.99",
-            originalPrice: "8.99",
-            discount: "-33%",
-            buttonText: "Start Free Trial",
-            href: `https://cravioai.lemonsqueezy.com/buy/eab36718-8eb4-4266-a503-b7d165187d02?checkout[email]=${encodeURIComponent(email || '')}`,
-            isPopular: true,
-            features: {
-                thumbnails: 20,
-                credits: 200,
-                list: [
-                    { name: "200 credits", included: true },
-                    { name: "AI Thumbnail Generator", included: true },
-                    { name: "Persona Feature", included: true },
-                    { name: "HD Export", included: true },
-                    { name: "Advanced Styles", included: true },
-                    { name: "Custom Branding", included: true },
-                    { name: "Priority Support", included: false },
-                    { name: "Bulk Generation", included: false }
-                ]
-            }
-        },
-        {
-            plan: "Premium",
-            price: "11.99",
-            originalPrice: "17.99",
-            discount: "-33%",
-            buttonText: "Start Free Trial",
-            href: `https://cravioai.lemonsqueezy.com/buy/43aad267-faec-4d5f-9c9b-3c6cf6d83376?checkout[email]=${encodeURIComponent(email || '')}`,
-            isPopular: false,
-            features: {
-                thumbnails: 50,
-                credits: 500,
-                list: [
-                    { name: "500 credits", included: true },
-                    { name: "AI Thumbnail Generator", included: true },
-                    { name: "Persona Feature", included: true },
-                    { name: "HD Export", included: true },
-                    { name: "Advanced Styles", included: true },
-                    { name: "Custom Branding", included: true },
-                    { name: "Priority Support", included: true },
-                    { name: "Bulk Generation", included: true }
-                ]
-            }
-        }
-    ];
-
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                duration: 1,
-                staggerChildren: 0.15
-            }
-        }
-    };
-
-    const titleVariants = {
-        hidden: { opacity: 0, y: -40 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 1,
-                ease: "easeOut"
-            }
-        }
-    };
-
-    // Pre-defined particle positions to avoid hydration mismatch
-    const particlePositions = [
-        { left: 7.17, top: 11.71 },
-        { left: 83.17, top: 27.67 },
-        { left: 17.48, top: 7.38 },
-        { left: 33.40, top: 57.26 },
-        { left: 87.97, top: 94.13 },
-        { left: 44.38, top: 71.92 }
-    ];
-
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black relative overflow-hidden">
-            {/* Background Pattern - Fixed pointer events */}
-            <div
-                className="absolute inset-0 opacity-30"
-                style={{ pointerEvents: 'none' }} // Background shouldn't block interactions
-            >
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(71,255,231,0.15),transparent_50%)]" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(71,255,231,0.1),transparent_50%)]" />
+              MOST POPULAR
             </div>
 
-            <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="relative z-10 container mx-auto px-4 py-8 sm:py-16"
-                style={{ pointerEvents: 'auto' }} // Ensure content is interactive
-            >
-                <motion.div
-                    variants={titleVariants}
-                    className="text-center mb-12 sm:mb-16"
-                >
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-[#47FFE7] drop-shadow-lg select-text">
-                        Choose Your Plan
-                    </h1>
-                    <p className="text-base sm:text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed select-text">
-                        Unlock the power of AI-generated thumbnails with our flexible pricing plans
-                    </p>
-                </motion.div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-7xl mx-auto">
-                    {plans.map((plan, index) => (
-                        <PricingCard
-                            key={index}
-                            {...plan}
-                            delay={index * 0.2}
-                        />
-                    ))}
-                </div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <h3 className="text-2xl font-bold">Premium</h3>
+                {billingCycle === 'annually' && (
+                  <span className="bg-rose-500/10 text-rose-500 text-xs font-bold px-2 py-0.5 rounded-xl">-50%</span>
+                )}
+              </div>
+              
+              <div className="flex items-baseline gap-1 mb-1 h-12">
+                <AnimatePresence mode="wait">
+                  <motion.div 
+                    key={billingCycle}
+                    initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.5, duration: 0.8 }}
-                    className="text-center mt-12 sm:mt-16"
-                >
-                    <p className="text-zinc-400 text-sm select-text">
-                        All plans include a 1-day free trial • Cancel anytime • No hidden fees
-                    </p>
-                </motion.div>
-            </motion.div>
+                    exit={{ opacity: 0, y: -5 }}
+                    className="flex items-baseline gap-2"
+                  >
+                    {billingCycle === 'annually' && (
+                      <span className="text-gray-500 line-through text-xl tracking-tight">${originalPrice}</span>
+                    )}
+                    <span className="text-5xl font-bold text-teal-400 tracking-tighter">${currentPrice}</span>
+                    <span className="text-gray-500">/mo</span>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+              <p className="text-xs text-gray-500 font-medium mb-4">
+                {billingCycle === 'annually' ? 'Billed Annually' : 'Billed Monthly'}
+              </p>
+              <p className="text-sm text-gray-300">
+                Generate up to <span className="text-teal-400 font-bold">{billingCycle === 'annually' ? '600' : '50'} thumbnails</span> per {billingCycle === 'annually' ? 'year' : 'month'}.
+              </p>
+            </div>
 
-            {/* Floating Particles Effect - Fixed pointer events */}
-            {isClient && (
-                <div
-                    className="absolute inset-0"
-                    style={{ pointerEvents: 'none' }} // Particles shouldn't block interactions
-                >
-                    {particlePositions.map((position, i) => (
-                        <motion.div
-                            key={i}
-                            className="absolute w-1 h-1 bg-[#47FFE7] rounded-full opacity-60"
-                            style={{
-                                left: `${position.left}%`,
-                                top: `${position.top}%`,
-                                pointerEvents: 'none' // Individual particles shouldn't block interactions
-                            }}
-                            animate={{
-                                y: [0, -20, 0],
-                                opacity: [0.3, 0.8, 0.3],
-                            }}
-                            transition={{
-                                duration: 3 + (i * 0.2),
-                                repeat: Infinity,
-                                delay: i * 0.3,
-                            }}
-                        />
-                    ))}
+            {/* Features List */}
+            <div className="bg-black/40 rounded-3xl p-6 mb-8 border border-white/5 space-y-4">
+              <div className="flex items-center gap-2 text-teal-400 font-bold text-sm mb-2">
+                <Check size={16} strokeWidth={3} />
+                <span>{billingCycle === 'annually' ? '6000' : '500'} credits</span>
+                <Info size={14} className="text-gray-600 ml-auto" />
+              </div>
+              
+              {features.map((feature, fIdx) => (
+                <div key={fIdx} className="flex items-center gap-3">
+                  {feature.included ? (
+                    <Check size={16} className="text-teal-400 shrink-0" strokeWidth={3} />
+                  ) : (
+                    <X size={16} className="text-rose-500 shrink-0" strokeWidth={3} />
+                  )}
+                  <span className={`text-sm ${feature.included ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {feature.text}
+                  </span>
+                  <Info size={14} className="text-gray-600/50 ml-auto shrink-0" />
                 </div>
-            )}
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-4">
+            
+           {billingCycle === 'annually' ? (
+             <Link href={`https://richacle.lemonsqueezy.com/checkout/buy/a3969d52-f3bb-45c4-8142-9a705f1ebb38/?checkout[email]=${email}`}> <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full py-4 rounded-2xl font-bold bg-teal-400 text-black hover:bg-teal-300 transition-colors shadow-[0_0_20px_rgba(45,212,191,0.3)]"
+              >
+                Subscribe Now
+              </motion.button></Link>
+           ) : (
+             <Link href={`https://richacle.lemonsqueezy.com/checkout/buy/9426dea7-2b31-43b7-b496-c6d9c4716014/?checkout[email]=${email}`}> <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full py-4 rounded-2xl font-bold bg-teal-400 text-black hover:bg-teal-300 transition-colors shadow-[0_0_20px_rgba(45,212,191,0.3)]"
+              >
+                Subscribe Now
+              </motion.button></Link>
+           )}
+            </div>
+          </motion.div>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
-export default Page;
+export default PricingPage;

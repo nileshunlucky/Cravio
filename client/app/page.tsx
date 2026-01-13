@@ -13,7 +13,6 @@ const page = () => {
     <div className='overflow-hidden'>
       <Nav/>
       <Hero/>
-      <Packaged/>
       <Features/>
       <Review/>
       <Footer/>

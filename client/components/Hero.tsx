@@ -92,7 +92,7 @@ const LandingPage = () => {
       </div>
 
       {/* 3. MAIN CONTENT LAYER */}
-      <main className="relative z-20 flex flex-col items-center pt-12 px-4 max-w-7xl mx-auto flex-1">
+      <main className="relative z-20 flex flex-col items-center pt-10 p-3 md:max-w-7xl md:mx-auto flex-1">
         
         {/* Top Badges */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-4 mb-10">
