@@ -233,7 +233,7 @@ const Page = () => {
                                                     variant="secondary"
                                                     className="bg-zinc-900 border border-[#47FFE7] text-[#47FFE7] hover:bg-zinc-800 w-8 h-8 sm:w-10 sm:h-10"
                                                 >
-                                                    <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                                                     <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                                                 </Button>
                                             </motion.div>
                                         </div>
