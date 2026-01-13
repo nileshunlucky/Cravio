@@ -3,8 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Upload, Link, Star, Download, Plus, User, Pencil } from 'lucide-react';
+import {  Star, Download, Plus, User } from 'lucide-react';
 import { toast } from "sonner";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from 'next/navigation';
@@ -81,7 +80,6 @@ const LoadingState = () => {
 
 
 const Page = () => {
-    const [activeTab, setActiveTab] = useState('link');
     const [youtubeUrl, setYoutubeUrl] = useState('');
     const [thumbnailImage, setThumbnailImage] = useState<ImageWithPreview | null>(null);
     const [faceImage, setFaceImage] = useState<ImageWithPreview | null>(null);
@@ -113,9 +111,6 @@ useEffect(() => {
 
     const router = useRouter()
 
-    const thumbnailRef = useRef<HTMLInputElement>(null);
-    const faceRef = useRef<HTMLInputElement>(null);
-
     const { user } = useUser();
 
     type ImageWithPreview = { file: File; preview: string };
@@ -129,22 +124,6 @@ useEffect(() => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-    };
-
-
-    const handleFileUpload = (file: File, type: 'thumbnail' | 'face') => {
-        if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const result = e.target && typeof e.target.result === 'string' ? e.target.result : '';
-                if (type === 'thumbnail') {
-                    setThumbnailImage({ file, preview: result });
-                } else if (type === 'face') {
-                    setFaceImage({ file, preview: result });
-                }
-            };
-            reader.readAsDataURL(file);
-        }
     };
 
     const handleSubmit = async () => {
@@ -209,11 +188,6 @@ useEffect(() => {
             setAnimation(false);
             setLoading(false);
         }
-    };
-
-    const canSubmit = () => {
-        const hasSource = activeTab === 'link' ? youtubeUrl.trim() : thumbnailImage;
-        return hasSource && faceImage;
     };
 
     return (
