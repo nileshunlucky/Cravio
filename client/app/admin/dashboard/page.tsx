@@ -88,7 +88,7 @@ const Page = () => {
     // 1. Add this list above your Page component
 const PERSONAS = [
   { id: '1', name: 'Alex', image: 'https://github.com/shadcn.png' },
-  { id: '2', name: 'Cristiano Ronaldo', image: 'https://png.pngtree.com/png-vector/20251030/ourlarge/pngtree-cristiano-ronaldo-football-player-celebrating-goal-illustration-png-image_17856069.webp' },
+  { id: '2', name: 'Cristiano Ronaldo', image: 'https://img.a.transfermarkt.technology/portrait/big/8198-1748102259.jpg' },
 ];
 const [selectedPersona, setSelectedPersona] = useState<{id: string, name: string, image: string} | null>(null);
 

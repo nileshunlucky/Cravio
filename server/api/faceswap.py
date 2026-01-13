@@ -90,7 +90,6 @@ async def faceswap_endpoint(
                         {
                             "type": "input_text", 
                             "text": (
-                                f"Face swap: Take the person's face from the first image and "
                                 f"seamlessly blend it onto the main person in the second YouTube thumbnail. "
                                 f"Maintain skin tone, lighting, and background. "
                                 f"Style: {prompt if prompt else 'Viral 4K high-quality thumbnail.'}"
