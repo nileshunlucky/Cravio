@@ -81,8 +81,6 @@ const LoadingState = () => {
 
 const Page = () => {
     const [youtubeUrl, setYoutubeUrl] = useState('');
-    const [thumbnailImage, setThumbnailImage] = useState<ImageWithPreview | null>(null);
-    const [faceImage, setFaceImage] = useState<ImageWithPreview | null>(null);
     const [animation, setAnimation] = useState(false);
     const [loading, setLoading] = useState(false);
     const [thumbnailUrl, setThumbnailUrl] = useState('');
@@ -112,8 +110,6 @@ useEffect(() => {
     const router = useRouter()
 
     const { user } = useUser();
-
-    type ImageWithPreview = { file: File; preview: string };
 
     const handleDownload = () => {
         if (!thumbnailUrl) return;
@@ -335,7 +331,7 @@ useEffect(() => {
       Changes <span className="opacity-50">(optional)</span>
     </div>
     <textarea
-      placeholder="Describe what you'd like to add, remove or replace."
+      placeholder="Describe what you like to add, remove or replace."
       value={prompt}
       onChange={(e) => setPrompt(e.target.value)}
       // Adjusted: h-24 for mobile, text-sm for mobile
