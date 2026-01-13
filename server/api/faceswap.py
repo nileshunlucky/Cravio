@@ -98,11 +98,11 @@ async def faceswap_endpoint(
                         },
                         {
                             "type": "input_image",
-                            "image_url": {"url": f"data:image/jpeg;base64,{b64_persona}"}
+                            "image_url": f"data:image/jpeg;base64,{b64_persona}"
                         },
                         {
                             "type": "input_image",
-                            "image_url": {"url": f"data:image/jpeg;base64,{b64_thumb}"}
+                            "image_url": f"data:image/jpeg;base64,{b64_thumb}"
                         }
                     ]
                 }
