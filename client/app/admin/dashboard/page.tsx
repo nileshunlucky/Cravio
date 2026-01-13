@@ -187,7 +187,7 @@ useEffect(() => {
                 setThumbnailUrl(data.thumbnailUrl);
             } else {
                 // Error case
-                if (res.status === 402 && data.error === "Not enough credits") {
+                if (res.status === 403) {
                     toast.error("Not enough credits");
                     router.push("/admin/plan");
                     return;
