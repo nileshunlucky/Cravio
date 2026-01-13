@@ -82,7 +82,7 @@ async def faceswap_endpoint(
 
         # 4. Call OpenAI Responses API
         response = await openai_client.responses.create(
-            model="gpt-4.1", # Ensure your API key has access to gpt-4.1 or gpt-image-1
+            model="gpt-4o", 
             input=[
                 {
                     "role": "user",
