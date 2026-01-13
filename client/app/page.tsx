@@ -3,7 +3,7 @@
 import Footer from '@/components/Footer'
 import Nav from '@/components/Nav'
 import Review from '@/components/Review'
-import HeroX from '@/components/HeroX'
+import Hero from '@/components/Hero'
 import React from 'react'
 import Features from '@/components/Features';
 import Packaged from '@/components/Packaged';
@@ -12,7 +12,7 @@ const page = () => {
   return (
     <div className='overflow-hidden'>
       <Nav/>
-      <HeroX/>
+      <Hero/>
       <Packaged/>
       <Features/>
       <Review/>

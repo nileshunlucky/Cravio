@@ -191,7 +191,7 @@ const Page = () => {
         <div className="min-h-screen my-5 flex items-center justify-center p-4">
             <AnimatePresence mode="wait">
                 {
-                    animation ?
+                    !animation ?
                         (
                             <motion.div
                                 key="result"
@@ -201,7 +201,7 @@ const Page = () => {
                                 exit={{ opacity: 0, y: -20 }}
                                 transition={{ duration: 0.5 }}
                             >
-                                {loading ? (
+                                {!loading ? (
                                     <LoadingState />
                                 ) : thumbnailUrl ? (
                                     <motion.div

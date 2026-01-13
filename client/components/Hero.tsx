@@ -1,291 +1,164 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import Link from "next/link";
-import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Target, Shield, BarChart3, Brain, Upload, ArrowUpRight } from 'lucide-react';
 
-const Page = () => {
-  const [athletes, setAthletes] = useState<number | null>(null);
-  const [showLogo, setShowLogo] = useState(true);
+import React, {useState, useEffect} from 'react';
+import { motion } from 'framer-motion';
+import { Star, Play, Sparkles } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const res = await fetch(`https://cravio-ai.onrender.com/users-emails`);
-        if (!res.ok) return;
-        const data = await res.json();
-        setAthletes(data.length);
-      } catch (err) {
-        console.error('Failed to fetch user data:', err);
-      }
-    };
-    fetchUserData();
+const thumbnails = [
+  { id: 1, label: "The Unfathomable Wealth of Pablo Escobar", views: "900,000+", img: "https://pikzels.com/_next/image?url=%2Fthumbnails%2F014.webp&w=256&q=75" },
+  { id: 2, label: "The Satisfying Downfall of Ashton Hall", views: "3,500,000+", img: "https://pikzels.com/_next/image?url=%2Fthumbnails%2F017.webp&w=256&q=75" },
+  { id: 3, label: "How Samuel Onuha Sniffed His Way to Prison", views: "550,000+", img: "https://pikzels.com/_next/image?url=%2Fthumbnails%2F006.webp&w=256&q=75" },
+  { id: 4, label: "SECRET Tattoos Footballers Don't Talk About", views: "1,500,000+", img: "https://pikzels.com/_next/image?url=%2Fthumbnails%2F002.webp&w=256&q=75" },
+  { id: 5, label: "Trump's Tariff Plan Explained", views: "3,500,000+", img: "https://pikzels.com/_next/image?url=%2Fthumbnails%2F007.webp&w=256&q=75" },
+  { id: 6, label: "Iman Gadzhi Has Completely Lost His Mind..", views: "700,000+", img: "https://pikzels.com/_next/image?url=%2Fthumbnails%2F012.webp&w=256&q=75" },
+];
 
-    const timer = setTimeout(() => setShowLogo(false), 3000);
-    return () => clearTimeout(timer);
-  }, []);
+const LandingPage = () => {
+  const [userCount, setUserCount] = React.useState(100);
 
-  const features = [
-    { icon: <Upload className="w-6 h-6" />, title: "Upload Chart", description: "Simply upload your trading chart screenshot" },
-    { icon: <Brain className="w-6 h-6" />, title: "AI Analysis", description: "Advanced AI analyzes patterns instantly" },
-    { icon: <TrendingUp className="w-6 h-6" />, title: "BUY/SELL Signal", description: "Get clear actionable trading signals" },
-    { icon: <Shield className="w-6 h-6" />, title: "Stop Loss", description: "Precise risk management levels" },
-    { icon: <Target className="w-6 h-6" />, title: "Target Price", description: "Multiple profit target recommendations" },
-    { icon: <BarChart3 className="w-6 h-6" />, title: "Win Probability", description: "Data-driven success rate prediction" },
-  ];
+      useEffect(() => {
+        const fetchUserCount = async () => { 
+          try {
+            const res = await fetch(`https://cravio-ai.onrender.com/users-emails`)
+            const data = await res.json()
+            // Calculate total number of users from the email list
+            const totalUsers = Array.isArray(data) ? data.length : 100
+            setUserCount(totalUsers)
+          } catch (error) {
+            console.error('Error fetching user count:', error)
+            setUserCount(100) // Fallback value
+          } 
+        }
+          
+        fetchUserCount()
+      }, [])
 
-  const steps = [
-    { number: "01", title: "Upload Your Chart", description: "Upload any trading chart from your platform" },
-    { number: "02", title: "AI Processing", description: "Our advanced AI analyzes technical patterns, support/resistance, and market sentiment" },
-    { number: "03", title: "Get Predictions", description: "Receive BUY/SELL signals with stop loss, targets, and winning probability percentage" },
-  ];
+  const ThumbnailCard = ({ t }: { t: typeof thumbnails[0] }) => (
+    <div className="relative w-[220px] md:w-[260px] aspect-video bg-gray-900/40 rounded-xl border border-white/5 overflow-hidden group">
+      <img src={t.img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+      <div className="absolute bottom-2 left-2 right-2">
+        <p className="text-[9px] font-bold text-white/70 line-clamp-1 uppercase tracking-tight">{t.label}</p>
+        <p className="text-[8px] text-teal-500 font-medium">{t.views} views</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-hidden relative">
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-500/3 to-cyan-500/3 rounded-full blur-3xl animate-pulse delay-1000" />
-      <AnimatePresence>
-        {showLogo && (
-          <motion.div
-            className="fixed inset-0 bg-black flex items-center justify-center z-[9999]"
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1 }}
+    <div className="min-h-screen bg-[#020606] text-white overflow-hidden relative font-sans flex flex-col justify-between">
+      
+      {/* 1. THE INTENSE GLOW - Center Weighted */}
+      <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-full max-w-[800px] aspect-square pointer-events-none z-0">
+        <div className="absolute inset-0 bg-teal-400/20 blur-[140px] rounded-full" />
+        <div className="absolute inset-0 bg-teal-500/10 blur-[100px] rounded-full scale-110 translate-y-10" />
+      </div>
+
+      {/* 2. THE THUMBNAILS - Adjusted Positioning */}
+      <div className="absolute inset-0 z-0 pointer-events-none flex flex-col justify-end pb-12 overflow-hidden">
+        {/* Row 1 */}
+        <div className="flex mb-4">
+          <motion.div 
+            animate={{ x: [0, -1500] }} 
+            transition={{ repeat: Infinity, duration: 40, ease: "linear" }} 
+            className="flex gap-4 shrink-0 px-2"
           >
-            <motion.div
-              className="relative flex items-center justify-center"
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: [0.6, 1.05, 1], opacity: [0, 1, 1] }}
-              exit={{ scale: 1.1, opacity: 0 }}
-              transition={{ duration: 2, ease: "easeInOut" }}
-            >
-              <motion.div
-                className="absolute"
-                animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              />
-
-              <img
-                src="/logo.png"
-                alt="Logo"
-                className="md:w-64 md:h-64 w-32 h-32"
-              />
-            </motion.div>
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="flex gap-4">
+                {thumbnails.map((t) => <ThumbnailCard key={`row1-${i}-${t.id}`} t={t} />)}
+              </div>
+            ))}
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: showLogo ? 0 : 1 }}
-        transition={{ delay: 0.3, duration: 1 }}
-      >
-
-        <motion.div
-          className="absolute inset-0 opacity-30"
-          animate={{
-            background: [
-              'radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.3) 0%, transparent 50%)',
-              'radial-gradient(circle at 80% 50%, rgba(37, 99, 235, 0.3) 0%, transparent 50%)',
-              'radial-gradient(circle at 50% 80%, rgba(29, 78, 216, 0.3) 0%, transparent 50%)',
-              'radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.3) 0%, transparent 50%)',
-            ],
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-        />
-
-        <motion.div
-          className="absolute top-20 left-10 w-72 h-72 bg-blue-500 rounded-full filter blur-[120px] opacity-20"
-          animate={{ x: [0, 100, 0], y: [0, 50, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        />
-
-        <motion.div
-          className="absolute bottom-20 right-10 w-96 h-96 bg-blue-600 rounded-full filter blur-[120px] opacity-20"
-          animate={{ x: [0, -80, 0], y: [0, -60, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        />
-
-        <div className="relative z-10">
-
-          <div className="container mx-auto px-6 pt-20 pb-32 text-center max-w-5xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              <motion.div
-                className="inline-block mb-6 px-6 py-2 rounded-full border border-blue-500/30 bg-blue-500/10 backdrop-blur-sm"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                <span className="text-blue-400 font-medium">AI-Powered Trading Intelligence</span>
-              </motion.div>
-
-              <h1 className="text-4xl md:text-7xl lg:text-8xl font-bold mb-8 leading-tight">
-                <span className="bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 bg-clip-text text-transparent">
-                  Built in Silence.
-                </span>
-                <br />
-                <span className="text-white">Shown Through Precision.</span>
-              </h1>
-
-              <p className="text-xl md:text-2xl text-gray-400 mb-8 max-w-3xl mx-auto">
-                Wealth is earned, not given. One Trade. Infinite Lessons.
-              </p>
-
-              <motion.div
-                className="flex items-center justify-center gap-8 mb-12"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-              >
-                <div className="text-center">
-                  <div className="text-5xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                    {athletes || "---"}+
-                  </div>
-                  <div className="text-gray-400 mt-2">Traders Mentored</div>
-                </div>
-
-                <div className="h-16 w-px bg-blue-500/30" />
-
-                <div className="text-center">
-                  <div className="text-5xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                    95%
-                  </div>
-                  <div className="text-gray-400 mt-2">Accuracy Rate</div>
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-              >
-                <Link href="/admin/dashboard">
-                  <motion.button
-                    className="group relative px-14 py-5 font-bold text-lg rounded-2xl overflow-hidden text-white shadow-[0_0_25px_rgba(37,99,235,0.4)] border border-blue-400/20"
-                    whileHover={{ scale: 1.06 }}
-                    whileTap={{ scale: 0.96 }}
-                  >
-                    <motion.div
-                      className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-700 via-blue-500 to-cyan-400 opacity-90 blur-[2px]"
-                      animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                      style={{ backgroundSize: "200% 200%" }}
-                    />
-
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-2xl"
-                      initial={{ x: "-100%" }}
-                      whileHover={{ x: "100%" }}
-                      transition={{ duration: 0.8, ease: "easeInOut" }}
-                    />
-
-                    <span className="relative z-10 flex items-center gap-3 tracking-tight">
-                      LOCK IN
-                      <ArrowUpRight className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
-                    </span>
-
-                    <motion.div
-                      className="absolute inset-0 rounded-2xl border border-blue-400/40"
-                      animate={{ opacity: [0.4, 0.7, 0.4], scale: [1, 1.02, 1] }}
-                      transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                  </motion.button>
-                </Link>
-
-                <p className="text-gray-500 mt-4">
-                  No more doing it all yourself. Its your time to rise.
-                </p>
-              </motion.div>
-            </motion.div>
-          </div>
-
-          <div className="container mx-auto px-6 py-24">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <h2 className="text-5xl font-bold mb-4">
-                <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                  How It Works
-                </span>
-              </h2>
-              <p className="text-xl text-gray-400">Three simple steps to trading mastery</p>
-            </motion.div>
-
-            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {steps.map((step, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.2 }}
-                  className="relative group"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-blue-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all" />
-                  <div className="relative bg-gradient-to-br from-blue-950/50 to-black border border-blue-500/20 rounded-2xl p-8 backdrop-blur-sm hover:border-blue-500/40 transition-all">
-                    <div className="text-6xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent mb-4">
-                      {step.number}
-                    </div>
-                    <h3 className="text-2xl font-bold mb-3 text-white">{step.title}</h3>
-                    <p className="text-gray-400 leading-relaxed">{step.description}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          <div className="container mx-auto px-6 py-24">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <h2 className="text-5xl font-bold mb-4">
-                <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                  What You Get
-                </span>
-              </h2>
-              <p className="text-xl text-gray-400">Complete trading intelligence at your fingertips</p>
-            </motion.div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-              {features.map((feature, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ y: -5 }}
-                  className="group relative"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-blue-500/10 rounded-xl blur-lg group-hover:blur-xl transition-all" />
-                  <div className="relative bg-gradient-to-br from-blue-950/30 to-black border border-blue-500/20 rounded-xl p-8 backdrop-blur-sm hover:border-blue-500/40 transition-all">
-                    <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                      {feature.icon}
-                    </div>
-                    <h3 className="text-xl font-bold mb-3 text-white">{feature.title}</h3>
-                    <p className="text-gray-400">{feature.description}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
         </div>
-      </motion.div>
+        {/* Row 2 */}
+        <div className="flex">
+          <motion.div 
+            animate={{ x: [-1500, 0] }} 
+            transition={{ repeat: Infinity, duration: 40, ease: "linear" }} 
+            className="flex gap-4 shrink-0 px-2"
+          >
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="flex gap-4">
+                {thumbnails.map((t) => <ThumbnailCard key={`row2-${i}-${t.id}`} t={t} />)}
+              </div>
+            ))}
+          </motion.div>
+        </div>
+        
+        {/* Subtler Bottom Fade - So thumbnails are visible */}
+        <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-[#020606] via-[#020606]/40 to-transparent z-10" />
+      </div>
+
+      {/* 3. MAIN CONTENT LAYER */}
+      <main className="relative z-20 flex flex-col items-center pt-12 px-4 max-w-7xl mx-auto flex-1">
+        
+        {/* Top Badges */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-4 mb-10">
+          <div className="flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase opacity-70">
+            <span>Excellent</span>
+            <div className="flex gap-0.5 mx-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="bg-[#00b67a] p-0.5 rounded-[1px]">
+                  <Star size={10} fill="white" stroke="none" />
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-1">
+                <img className="w-4 h-4" src="https://cdn.iconscout.com/icon/free/png-256/free-trustpilot-icon-svg-download-png-8715838.png" alt="" />
+                <span className="font-bold lowercase">Trustpilot</span>
+            </div>
+          </div>
+          <div className="bg-[#121818] border border-white/10 px-5 py-1.5 rounded-full backdrop-blur-md">
+            <p className="text-[11px] font-medium text-gray-400">
+              Trusted by <span className="text-teal-400 font-bold">{userCount}+</span> Users
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Hero */}
+        <div className="text-center mb-10">
+          <h1 className="text-5xl md:text-8xl font-semibold  mb-4 leading-none">
+            The <span className="text-teal-300 drop-shadow-[0_0_25px_rgba(45,212,191,0.4)]">Shortcut</span> <br />
+            to Millions of Views
+          </h1>
+          <p className="text-gray-400 text-lg md:text-xl font-light">
+            From Ignored to Viral With Data-Backed AI Thumbnails
+          </p>
+        </div>
+
+        {/* The Card */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          className="w-full max-w-3xl relative"
+        >
+          <div className="bg-[#0a0f0f]/80 backdrop-blur-3xl border border-white/10 rounded-[40px] p-8 md:p-12 shadow-2xl">
+            <textarea 
+              className="w-full bg-transparent border-none focus:ring-0 text-xl md:text-2xl text-gray-200 resize-none h-24 placeholder:text-gray-700 outline-none"
+              placeholder="Dubai's $100 billion branded megaprojects"
+            />
+            
+            <div className="flex flex-col items-center mt-6 gap-6">
+              <Button className="bg-teal-400 hover:bg-teal-300 text-black py-7 px-12 rounded-full transition-transform active:scale-95 flex gap-2 text-lg">
+                <Star size={20} fill="currentColor" />
+                Generate My First Thumbnail
+              </Button>
+              
+              <button className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors text-sm font-bold">
+                <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center">
+                  <Play size={14} fill="currentColor" className="ml-1" />
+                </div>
+                Watch Demo <span className="opacity-50 ml-1">65 sec</span>
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </main>
+
+      {/* Spacer to prevent overlap if screen is small */}
+      <div className="h-48 md:h-64 pointer-events-none" />
     </div>
   );
 };
 
-export default Page;
+export default LandingPage;
