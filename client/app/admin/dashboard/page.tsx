@@ -10,7 +10,6 @@ import { useRouter } from 'next/navigation';
 
 const LoadingState = () => {
     const [percentage, setPercentage] = useState(0);
- 
 
 
     // Simulate a realistic, non-linear progress animation
@@ -86,11 +85,20 @@ const Page = () => {
     const [thumbnailUrl, setThumbnailUrl] = useState('');
     const [prompt, setPrompt] = useState("");
     // 1. Add this list above your Page component
-const PERSONAS = [
-  { id: '1', name: 'Alex', image: 'https://github.com/shadcn.png' },
-  { id: '2', name: 'Cristiano Ronaldo', image: 'https://img.a.transfermarkt.technology/portrait/big/8198-1748102259.jpg' },
-];
+
 const [selectedPersona, setSelectedPersona] = useState<{id: string, name: string, image: string} | null>(null);
+const [persona, setPersona] = useState([]);
+const [showCreateModal, setShowCreateModal] = useState(false);
+const [newName, setNewName] = useState("");
+const [imagePreview, setImagePreview] = useState<string | null>(null);
+const fileInputRef = useRef<HTMLInputElement>(null);
+
+const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (file) {
+    setImagePreview(URL.createObjectURL(file));
+  }
+};
 
 // 2. Inside your Page component, add these states
 const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -110,6 +118,7 @@ useEffect(() => {
     const router = useRouter()
 
     const { user } = useUser();
+    const email = user?.primaryEmailAddress?.emailAddress
 
     const handleDownload = () => {
         if (!thumbnailUrl) return;
@@ -122,12 +131,28 @@ useEffect(() => {
         document.body.removeChild(link);
     };
 
+
+   useEffect(() => {
+    const fetchPersona = async () => {
+
+      try {
+        const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`)
+        const data = await res.json()
+        setPersona(data)
+      } catch (error) {
+        console.error('Error fetching videos:', error)
+      } 
+    }
+    
+      fetchPersona()
+  }, [user])
+
     const handleSubmit = async () => {
         try {
             setAnimation(true);
             setLoading(true);
            
-            const email = user?.primaryEmailAddress?.emailAddress
+           
              if(!email){
                 toast.error("User Not found");
                 return;
@@ -184,6 +209,64 @@ useEffect(() => {
         } finally {
             setAnimation(false);
             setLoading(false);
+        }
+    };
+
+    const handlePersona = async () => {
+        try {
+           
+            const email = user?.primaryEmailAddress?.emailAddress
+             if(!email){
+                toast.error("User Not found");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('email', email);
+
+             if (!newName) {
+            toast.error("Please add Persona Name.");
+              return;
+            }          
+            formData.append('name', newName);
+
+            if (!fileInputRef.current?.files?.[0]) {
+            toast.error("Please select a face image");
+              return;
+            }
+            formData.append('image', fileInputRef.current.files[0]);
+
+            const res = await fetch('https://cravio-ai.onrender.com/api/add-persona', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await res.json(); // Parse response once
+            console.log(data)
+
+            if (res.ok) {
+              toast.success("Persona Created.")
+              setNewName("");          
+              setImagePreview(null);
+              setShowCreateModal
+            } else {
+                if (res.status === 403) {
+                    toast.error("Upgrade your Plan");
+                    router.push("/admin/plan");
+                    return;
+                } else {
+                    toast.error(data.message || "An error occurred");
+                    setAnimation(false);
+                    setLoading(false);
+                }
+            }
+
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            toast.error("Error sumbmitting form", {
+                position: "top-center",
+                duration: 4000,
+            })
         }
     };
 
@@ -269,7 +352,7 @@ useEffect(() => {
       <button 
         type="button"
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="flex cursor-pointer items-center gap-2 px-4 md:px-5 py-2 bg-[#1A1A1A] text-white rounded-full text-xs md:text-sm font-medium border border-white/10 shadow-lg transition-all hover:bg-[#222]"
+        className="flex cursor-pointer items-center gap-2 px-4 md:px-5 py-2 bg-[#1A1A1A] text-white rounded-full text-xs md:text-sm font-medium border border-white/10 shadow-lg transition-all hover:bg-[#222] relative"
       >
         {!selectedPersona ? (
           <>
@@ -284,6 +367,7 @@ useEffect(() => {
               alt="" 
             />
             <span className="text-zinc-200">{selectedPersona.name}</span>
+            <span onClick={()=> setSelectedPersona("")} className="text-teal-500 bg-zinc-800 rounded-full p-1 px-2 absolute -top-3 -right-1">X</span>
           </>
         )}
       </button>
@@ -299,7 +383,8 @@ useEffect(() => {
           className="absolute top-full mt-3 w-48 md:w-52 bg-[#1A1A1A] border border-white/10 rounded-2xl overflow-hidden z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2"
         >
           <p className="text-[9px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold px-3 py-2">Select Persona</p>
-          {PERSONAS.map((p) => (
+          {persona.map((p) => (
+     
             <button
               key={p.id}
               onClick={() => {
@@ -320,7 +405,21 @@ useEffect(() => {
               </div>
               <span className="text-xs md:text-sm font-medium">{p.name}</span>
             </button>
+       
           ))}
+          {/* Add this after the PERSONAS.map() inside the dropdown motion.div */}
+<button 
+  onClick={() => {
+    setShowCreateModal(true);
+    setIsDropdownOpen(false);
+  }}
+  className="w-full flex items-center gap-3 p-2 rounded-xl mt-1 border-t border-white/5 text-[#47FFE7] hover:bg-[#47FFE7]/5 transition-all"
+>
+  <div className="w-8 h-8 md:w-9 md:h-9 rounded-full border border-dashed border-[#47FFE7]/40 flex items-center justify-center">
+    <Plus size={16} />
+  </div>
+  <span className="text-xs md:text-sm font-semibold">Create New</span>
+</button>
         </motion.div>
       )}
     </AnimatePresence>
@@ -357,6 +456,60 @@ useEffect(() => {
 </motion.div>)
                 }
             </AnimatePresence>
+            <AnimatePresence>
+  {showCreateModal && (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        exit={{ opacity: 0 }} 
+        onClick={() => setShowCreateModal(false)} 
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
+      />
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0 }} 
+        animate={{ scale: 1, opacity: 1 }} 
+        exit={{ scale: 0.9, opacity: 0 }} 
+        className="relative w-full max-w-md bg-[#111111] border border-[#47FFE7]/20 rounded-[32px] p-8 shadow-[0_0_50px_rgba(71,255,231,0.1)]"
+      >
+        <h3 className="text-xl font-bold text-white mb-6 text-left">Create Persona</h3>
+        
+        <div className="space-y-6">
+          {/* Image Upload */}
+          <div 
+            onClick={() => fileInputRef.current?.click()}
+            className="group relative w-28 h-28 mx-auto rounded-full border-2 border-dashed border-[#47FFE7]/30 flex items-center justify-center cursor-pointer hover:border-[#47FFE7] transition-all bg-black/40 overflow-hidden"
+          >
+            {imagePreview ? (
+              <img src={imagePreview} className="w-full h-full object-cover" alt="preview" />
+            ) : (
+              <div className="text-zinc-500 group-hover:text-[#47FFE7] flex flex-col items-center">
+                <span className="text-[10px] font-bold uppercase mt-1">Face</span>
+              </div>
+            )}
+            <input type="file" ref={fileInputRef} hidden accept="image/*" onChange={handleImageChange} />
+          </div>
+
+          {/* Name Input */}
+          <input 
+            type="text" 
+            placeholder="Persona Name" 
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 px-6 text-white focus:outline-none focus:border-[#47FFE7]/50 transition-all text-center"
+          />
+
+          <Button 
+            onClick={handlePersona}
+            className="w-full py-7 bg-[#47FFE7] text-black font-bold text-lg rounded-2xl shadow-[0_10px_30px_rgba(71,255,231,0.2)] hover:bg-[#3de6d0] transition-all"
+          >
+            Create
+          </Button>
+        </div>
+      </motion.div>
+    </div>
+  )}
+</AnimatePresence>
         </div>
     );
 };

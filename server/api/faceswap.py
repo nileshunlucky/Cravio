@@ -7,7 +7,7 @@ import boto3
 import datetime
 import io
 from typing import Optional
-from fastapi import APIRouter, Form
+from fastapi import APIRouter, Form, UploadFile, File
 from fastapi.responses import JSONResponse
 from openai import AsyncOpenAI
 from db import users_collection
@@ -154,3 +154,58 @@ async def faceswap_endpoint(
         # Refund credits on failure
         users_collection.update_one({"email": email}, {"$inc": {"credits": 10}})
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+@router.post("/api/add-persona")
+async def add_persona_endpoint(
+    email: str = Form(...),
+    name: str = Form(...),
+    image: UploadFile = File(...)
+):
+    try:
+        # 1. Check if user exists
+        user = users_collection.find_one({"email": email})
+        if not user:
+            return JSONResponse(status_code=404, content={"message": "User not found"})
+
+        if not user.get("credits", 0) < 10:
+            return JSONResponse(status_code=403, content={"error": "Insufficient credits"})
+
+        # 2. Prepare file for S3
+        file_extension = image.filename.split(".")[-1] if "." in image.filename else "jpg"
+        filename = f"personas/{uuid.uuid4().hex}.{file_extension}"
+        
+        # Read image content
+        image_content = await image.read()
+
+        # 3. Upload to S3
+        s3_client.put_object(
+            Bucket=S3_BUCKET,
+            Key=filename,
+            Body=image_content,
+            ContentType=image.content_type or "image/jpeg"
+        )
+        
+        public_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{filename}"
+
+        # 4. Save to DB (Push to personas array)
+        new_persona = {
+            "id": str(uuid.uuid4()),
+            "name": name,
+            "image": public_url,
+            "created_at": datetime.datetime.now(datetime.timezone.utc)
+        }
+
+        result = users_collection.update_one(
+            {"email": email},
+            {"$push": {"personas": new_persona}}
+        )
+
+        return {
+            "success": True, 
+            "message": "Persona added successfully",
+            "persona": new_persona
+        }
+
+    except Exception as e:
+        print(f"Error adding persona: {e}")
+        return JSONResponse(status_code=500, content={"message": str(e)})

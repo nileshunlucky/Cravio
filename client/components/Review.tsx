@@ -32,7 +32,7 @@ const TestimonialsSection = () => {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans py-24 px-6 relative overflow-hidden">
       {/* Background Teal Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[600px] bg-teal-500/5 blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[600px] bg-teal-500/9 blur-[120px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Header */}

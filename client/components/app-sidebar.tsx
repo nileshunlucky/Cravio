@@ -29,12 +29,18 @@ export function AppSidebar() {
   const pathname = usePathname()
 
   return (
-    <Sidebar>
-      <SidebarContent>
-        <SidebarGroup className="gap-3">
-          <SidebarGroupLabel className="text-xl font-medium">MELLVITTA</SidebarGroupLabel>
+    <Sidebar className="border-r border-white/5 bg-[#030303] text-white overflow-hidden">
+      <SidebarContent className="relative bg-[#030303] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {/* Ambient Teal Glow rising from bottom */}
+        <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-[120%] h-80 bg-teal-500/10 blur-[120px] pointer-events-none" />
+        
+        <SidebarGroup className="gap-8 pt-10">
+          <SidebarGroupLabel className="px-6 text-2xl font-bold tracking-tighter text-white">
+            MELLV<span className="text-teal-400">ITTA</span>
+          </SidebarGroupLabel>
+          
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="px-4 space-y-2">
               {items.map((item) => {
                 const isActive = pathname === item.url
 
@@ -42,14 +48,21 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition ${
+                      className={`flex items-center px-6 py-7 rounded-xl transition-all duration-500 relative overflow-hidden group ${
                         isActive
-                          ? "bg-[#47FFE7] text-black shadow-md"
-                          : "text-white hover:bg-white/10"
+                          ? "text-white shadow-[0_0_25px_rgba(45,212,191,0.2)]"
+                          : "text-gray-500 hover:text-gray-200 hover:bg-white/5"
                       }`}
                     >
                       <Link href={item.url}>
-                        <span>{item.title}</span>
+                        {/* Premium Teal/Black Gradient Background for Active State */}
+                        {isActive && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-teal-500/20 via-teal-500/10 to-transparent border-l-2 border-teal-400 animate-in fade-in duration-500" />
+                        )}
+                        
+                        <span className={`relative z-10 text-base font-medium tracking-wide ${isActive ? "text-teal-400" : ""}`}>
+                          {item.title}
+                        </span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

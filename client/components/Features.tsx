@@ -8,7 +8,7 @@ const PersonaSection = () => {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans py-20 px-6 relative overflow-hidden">
       {/* Background Teal Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-teal-500/7 blur-[120px] pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-teal-500/9 blur-[120px] pointer-events-none" />
 
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Header Section */}
