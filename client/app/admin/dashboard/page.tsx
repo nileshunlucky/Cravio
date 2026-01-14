@@ -371,7 +371,10 @@ useEffect(() => {
               alt="" 
             />
             <span className="text-zinc-200">{selectedPersona.name}</span>
-            <span onClick={()=> setSelectedPersona("")} className="text-teal-500 bg-zinc-800 rounded-full p-1 px-2 absolute -top-3 -right-1">X</span>
+            <span onClick={(e) => {
+    e.stopPropagation();
+    setSelectedPersona(null); 
+  }} className="text-teal-500 bg-zinc-800 rounded-full p-1 px-2 absolute -top-3 -right-1">X</span>
           </>
         )}
       </button>

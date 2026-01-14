@@ -2,7 +2,7 @@
 
 import React from 'react'
 import Image from 'next/image'
-import { Instagram } from 'lucide-react';
+import { Instagram , Youtube} from 'lucide-react';
 import Link from 'next/link'
 
 const Footer = () => {
@@ -18,6 +18,9 @@ const Footer = () => {
 
             <Link href="https://www.instagram.com/mellvitta.ai" target="_blank">
 <Instagram className="hover:opacity-80 transition text-teal-500"/>
+            </Link>
+            <Link href="https://youtube.com/@mellvittaai" target="_blank">
+<Youtube  className="hover:opacity-80 transition text-teal-500"/>
             </Link>
 
           </div>
