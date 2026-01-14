@@ -252,7 +252,7 @@ useEffect(() => {
               toast.success("Persona Created.")
               setNewName("");          
               setImagePreview(null);
-              setShowCreateModal
+              setShowCreateModal(false);
             } else {
                 if (res.status === 403) {
                     toast.error("Upgrade your Plan");
