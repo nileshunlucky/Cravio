@@ -167,7 +167,7 @@ async def add_persona_endpoint(
         if not user:
             return JSONResponse(status_code=404, content={"message": "User not found"})
 
-        if not user.get("credits", 0) < 10:
+       if user.get("credits", 0) < 10:
             return JSONResponse(status_code=403, content={"error": "Insufficient credits"})
 
         # 2. Prepare file for S3

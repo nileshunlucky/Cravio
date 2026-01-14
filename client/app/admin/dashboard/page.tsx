@@ -87,7 +87,7 @@ const Page = () => {
     const [prompt, setPrompt] = useState("");
 
 const [selectedPersona, setSelectedPersona] = useState<{id: string, name: string, image: string} | null>(null);
-const [personas, setPersonas] = useState([]);
+const [personas, setPersonas] = useState<{id: string, name: string, image: string}[]>([]);
 const [showCreateModal, setShowCreateModal] = useState(false);
 const [newName, setNewName] = useState("");
 const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -390,30 +390,28 @@ useEffect(() => {
           className="absolute top-full mt-3 w-48 md:w-52 bg-[#1A1A1A] border border-white/10 rounded-2xl overflow-hidden z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2"
         >
           <p className="text-[9px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold px-3 py-2">Select Persona</p>
-          {personas.map((p) => (
-     
-            <button
-              key={p.id}
-              onClick={() => {
-                setSelectedPersona(p);
-                setIsDropdownOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all mb-1 ${
-                selectedPersona?.id === p.id 
-                ? "bg-[#47FFE7]/10 text-white" 
-                : "hover:bg-white/5 text-zinc-400 hover:text-white"
-              }`}
-            >
-              <div className="relative">
-                 <img src={p.image} className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover border border-white/10" alt="" />
-                 {selectedPersona?.id === p.id && (
-                   <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 bg-[#47FFE7] rounded-full border-2 border-[#1A1A1A]" />
-                 )}
-              </div>
-              <span className="text-xs md:text-sm font-medium">{p.name}</span>
-            </button>
-       
-          ))}
+          {personas?.map((p) => (
+  <button
+    key={p.id} // Works now!
+    onClick={() => {
+      setSelectedPersona(p);
+      setIsDropdownOpen(false);
+    }}
+    className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all mb-1 ${
+      selectedPersona?.id === p.id 
+      ? "bg-[#47FFE7]/10 text-white" 
+      : "hover:bg-white/5 text-zinc-400 hover:text-white"
+    }`}
+  >
+    <div className="relative">
+       <img src={p.image} className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover border border-white/10" alt={p.name} />
+       {selectedPersona?.id === p.id && (
+         <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 bg-[#47FFE7] rounded-full border-2 border-[#1A1A1A]" />
+       )}
+    </div>
+    <span className="text-xs md:text-sm font-medium">{p.name}</span>
+  </button>
+))}
           {/* Add this after the PERSONAS.map() inside the dropdown motion.div */}
 <button 
   onClick={() => {
