@@ -36,7 +36,7 @@ export function AppSidebar() {
         
         <SidebarGroup className="gap-8 pt-10">
           <SidebarGroupLabel className="px-6 text-2xl font-bold tracking-tighter text-white">
-            MELLV<span className="text-teal-400">ITTA</span>
+            MELL<span className="text-teal-400">VITTA</span>
           </SidebarGroupLabel>
           
           <SidebarGroupContent>

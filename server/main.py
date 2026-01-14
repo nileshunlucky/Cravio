@@ -42,6 +42,7 @@ def get_user(email: str):
         return user
     raise HTTPException(status_code=404, detail="User not found")
 
+
 # get users email
 @app.get("/users-emails")
 def get_users():

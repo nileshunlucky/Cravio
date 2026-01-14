@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 
 const LoadingState = () => {
     const [percentage, setPercentage] = useState(0);
+ 
 
 
     // Simulate a realistic, non-linear progress animation
@@ -84,14 +85,15 @@ const Page = () => {
     const [loading, setLoading] = useState(false);
     const [thumbnailUrl, setThumbnailUrl] = useState('');
     const [prompt, setPrompt] = useState("");
-    // 1. Add this list above your Page component
 
 const [selectedPersona, setSelectedPersona] = useState<{id: string, name: string, image: string} | null>(null);
-const [persona, setPersona] = useState([]);
+const [personas, setPersonas] = useState([]);
 const [showCreateModal, setShowCreateModal] = useState(false);
 const [newName, setNewName] = useState("");
 const [imagePreview, setImagePreview] = useState<string | null>(null);
 const fileInputRef = useRef<HTMLInputElement>(null);
+
+
 
 const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
@@ -120,32 +122,34 @@ useEffect(() => {
     const { user } = useUser();
     const email = user?.primaryEmailAddress?.emailAddress
 
+    useEffect(() => {
+    const fetchPersonas = async () => {
+
+      try {
+        const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`)
+        const data = await res.json()
+        console.log(data)
+        setPersonas(data?.personas)
+      } catch (error) {
+        console.error('Error fetching personas:', error)
+      } 
+    }
+    
+    if (user) {
+      fetchPersonas()
+    }
+  }, [user])
+
     const handleDownload = () => {
         if (!thumbnailUrl) return;
 
         const link = document.createElement('a');
         link.href = thumbnailUrl;
-        link.download = 'cravio_thumbnail.jpg'; // or .png
+        link.download = 'mellvitta_thumbnail.jpg'; // or .png
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
-
-
-   useEffect(() => {
-    const fetchPersona = async () => {
-
-      try {
-        const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`)
-        const data = await res.json()
-        setPersona(data)
-      } catch (error) {
-        console.error('Error fetching videos:', error)
-      } 
-    }
-    
-      fetchPersona()
-  }, [user])
 
     const handleSubmit = async () => {
         try {
@@ -383,7 +387,7 @@ useEffect(() => {
           className="absolute top-full mt-3 w-48 md:w-52 bg-[#1A1A1A] border border-white/10 rounded-2xl overflow-hidden z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2"
         >
           <p className="text-[9px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold px-3 py-2">Select Persona</p>
-          {persona.map((p) => (
+          {personas.map((p) => (
      
             <button
               key={p.id}
