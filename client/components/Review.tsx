@@ -38,9 +38,9 @@ const TestimonialsSection = () => {
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-6xl font-bold mb-4 tracking-tight">
-            Don't <span className="text-teal-400">Just</span> Take <br /> Our Word for It
+            Don&apos;t <span className="text-teal-400">Just</span> Take <br /> Our Word for It
           </h2>
-          <p className="text-gray-400 text-lg font-medium">Here's what our users say:</p>
+          <p className="text-gray-400 text-lg font-medium">Here&apos;s what our users say:</p>
         </div>
 
         {/* Testimonials Grid */}
@@ -110,12 +110,5 @@ const TestimonialsSection = () => {
     </div>
   );
 };
-
-// Helper for the checkmark in the avatar
-const Check = ({ size, className, strokeWidth }: { size: number, className: string, strokeWidth: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
 
 export default TestimonialsSection;
