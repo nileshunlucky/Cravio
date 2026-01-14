@@ -1,110 +1,129 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, X } from 'lucide-react';
 
-type FAQItem = {
-  id: string;
+interface FAQItem {
   question: string;
-  answer: string;
-};
+  answer: React.ReactNode;
+}
 
-
-const FAQS: FAQItem[] = [
+const faqs: FAQItem[] = [
   {
-    id: "q1",
-    question: "Can people actually tell it's AI?",
-    answer:
-      "In most cases, NO. Even when real and AI-generated videos play side by side, the difference is almost impossible to spot. Our system perfectly mirrors your voice, tone, and micro-expressions, so it looks and feels real. What matters more is clarity and context, not the label. With light human polish, it becomes virtually indistinguishable from original content.",
+    question: "What is Mellvitta?",
+    answer: (
+      <div className="space-y-4">
+        <p>Mellvitta is a YouTube packaging tool built to help creators create, test & iterate thumbnails & titles that get clicked.</p>
+        <p>This is not a generic image generator. Everything is designed around YouTube performance, CTR & repeatable results.</p>
+        <p className="font-bold text-teal-400">No designers. No photoshoots. No guesswork.</p>
+      </div>
+    ),
   },
   {
-    id: "q2",
-    question: "How does AI content perform?",
-    answer:
-      "Exceptionally well. AI lets you scale content creation without losing quality, more hooks, more formats, more reach. Our users see strong performance across watch time, engagement, and conversions because every piece is data-driven and tailored. Combine AI speed with strategic human direction, and you unlock consistent, compounding growth.",
+    question: "Why choose Mellvitta over ChatGPT, Midjourney or other AI tools?",
+    answer: "Unlike general AI tools, Mellvitta is specifically trained on high-performance YouTube thumbnails. It understands layout, focal points, and visual psychology that drives clicks, rather than just generating a pretty image.",
   },
   {
-    id: "q3",
-    question: "How long does content creation take?",
-    answer:
-      "Just a few minutes. Once your clone is set up, generating a new video is faster than making a coffee. Captions and short clips take seconds. Long-form scripts and polished videos usually render within a couple of minutes. No reshoots. Just instant, ready-to-post content.",
+    question: "Can I use Mellvitta with my own face?",
+    answer: "Yes! Our Persona feature allows you to upload a few reference photos once. Our AI then learns your features so you can place yourself in any thumbnail scenario with perfect consistency.",
+  },
+  {
+    question: "Do I need design skills to use Mellvitta?",
+    answer: "None at all. Mellvitta handles the complex composition, lighting, and branding. You provide the idea, and we provide the professional-grade output.",
   },
 ];
-// Main FAQ Component
-export default function FAQComponent() {
-  // State to track the currently open accordion item, defaults to the first
-  const [openId, setOpenId] = useState<string | null>(FAQS[0].id);
 
-  function toggle(id: string) {
-    setOpenId((prevId) => (prevId === id ? null : id));
-  }
+const FAQPage = () => {
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="flex items-center justify-center min-h-screen w-full bg-black p-4 sm:p-6 lg:p-8 font-sans"
-      aria-label="Frequently Asked Questions"
-    >
-      {/* The Glassmorphism Card */}
-      <div className="w-full max-w-3xl rounded-2xl border border-white/20 bg-white/10 p-6 shadow-2xl backdrop-blur-xl md:p-8">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-zinc-100 md:text-4xl">
-            FAQ
-          </h1>
-          <p className="mt-2 text-sm text-zinc-400 sm:text-base">
-            Frequently Asked Questions
+    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans py-24 px-6 relative overflow-hidden">
+      {/* Background Teal Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[600px] bg-teal-500/5 blur-[120px] pointer-events-none" />
+
+      <div className="max-w-4xl mx-auto relative z-10">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <motion.h1 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-4xl md:text-6xl font-bold mb-6 tracking-tight"
+          >
+            Frequently  
+            <span className="text-teal-500"> Asked </span>
+              Questions
+          </motion.h1>
+          <h2 className="text-xl md:text-2xl font-semibold mb-4 text-gray-200">
+            The most common questions, answered.
+          </h2>
+          <p className="text-gray-400">
+            Anything else?{" "}
+            <a 
+              href="mailto:mellvitta.ai@gmail.com" 
+              className="text-white underline cursor-pointer hover:text-teal-400 transition-colors decoration-teal-500/50 underline-offset-4"
+            >
+              Click here
+            </a>{" "}
+            to talk directly to the team.
           </p>
         </div>
 
-        {/* Accordion Items Container */}
-        <div className="space-y-3">
-          {FAQS.map((faq) => {
-            const isOpen = openId === faq.id;
+        {/* FAQ List */}
+        <div className="space-y-4">
+          {faqs.map((faq, index) => {
+            const isOpen = openIndex === index;
             return (
-              <article
-                key={faq.id}
-                className="overflow-hidden rounded-lg border-b border-white/10 last:border-b-0"
+              <motion.div
+                key={index}
+                initial={false}
+                className={`rounded-[1.5rem] border transition-all duration-300 ${
+                  isOpen 
+                  ? 'bg-[#121212] border-teal-500/30 shadow-[0_0_30px_rgba(20,184,166,0.05)]' 
+                  : 'bg-[#0d0d0d] border-white/5 hover:border-white/10'
+                }`}
               >
                 <button
-                  onClick={() => toggle(faq.id)}
-                  aria-expanded={isOpen}
-                  aria-controls={`${faq.id}-panel`}
-                  className="flex w-full items-center justify-between p-4 text-left text-lg font-medium text-zinc-100 transition-colors duration-300 hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black/50"
+                  onClick={() => setOpenIndex(isOpen ? null : index)}
+                  className="w-full flex items-center gap-4 px-6 py-6 text-left"
                 >
-                  <span>{faq.question}</span>
-                  <motion.span
-                    animate={{ rotate: isOpen ? 180 : 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  >
-                    <ChevronDown className="h-5 w-5 text-zinc-400" />
-                  </motion.span>
+                  <div className={`flex-shrink-0 w-8 h-8 rounded-lg border flex items-center justify-center transition-colors ${
+                    isOpen ? 'bg-teal-500/10 border-teal-500/40 text-teal-400' : 'bg-white/5 border-white/10 text-gray-400'
+                  }`}>
+                    {isOpen ? <X size={18} strokeWidth={3} /> : <Plus size={18} strokeWidth={3} />}
+                  </div>
+                  <span className={`text-lg font-bold transition-colors ${isOpen ? 'text-teal-400' : 'text-gray-200'}`}>
+                    {faq.question}
+                  </span>
                 </button>
 
                 <AnimatePresence initial={false}>
                   {isOpen && (
                     <motion.div
-                      id={`${faq.id}-panel`}
-                      key={`${faq.id}-panel`}
                       initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
+                      animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                      className="px-4 pb-4"
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
                     >
-                      <p className="text-zinc-300 leading-relaxed">
-                        {faq.answer}
-                      </p>
+                      <div className="px-6 md:px-20 pb-8 text-gray-400 leading-relaxed">
+                        <motion.div
+                          initial={{ y: -10 }}
+                          animate={{ y: 0 }}
+                          className="pt-4 border-t border-white/5"
+                        >
+                          {faq.answer}
+                        </motion.div>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </article>
+              </motion.div>
             );
           })}
         </div>
       </div>
-    </motion.section>
+    </div>
   );
-}
+};
+
+export default FAQPage;

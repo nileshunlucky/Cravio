@@ -1,150 +1,121 @@
-'use client'
+"use client";
 
-import React, { useRef } from 'react'
-import { motion, useInView } from 'framer-motion'
-import { Card, CardContent } from '@/components/ui/card'
-import Image from 'next/image'
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Star } from 'lucide-react';
 
-const testimonials = [
-  {
-    name: 'Sarah Chen',
-    role: 'YouTube Creator & Designer',
-    quote:
-      "Cravio AI completely transformed my thumbnail game. I went from spending hours in Photoshop to generating stunning thumbnails in seconds.",
-    avatar: '/review/ash-allen.jpeg',
-    subscribers: '2.3M',
-  },
-  {
-    name: 'Marcus Rodriguez',
-    role: 'Content Strategy Consultant',
-    quote:
-      'As someone who manages 15+ YouTube channels, Cravio AI is a lifesaver. The AI understands what makes thumbnails click-worthy.',
-    avatar: '/review/alex-george.webp',
-    subscribers: '1.8M',
-  },
-  {
-    name: 'Emma Thompson',
-    role: 'Thumbnail Design Specialist',
-    quote:
-      "The AI generates thumbnails that actually convert. My clients' CTR improved by 40% on average after switching to Cravio.",
-    avatar: '/review/Laurence Vincent.jpg',
-    subscribers: '950K',
-  },
-  {
-    name: 'David Park',
-    role: 'YouTube Growth Expert',
-    quote:
-      "I was skeptical about AI thumbnails, but Cravio's results speak for themselves. It's like having a design team in your pocket.",
-    avatar: '/review/Ishan Sharma.jpg',
-    subscribers: '1.4M',
-  },
-  {
-    name: 'Jessica Williams',
-    role: 'Digital Marketing Coach',
-    quote:
-      "Cravio AI doesn't just make thumbnails—it creates attention-grabbing visuals that stop the scroll. My engagement is through the roof!",
-    avatar: '/review/Louis Dershal.png',
-    subscribers: '3.2M',
-  },
-  {
-    name: 'Taylor Brooks',
-    role: 'Brand Visual Strategist',
-    quote:
-      'The quality is incredible and the speed is unmatched. Cravio AI helped me scale my thumbnail creation process 10x faster.',
-    avatar: '/review/Rose Delvard..png',
-    subscribers: '680K',
-  },
-]
-
-const Review = () => {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, amount: 0.3 })
+const TestimonialsSection = () => {
+  const testimonials = [
+    {
+      name: "MrBeast",
+      handle: "@MrBeast",
+      text: "The quality of these thumbnails is actually insane. Mellvitta has completely streamlined how we think about our click-through rates. It's the first AI that truly understands YouTube pacing.",
+      rating: 5,
+      image: "https://www.tvline.com/tvline/news/beast-games-mrbeast-series-order-prime-video-1235189479/mrbeast-amazon-prime.jpg" // You can replace with your local path
+    },
+    {
+      name: "IShowSpeed",
+      handle: "@ishowspeed",
+      text: "YO THIS IS CRAZY! The persona feature keeps me looking exactly right in every single image. I don't even have to take photos anymore. Mellvitta is a W!",
+      rating: 5,
+      image: "https://static.wikia.nocookie.net/caseoh/images/e/ef/IShowSpeed.jpg" // You can replace with your local path
+    },
+    {
+      name: "Iman Gadzhi",
+      handle: "@ImanGadzhi",
+      text: "Consistency is the bedrock of a high-performance brand. Mellvitta allows us to scale our content output while maintaining a premium, high-ticket aesthetic effortlessly.",
+      rating: 5,
+      image: "https://tvovermind.com/wp-content/uploads/2025/08/iman.jpg" // You can replace with your local path
+    },
+  ];
 
   return (
-    <section ref={ref} className="px-6 py-20 bg-gradient-to-b from-background to-background/50">
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={isInView ? { opacity: 1, y: 0 } : {}}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="max-w-6xl mx-auto space-y-12"
-      >
-        <div className="text-center space-y-4">
-          <h2 className="text-4xl font-bold">
-            See why creators love{' '}
-            <span
-              className="underline decoration-2 underline-offset-4"
-              style={{ textDecorationColor: '#47FFE7' }}
-            >
-              Cravio AI
-            </span>
+    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans py-24 px-6 relative overflow-hidden">
+      {/* Background Teal Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[600px] bg-teal-500/5 blur-[120px] pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-6xl font-bold mb-4 tracking-tight">
+            Don't <span className="text-teal-400">Just</span> Take <br /> Our Word for It
           </h2>
-          <p className=" text-lg text-[#47FFE&]">
-            Revolutionizing thumbnail creation with AI. Real stories from real creators.
-          </p>
+          <p className="text-gray-400 text-lg font-medium">Here's what our users say:</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {testimonials.map((t, idx) => (
+        {/* Testimonials Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {testimonials.map((item, idx) => (
             <motion.div
               key={idx}
               initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{
-                duration: 0.5,
-                delay: idx * 0.1,
-                ease: 'easeOut'
-              }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.1, duration: 0.5 }}
+              className="bg-[#121212] border border-white/5 rounded-[2.5rem] p-8 flex flex-col h-full hover:border-teal-500/40 transition-all duration-300 group hover:shadow-[0_0_30px_rgba(20,184,166,0.05)]"
             >
-              <Card className="rounded-2xl border border-border/50 p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-[#47FFE7]/30 bg-card/80 backdrop-blur-sm">
-                <CardContent className="p-0 space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <Image
-                        src={t.avatar}
-                        alt={t.name}
-                        width={48}
-                        height={48}
-                        className="rounded-full object-cover ring-2 ring-[#47FFE7]/20"
-                      />
-                      <div
-                        className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-background"
-                        style={{ backgroundColor: '#47FFE7' }}
-                      ></div>
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-foreground">{t.name}</p>
-                      <p className="text-sm text-muted-foreground">{t.role}</p>
-                    </div>
-                    {t.subscribers && (
-                      <span
-                        className="text-xs px-3 py-1 rounded-full font-medium border"
-                        style={{
-                          backgroundColor: '#47FFE7/10',
-                          borderColor: '#47FFE7/30',
-                          color: '#47FFE7'
-                        }}
-                      >
-                        {t.subscribers}
-                      </span>
-                    )}
+              {/* Stars */}
+              <div className="flex gap-1 mb-6">
+                {[...Array(item.rating)].map((_, i) => (
+                  <Star
+                    key={i}
+                    size={18}
+                    className="fill-teal-400 text-teal-400"
+                  />
+                ))}
+              </div>
+
+              {/* Content */}
+              <div className="flex-grow">
+                <h4 className="text-xl font-bold mb-4 leading-tight text-teal-50/90">
+                  {idx === 0 ? "Game changing quality" : 
+                   idx === 1 ? "Absolutely Insane Speed" : 
+                   "Premium Brand Consistency"}
+                </h4>
+                <p className="text-gray-400  text-[15px] mb-8">
+                  {item.text}
+                </p>
+              </div>
+
+              {/* Footer / User Info */}
+              <div className="flex items-center gap-4 mt-auto pt-6 border-t border-white/5">
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-full bg-teal-500/10 border border-teal-500/20 p-1">
+                    <img 
+                      src={item.image} 
+                      alt={item.name}
+                      className="w-full h-full rounded-full object-cover  transition-all duration-500"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${item.name}&background=14b8a6&color=fff`;
+                      }}
+                    />
                   </div>
-                  <div className="relative">
-                    <div
-                      className="absolute left-0 top-0 w-1 h-full rounded-full opacity-60"
-                      style={{ backgroundColor: '#47FFE7' }}
-                    ></div>
-                    <p className="text-sm text-muted-foreground leading-relaxed pl-4">
-                      &ldquo;{t.quote}&rdquo;
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+            
+                </div>
+                <div>
+                  <p className="font-bold text-base text-white group-hover:text-teal-400 transition-colors">
+                    {item.name}
+                  </p>
+                  <p className="text-xs text-gray-500 lowercase">
+                    {item.handle}
+                  </p>
+                </div>
+              </div>
             </motion.div>
           ))}
         </div>
-      </motion.div>
-    </section>
-  )
-}
+      </div>
+      
 
-export default Review
+    </div>
+  );
+};
+
+// Helper for the checkmark in the avatar
+const Check = ({ size, className, strokeWidth }: { size: number, className: string, strokeWidth: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+export default TestimonialsSection;
