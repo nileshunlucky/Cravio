@@ -3,10 +3,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
-import { Star, Download, Plus, User, Image } from 'lucide-react';
+import { Star, Download, Plus, User } from 'lucide-react';
 import { toast } from "sonner";
 import { useUser } from "@clerk/nextjs";
-import { useRouter } from 'next/navigation';
 
 const LoadingState = ({ onComplete }: { onComplete: () => void }) => {
     const [percentage, setPercentage] = useState(0);
@@ -68,7 +67,7 @@ const Page = () => {
     const [thumbnailUrl, setThumbnailUrl] = useState('');
     const [prompt, setPrompt] = useState("");
     const [selectedPersona, setSelectedPersona] = useState<{ id: string, name: string, image: string } | null>(null);
-    const [personas, setPersonas] = useState<any[]>([]);
+    const [personas, setPersonas] = useState([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newName, setNewName] = useState("");
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -77,7 +76,6 @@ const Page = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const thumbInputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const router = useRouter();
     const { user } = useUser();
     const email = user?.primaryEmailAddress?.emailAddress;
 
