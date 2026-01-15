@@ -46,53 +46,61 @@ async def get_valid_thumbnail_url(url: str) -> str:
         except:
             return hq_url
 
-async def encode_image_from_url(url: str) -> str:
-    """Downloads an image and returns a base64 string."""
+async def download_image_to_buffer(url: str) -> io.BytesIO:
+    """Downloads an image from a URL and returns a seekable BytesIO object."""
     async with httpx.AsyncClient() as client:
         response = await client.get(url, timeout=10.0)
         if response.status_code != 200:
             raise Exception(f"Failed to download image from {url}")
-        return base64.b64encode(response.content).decode("utf-8")
+        # Create a buffer and seek to start
+        buffer = io.BytesIO(response.content)
+        buffer.name = "image.jpg" # OpenAI requires a filename property
+        return buffer
 
 @router.post("/api/faceswap")
 async def faceswap_endpoint(
     email: str = Form(...),
     youtubeUrl: str = Form(...),
-    persona: str = Form(...), # URL of the user's face
+    persona: str = Form(...), # This is the S3 URL of the user's face
     prompt: Optional[str] = Form(None),
 ):
-    # 1. Validation & Credits (Simplified for brevity)
+    # 1. Credit Check
     user = users_collection.find_one({"email": email})
     if not user or user.get("credits", 0) < 10:
         return JSONResponse(status_code=403, content={"error": "Insufficient credits"})
 
     try:
-        # 2. Prepare Source Images
+        # 2. Prepare Source Image Buffers
         yt_thumb_url = await get_valid_thumbnail_url(youtubeUrl)
-        
-        # 3. Call the 2026 Composition API
-        # We use the 'images.edit' method with multiple image inputs
+        if not yt_thumb_url:
+            raise ValueError("Invalid YouTube URL")
+
+        # DOWNLOAD the images into memory buffers
+        face_buffer = await download_image_to_buffer(persona)
+        thumb_buffer = await download_image_to_buffer(yt_thumb_url)
+
+        # 3. Call the API with the BUFFERS (not the strings)
         response = await openai_client.images.edit(
             model="gpt-image-1.5",
             image=[
-                persona,   # Image Index 0: The Source Face
-                yt_thumb_url   # Image Index 1: The Target Thumbnail
+                face_buffer,   # Now passing bytes buffer
+                thumb_buffer   # Now passing bytes buffer
             ],
             prompt=(
-                f"Face-swap composition: Extract the facial identity from [IMG_0] and map it onto the subject in [IMG_1]. "
+                f"Face-swap composition: Extract the facial identity from the first image "
                 f"and map it onto the main subject in the second image. "
-                f"Match the skin tone and lighting of [IMG_1]. {prompt or ''}"
+                f"Ensure the lighting and resolution match the second image perfectly. "
+                f"{prompt or ''}"
             ),
-            # Composition-specific parameters for 2026 models
             extra_body={
                 "composition_mode": "identity_transfer",
-                "fidelity": 1.0, # Scale of 0.0 to 1.0 for face matching
+                "fidelity": 1.0,
                 "preserve_background": True
             },
             response_format="b64_json"
         )
 
-        # 4. Process Result
+        # 4. Process and Decode
         image_base64 = response.data[0].b64_json
         image_bytes = base64.b64decode(image_base64)
 
@@ -107,13 +115,14 @@ async def faceswap_endpoint(
         
         final_url = f"https://{os.getenv('S3_BUCKET_NAME')}.s3.amazonaws.com/{filename}"
 
-        # 6. Database Logging & Credit Deduction
+        # 6. Database Update
         users_collection.update_one(
             {"email": email}, 
             {
                 "$inc": {"credits": -10},
                 "$push": {"generated_thumbnails": {
                     "url": final_url,
+                    "source_video": youtubeUrl,
                     "created_at": datetime.datetime.now(datetime.timezone.utc)
                 }}
             }
@@ -123,7 +132,9 @@ async def faceswap_endpoint(
 
     except Exception as e:
         print(f"Error: {str(e)}")
-        return JSONResponse(status_code=500, content={"error": "Faceswap failed. Please try again."})
+        # Refund credits on crash
+        users_collection.update_one({"email": email}, {"$inc": {"credits": 10}})
+        return JSONResponse(status_code=500, content={"error": "Faceswap failed. Check server logs."})
 
 @router.post("/api/add-persona")
 async def add_persona_endpoint(
