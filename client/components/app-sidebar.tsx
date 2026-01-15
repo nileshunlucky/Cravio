@@ -16,6 +16,15 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
+// --- TYPES FOR VERCEL BUILD ---
+interface GeneratedThumbnail {
+  url: string;
+  source_video?: string;
+  created_at: {
+    $date: string;
+  } | string;
+}
+
 const items = [
   {
     title: "Dashboard",
@@ -29,7 +38,8 @@ const items = [
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const [thumbnails, setThumbnails] = useState([]);
+  // Apply the type to the state
+  const [thumbnails, setThumbnails] = useState<GeneratedThumbnail[]>([]);
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress
 
@@ -38,7 +48,6 @@ export function AppSidebar() {
       try {
         const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`)
         const data = await res.json()
-        // Ensure we handle the case where generated_thumbnails might be null
         setThumbnails(data?.generated_thumbnails || [])
       } catch (error) {
         console.error('Error fetching thumbnails:', error)
@@ -50,9 +59,15 @@ export function AppSidebar() {
     }
   }, [user, email])
 
-  const formatDate = (dateObj: string) => {
-    const dateValue = dateObj?.$date || dateObj;
+  // Fixed the type here to accept the object or string
+  const formatDate = (dateObj: GeneratedThumbnail['created_at']) => {
+    // Check if it's the MongoDB {$date: ...} object or a raw string
+    const dateValue = typeof dateObj === 'object' && '$date' in dateObj 
+      ? dateObj.$date 
+      : (dateObj as string);
+
     const date = new Date(dateValue);
+    
     return isNaN(date.getTime()) ? "Recent" : date.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
@@ -103,27 +118,26 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Premium Thumbnail History Group */}
-        <SidebarGroup className="mt-4">
-          <SidebarGroupLabel className="px-6 text-xs font-semibold uppercase tracking-widest text-gray-500 mb-4">
-            RECENT Thumbnail
+        <SidebarGroup className="mt-4 pb-10">
+          <SidebarGroupLabel className="px-6 text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4">
+            Recent Thumbnails
           </SidebarGroupLabel>
           <SidebarGroupContent className="px-4">
-            {/* flex-col-reverse makes the newest array items appear at the bottom, 
-                swap to flex-col if your API already sorts by newest first */}
             <div className="flex flex-col-reverse gap-4">
               {thumbnails.map((thumb, index) => (
                 <div 
                   key={index} 
-                  className="group relative aspect-video w-full overflow-hidden rounded-xl border border-white/10 bg-white/5 transition-all duration-300 hover:border-teal-500/50 hover:scale-[1.02]"
+                  className="group relative aspect-video w-full overflow-hidden rounded-xl border border-white/10 bg-white/5 transition-all duration-300 hover:border-teal-500/50 hover:scale-[1.02] active:scale-95"
                 >
                   <img 
                     src={thumb.url} 
-                    alt="Generated Thumbnail" 
-                    className="h-full w-full object-cover transition-opacity duration-300 group-hover:opacity-80"
+                    alt="Thumbnail" 
+                    className="h-full w-full object-cover transition-opacity duration-300 group-hover:opacity-70"
                   />
-                  {/* Subtle Overlay on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 opacity-100 transition-opacity flex flex-col justify-end p-2">
-                     <p className="text-[10px] text-teal-400 font-medium truncate">
+                  
+                  {/* Overlay: opacity-0 by default, shows on hover (desktop) or active (mobile) */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-100 group-active:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                     <p className="text-[10px] text-teal-400 font-bold tracking-widest uppercase">
                         {formatDate(thumb.created_at)}
                      </p>
                   </div>
@@ -131,7 +145,7 @@ export function AppSidebar() {
               ))}
               
               {thumbnails.length === 0 && (
-                <div className="px-2 py-4 rounded-xl text-center">
+                <div className="px-2 py-4 rounded-xl text-center ">
                   <p className="text-xs text-gray-600">No thumbnails yet</p>
                 </div>
               )}
