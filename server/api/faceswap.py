@@ -47,94 +47,84 @@ async def get_valid_thumbnail_url(url: str) -> str:
             return hq_url
 
 async def download_image_to_buffer(url: str) -> io.BytesIO:
-    """Downloads an image from a URL and returns a seekable BytesIO object."""
     async with httpx.AsyncClient() as client:
-        response = await client.get(url, timeout=10.0)
+        response = await client.get(url, timeout=15.0)
         if response.status_code != 200:
             raise Exception(f"Failed to download image from {url}")
-        # Create a buffer and seek to start
         buffer = io.BytesIO(response.content)
-        buffer.name = "image.jpg" # OpenAI requires a filename property
+        buffer.name = "image.jpg" 
         return buffer
 
 @router.post("/api/faceswap")
 async def faceswap_endpoint(
     email: str = Form(...),
     youtubeUrl: str = Form(...),
-    persona: str = Form(...), # This is the S3 URL of the user's face
+    persona: str = Form(...), 
     prompt: Optional[str] = Form(None),
 ):
-    # 1. Credit Check
     user = users_collection.find_one({"email": email})
     if not user or user.get("credits", 0) < 10:
         return JSONResponse(status_code=403, content={"error": "Insufficient credits"})
 
-    try:
-        # 2. Prepare Source Image Buffers
-        yt_thumb_url = await get_valid_thumbnail_url(youtubeUrl)
-        if not yt_thumb_url:
-            raise ValueError("Invalid YouTube URL")
+    # Deduct credits upfront
+    users_collection.update_one({"email": email}, {"$inc": {"credits": -10}})
 
-        # DOWNLOAD the images into memory buffers
+    try:
+        yt_thumb_url = await get_valid_thumbnail_url(youtubeUrl)
+        
+        # Download images to buffers
         face_buffer = await download_image_to_buffer(persona)
         thumb_buffer = await download_image_to_buffer(yt_thumb_url)
 
-        # 3. Call the API with the BUFFERS (not the strings)
+        # Call the API
+        # We removed response_format if it causes issues, and handle 'url' instead
         response = await openai_client.images.edit(
             model="gpt-image-1.5",
-            image=[
-                face_buffer,   # Now passing bytes buffer
-                thumb_buffer   # Now passing bytes buffer
-            ],
+            image=[face_buffer, thumb_buffer],
             prompt=(
-                f"Face-swap composition: Extract the facial identity from the first image "
-                f"and map it onto the main subject in the second image. "
-                f"Ensure the lighting and resolution match the second image perfectly. "
-                f"{prompt or ''}"
+                f"Face-swap composition: Replace the face in the second image with the identity from the first image. "
+                f"Maintain the exact resolution and lighting of the second image. {prompt or ''}"
             ),
-            extra_body={
-                "composition_mode": "identity_transfer",
-                "fidelity": 1.0,
-                "preserve_background": True
-            },
-            response_format="b64_json"
         )
 
-        # 4. Process and Decode
-        image_base64 = response.data[0].b64_json
-        image_bytes = base64.b64decode(image_base64)
+        # Logic to handle either B64 or URL response
+        generated_data = response.data[0]
+        if hasattr(generated_data, 'b64_json') and generated_data.b64_json:
+            image_bytes = base64.b64decode(generated_data.b64_json)
+        else:
+            # If the API returned a URL, download it to save to your own S3
+            async with httpx.AsyncClient() as client:
+                img_res = await client.get(generated_data.url)
+                image_bytes = img_res.content
 
-        # 5. S3 Upload Logic
+        # 5. S3 Upload
         filename = f"swaps/{uuid.uuid4().hex}.jpg"
         s3_client.put_object(
-            Bucket=os.getenv("S3_BUCKET_NAME"),
+            Bucket=S3_BUCKET,
             Key=filename,
             Body=image_bytes,
             ContentType="image/jpeg"
         )
         
-        final_url = f"https://{os.getenv('S3_BUCKET_NAME')}.s3.amazonaws.com/{filename}"
+        final_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{filename}"
 
-        # 6. Database Update
+        # 6. Database Log
         users_collection.update_one(
             {"email": email}, 
-            {
-                "$inc": {"credits": -10},
-                "$push": {"generated_thumbnails": {
-                    "url": final_url,
-                    "source_video": youtubeUrl,
-                    "created_at": datetime.datetime.now(datetime.timezone.utc)
-                }}
-            }
+            {"$push": {"generated_thumbnails": {
+                "url": final_url,
+                "source_video": youtubeUrl,
+                "created_at": datetime.datetime.now(datetime.timezone.utc)
+            }}}
         )
 
         return {"success": True, "thumbnailUrl": final_url}
 
     except Exception as e:
-        print(f"Error: {str(e)}")
-        # Refund credits on crash
+        # Refund on failure
         users_collection.update_one({"email": email}, {"$inc": {"credits": 10}})
-        return JSONResponse(status_code=500, content={"error": "Faceswap failed. Check server logs."})
+        print(f"Faceswap Error: {str(e)}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 @router.post("/api/add-persona")
 async def add_persona_endpoint(
