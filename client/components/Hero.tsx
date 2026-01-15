@@ -120,11 +120,11 @@ const LandingPage = () => {
         {/* Hero */}
         <div className="text-center mb-10">
           <h1 className="text-5xl md:text-8xl font-semibold  mb-4 leading-none">
-            The <span className="text-teal-300 drop-shadow-[0_0_25px_rgba(45,212,191,0.4)]">Shortcut</span> <br />
-            to Millions of Views
+            <span className="text-teal-300 drop-shadow-[0_0_25px_rgba(45,212,191,0.4)]">Laziest</span> way  <br />
+            to make Millions of Views
           </h1>
           <p className="text-gray-400 text-lg md:text-xl font-light">
-            From Ignored to Viral With Data-Backed AI Thumbnails
+            Stop getting ignored, The lazy way to go viral using AI thumbnails.
           </p>
         </div>
 
