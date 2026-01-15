@@ -211,7 +211,6 @@ useEffect(() => {
                 duration: 4000,
             })
         } finally {
-            setAnimation(false);
             setLoading(false);
         }
     };
@@ -341,6 +340,7 @@ useEffect(() => {
   {/* URL Input */}
   <div className="relative">
     <h1 className="text-[#47FFE7] text-lg md:text-xl text-left p-2">Get Started</h1>
+    
     <input
       type="text"
       placeholder="Enter YouTube Link"

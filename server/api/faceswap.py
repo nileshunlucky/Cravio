@@ -85,6 +85,9 @@ async def faceswap_endpoint(
                 f"Face-swap composition: Replace the face in the second image with the identity from the first image. "
                 f"Maintain the exact resolution and lighting of the second image. {prompt or ''}"
             ),
+            quality="medium",       # Sets cost to ~$0.034 (₹3.07)
+            size="1536x1024",      # Standard YouTube Landscape resolution
+            output_format="jpeg"    # Fast and S3-friendly
         )
 
         # Logic to handle either B64 or URL response
