@@ -17,7 +17,7 @@ load_dotenv()
 router = APIRouter()
 
 # Clients
-openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=80.0)
+openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 s3_client = boto3.client(
     "s3",
     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
@@ -57,103 +57,73 @@ async def encode_image_from_url(url: str) -> str:
 @router.post("/api/faceswap")
 async def faceswap_endpoint(
     email: str = Form(...),
-    youtubeUrl: str = Form(...), 
-    persona: str = Form(...),    # Persona face image URL
+    youtubeUrl: str = Form(...),
+    persona: str = Form(...), # URL of the user's face
     prompt: Optional[str] = Form(None),
 ):
-    # 1. Credit Check
+    # 1. Validation & Credits (Simplified for brevity)
     user = users_collection.find_one({"email": email})
     if not user or user.get("credits", 0) < 10:
         return JSONResponse(status_code=403, content={"error": "Insufficient credits"})
 
-    # Deduct credits
-    users_collection.update_one({"email": email}, {"$inc": {"credits": -10}})
-
     try:
-        # 2. Extract Thumbnail URL
+        # 2. Prepare Source Images
         yt_thumb_url = await get_valid_thumbnail_url(youtubeUrl)
-        if not yt_thumb_url:
-            raise ValueError("Invalid YouTube URL format provided.")
-
-        # 3. Convert both images to Base64 (Best for Responses API fidelity)
-        # Note: You can also pass the raw URLs, but Base64 is more reliable for "edit" actions
-        b64_persona = await encode_image_from_url(persona)
-        b64_thumb = await encode_image_from_url(yt_thumb_url)
-
-        # 4. Call OpenAI Responses API
-        response = await openai_client.responses.create(
-            model="gpt-4o", 
-            input=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "input_text", 
-                            "text": (
-                                f"seamlessly blend it onto the main person in the second YouTube thumbnail. "
-                                f"Maintain skin tone, lighting, and background. "
-                                f"Style: {prompt if prompt else 'Viral 4K high-quality thumbnail.'}"
-                            )
-                        },
-                        {
-                            "type": "input_image",
-                            "image_url": f"data:image/jpeg;base64,{b64_persona}"
-                        },
-                        {
-                            "type": "input_image",
-                            "image_url": f"data:image/jpeg;base64,{b64_thumb}"
-                        }
-                    ]
-                }
+        
+        # 3. Call the 2026 Composition API
+        # We use the 'images.edit' method with multiple image inputs
+        response = await openai_client.images.edit(
+            model="gpt-image-1.5",
+            image=[
+                persona,   # Image Index 0: The Source Face
+                yt_thumb_url   # Image Index 1: The Target Thumbnail
             ],
-            tools=[{
-                "type": "image_generation",
-                "action": "edit",
-                "input_fidelity": "high",
-                "size": "1536x1024"
-            }]
+            prompt=(
+                f"Face-swap composition: Extract the facial identity from [IMG_0] and map it onto the subject in [IMG_1]. "
+                f"and map it onto the main subject in the second image. "
+                f"Match the skin tone and lighting of [IMG_1]. {prompt or ''}"
+            ),
+            # Composition-specific parameters for 2026 models
+            extra_body={
+                "composition_mode": "identity_transfer",
+                "fidelity": 1.0, # Scale of 0.0 to 1.0 for face matching
+                "preserve_background": True
+            },
+            response_format="b64_json"
         )
 
-        # 5. Extract result from Tool Output
-        # Look for the 'image_generation_call' in the response output
-        image_call = next((o for o in response.output if o.type == "image_generation_call"), None)
-        
-        if not image_call or not image_call.result:
-            raise Exception("AI failed to generate an image. Check prompt or image safety filters.")
-            
-        # In the 2026 Responses API, the result is the base64 string
-        image_bytes = base64.b64decode(image_call.result)
-        
-        # 6. Upload to S3
-        filename = f"{uuid.uuid4().hex}.jpg"
-        s3_key = f"thumbnails/{filename}"
-        
+        # 4. Process Result
+        image_base64 = response.data[0].b64_json
+        image_bytes = base64.b64decode(image_base64)
+
+        # 5. S3 Upload Logic
+        filename = f"swaps/{uuid.uuid4().hex}.jpg"
         s3_client.put_object(
-            Bucket=S3_BUCKET,
-            Key=s3_key,
+            Bucket=os.getenv("S3_BUCKET_NAME"),
+            Key=filename,
             Body=image_bytes,
             ContentType="image/jpeg"
         )
         
-        public_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{s3_key}"
+        final_url = f"https://{os.getenv('S3_BUCKET_NAME')}.s3.amazonaws.com/{filename}"
 
-        # 7. Log to DB
+        # 6. Database Logging & Credit Deduction
         users_collection.update_one(
             {"email": email}, 
-            {"$push": {"generated_thumbnails": {
-                "id": str(uuid.uuid4()),
-                "url": public_url, 
-                "source_video": youtubeUrl,
-                "created_at": datetime.datetime.now(datetime.timezone.utc)
-            }}}
+            {
+                "$inc": {"credits": -10},
+                "$push": {"generated_thumbnails": {
+                    "url": final_url,
+                    "created_at": datetime.datetime.now(datetime.timezone.utc)
+                }}
+            }
         )
 
-        return {"success": True, "thumbnailUrl": public_url}
+        return {"success": True, "thumbnailUrl": final_url}
 
     except Exception as e:
-        # Refund credits on failure
-        users_collection.update_one({"email": email}, {"$inc": {"credits": 10}})
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        print(f"Error: {str(e)}")
+        return JSONResponse(status_code=500, content={"error": "Faceswap failed. Please try again."})
 
 @router.post("/api/add-persona")
 async def add_persona_endpoint(
@@ -162,22 +132,16 @@ async def add_persona_endpoint(
     image: UploadFile = File(...)
 ):
     try:
-        # 1. Check if user exists
         user = users_collection.find_one({"email": email})
         if not user:
             return JSONResponse(status_code=404, content={"message": "User not found"})
 
-       if user.get("credits", 0) < 10:
+        if user.get("credits", 0) < 10:
             return JSONResponse(status_code=403, content={"error": "Insufficient credits"})
 
-        # 2. Prepare file for S3
-        file_extension = image.filename.split(".")[-1] if "." in image.filename else "jpg"
-        filename = f"personas/{uuid.uuid4().hex}.{file_extension}"
-        
-        # Read image content
+        filename = f"personas/{uuid.uuid4().hex}.jpg"
         image_content = await image.read()
 
-        # 3. Upload to S3
         s3_client.put_object(
             Bucket=S3_BUCKET,
             Key=filename,
@@ -187,7 +151,6 @@ async def add_persona_endpoint(
         
         public_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{filename}"
 
-        # 4. Save to DB (Push to personas array)
         new_persona = {
             "id": str(uuid.uuid4()),
             "name": name,
@@ -195,17 +158,12 @@ async def add_persona_endpoint(
             "created_at": datetime.datetime.now(datetime.timezone.utc)
         }
 
-        result = users_collection.update_one(
+        users_collection.update_one(
             {"email": email},
             {"$push": {"personas": new_persona}}
         )
 
-        return {
-            "success": True, 
-            "message": "Persona added successfully",
-            "persona": new_persona
-        }
+        return {"success": True, "persona": new_persona}
 
     except Exception as e:
-        print(f"Error adding persona: {e}")
         return JSONResponse(status_code=500, content={"message": str(e)})
