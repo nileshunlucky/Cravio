@@ -48,6 +48,58 @@ class YouTubeRequest(BaseModel):
             
         return v
 
+import re
+from fastapi import APIRouter, HTTPException
+from googleapiclient.discovery import build
+import isodate # pip install isodate (to parse YouTube's duration format)
+
+router = APIRouter()
+
+# You'll need a free API Key from Google Cloud Console
+YOUTUBE_API_KEY = "AIzaSyABOLL5Z9lcveYX_aunPnDPLk0lCtZKvqU"
+youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
+
+def extract_video_id(url: str):
+    """Extracts the 11-character YouTube ID using regex"""
+    regex = r"(?:v=|\/)([0-9A-Za-z_-]{11}).*"
+    match = re.search(regex, url)
+    return match.group(1) if match else None
+
+@router.get("/quick-youtube-info")
+async def get_youtube_info(url: str):
+    video_id = extract_video_id(url)
+    
+    if not video_id:
+        raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+
+    # 1. Get Thumbnail (No API needed for this)
+    thumbnail_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
+
+    # 2. Get Duration (Requires a quick API call)
+    try:
+        request = youtube.videos().list(
+            part="contentDetails",
+            id=video_id
+        )
+        response = request.execute()
+
+        if not response['items']:
+            raise HTTPException(status_code=404, detail="Video not found")
+
+        # YouTube returns duration in ISO 8601 format (e.g., PT1M30S)
+        duration_iso = response['items'][0]['contentDetails']['duration']
+        duration_seconds = isodate.parse_duration(duration_iso).total_seconds()
+
+        return {
+            "video_id": video_id,
+            "thumbnail_url": thumbnail_url,
+            "duration_seconds": duration_seconds,
+            "formatted_duration": str(isodate.parse_duration(duration_iso))
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 class ProcessingResponse(BaseModel):
     video_url: str
     thumbnail_url: str
@@ -100,6 +152,7 @@ async def upload_video(file: UploadFile = File(...)):
         if os.path.exists(temp_path):
             os.remove(temp_path)
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+        
 
 @router.post("/process-youtube", response_model=ProcessingResponse)
 async def process_youtube_video(request: YouTubeRequest):
