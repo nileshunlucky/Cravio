@@ -212,6 +212,7 @@ useEffect(() => {
             })
         } finally {
             setLoading(false);
+            setAnimation(false);
         }
     };
 
@@ -275,6 +276,7 @@ useEffect(() => {
 
     return (
         <div className="min-h-screen my-5 flex items-center text-center justify-center p-4">
+        <div className="fixed -bottom-24 left-1/2 -translate-x-1/2 w-full h-[150px] bg-teal-500/50 blur-[120px] pointer-events-none" />
             <AnimatePresence mode="wait">
                 {
                     animation ?
