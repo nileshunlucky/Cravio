@@ -9,23 +9,23 @@ const TestimonialsSection = () => {
     {
       name: "MrBeast",
       handle: "@MrBeast",
-      text: "The quality of these clips is actually insane. Mellvitta has completely streamlined how we turn long videos into viral shorts. It's the first AI that truly understands pacing and hook potential.",
+      text: "The quality of these thumbnails is actually insane. Mellvitta has completely streamlined how we think about our click-through rates. It's the first AI that truly understands YouTube pacing.",
       rating: 5,
-      image: "https://www.tvline.com/tvline/news/beast-games-mrbeast-series-order-prime-video-1235189479/mrbeast-amazon-prime.jpg" 
+      image: "https://www.tvline.com/tvline/news/beast-games-mrbeast-series-order-prime-video-1235189479/mrbeast-amazon-prime.jpg" // You can replace with your local path
     },
     {
       name: "IShowSpeed",
       handle: "@ishowspeed",
-      text: "YO THIS IS CRAZY! It finds the funniest moments from my 4-hour streams and makes them into clips instantly. I don't even have to hire an editor anymore. Mellvitta is a W!",
+      text: "YO THIS IS CRAZY! The persona feature keeps me looking exactly right in every single image. I don't even have to take photos anymore. Mellvitta is a W!",
       rating: 5,
-      image: "https://static.wikia.nocookie.net/caseoh/images/e/ef/IShowSpeed.jpg" 
+      image: "https://static.wikia.nocookie.net/caseoh/images/e/ef/IShowSpeed.jpg" // You can replace with your local path
     },
     {
       name: "Iman Gadzhi",
       handle: "@ImanGadzhi",
-      text: "Efficiency is the bedrock of a high-performance brand. Mellvitta allows us to scale our short-form output by converting our long-form assets into premium clips effortlessly.",
+      text: "Consistency is the bedrock of a high-performance brand. Mellvitta allows us to scale our content output while maintaining a premium, high-ticket aesthetic effortlessly.",
       rating: 5,
-      image: "https://tvovermind.com/wp-content/uploads/2025/08/iman.jpg" 
+      image: "https://tvovermind.com/wp-content/uploads/2025/08/iman.jpg" // You can replace with your local path
     },
   ];
 

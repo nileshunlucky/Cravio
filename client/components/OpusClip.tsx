@@ -662,11 +662,10 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   ]
 
   return (
-    <div className="min-h-screen bg-black selection:bg-teal-500/30 text-white flex flex-col items-center justify-center p-1 sm:p-6 gap-7">
-    <div className="fixed -bottom-10 left-1/2 -translate-x-1/2 w-full h-[380px] bg-teal-500/70 blur-[120px] pointer-events-none" />
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-1 sm:p-6 gap-7">
       {/* Background text - Changed from OpusClip to CRAVIO */}
       <div className="absolute inset-0 md:flex items-center justify-center overflow-hidden pointer-events-none hidden">
-        <h1 className="text-[17vw] font-bold text-zinc-700/30 select-none">MELLVITTA</h1>
+        <h1 className="text-[23vw] font-bold text-zinc-700/30 select-none">CRAVIO</h1>
       </div>
 
       <motion.div
@@ -685,7 +684,7 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         {isLoading && (
           <div className="absolute inset-0 z-0">
             <motion.div
-              className="absolute inset-0 bg-teal-500 rounded-xl"
+              className="absolute inset-0 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 rounded-xl"
               initial={{ rotate: 0, scale: 1 }}
               animate={{
                 rotate: 360,
@@ -792,7 +791,7 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                 "py-3 md:py-6",
                 (!isSubmitEnabled && !videoProcessed) || isLoading
                   ? "bg-zinc-800 text-zinc-400 cursor-not-allowed"
-                  : "bg-white text-black hover:bg-zinc-200"
+                  : "bg-white text-black hover:bg-gray-200"
               )}
             >
               {isLoading ? (

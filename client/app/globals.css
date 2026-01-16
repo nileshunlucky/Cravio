@@ -130,3 +130,9 @@
 *{
   font-family: 'Poppins', sans-serif;
 }
+
+/* when selected add #47FFE7 color */
+::selection {
+  background-color: #47FFE7;
+  color: black;
+}

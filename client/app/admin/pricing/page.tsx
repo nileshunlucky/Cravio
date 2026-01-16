@@ -14,21 +14,20 @@ const PricingPage = () => {
   const email = user?.primaryEmailAddress?.emailAddress
 
   // Pricing Logic
-  const monthlyPrice = 29;
-  const annualMonthlyPrice = 14.5; // 50% discount
+  const monthlyPrice = 19;
+  const annualMonthlyPrice = 9.5; // 50% discount
   
   const currentPrice = billingCycle === 'annually' ? annualMonthlyPrice : monthlyPrice;
   const originalPrice = monthlyPrice;
 
   const features = [
-    { text: "Multiple aspect ratios (9:16, 1:1, 16:9)", included: true },
-    { text: "AI clipping with Virality Score", included: true },
-    { text: "Powerful editor", included: true },
-    { text: "AI captions", included: true },
-    { text: "Social media scheduler", included: true },
-    { text: "Custom fonts", included: true },
-    { text: "Speech enhancement", included: true },
-    { text: "Exclusive support", included: true },
+    { text: "Works in Any Language", included: true },
+    { text: "Prompt-to-Thumbnail", included: true },
+    { text: "Recreate", included: true },
+    { text: "Edit", included: true },
+    { text: "Personas", included: true },
+    { text: "FaceSwap", included: true },
+    { text: "Early Access to New Features", included: true },
   ];
 
   return (
@@ -39,7 +38,7 @@ const PricingPage = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 flex flex-col items-center">
         {/* Header */}
         <div className="text-center mb-12">
-          <motion.h1
+          <motion.h1 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-4xl md:text-6xl font-bold mb-4 tracking-tight"
@@ -118,7 +117,7 @@ const PricingPage = () => {
                 {billingCycle === 'annually' ? 'Billed Annually' : 'Billed Monthly'}
               </p>
               <p className="text-sm text-gray-300">
-                Generate up to <span className="text-teal-400 font-bold">{billingCycle === 'annually' ? '1200' : '100'} Clips</span> per {billingCycle === 'annually' ? 'year' : 'month'}.
+                Generate up to <span className="text-teal-400 font-bold">{billingCycle === 'annually' ? '600' : '50'} thumbnails</span> per {billingCycle === 'annually' ? 'year' : 'month'}.
               </p>
             </div>
 
@@ -126,8 +125,7 @@ const PricingPage = () => {
             <div className="bg-black/40 rounded-3xl p-6 mb-8 border border-white/5 space-y-4">
               <div className="flex items-center gap-2 text-teal-400 font-bold text-sm mb-2">
                 <Check size={16} strokeWidth={3} />
-                <span>{billingCycle === 'annually' ? '3600' : '300'} credits</span>per {billingCycle === 'annually' ? 'year' : 'month'}.
-                
+                <span>{billingCycle === 'annually' ? '6000' : '500'} credits</span>
                 <Info size={14} className="text-gray-600 ml-auto" />
               </div>
               
@@ -150,7 +148,7 @@ const PricingPage = () => {
             <div className="space-y-4">
             
            {billingCycle === 'annually' ? (
-             <Link href={`https://mellvitta-ai.lemonsqueezy.com/checkout/buy/a3969d52-f3bb-45c4-8142-9a705f1ebb38/?checkout[email]=${email}`}> <motion.button 
+             <Link href={`https://richacle.lemonsqueezy.com/checkout/buy/a3969d52-f3bb-45c4-8142-9a705f1ebb38/?checkout[email]=${email}`}> <motion.button 
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="w-full py-4 rounded-2xl font-bold bg-teal-400 text-black hover:bg-teal-300 transition-colors shadow-[0_0_20px_rgba(45,212,191,0.3)]"
@@ -158,7 +156,7 @@ const PricingPage = () => {
                 Subscribe Now
               </motion.button></Link>
            ) : (
-             <Link href={`https://mellvitta-ai.lemonsqueezy.com/checkout/buy/9426dea7-2b31-43b7-b496-c6d9c4716014/?checkout[email]=${email}`}> <motion.button 
+             <Link href={`https://richacle.lemonsqueezy.com/checkout/buy/9426dea7-2b31-43b7-b496-c6d9c4716014/?checkout[email]=${email}`}> <motion.button 
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="w-full py-4 rounded-2xl font-bold bg-teal-400 text-black hover:bg-teal-300 transition-colors shadow-[0_0_20px_rgba(45,212,191,0.3)]"
