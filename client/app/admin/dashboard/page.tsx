@@ -212,7 +212,6 @@ useEffect(() => {
             })
         } finally {
             setLoading(false);
-            setAnimation(false);
         }
     };
 
