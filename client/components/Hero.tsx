@@ -84,20 +84,6 @@ const LandingPage = () => {
             ))}
           </motion.div>
         </div>
-        {/* Row 2 */}
-        <div className="flex">
-          <motion.div 
-            animate={{ x: [-1500, 0] }} 
-            transition={{ repeat: Infinity, duration: 40, ease: "linear" }} 
-            className="flex gap-4 shrink-0 px-2"
-          >
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="flex gap-4">
-                {thumbnails.map((t) => <ThumbnailCard key={`row2-${i}-${t.id}`} t={t} />)}
-              </div>
-            ))}
-          </motion.div>
-        </div>
         
         {/* Subtler Bottom Fade - So thumbnails are visible */}
         <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-[#020606] via-[#020606]/40 to-transparent z-10" />
