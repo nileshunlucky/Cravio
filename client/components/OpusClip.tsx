@@ -663,7 +663,7 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-1 sm:p-6 gap-7">
-    <div className="fixed -bottom-12 left-1/2 -translate-x-1/2 w-full h-[350px] bg-teal-500/50 blur-[120px] pointer-events-none" />
+    <div className="fixed -bottom-10 left-1/2 -translate-x-1/2 w-full h-[380px] bg-teal-500/70 blur-[120px] pointer-events-none" />
       {/* Background text - Changed from OpusClip to CRAVIO */}
       <div className="absolute inset-0 md:flex items-center justify-center overflow-hidden pointer-events-none hidden">
         <h1 className="text-[17vw] font-bold text-zinc-700/30 select-none">MELLVITTA</h1>
