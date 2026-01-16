@@ -8,12 +8,11 @@ import Link from "next/link"
 
 
 const thumbnails = [
-  { id: 1, label: "The Unfathomable Wealth of Pablo Escobar", views: "900,000+", img: "https://pikzels.com/_next/image?url=%2Fthumbnails%2F014.webp&w=256&q=75" },
-  { id: 2, label: "The Satisfying Downfall of Ashton Hall", views: "3,500,000+", img: "https://pikzels.com/_next/image?url=%2Fthumbnails%2F017.webp&w=256&q=75" },
-  { id: 3, label: "How Samuel Onuha Sniffed His Way to Prison", views: "550,000+", img: "https://pikzels.com/_next/image?url=%2Fthumbnails%2F006.webp&w=256&q=75" },
-  { id: 4, label: "SECRET Tattoos Footballers Don't Talk About", views: "1,500,000+", img: "https://pikzels.com/_next/image?url=%2Fthumbnails%2F002.webp&w=256&q=75" },
-  { id: 5, label: "Trump's Tariff Plan Explained", views: "3,500,000+", img: "https://pikzels.com/_next/image?url=%2Fthumbnails%2F007.webp&w=256&q=75" },
-  { id: 6, label: "Iman Gadzhi Has Completely Lost His Mind..", views: "700,000+", img: "https://pikzels.com/_next/image?url=%2Fthumbnails%2F012.webp&w=256&q=75" },
+  { id: 1, label: "Bill Gates", views: "950,000+", vid: "https://v1.pinimg.com/videos/iht/expMp4/23/ba/ef/23baef1c269a3e7b7f58dcc9eb75d1ef_720w.mp4" },
+  { id: 2, label: "IShowSpeed", views: "3,500,000+", vid: "https://v1.pinimg.com/videos/iht/720p/db/eb/c0/dbebc0163fe49507db05c215c3755c17.mp4" },
+  { id: 3, label: "Andrew Tate", views: "900,000+", vid: "https://v1.pinimg.com/videos/mc/720p/e1/d5/e5/e1d5e55c8e247baafccc498e0049d686.mp4" },
+  { id: 4, label: "Iman Gadzhi", views: "350,000+", vid: "https://v1.pinimg.com/videos/mc/720p/f3/4a/ae/f34aae4a15eff3a7a1fa619e7e219391.mp4" },
+  { id: 5, label: "Amara Riva", views: "500,000+", vid: "https://v1.pinimg.com/videos/iht/expMp4/a1/af/10/a1af1028b08030ca4bd8385bd1c8d19a_720w.mp4" },
 ];
 
 const LandingPage = () => {
@@ -37,14 +36,27 @@ const LandingPage = () => {
       }, [])
 
   const ThumbnailCard = ({ t }: { t: typeof thumbnails[0] }) => (
-    <div className="relative w-[220px] md:w-[260px] aspect-video bg-gray-900/40 rounded-xl border border-white/5 overflow-hidden group">
-      <img src={t.img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-      <div className="absolute bottom-2 left-2 right-2">
-        <p className="text-[9px] font-bold text-white/70 line-clamp-1 uppercase tracking-tight">{t.label}</p>
-        <p className="text-[8px] text-teal-500 font-medium">{t.views} views</p>
-      </div>
-    </div>
+ <div className="relative w-[160px] md:w-[200px] aspect-[9/16] bg-gray-900/40 rounded-xl border border-white/5 overflow-hidden group">
+  <video 
+    src={t.vid} 
+    autoPlay 
+    muted 
+    loop 
+    playsInline
+    className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" 
+  />
+  
+  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+  
+  <div className="absolute bottom-3 left-3 right-3">
+    <p className="text-[10px] md:text-[11px] font-bold text-white/70 line-clamp-1 uppercase tracking-tight">
+      {t.label}
+    </p>
+    <p className="text-[9px] md:text-[10px] text-teal-500 font-medium">
+      {t.views} views
+    </p>
+  </div>
+</div>
   );
 
   return (
@@ -112,7 +124,7 @@ const LandingPage = () => {
           </div>
           <div className="bg-[#121818] border border-white/10 px-5 py-1.5 rounded-full backdrop-blur-md">
             <p className="text-[11px] font-medium text-gray-400">
-              Trusted by <span className="text-teal-400 font-bold">{userCount}+</span> Users
+              Trusted by <span className="text-teal-400 font-bold">{userCount}+</span> Creators
             </p>
           </div>
         </motion.div>
@@ -120,11 +132,11 @@ const LandingPage = () => {
         {/* Hero */}
         <div className="text-center mb-10">
           <h1 className="text-5xl md:text-8xl font-semibold  mb-4 leading-none">
-            <span className="text-teal-300 drop-shadow-[0_0_25px_rgba(45,212,191,0.4)]">Laziest</span> way  <br />
-            to make Millions of Views
+           1 long video, <span className="text-teal-300 drop-shadow-[0_0_25px_rgba(45,212,191,0.4)]">10 viral clips.</span>  <br />
+Create 10x faster.
           </h1>
           <p className="text-gray-400 text-lg md:text-xl font-light">
-            Stop getting ignored, The lazy way to go viral using AI thumbnails.
+           Mellvitta turns long videos into short viral clips in minutes.
           </p>
         </div>
 
@@ -136,14 +148,14 @@ const LandingPage = () => {
         >
           <div className="bg-[#0a0f0f]/80 backdrop-blur-3xl border border-white/10 rounded-[40px] p-8 md:p-12 shadow-2xl">
             <textarea 
-              className="w-full bg-transparent border-none focus:ring-0 text-xl md:text-2xl text-gray-200 resize-none h-24 placeholder:text-gray-700 outline-none"
-              placeholder="Dubai's $100 billion branded megaprojects"
+              className="w-full text-center bg-transparent border-none focus:ring-0 text-xl md:text-2xl text-gray-200 resize-none h-24 placeholder:text-gray-700 outline-none"
+              placeholder="Drop a YouTube link"
             />
             
             <div className="flex flex-col items-center mt-6 gap-6">
               <Link href="/admin/dashboard"><Button className="bg-teal-400 hover:bg-teal-300 text-black py-7 px-12 rounded-full transition-transform active:scale-95 flex gap-2 text-lg">
                 <Star size={20} fill="currentColor" />
-                Generate My First Thumbnail
+                Get Free Clips
               </Button></Link>
               
               <button className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors text-sm font-bold">

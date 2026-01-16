@@ -14,23 +14,23 @@ const faqs: FAQItem[] = [
     question: "What is Mellvitta?",
     answer: (
       <div className="space-y-4">
-        <p>Mellvitta is a YouTube packaging tool built to help creators create, test & iterate thumbnails & titles that get clicked.</p>
-        <p>This is not a generic image generator. Everything is designed around YouTube performance, CTR & repeatable results.</p>
-        <p className="font-bold text-teal-400">No designers. No photoshoots. No guesswork.</p>
+        <p>Mellvitta is an AI-powered video repurposing tool built to help creators turn long-form content into viral short-form clips in minutes.</p>
+        <p>This is not a generic video editor. Our engine identifies high-retention moments, handles auto-reframing, and adds captions designed for social media performance.</p>
+        <p className="font-bold text-teal-400">No manual cutting. No expensive editors. No wasted content.</p>
       </div>
     ),
   },
   {
-    question: "Why choose Mellvitta over ChatGPT, Midjourney or other AI tools?",
-    answer: "Unlike general AI tools, Mellvitta is specifically trained on high-performance YouTube thumbnails. It understands layout, focal points, and visual psychology that drives clicks, rather than just generating a pretty image.",
+    question: "Why choose Mellvitta over ChatGPT, OpusClip or other AI tools?",
+    answer: "Unlike general AI tools, Mellvitta is specifically trained on viral hooks and retention patterns. It understands the 'meat' of a video—finding the exact moments that drive engagement rather than just cutting random segments.",
   },
   {
-    question: "Can I use Mellvitta with my own face?",
-    answer: "Yes! Our Persona feature allows you to upload a few reference photos once. Our AI then learns your features so you can place yourself in any thumbnail scenario with perfect consistency.",
+    question: "Can I use Mellvitta to maintain my personal brand?",
+    answer: "Absolutely. Our AI maintains your visual style across every clip. From consistent caption styles to face-tracking that keeps you centered, Mellvitta ensures your brand look stays premium and recognizable.",
   },
   {
-    question: "Do I need design skills to use Mellvitta?",
-    answer: "None at all. Mellvitta handles the complex composition, lighting, and branding. You provide the idea, and we provide the professional-grade output.",
+    question: "Do I need editing skills to use Mellvitta?",
+    answer: "None at all. Mellvitta handles the complex clipping, audio leveling, and captioning. You provide the long-form link or file, and we provide the ready-to-post viral clips.",
   },
 ];
 

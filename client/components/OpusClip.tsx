@@ -665,7 +665,7 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-1 sm:p-6 gap-7">
       {/* Background text - Changed from OpusClip to CRAVIO */}
       <div className="absolute inset-0 md:flex items-center justify-center overflow-hidden pointer-events-none hidden">
-        <h1 className="text-[23vw] font-bold text-zinc-700/30 select-none">CRAVIO</h1>
+        <h1 className="text-[17vw] font-bold text-zinc-700/30 select-none">MELLVITTA</h1>
       </div>
 
       <motion.div
