@@ -1,11 +1,56 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { UserButton } from '@clerk/nextjs'
 import Image from 'next/image'
 import Link from 'next/link'
+import { Button } from './ui/button'
+import { useUser } from '@clerk/nextjs';
+
+declare global {
+  interface Window {
+    fbq: (...args: unknown[]) => void;
+  }
+}
+declare const fbq: (...args: unknown[]) => void;
+
 
 const Navbar = ({ credits = 0 }: { credits: number }) => {
+  const { user } = useUser();
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const fetchVideos = async () => {
+
+      if (!user?.primaryEmailAddress?.emailAddress) {
+        return;
+      }
+      const email = user.primaryEmailAddress.emailAddress;
+
+      try {
+        const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`);
+        if (!res.ok) {
+          throw new Error(`Failed to fetch videos: ${res.status} ${res.statusText}`);
+        }
+        const data = await res.json();
+        // Check if trial has been claimed
+        if (data?.trial_claimed) {
+          setShow(false);
+        } else {
+          setShow(true);
+        }
+
+
+      } catch (err) {
+        console.error('Error fetching videos:', err);
+      }
+    };
+    if (user) {
+      fetchVideos();
+    }
+  }, [user]);
+
+  
 
   return (
     <nav className="w-full  border-b shadow-sm py-2 px-4 flex items-center justify-between">
@@ -14,30 +59,25 @@ const Navbar = ({ credits = 0 }: { credits: number }) => {
 
       {/* Right: Credits + Clerk User Button */}
       <div className="flex items-center gap-5">
+        {
+          show && (
+            <Button className="bg-gradient-to-r from-red-600 to-yellow-500 text-white text-sm px-3 py-1 shadow-md" asChild>
+              <a
+                href="https://rzp.io/rzp/jyXt3Ix"
+                rel="noopener noreferrer"
+                onClick={() => {
+                if (typeof window !== 'undefined' && typeof fbq === 'function') {
+                  fbq('track', 'InitiateCheckout');
+                }
+              }}
+              >
+                Exclusive $1 Trial
+              </a>
+            </Button>
+          )
+        }
         <div className="text-sm flex items-center">
-          <span className="inline-flex items-center justify-center filter drop-shadow-[0_0_8px_rgba(71,255,231,0.6)]">
-  <svg 
-    width="16" 
-    height="16" 
-    viewBox="0 0 24 24" 
-    strokeWidth="1.5" 
-    fill="none" 
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path 
-      fillRule="evenodd" 
-      clipRule="evenodd" 
-      d="M13.2319 2.28681C13.5409 2.38727 13.75 2.6752 13.75 3.00005V9.25005H19C19.2821 9.25005 19.5403 9.40834 19.6683 9.65972C19.7963 9.9111 19.7725 10.213 19.6066 10.4412L11.6066 21.4412C11.4155 21.7039 11.077 21.8137 10.7681 21.7133C10.4591 21.6128 10.25 21.3249 10.25 21.0001V14.7501H5C4.71791 14.7501 4.45967 14.5918 4.33167 14.3404C4.20366 14.089 4.22753 13.7871 4.39345 13.5589L12.3935 2.55892C12.5845 2.2962 12.923 2.18635 13.2319 2.28681Z" 
-      fill="url(#tealGlowGradient)"
-    />
-    <defs>
-      <linearGradient id="tealGlowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stopColor="#47FFE7" />
-        <stop offset="100%" stopColor="#0EA5E9" />
-      </linearGradient>
-    </defs>
-  </svg>
-</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path fillRule="evenodd" clipRule="evenodd" d="M13.2319 2.28681C13.5409 2.38727 13.75 2.6752 13.75 3.00005V9.25005H19C19.2821 9.25005 19.5403 9.40834 19.6683 9.65972C19.7963 9.9111 19.7725 10.213 19.6066 10.4412L11.6066 21.4412C11.4155 21.7039 11.077 21.8137 10.7681 21.7133C10.4591 21.6128 10.25 21.3249 10.25 21.0001V14.7501H5C4.71791 14.7501 4.45967 14.5918 4.33167 14.3404C4.20366 14.089 4.22753 13.7871 4.39345 13.5589L12.3935 2.55892C12.5845 2.2962 12.923 2.18635 13.2319 2.28681Z" fill="url(&quot;#linearGradient&quot;)"></path><defs><linearGradient gradientTransform="rotate(90)" id="linearGradient"><stop offset="0%" stopColor="#FFE629"></stop><stop offset="100%" stopColor="#FFA057"></stop></linearGradient></defs></svg>
           <span className="font-bold ">{credits}</span>
         </div>
         <UserButton afterSignOutUrl="/" />

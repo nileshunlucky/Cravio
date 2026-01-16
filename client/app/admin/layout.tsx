@@ -21,7 +21,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       try {
         const res = await fetch(`https://cravio-ai.onrender.com/user/${email}`)
         const data = await res.json()
-        setCredits(data?.credits)
+        setCredits(data.credits)
       } catch (error) {
         console.error('Error fetching videos:', error)
       } 

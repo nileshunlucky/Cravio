@@ -3,10 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from db import users_collection
 from subscription import router as subscription_router
+from limited_offer import router as limited_offer_router
+from api.opusclip import router as opusclip_router
 from social_manage import router as social_manage_router
 from api.faceswap import router as faceswap_router
-from api.lemon_webhook import router as lemon_webhook_router
-from api.thumb2title import router as thumb2title_router
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -20,7 +20,7 @@ app = FastAPI()
 # Allow CORS for your frontend (update this with your Next.js domain)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://mellvitta.com", "https://www.mellvitta.com", "http://localhost:3000"], 
+    allow_origins=["https://cravioai.in", "https://www.cravioai.in", "http://localhost:3000"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,10 +28,10 @@ app.add_middleware(
 
 # add routers
 app.include_router(subscription_router)
+app.include_router(limited_offer_router)
+app.include_router(opusclip_router)
 app.include_router(social_manage_router)
 app.include_router(faceswap_router)
-app.include_router(lemon_webhook_router)
-app.include_router(thumb2title_router)
 
 # Get user by email
 @app.get("/user/{email}")
@@ -42,57 +42,51 @@ def get_user(email: str):
         return user
     raise HTTPException(status_code=404, detail="User not found")
 
-
 # get users email
 @app.get("/users-emails")
 def get_users():
     users = list(users_collection.find({}, {"_id": 0, "email": 1}))
     return users
 
-@app.get("/users-full")
-def get_users_full():
-    """Get all user data including thumbnails"""
-    try:
-        # Fetch all users with all fields
-        users = list(users_collection.find({}))
-        
-        # Convert ObjectId to string for JSON serialization
-        for user in users:
-            if '_id' in user and hasattr(user['_id'], '__str__'):
-                user['_id'] = str(user['_id'])
-        return users
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Error fetching user data")
-
 @app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check():
     return {"status": "OK"}
 
 class UserReferral(BaseModel):
-    email: EmailStr   
+    email: EmailStr
+    referredBy: Optional[str] = None   
 
 @app.post("/add-user")
-def save_referral(data: UserReferral = Body(...)):
-
-    # 1. Check if user exists with email
-    user = users_collection.find_one({"email": data.email})
-
-    if user:
+def save_referral(data: UserReferral = Body(...)):  # Expect referral data in the body
+    # 1. Check if the user already exists
+    existing = users_collection.find_one({"email": data.email})
+    if existing:
         return {"message": "User already exists"}
 
-    # 3. If user doesn't exist, insert as new user
+    # 2. Start building user data
     user_data = {
         "email": data.email,
+        "user_paid": False  # 🔥 Add this line
     }
+
+    # 2. Validate referredBy if provided
+    if data.referredBy:
+        # Check if referredBy is a valid ref_code in another user
+        ref_user = users_collection.find_one({"ref_code": data.referredBy})
+        if not ref_user:
+            return {"message": "Invalid referral code"}
+
+        user_data["referredBy"] = data.referredBy
+
+    # 3. Insert the user
     users_collection.insert_one(user_data)
     return {"message": "User added successfully"}
 
-
-@app.get("/migrate/trial_used")
+@app.get("/migrate/user_paid")
 def add_user_paid_to_existing_users():
     result = users_collection.update_many(
-        {"trial_used": {"$exists": False}},
-        {"$set": {"trial_used": False}}
+        {"user_paid": {"$exists": False}},
+        {"$set": {"user_paid": False}}
     )
     return {"updated_users": result.modified_count}
 

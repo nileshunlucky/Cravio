@@ -1,21 +1,21 @@
 "use client";
 
 import Footer from '@/components/Footer'
+import Monitize from '@/components/Monitize'
 import Nav from '@/components/Nav'
 import Review from '@/components/Review'
-import FAQ from '@/components/FAQ'
-import Hero from '@/components/Hero'
+import HeroX from '@/components/HeroX'
 import React from 'react'
-import Features from '@/components/Features';
+import Anything from '@/components/Anything';
 
 const page = () => {
   return (
     <div className='overflow-hidden'>
       <Nav/>
-      <Hero/>
-      <Features/>
+      <HeroX/>
+      <Anything/>
+      <Monitize/>
       <Review/>
-      <FAQ/>
       <Footer/>
     </div>
   )

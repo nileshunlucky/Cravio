@@ -11,6 +11,12 @@ export default function SendEmailToBackend() {
       if (!user?.emailAddresses?.[0]?.emailAddress) return
 
       const email = user.emailAddresses[0].emailAddress
+      const referralCode = localStorage.getItem("referrer")
+
+      // build payload only with available fields
+      const payload = referralCode
+        ? { email, referredBy: referralCode }
+        : { email }
 
       try {
         const res = await fetch('https://cravio-ai.onrender.com/add-user', {
@@ -18,7 +24,7 @@ export default function SendEmailToBackend() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ email: email }),
+          body: JSON.stringify(payload),
         })
 
         const data = await res.json()
@@ -27,7 +33,7 @@ export default function SendEmailToBackend() {
           console.error("Error from server:", data)
         }
       } catch (error) {
-        console.error("Failed to send data to backend:", error)
+        console.error("Failed to send email to backend:", error)
       }
     }
 
