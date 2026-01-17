@@ -194,7 +194,7 @@ useEffect(() => {
                 // Error case
                 if (res.status === 403) {
                     toast.error("Not enough credits");
-                    router.push("/admin/plan");
+                    router.push("/admin/pricing");
                     return;
                 } else {
                     // Handle other errors
@@ -255,7 +255,7 @@ useEffect(() => {
             } else {
                 if (res.status === 403) {
                     toast.error("Upgrade your Plan");
-                    router.push("/admin/plan");
+                    router.push("/admin/pricing");
                     return;
                 } else {
                     toast.error(data.message || "An error occurred");
