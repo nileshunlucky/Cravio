@@ -83,7 +83,7 @@ def save_referral(data: UserReferral = Body(...)):
     # 3. If user doesn't exist, insert as new user and give free 10 credits
     user_data = {
         "email": data.email,
-        "credits"; 10,
+        "credits": 10,
     }
     users_collection.insert_one(user_data)
     return {"message": "User added successfully"}
