@@ -159,6 +159,7 @@ useEffect(() => {
            
              if(!email){
                 toast.error("User Not found");
+            setAnimation(false);
                 return;
             }
 
@@ -166,11 +167,13 @@ useEffect(() => {
             formData.append('email', email);
              if(!youtubeUrl){
                 toast.error("Select youtubeUrl");
+                setAnimation(false);
                 return;
             }
             formData.append('youtubeUrl', youtubeUrl);
             if(!selectedPersona){
                 toast.error("Select Persona!");
+                setAnimation(false);
                 return;
             }
             formData.append('persona', selectedPersona.image);
@@ -206,6 +209,7 @@ useEffect(() => {
 
         } catch (error) {
             console.error('Error submitting form:', error);
+            setAnimation(false);
             toast.error("Error sumbmitting form", {
                 position: "top-center",
                 duration: 4000,
