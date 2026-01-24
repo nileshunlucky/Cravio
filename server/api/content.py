@@ -29,12 +29,27 @@ def deduct_aura(email: str):
         raise HTTPException(status_code=403, detail="Not enough Aura")
     users_collection.update_one({"email": email}, {"$inc": {"aura": -1}})
 
+def deduct_aura_mog(email: str):
+    user = users_collection.find_one({"email": email})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.get("aura", 0) < 2:
+        raise HTTPException(status_code=403, detail="Not enough Aura")
+    users_collection.update_one({"email": email}, {"$inc": {"aura": -2}})
+
 
 def safe_json_parse(text: str):
+    """
+    Extract the first JSON object in a string and parse it.
+    Raises HTTPException if parsing fails.
+    """
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if not match:
         raise HTTPException(status_code=500, detail="GPT did not return valid JSON.")
-    return json.loads(match.group())
+    try:
+        return json.loads(match.group())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to parse JSON from GPT response: {e}")
 
 
 @router.post("/api/image")
@@ -45,7 +60,7 @@ async def analyze_image(
     deduct_aura(email)
 
     try:
-        # Read file and upload to S3
+        # Read file and upload to S3 (store under trade/ prefix)
         image_bytes = await image.read()
         file_ext = image.filename.split(".")[-1]
         file_key = f"trade/{uuid.uuid4()}.{file_ext}"
@@ -59,24 +74,39 @@ async def analyze_image(
 
         image_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{file_key}"
 
-        # === STEP 1: Analyze trading ===
+# === STEP 1: Analyze face/body image and return looks glow-up ratings ===
         analysis_prompt = (
-        "You are a professional trading analyst. Analyze this trading chart image "
-        "and identify the current market condition to predict a trading decision (BUY or SELL) "
-        "with a probability percentage. Then provide the following details:\n"
-        "- Stop Loss level\n"
-        "- Take Profit 1 level\n"
-        "- Take Profit 2 level (always more than Take Profit 1)\n"
-        "Return ONLY JSON in the exact format below (no extra text or explanation):\n"
-        "{ \"Prediction\": \"BUY\", \"Probability\": 87, \"Current Price\": 22600,  \"Stop Loss\": 22455, "
-        "\"Take Profit 1\": 22505, \"Take Profit 2\": 22553, }\n"
-        "Ensure all values are realistic and consistent with the detected trend in the image."
+    "You are an expert looks analyst and aesthetic evaluator. "
+    "Analyze the provided image focusing on physical presence, posture, facial structure, and overall masculine appeal. "
+    "Evaluate symmetry, confidence projection, bone structure, skin clarity, and visual dominance. "
+    
+    "Return a JSON object with these keys exactly: "
+    "\"Overall\" (integer 0-100), "
+    "\"Position\" (posture, confidence, frame presence — integer 0-100), "
+    "\"Masculinity\" (facial masculinity, dominance cues — integer 0-100), "
+    "\"Skin Quality\" (clarity, texture, glow — integer 0-100), "
+    "\"Jawline\" (sharpness, definition — integer 0-100), "
+    "\"Cheekbones\" (structure, prominence — integer 0-100). "
+
+    "All values must be numbers (not strings). "
+    "ONLY return the JSON object. No explanations, no extra text.\n\n"
+
+    "Example:\n"
+    "{ "
+    "\"Overall\": 82, "
+    "\"Position\": 78, "
+    "\"Masculinity\": 85, "
+    "\"Skin Quality\": 80, "
+    "\"Jawline\": 88, "
+    "\"Cheekbones\": 79 "
+    "}"
         )
+
 
         analysis_response = openai_client.responses.create(
             model="gpt-4o-mini",
             input=[
-                {"role": "system", "content": "You are a precise trading chart evaluator who analyzes market structures and predicts trades accurately."},
+                {"role": "system", "content": "You are a model expert looks."},
                 {"role": "user", "content": [
                     {"type": "input_text", "text": analysis_prompt},
                     {"type": "input_image", "image_url": image_url}
@@ -86,46 +116,40 @@ async def analyze_image(
 
         labels = safe_json_parse(analysis_response.output_text.strip())
 
-        # === STEP 2: Title + note ===
-        title_note_prompt = (
-        "You are a professional trading analyst and content writer. Generate:\n"
-        "1. A short, clear title (max 7 words) describing the market condition or setup seen in the chart. No hashtags, emojis, or fluff.\n"
-        "2. A short practical note (1-2 sentences) giving real insight or feedback about the current trading setup.\n"
-        "ONLY return JSON.\n"
-        "Format:\n"
-        "{ \"title\": \"...\", \"note\": \"...\" }"
-        )
-
-        title_note_response = openai_client.responses.create(
-            model="gpt-4o-mini",
-            input=[
-                {"role": "system", "content": "You are a professional trading analyst and content writer."},
-                {"role": "user", "content": [
-                    {"type": "input_text", "text": title_note_prompt},
-                    {"type": "input_image", "image_url": image_url}
-                ]}
-            ],
-        )
-
-        title_note = safe_json_parse(title_note_response.output_text.strip())
-
-        # === STEP 3: Generate trading Summary & Save as Achievement ===
-
+# === STEP 2: Optional detailed glow-up plan saved as an achievement ===
         summary_prompt = (
-        "You are a professional trading analyst. Based on the uploaded trading chart image, "
-        "create a clear, concise, long detailed summary including:\n"
-        "1. Market Overview (trend, key levels, volume insights)\n"
-        "2. Potential Trade Setups (entry, stop loss, target zones)\n"
-        "3. Risk Management & Suggestions\n"
-        "Format it in a clean, valuable, human-readable style (no fluff). "
-        "ONLY return JSON in the format:\n"
-        "{ \"market_overview\": \"...\", \"trade_setups\": \"...\", \"risk_management\": \"...\" }"
-        )
+    "You are a looks optimization and masculine glow-up strategist. "
+    "Based on the provided image, create a concise, practical glow-up plan including:\n"
+    
+    "1) overall_assessment (1–3 sentences summarizing current appearance and main limiting factors)\n"
+    "2) nutrition_plan (what to eat and avoid to improve skin quality, facial leanness, and masculinity)\n"
+    "3) skincare_routine (specific product types and usage timing)\n"
+    "4) daily_routine (a structured morning-to-night routine in table format)\n\n"
+    
+    "The daily_routine MUST be an array of objects formatted like a table with these exact keys:\n"
+    "\"Time\", \"Action\", \"Summary\"\n\n"
+    
+    "The routine should cover the full day from 6:00 AM to 10:00 PM, "
+    "including waking, meals, skincare, training, work focus, recovery, and sleep prep. "
+    "Summaries should be short and explain why the action supports glow-up or masculine presence.\n\n"
+    
+    "ONLY return JSON in this format:\n"
+    "{ "
+    "\"overall_assessment\": \"...\", "
+    "\"nutrition_plan\": \"...\", "
+    "\"skincare_routine\": \"...\", "
+    "\"daily_routine\": [ "
+    "{ \"Time\": \"6:00 AM\", \"Action\": \"...\", \"Summary\": \"...\" }, "
+    "{ \"Time\": \"...\", \"Action\": \"...\", \"Summary\": \"...\" } "
+    "] "
+    "}"
+)
+
 
         summary_response = openai_client.responses.create(
             model="gpt-4o-mini",
             input=[
-                {"role": "system", "content": "You are a professional trading analyst who summarizes plans from images."},
+                {"role": "system", "content": "You are a trading strategist who writes concise trade plans."},
                 {"role": "user", "content": [
                     {"type": "input_text", "text": summary_prompt},
                     {"type": "input_image", "image_url": image_url}
@@ -135,9 +159,8 @@ async def analyze_image(
 
         summary = safe_json_parse(summary_response.output_text.strip())
 
-        # Save achievement separately
+        # Save achievement separately (keeps user's achievements of analyses)
         achievement_entry = {
-            "title": f"{title_note.get('title', '').strip()}",
             "summary": summary,
             "image_url": image_url,
             "created_at": datetime.utcnow().isoformat()
@@ -148,12 +171,9 @@ async def analyze_image(
             {"$push": {"achievements": achievement_entry}}
         )
 
-
-        # === STEP 3: Save to DB ===
+        # === STEP 3: Save analysis entry to DB in the requested format ===
         entry = {
             "image_url": image_url,
-            "title": title_note.get("title", "").strip(),
-            "note": title_note.get("note", "").strip(),
             "labels": labels,
             "created_at": datetime.utcnow().isoformat()
         }
@@ -168,4 +188,115 @@ async def analyze_image(
     except Exception as e:
         # Refund aura if something fails
         users_collection.update_one({"email": email}, {"$inc": {"aura": 1}})
-        raise HTTPException(status_code=500, detail=f"Image analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Chart analysis failed: {str(e)}")
+
+@router.post("/api/mog")
+async def analyze_image(
+    email: str = Form(...),
+    leftImg: UploadFile = File(...),
+    rightImg: UploadFile = File(...),
+):
+    deduct_aura_mog(email)
+
+    try:
+        # Read file and upload left img to S3 (store under trade/ prefix)
+        image_bytes = await leftImg.read()
+        file_ext = leftImg.filename.split(".")[-1]
+        file_key = f"trade/{uuid.uuid4()}.{file_ext}"
+
+        s3_client.put_object(
+            Bucket=S3_BUCKET,
+            Key=file_key,
+            Body=image_bytes,
+            ContentType=leftImg.content_type,
+        )
+
+        left_image_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{file_key}"
+
+        # Read file and upload right img to S3 (store under trade/ prefix)
+        image_bytes = await rightImg.read()
+        file_ext = rightImg.filename.split(".")[-1]
+        file_key = f"trade/{uuid.uuid4()}.{file_ext}"
+
+        s3_client.put_object(
+            Bucket=S3_BUCKET,
+            Key=file_key,
+            Body=image_bytes,
+            ContentType=rightImg.content_type,
+        )
+
+        right_image_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{file_key}"
+
+        analysis_prompt = (
+    "You are a strict visual comparison engine.\n\n"
+
+    "Two face images are provided in this order:\n"
+    "1) LEFT image\n"
+    "2) RIGHT image\n\n"
+
+    "Compare both images and decide who is more physically attractive overall.\n\n"
+    "\"Overall\" (integer 0-100), "
+    "\"Position\" (posture, confidence, frame presence — integer 0-100), "
+    "\"Masculinity\" (facial masculinity, dominance cues — integer 0-100), "
+    "\"Skin Quality\" (clarity, texture, glow — integer 0-100), "
+    "\"Jawline\" (sharpness, definition — integer 0-100), "
+    "\"Cheekbones\" (structure, prominence — integer 0-100). "
+
+    "You MUST return a single JSON object ONLY.\n"
+    "No markdown, no explanations, no extra text.\n\n"
+
+    "Definitions:\n"
+    "- 'Mogs' = winner (more attractive)\n"
+    "- 'Mogged' = loser (less attractive)\n\n"
+
+    "Scoring rules:\n"
+    "- All scores must be integers between 0 and 100.\n\n"
+
+    "JSON FORMAT (follow exactly):\n"
+    "{\n"
+    "  \"Mogs\": \"LEFT\" | \"RIGHT\",\n"
+    "  \"Mogged\": \"LEFT\" | \"RIGHT\",\n"
+    "  \"LEFT\": {\n"
+    "    \"Overall\": number,\n"
+    "    \"Position\": number,\n"
+    "    \"Masculinity\": number,\n"
+    "    \"SkinQuality\": number,\n"
+    "    \"Jawline\": number,\n"
+    "    \"Cheekbones\": number\n"
+    "  },\n"
+    "  \"RIGHT\": {\n"
+    "    \"Overall\": number,\n"
+    "    \"Position\": number,\n"
+    "    \"Masculinity\": number,\n"
+    "    \"SkinQuality\": number,\n"
+    "    \"Jawline\": number,\n"
+    "    \"Cheekbones\": number\n"
+    "  }\n"
+    "}\n\n"
+
+    "Rules:\n"
+    "- 'Mogs' and 'Mogged' must be different.\n"
+    "- Output JSON ONLY.\n"
+)
+
+
+        analysis_response = openai_client.responses.create(
+            model="gpt-4o-mini",
+            input=[
+                {"role": "system", "content": "You are a strict visual comparison engine that follows instructions exactly and outputs JSON only."},
+                {"role": "user", "content": [
+                    {"type": "input_text", "text": analysis_prompt},
+                    {"type": "input_image", "image_url": left_image_url},
+                    {"type": "input_image", "image_url": right_image_url},
+                ]}
+            ],
+        )
+
+        labels = safe_json_parse(analysis_response.output_text.strip())
+
+        return {"status": "success", "data": labels}
+
+    except Exception as e:
+        # Refund aura if something fails
+        users_collection.update_one({"email": email}, {"$inc": {"aura": 2}})
+        raise HTTPException(status_code=500, detail=f"Chart analysis failed: {str(e)}")

@@ -4,6 +4,7 @@ import { SidebarProvider } from "@/components/ui/sidebar"
 import SendEmailToBackend from "@/components/SendEmailToBackend"
 import { SignedIn } from "@clerk/nextjs"
 import { Toaster } from "sonner";
+import Nav from '@/components/Nav'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
 
@@ -13,6 +14,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <SignedIn>
           <SendEmailToBackend />
         </SignedIn>
+          <Nav/>
         {children}
         <Toaster position="top-right" richColors />
       </div>

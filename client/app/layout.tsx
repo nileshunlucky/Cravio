@@ -4,7 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from '@clerk/nextjs';
 import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider"
-import Nav from '@/components/Nav'
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mellvitta AI",
-  description: "Auraiser AI is a powerfull ai for fitness members to grow thier strenght fast with scan your pysyics and get rated.",
+  title: "Mellvitta",
+  description: "Mellvitta AI . Upload face and get rated and improvement",
   icons: {
     icon: "/logo.png",
   },
@@ -61,7 +61,7 @@ export default function RootLayout({
             enableSystem={false}
             disableTransitionOnChange
           >
-          <Nav/>
+        
             {children}
           </ThemeProvider>
         </body>

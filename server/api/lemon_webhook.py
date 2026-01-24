@@ -3,12 +3,10 @@ import hmac
 import json
 from datetime import datetime, timezone
 from fastapi import APIRouter, Request, HTTPException, Header
-from db import users_collection
 import os
-import boto3
+from db import users_collection
 
 router = APIRouter()
-
 
 # Ensure you have your webhook secret in your environment variables
 LEMON_SQUEEZING_WEBHOOK_SECRET = os.getenv("LEMON_SQUEEZING_WEBHOOK_SECRET")
@@ -17,7 +15,9 @@ LEMON_SQUEEZING_WEBHOOK_SECRET = os.getenv("LEMON_SQUEEZING_WEBHOOK_SECRET")
 
 # Map your Lemon Squeezy plan variant IDs to the number of aura
 PLANS = {
-    1262539: 100
+    1157477: 100, 
+    1126909: 250, 
+    1157479: 3000, 
 }
 
 # --- Helper Functions ---
@@ -88,7 +88,7 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
                     "subscription_started_at": datetime.now(timezone.utc),
                 },
                 "$set": {"aura": aura_to_add},
-                "$set": {"user_paid": True},
+                "$set": {"is_paid": True},
             },
         )
         return {
@@ -98,26 +98,6 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
 
     # Event: A subscription is updated
     elif event == "subscription_updated":
-        aura_to_add = PLANS.get(variant_id)
-        if not aura_to_add:
-            return {
-                "status": "error",
-                "message": f"Invalid plan variant ID: {variant_id}",
-            }
-
-        users_collection.update_one(
-            {"email": email},
-            {
-                "$set": {
-                    "subscription_status": "active",
-                    "plan_variant_id": variant_id,
-                    "subscription_id": data.get("id"),
-                    "subscription_started_at": datetime.now(timezone.utc),
-                },
-                "$set": {"aura": aura_to_add},
-                "$set": {"user_paid": True},
-            },
-        )
         return {"status": "info", "message": "Subscription updated."}
 
     # Event: Subscription is cancelled by the user or admin
@@ -130,7 +110,7 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
                     "subscription_status": "cancelled",
                     "subscription_cancelled_at": datetime.now(timezone.utc),
                     "aura": "",
-                    "user_paid": False,
+                    "is_paid": False,
                 },
                 "$unset": {"plan_variant_id": ""},
             },
@@ -148,7 +128,7 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
                     "subscription_status": "expired",
                     "subscription_expired_at": datetime.now(timezone.utc),
                     "aura": "",
-                    "user_paid": False,
+                    "is_paid": False,
                 },
                 "$unset": {"plan_variant_id": ""},
             },

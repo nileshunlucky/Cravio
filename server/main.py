@@ -9,7 +9,8 @@ from api.persona import router as persona_router
 from api.persona2img import router as img2img_router
 from api.opus import router as opus_router
 from api.content import router as content_router
-from binance.client import Client
+from api.predictTrade import router as predictTrade_router
+from api.binance import router as binance_router
 
 app = FastAPI()
 
@@ -27,69 +28,9 @@ app.include_router(lemon_webhook_router)
 app.include_router(persona_router)
 app.include_router(img2img_router)
 app.include_router(opus_router)
+app.include_router(predictTrade_router)
+app.include_router(binance_router)
 app.include_router(content_router)
-
-@app.get("/api/balance/{email}")
-async def get_balance(email: str):
-    """
-    If email is 'nileshinde001@gmail.com' -> return DB balance
-    Else -> return Binance balance in USDT
-    """
-    try:
-        # ✅ SPECIAL CASE: Use DB balance
-        if email == "nileshinde001@gmail.com":
-            user = users_collection.find_one({"email": email})
-            if not user:
-                raise HTTPException(status_code=404, detail="User not found")
-            db_balance = float(user.get("balance", 0))
-            return { "balance": round(db_balance, 2) }
-
-        # ✅ DEFAULT: Binance balance
-        user = users_collection.find_one({"email": email})
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-
-        api_key = user.get("apiKey")
-        api_secret = user.get("apiSecret")
-
-        if not api_key or not api_secret:
-            raise HTTPException(
-                status_code=400,
-                detail="Binance API credentials missing. Please add them in settings."
-            )
-
-        client = Client(api_key, api_secret)
-        account = client.get_account()
-
-        total = 0.0
-
-        for b in account.get("balances", []):
-            amount = float(b.get("free", 0)) + float(b.get("locked", 0))
-            if amount <= 0:
-                continue
-
-            asset = b.get("asset")
-
-            # ✅ Direct USDT
-            if asset == "USDT":
-                total += amount
-            else:
-                try:
-                    ticker = client.get_symbol_ticker(symbol=f"{asset}USDT")
-                    price = float(ticker["price"])
-                    total += amount * price
-                except:
-                    pass
-
-        return { "balance": round(total, 2) }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ==================== END OF FILE ====================
 
 # Get user by email
 @app.get("/user/{email}")
@@ -149,10 +90,11 @@ def save_referral(data: UserReferral = Body(...)):
     if user:
         return {"message": "User already exists"}
 
-    # 3. If user doesn't exist, insert as new user 
+    # 3. If user doesn't exist, insert as new user and give 0 aura
     user_data = {
         "email": data.email,
-        "user_paid": False,
+        "aura": 0,
+        "is_paid": False,
     }
 
     users_collection.insert_one(user_data)
@@ -209,19 +151,3 @@ async def proxy_video(url: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch video: {str(e)}")
 
-# save brokerage details in the database
-class BrokerageDetails(BaseModel):
-    brokerId: str
-    apiKey: str
-    email: EmailStr
-
-@app.post("/api/save-brokerage")
-def save_brokerage(details: BrokerageDetails):
-    user = users_collection.find_one({"email": details.email})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    users_collection.update_one(
-        {"email": details.email},
-        {"$set": {"brokerId": details.brokerId, "apiKey": details.apiKey}}
-    )
-    return {"message": "Brokerage details saved successfully"}

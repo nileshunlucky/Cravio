@@ -1,182 +1,302 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useMemo } from "react";
+import { Camera, Sparkles, Zap, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Target, Shield, BarChart3, Brain, Upload, ArrowUpRight } from 'lucide-react';
 
-const Page = () => {
-  const [athletes, setAthletes] = useState<number | null>(null);
-  const [showLogo, setShowLogo] = useState(true);
+import { ReactNode, MouseEventHandler } from "react";
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const res = await fetch(`https://cravio-ai.onrender.com/users-emails`);
-        if (!res.ok) return;
-        const data = await res.json();
-        setAthletes(data.length);
-      } catch (err) {
-        console.error('Failed to fetch user data:', err);
-      }
-    };
-    fetchUserData();
+type ButtonVariant = "primary" | "secondary";
 
-    const timer = setTimeout(() => setShowLogo(false), 2500);
-    return () => clearTimeout(timer);
-  }, []);
+interface ButtonProps {
+  children: ReactNode;
+  className?: string;
+  variant?: ButtonVariant;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
+}
 
-  const features = [
-    { icon: <Upload className="w-5 h-5" />, title: "Upload Chart", description: "Simply upload your trading chart screenshot" },
-    { icon: <Brain className="w-5 h-5" />, title: "AI Analysis", description: "Advanced AI analyzes patterns instantly" },
-    { icon: <TrendingUp className="w-5 h-5" />, title: "BUY/SELL Signal", description: "Get clear actionable trading signals" },
-    { icon: <Shield className="w-5 h-5" />, title: "Stop Loss", description: "Precise risk management levels" },
-    { icon: <Target className="w-5 h-5" />, title: "Target Price", description: "Multiple profit target recommendations" },
-    { icon: <BarChart3 className="w-5 h-5" />, title: "Win Probability", description: "Data-driven success rate prediction" },
-  ];
+// Optimized Button Component
+const Button = ({
+  children,
+  className = "",
+  variant = "primary",
+  onClick,
+}: ButtonProps) => {
+  const baseStyles =
+    "px-10 py-5 text-lg font-bold backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-white/30 relative overflow-hidden group rounded-full";
 
-  const steps = [
-    { number: "01", title: "Upload Your Chart", description: "Upload any trading chart from your platform" },
-    { number: "02", title: "AI Processing", description: "Our advanced AI analyzes technical patterns, support/resistance, and market sentiment" },
-    { number: "03", title: "Get Predictions", description: "Receive BUY/SELL signals with stop loss, targets, and winning probability percentage" },
-  ];
+  const variantStyles: Record<ButtonVariant, string> = {
+    primary:
+      "bg-gradient-to-r from-white to-neutral-100 text-black hover:shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-105",
+    secondary:
+      "bg-white/5 backdrop-blur-md text-white border border-white/20 hover:bg-white/10 hover:border-white/40 hover:scale-105",
+  };
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-white selection:text-black font-sans antialiased">
-    
-      
-      {/* Apple-style Loading Screen */}
-      <AnimatePresence>
-        {showLogo && (
-          <motion.div
-            className="fixed inset-0 bg-black flex items-center justify-center z-[9999]"
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: [0.43, 0.13, 0.23, 0.96] }}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 1, ease: "easeOut" }}
-            >
-              <img src="/logo.png" alt="Logo" className="w-24 h-24 " />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <button
+      onClick={onClick}
+      className={`${baseStyles} ${variantStyles[variant]} ${className}`}
+    >
+      <span className="relative z-10 flex items-center gap-2">
+        {children}
+      </span>
+    </button>
+  );
+};
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: showLogo ? 0 : 1 }}
-        transition={{ duration: 1 }}
-      >
-        {/* Main Content */}
-        <div className="relative z-10">
-          
-          {/* Hero Section */}
-          <section className="container mx-auto px-6 pt-32 pb-24 text-center max-w-5xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 text-zinc-300 px-4 py-1.5 mb-8 backdrop-blur-md">
-               Trusted by   <span className=" font-medium tracking-widest uppercase text-white p-1"> 10,000 </span>   Traders
-              </div>
 
-              <h1 className="text-5xl md:text-8xl font-semibold tracking-tight mb-8">
-                <span className="opacity-70">Laziest way to make </span> $10k a Month.
-              </h1>
+interface CardProps {
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+}
 
-              {/* Stats Block */}
-              <div className="flex items-center justify-center gap-16 mb-16">
-                <div className="text-center">
-                  <div className="text-4xl font-medium tabular-nums">{athletes || "0"}+</div>
-                  <div className="text-xs uppercase tracking-widest opacity-40 mt-2">Traders Mentored</div>
-                </div>
-                <div className="h-10 w-px bg-white/10" />
-                <div className="text-center">
-                  <div className="text-4xl font-medium tabular-nums">95%</div>
-                  <div className="text-xs uppercase tracking-widest opacity-40 mt-2">Accuracy Rate</div>
-                </div>
-              </div>
+// Optimized Card Component
+const Card = ({ children, className = "", delay = 0 }: CardProps) => {
+  const [isVisible, setIsVisible] = useState(false);
 
-              {/* Call to Action */}
-              <div className="flex flex-col items-center">
-                <Link href="/admin/dashboard">
-                  <motion.button
-                    className="bg-white text-black px-10 py-4 rounded-full font-medium text-sm flex items-center gap-2 hover:bg-zinc-200 transition-colors"
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    LOCK IN
-                    <ArrowUpRight className="w-4 h-4" />
-                  </motion.button>
-                </Link>
-                <p className="text-zinc-500 text-sm mt-6 font-light">
-                  No more doing it all yourself. It’s your time to rise.
-                </p>
-              </div>
-            </motion.div>
-          </section>
-
-          {/* How It Works - Minimal Grid */}
-          <section className="container mx-auto px-6 py-32 border-t border-white/5">
-            <div className="max-w-6xl mx-auto">
-              <div className="mb-20">
-                <h2 className="text-3xl font-medium mb-4">How It Works</h2>
-                <p className="text-zinc-500">Three simple steps to trading mastery.</p>
-              </div>
-              
-              <div className="grid md:grid-cols-3 gap-12">
-                {steps.map((step, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
-                    className="group"
-                  >
-                    <div className="text-sm font-medium opacity-30 mb-4 tracking-tighter">— {step.number}</div>
-                    <h3 className="text-xl font-medium mb-3">{step.title}</h3>
-                    <p className="text-zinc-400 font-light leading-relaxed text-sm">{step.description}</p>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* Features - Bento Style Light */}
-          <section className="container mx-auto px-6 py-32 border-t border-white/5 bg-zinc-950/30">
-            <div className="max-w-6xl mx-auto">
-              <div className="text-center mb-20">
-                <h2 className="text-3xl font-medium mb-4">The Suite</h2>
-                <p className="text-zinc-500">Intelligence at your fingertips.</p>
-              </div>
-
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/5 border border-white/5 overflow-hidden rounded-3xl">
-                {features.map((feature, index) => (
-                  <div 
-                    key={index} 
-                    className="bg-black p-10 hover:bg-zinc-900/50 transition-colors group"
-                  >
-                    <div className="text-white mb-6 opacity-60 group-hover:opacity-100 transition-opacity">
-                      {feature.icon}
-                    </div>
-                    <h3 className="text-lg font-medium mb-2">{feature.title}</h3>
-                    <p className="text-zinc-500 text-sm font-light leading-relaxed">{feature.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-        </div>
-      </motion.div>
-      
-      {/* Subtle Noise Texture Overlay */}
-      <div className="pointer-events-none fixed inset-0 z-[100] opacity-[0.03] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+  return (
+    <div
+      className={`bg-gradient-to-br from-neutral-900/50 to-neutral-950/50 backdrop-blur-xl border border-neutral-800/50 p-8 rounded-3xl shadow-2xl transition-all duration-500 group relative overflow-hidden ${className}`}
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "translateY(0)" : "translateY(20px)",
+        transition: `all 0.6s ease-out ${delay}s`,
+      }}
+      ref={(el) => {
+        if (el && !isVisible) {
+          const observer = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) {
+              setIsVisible(true);
+              observer.disconnect();
+            }
+          });
+          observer.observe(el);
+        }
+      }}
+    >
+      <div className="relative z-10">{children}</div>
     </div>
   );
 };
 
-export default Page;
+
+export default function GlowUpLanding() {
+
+  // Memoized static data to prevent re-renders
+  const features = useMemo(() => [
+    {
+      icon: Camera,
+      title: "Upload & Analyze",
+      description: "Upload your photo and let our advanced AI analyze your facial features, structure, and overall aesthetic appeal with precision.",
+      step: "STEP ONE",
+    },
+    {
+      icon: Sparkles,
+      title: "Get Your Rating",
+      description: "Receive a comprehensive attractiveness score with detailed insights on diet, skincare routine, and daily habits to maximize your glow-up potential.",
+      step: "STEP TWO",
+    },
+    {
+      icon: Zap,
+      title: "Mog Arena",
+      description: "Compare two faces side-by-side. See who has model-tier features and discover the winner and mogged based on attrative model looks.",
+      step: "STEP THREE",
+    },
+  ], []);
+
+
+  const trustIndicators = useMemo(() => [
+    "AI-powered analysis",
+    "Privacy protected",
+    "Model ratings",
+  ], []);
+
+  return (
+    <div className="min-h-screen bg-black text-white font-sans overflow-hidden relative">
+      {/* Optimized background - premium black & white */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-neutral-900 via-black to-black"></div>
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-to-br from-neutral-800/20 to-transparent rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-neutral-700/20 to-transparent rounded-full blur-3xl"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]"></div>
+      </div>
+
+      {/* HERO SECTION */}
+      <section className="min-h-screen flex items-center justify-center px-4 py-32 relative z-10">
+        <div className="max-w-7xl mx-auto text-center relative z-10">
+          <h1 className="text-5xl md:text-8xl lg:text-9xl font-black mb-8 leading-[0.9] tracking-tighter">
+            <span className="bg-gradient-to-r from-white via-neutral-200 to-neutral-400 bg-clip-text text-transparent animate-gradient">
+              Upload Your Face.
+            </span>
+            <br />
+            <span className="text-white">Get Rated by AI.</span>
+            <br />
+            <span className="bg-gradient-to-r from-neutral-200 to-neutral-400 bg-clip-text text-transparent">
+              Maximize Your Looks.
+            </span>
+          </h1>
+
+          <p className="text-xs md:text-2xl text-neutral-400 mb-12 max-w-3xl mx-auto font-light leading-relaxed">
+            Get an <span className="text-white font-semibold">AI-powered attractiveness rating</span> with personalized glow-up advice.
+            <br className="hidden md:block" />
+            Discover your true potential with model analysis.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+           <Link href="/admin/dashboard"> <Button className="shadow-2xl shadow-white/10">
+              Start Your Glow-Up
+              <ArrowRight className="w-5 h-5" />
+            </Button></Link>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-6 text-xs text-neutral-500">
+            {trustIndicators.map((item, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-neutral-600 rounded-full"></div>
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURES SECTION */}
+      <section className="py-32 px-4 relative z-10">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-6">
+              <span className="bg-gradient-to-r from-white via-neutral-300 to-neutral-500 bg-clip-text text-transparent">
+                Your Complete
+              </span>
+              <br />
+              <span className="text-white">Glow-Up Journey</span>
+            </h2>
+            <p className="text-neutral-500 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+              Three simple steps to unlock your maximum aesthetic potential
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+            {features.map((feature, i) => (
+              <Card key={i} delay={i * 0.15} className="h-full">
+                <div className="flex items-start justify-between mb-8">
+                  <div className="p-4 bg-gradient-to-br from-white/10 to-white/5 rounded-2xl backdrop-blur-sm border border-white/10 hover:scale-110 transition-transform">
+                    <feature.icon className="w-8 h-8 stroke-[1.5]" />
+                  </div>
+                  <div className="text-7xl font-black text-white/10">
+                    {i + 1}
+                  </div>
+                </div>
+
+                <div className="text-xs font-bold mb-4 uppercase tracking-[0.2em] text-neutral-500">
+                  {feature.step}
+                </div>
+
+                <h3 className="text-2xl md:text-3xl font-bold mb-4 tracking-tight text-white leading-tight">
+                  {feature.title}
+                </h3>
+
+                <p className="text-neutral-400 text-base md:text-lg leading-relaxed">
+                  {feature.description}
+                </p>
+
+                <div className="h-1 bg-gradient-to-r from-white/50 to-transparent mt-6 rounded-full w-0 group-hover:w-full transition-all duration-800"></div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* MOG FEATURE HIGHLIGHT */}
+      <section className="py-24 px-4 relative z-10">
+        <div className="max-w-5xl mx-auto">
+          <Card className="bg-gradient-to-br from-neutral-900/60 to-black/80 p-12 md:p-16 text-center border-white/10">
+<div className="flex items-center justify-center gap-6 mt-6">
+  {/* WINNER */}
+  <div className="relative">
+    <img
+      className="h-30 w-30 rounded-xl object-cover border border-white/20 shadow-lg"
+      src="https://i.pinimg.com/736x/cb/74/5b/cb745bf46057d615a7ddfa48532344a0.jpg"
+      alt="mog"
+    />
+    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black text-xs font-black px-3 py-1 rounded-full tracking-wide">
+      MOGS
+    </span>
+  </div>
+
+  {/* VS */}
+  <div className="text-neutral-500 font-black text-xl select-none">VS</div>
+
+  {/* MOGGED */}
+  <div className="relative">
+    <img
+      className="h-30 w-30 rounded-xl object-cover border border-red-600/40 shadow-lg grayscale"
+      src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQqcAIfnL4KkCGZPVP7qIwXb96sVpCGO-j76Q&s"
+      alt="mogged"
+    />
+
+    {/* MOGGED LABEL */}
+    <div className="absolute top-8 left-0 right-0 bg-black/90 py-1">
+      <p className="text-center text-red-500 text-xs font-black tracking-widest">
+        MOGGED
+      </p>
+    </div>
+  </div>
+</div>
+            <h3 className="text-4xl md:text-5xl font-black mb-6 text-white">
+              Mog Arena
+            </h3>
+            <p className="text-neutral-400 text-xs md:text-xl mb-8 max-w-2xl mx-auto">
+              Upload two faces and let AI determine who has superior genetics. Compare facial harmony, symmetry, and model-tier features. See who mogs who.
+            </p>
+           <Link href="/admin/mog"> <Button className="mx-auto">
+              GET MOG
+            </Button></Link>
+          </Card>
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="py-32 px-4 relative z-10">
+        <div className="max-w-5xl mx-auto text-center">
+          <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/10 to-white/5 blur-3xl rounded-full scale-150 -z-10"></div>
+
+          <h2 className="text-4xl md:text-7xl lg:text-8xl font-black mb-8 tracking-tighter leading-[0.95]">
+            <span className="bg-gradient-to-r from-white via-neutral-200 to-neutral-400 bg-clip-text text-transparent">
+              Unlock Your Potential,
+            </span>
+            <br />
+            <span className="text-white">Start Your Glow-Up.</span>
+          </h2>
+
+          <p className="text-xs md:text-2xl text-neutral-400 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+            Join the AI revolution in self-improvement.
+            <br className="hidden md:block" />
+            Your transformation begins today.
+          </p>
+
+         <Link href="/admin/glowup"> <Button className="p-2 text-xl font-bold shadow-[0_0_80px_rgba(255,255,255,0.15)]">
+            Glow Up Summary
+            <ArrowRight className="w-6 h-6" />
+          </Button></Link>
+
+          <p className="mt-8 text-xs text-neutral-600">
+            Join 10,000+ people already on their glow-up journey
+          </p>
+        </div>
+      </section>
+
+      <style jsx>{`
+        @keyframes gradient {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        .animate-gradient {
+          background-size: 200% 200%;
+          animation: gradient 8s ease infinite;
+        }
+      `}</style>
+    </div>
+  );
+}

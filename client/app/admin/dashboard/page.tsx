@@ -3,15 +3,14 @@
 import React, { useState, useRef, ChangeEvent, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { Camera, Upload } from "lucide-react";
 
 interface TradeAnalysis {
   image_url: string;
-  title: string;
-  note: string;
   labels: Record<string, number | string>;
   created_at: string;
   _loading?: boolean;
@@ -21,18 +20,15 @@ const Page = () => {
   const { user } = useUser();
   const email = user?.emailAddresses?.[0]?.emailAddress || "";
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const [analyses, setAnalyses] = useState<TradeAnalysis[]>([]);
   const [selected, setSelected] = useState<TradeAnalysis | null>(null);
+  const [showMenu, setShowMenu] = useState(false);
   const router = useRouter();
 
-  const handleChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const uploadImage = async (file: File) => {
     const fakeCard: TradeAnalysis = {
       image_url: "",
-      title: "Analyzing Trade...",
-      note: "",
       labels: {},
       created_at: new Date().toISOString(),
       _loading: true,
@@ -67,9 +63,28 @@ const Page = () => {
       console.error(err);
       toast.error("Failed! Try again.");
       setAnalyses(prev => prev.filter(c => c !== fakeCard));
-    } finally {
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    await uploadImage(file);
+    
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
+    setShowMenu(false);
+  };
+
+  const handleCameraClick = () => {
+    cameraInputRef.current?.click();
+    setShowMenu(false);
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+    setShowMenu(false);
   };
 
   useEffect(() => {
@@ -83,7 +98,6 @@ const Page = () => {
           if (Array.isArray(data.image_analysis)) {
             setAnalyses(data.image_analysis.slice().reverse());
           }
-
         } else {
           toast.error("Failed to fetch user data.");
         }
@@ -98,21 +112,60 @@ const Page = () => {
 
   return (
     <div className="relative min-h-screen bg-black p-4 md:ml-20 ml-0">
+      {/* Hidden file inputs */}
       <input
         type="file"
         accept="image/*"
         ref={fileInputRef}
-        onChange={handleChange}
+        onChange={handleFileChange}
+        className="hidden"
+      />
+      <input
+        type="file"
+        accept="image/*"
+        capture="environment"
+        ref={cameraInputRef}
+        onChange={handleFileChange}
         className="hidden"
       />
 
+      {/* Menu options */}
+      <AnimatePresence>
+        {showMenu && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-24 right-6 bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden z-50 border border-zinc-800"
+          >
+            <button
+              onClick={handleCameraClick}
+              className="flex items-center gap-3 px-6 py-4 hover:bg-zinc-800 transition w-full text-left text-white"
+            >
+              <Camera className="w-5 h-5" />
+              <span className="font-medium">Open Camera</span>
+            </button>
+            <div className="h-px bg-zinc-800"></div>
+            <button
+              onClick={handleUploadClick}
+              className="flex items-center gap-3 px-6 py-4 hover:bg-zinc-800 transition w-full text-left text-white"
+            >
+              <Upload className="w-5 h-5" />
+              <span className="font-medium">Upload Image</span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating action button */}
       <button
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => setShowMenu(!showMenu)}
         className="fixed bottom-6 right-6 bg-white text-black rounded-full w-14 h-14 flex items-center justify-center text-3xl shadow-lg hover:scale-105 transition z-50"
       >
-        +
+        {showMenu ? "×" : "+"}
       </button>
 
+      {/* Grid of analyses */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6">
         {analyses.map((a, idx) => (
           <motion.div
@@ -136,17 +189,16 @@ const Page = () => {
                 <>
                   <img
                     src={a.image_url}
-                    alt={a.title}
+                    alt={a.image_url}
                     className="w-full h-full object-cover absolute inset-0"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
-                  <CardContent className="absolute bottom-4 left-4 right-4 text-white space-y-2 p-0">
-                    <CardTitle className="text-xl font-bold">{a.title}</CardTitle>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
+                  <CardContent className="absolute bottom-4 left-4 right-4 text-white p-0">
+                    <div className="bg-black/60 backdrop-blur rounded-lg p-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                       {Object.entries(a.labels).map(([key, value]) => (
-                        <div key={key} className="flex justify-between">
-                          <span>{key.toLowerCase().includes("probability") ? 'Winning Probability' : key}</span>
-                          <span>{key.toLowerCase().includes("probability") ? `${value}%` : value}</span>
+                        <div key={key} className="flex items-center justify-between">
+                          <span className="text-zinc-300 truncate">{key}</span>
+                          <span className="font-semibold text-white">{Number(value)}</span>
                         </div>
                       ))}
                     </div>
@@ -158,87 +210,53 @@ const Page = () => {
         ))}
       </div>
 
+      {/* Detail modal */}
       <AnimatePresence>
         {selected && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-3 md:p-4"
+            className="fixed inset-0 bg-black flex items-center justify-center z-50 p-4 pt-14"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSelected(null)}
           >
             <motion.div
-              className="bg-zinc-900 text-white rounded-xl max-w-xl w-full p-4 md:p-6 overflow-y-auto"
-              initial={{ scale: 0.8 }}
+              className="bg-zinc-950 text-white rounded-2xl max-w-md w-full p-6 relative"
+              initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
-              exit={{ scale: 0.8 }}
-              onClick={e => e.stopPropagation()}
+              exit={{ scale: 0.9 }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <img
-                src={selected.image_url}
-                alt={selected.title}
-                className="w-full h-64 object-cover rounded-md mb-4"
-              />
-              <h2 className="text-xl font-semibold mb-4">{selected.title}</h2>
+              <div className="flex justify-center mb-16">
+                <img
+                  src={selected.image_url}
+                  alt="Face"
+                  className="w-35 h-35 absolute -top-14 rounded-full object-cover"
+                />
+              </div>
 
-              <div className="grid grid-cols-1 gap-4">
-  {Object.entries(selected.labels)
-    .filter(([key]) => 
-      !["Stop Loss", "Take Profit 1", "Take Profit 2"].includes(key)
-    )
-          .map(([key, value]) => (
-      <div key={key}>
-        <div className="flex justify-between mb-1">
-          <span>{key.toLowerCase().includes("probability") ? 'Winning Probability' : key}</span>
-          <span
-            className={
-              key.toLowerCase().includes("prediction")
-                ? value.toString().toLowerCase() === "buy"
-                  ? "text-green-500 font-semibold"
-                  : value.toString().toLowerCase() === "sell"
-                  ? "text-red-500 font-semibold"
-                  : ""
-                : ""
-            }
-          >
-            {key.toLowerCase().includes("probability")
-              ? `${value}%`
-              : value}
-          </span>
-        </div>
-        {key.toLowerCase().includes("probability") && (
-          <Progress  value={Number(value)} />
-        )}
-      </div>
-    ))}
-</div>
+              <div className="grid grid-cols-2 gap-4">
+                {Object.entries(selected.labels).map(([key, value]) => (
+                  <div key={key} className="space-y-2">
+                    <p className="text-zinc-200">{key}</p>
+                    <p className="text-lg font-semibold text-white">{Number(value)}</p>
+                    <Progress
+                      value={Number(value)}
+                      className={`h-2 ${
+                        Number(value) <= 30
+                          ? "[&>div]:bg-gradient-to-r [&>div]:from-red-600 [&>div]:to-red-400"
+                          : Number(value) <= 79
+                          ? "[&>div]:bg-gradient-to-r [&>div]:from-yellow-600 [&>div]:to-yellow-400"
+                          : "[&>div]:bg-gradient-to-r [&>div]:from-green-600 [&>div]:to-green-400"
+                      }`}
+                    />
+                  </div>
+                ))}
+              </div>
 
-
-
-        <div className="grid grid-cols-3 gap-4 text-center text-sm md:text-base mb-6">
-          <div className="bg-gradient-to-t from-red-600 via-red-900 to-zinc-900 p-3 rounded-lg">
-            <p className="text-red-400">Stop Loss</p>
-            <p className="font-semibold">
-              {selected.labels["Stop Loss"] || "-"}
-            </p>
-          </div>
-          <div className="bg-gradient-to-t from-green-600 via-green-900 to-zinc-900 p-3 rounded-lg">
-            <p className="text-green-400 whitespace-nowrap">Take Profit 1</p>
-            <p className="font-semibold">
-              {selected.labels["Take Profit 1"] || "-"}
-            </p>
-          </div>
-          <div className="bg-gradient-to-t from-green-600 via-green-900 to-zinc-900 p-3 rounded-lg">
-            <p className="text-green-400 whitespace-nowrap">Take Profit 2</p>
-            <p className="font-semibold">
-              {selected.labels["Take Profit 2"] || "-"}
-            </p>
-          </div>
-        </div>
-
-              <p className="mt-3 text-zinc-500 text-xs md:text-lg">
-                <span className="text-zinc-100">Analysis:</span> {selected.note}
-              </p>
+              <div className="flex justify-center mt-8">
+                <img src="/logo.png" alt="Brand Logo" className="h-6" />
+              </div>
             </motion.div>
           </motion.div>
         )}

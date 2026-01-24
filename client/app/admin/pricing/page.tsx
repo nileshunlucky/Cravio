@@ -1,117 +1,181 @@
-"use client";
+"use client"
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Check, Info } from 'lucide-react';
-import Link from "next/link"
+import React from "react";
+import { motion } from "framer-motion";
+import { Check } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 
-const PricingPage = () => {
-  const { user } = useUser();
-  const email = user?.primaryEmailAddress?.emailAddress
 
-  const features = [
-    { text: "Upload Chart", included: true },
-    { text: "Winning Probability", included: true },
-    { text: "Predicts P&L (BUY/SELL, Stop Loss, Take Profit)", included: true },
-    { text: "Risk Management", included: true },
-    { text: "Data Analysis", included: true },
-    { text: "Real-time market insights", included: true },
-    { text: "Early Access to New Features", included: true },
+export default function Home() {
+  const { user } = useUser();
+  const email = user?.emailAddresses?.[0]?.emailAddress || "";
+
+  const plans = [
+    {
+      name: "Starter Plan",
+      price: 15,
+      period: "/month",
+      features: [
+        "100 Credits",
+        "Face Analysis",
+        "Community support",
+      ],
+      cta: "Get Started",
+      link: `https://mellvitta.lemonsqueezy.com/buy/918fa757-f8e1-4a4f-98e7-006bab0cd1cb/?checkout[email]=${email}`,
+      featured: false
+    },
+    {
+      name: "Pro Plan",
+      price: 25,
+      period: "/month",
+      features: [
+        "Everything in Starter, Plus",
+        "250 Credits",
+        "Glow Up Routine",
+        "MOG Battle",
+        "Exclusive support"
+      ],
+      cta: "Get Pro",
+      link: `https://mellvitta.lemonsqueezy.com/buy/076a89d9-d4fa-44de-874d-a090b2e65342/?checkout[email]=${email}`,
+      featured: true
+    },
+    {
+      name: "Premium Plan",
+      price: 7,
+      period: "/month",
+      features: [
+        "Everything in Pro, Plus",
+        "3000 Credits",
+        "Priority access to new features",
+      ],
+      cta: "Get Premium",
+      link: `https://mellvitta.lemonsqueezy.com/buy/1affc38f-c109-4411-85f3-227f4657bdd6/?checkout[email]=${email}`,
+      featured: false,
+      yearly: true
+    }
   ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2
+      }
+    }
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        ease: "easeOut"
+      }
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans  overflow-x-hidden">
-      
-      {/* Background Glow - Using #B08D57 */}
- 
-      
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 flex flex-col items-center">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <motion.h1 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-6xl font-bold mb-4 tracking-tight"
-          >
-            Start Trading <br /> with <span className="italic">Mellvitta</span> Today
-          </motion.h1>
-          <p className="text-zinc-400 text-lg">
-            No surprises or hidden fees. Cancel anytime.
-          </p>
+    <div className="min-h-screen bg-black text-white md:pt-10 ">
+      {/* Hero Section */}
+      <div className="pt-20 pb-16 px-6 relative">
+        {/* Large Background Text */}
+        <div className="absolute top-35 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none overflow-hidden w-full">
+          <h1 className="text-[5rem] md:text-[20rem] font-bold text-zinc-200 whitespace-nowrap text-center">
+            Pricing
+          </h1>
         </div>
 
-        {/* Pricing Card - Single Premium Plan */}
-        <div className="w-full max-w-md">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative rounded-[2.5rem] p-8 border bg-[#121212] border-white shadow-[0_0_50px_rgba(176,141,87,0.1)]"
-          >
-            {/* Status Badge */}
-            <div className="absolute top-2 right-6 flex items-center gap-1.5  px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-white">
-              <span className="relative flex size-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
-                <span className="relative inline-flex size-2 rounded-full bg-white"></span>
-              </span>
-              MOST POPULAR
-            </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-18 relative z-10"
+        >
 
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-4">
-                <h3 className="text-2xl font-bold">Premium</h3>
-                <span className="bg-red-600/50 text-red-500 text-xs font-bold px-2 py-0.5 rounded-xl border border-red-500">-50% OFF</span>
-              </div>
-              
-              <div className="flex items-baseline gap-2 mb-1 h-12">
-                  <span className="text-zinc-500 line-through text-xl tracking-tight">$10</span>
-                  <span className="text-5xl font-bold text-white tracking-tighter">$4.99</span>
-                  <span className="text-zinc-500">/week</span>
-              </div>
-              <p className="text-xs text-zinc-500 font-medium mb-4">
-                Billed Weekly (Limited Time Offer)
-              </p>
-              <p className="text-sm text-zinc-300">
-                Predict up to <span className="text-white font-bold">Unlimited</span> Trades with our AI.
-              </p>
-            </div>
+        </motion.div>
 
-            {/* Features List */}
-            <div className="bg-black/40 rounded-3xl p-6 mb-8 border border-white/5 space-y-4">
-              <div className="flex items-center gap-2  font-bold text-sm mb-2">
-                <Check size={16} strokeWidth={3} />
-                <span>BloombergGPT</span>
-                <Info size={14} className="text-zinc-600 ml-auto" />
-              </div>
-              
-              {features.map((feature, fIdx) => (
-                <div key={fIdx} className="flex items-center gap-3">
-                  <Check size={16} className=" shrink-0" strokeWidth={3} />
-                  <span className="text-sm text-zinc-300">
-                    {feature.text}
-                  </span>
-                  <Info size={14} className="text-zinc-600/50 ml-auto shrink-0" />
+        {/* Pricing Cards */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10"
+        >
+          {plans.map((plan) => (
+            <motion.div
+              key={plan.name}
+              variants={cardVariants}
+              whileHover={{ y: -10 }}
+              className={`relative rounded-3xl p-8 backdrop-blur-xl ${
+                plan.featured
+                  ? 'bg-white/95 text-black'
+                  : 'bg-white/5 border border-white/10'
+              }`}
+            >
+              {plan.featured && (
+                <div className="absolute top-5 left-1/2 -translate-x-1/2 px-4 py-1 bg-black text-white text-xs font-semibold rounded-full">
+                  RECOMMEDED
                 </div>
-              ))}
-            </div>
+              )}
 
-            {/* Actions */}
-            <div className="space-y-4">
-              <Link href={`https://richacle.lemonsqueezy.com/checkout/buy/136381cf-5a8e-4ab1-8e66-aee160d234e4/?checkout[email]=${email}`}> 
-                <motion.button 
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full py-4 rounded-2xl font-bold text-white bg-zinc-800"
-                >
-                  Subscribe Now
-                </motion.button>
-              </Link>
-            </div>
-          </motion.div>
-        </div>
+              {plan.yearly && (
+                <div className="absolute top-5 -right-10 -translate-x-1/2 px-4 py-1 bg-white text-black text-xs font-semibold rounded-full">
+                  72% Discount Yearly Plan
+                </div>
+              )}
+
+              <div className="mb-8">
+                <p className={`text-sm font-medium mb-4 ${plan.featured ? 'text-gray-600' : 'text-gray-400'}`}>
+                  {plan.name}
+                </p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-5xl font-bold">
+                    ${plan.price}
+                  </span>
+                  <span className={`text-lg ${plan.featured ? 'text-gray-600' : 'text-gray-400'}`}>
+                    {plan.period}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-8">
+                {plan.features.map((feature, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className={`mt-0.5 rounded-full p-0.5 ${
+                      plan.featured ? 'bg-black' : 'bg-white'
+                    }`}>
+                      <Check className={`w-4 h-4 ${
+                        plan.featured ? 'text-white' : 'text-black'
+                      }`} />
+                    </div>
+                    <span className={`text-sm ${
+                      plan.featured ? 'text-gray-700' : 'text-gray-300'
+                    }`}>
+                      {feature}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+             <a href={plan.link}> <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`w-full py-4 rounded-full font-semibold transition ${
+                  plan.featured
+                    ? 'bg-black text-white hover:bg-gray-900'
+                    : 'bg-white text-black hover:bg-gray-200'
+                }`}
+              >
+                {plan.cta}
+              </motion.button>
+              </a>
+            </motion.div> 
+          ))}
+        </motion.div>
       </div>
     </div>
   );
-};
-
-export default PricingPage;
+}
