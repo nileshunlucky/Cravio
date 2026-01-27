@@ -83,14 +83,8 @@ const Page = () => {
               </div>
 
               <h1 className="text-5xl md:text-8xl font-semibold tracking-tight mb-8">
-                Built in Silence.
-                <br />
-                <span className="opacity-40">Shown Through Precision.</span>
+                <span className="opacity-70">Laziest way to make </span> $10k a Month.
               </h1>
-
-              <p className="text-lg md:text-xl text-zinc-400 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
-                Wealth is earned, not given. One Trade. Infinite Lessons.
-              </p>
 
               {/* Stats Block */}
               <div className="flex items-center justify-center gap-16 mb-16">
