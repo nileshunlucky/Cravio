@@ -41,30 +41,8 @@ const Page = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-white selection:text-black font-sans antialiased relative">
-    {/* Instagram Full Bright Glow with Top (50%) and Bottom (10%) Black Fade */}
-<div className="absolute inset-0 overflow-hidden z-0">
-  
-  {/* 1. The Main Vibrant Layer - Now themed to #B08D57 */}
-  <div 
-    className="absolute inset-0 opacity-100"
-    style={{
-      background: `
-        radial-gradient(circle at 0% 100%, rgba(176, 141, 87, 1) 0%, rgba(176, 141, 87, 0.6) 35%, transparent 70%),
-        radial-gradient(circle at 100% 100%, rgba(176, 141, 87, 0.9) 0%, rgba(176, 141, 87, 0.7) 40%, transparent 80%),
-        radial-gradient(circle at 50% 50%, rgba(176, 141, 87, 0.8) 0%, transparent 100%)
-      `,
-      filter: 'blur(40px)'
-    }}
-  />
-
-  {/* 2. The Black Top Mask (Top 50%) */}
-  <div className="absolute inset-0 bg-gradient-to-b from-black via-black/60 to-transparent h-1/2" />
-
-  {/* 4. Global Saturation Boost */}
-  <div className="absolute inset-0 bg-white/9 mix-blend-overlay pointer-events-none" />
-
-</div>
+    <div className="min-h-screen bg-black text-white selection:bg-white selection:text-black font-sans antialiased">
+    
       
       {/* Apple-style Loading Screen */}
       <AnimatePresence>
@@ -118,7 +96,7 @@ const Page = () => {
                 <div className="h-10 w-px bg-white/10" />
                 <div className="text-center">
                   <div className="text-4xl font-medium tabular-nums">95%</div>
-                  <div className="text-xs uppercase tracking-widest opacity-60 mt-2">Accuracy Rate</div>
+                  <div className="text-xs uppercase tracking-widest opacity-40 mt-2">Accuracy Rate</div>
                 </div>
               </div>
 
