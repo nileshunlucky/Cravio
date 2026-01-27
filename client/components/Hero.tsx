@@ -57,7 +57,7 @@ const Page = () => {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 1, ease: "easeOut" }}
             >
-              <img src="/logo.png" alt="Logo" className="w-24 h-24 grayscale invert" />
+              <img src="/logo.png" alt="Logo" className="w-24 h-24 " />
             </motion.div>
           </motion.div>
         )}
@@ -78,8 +78,8 @@ const Page = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-1.5 mb-8 backdrop-blur-md">
-                <span className="text-[12px] font-medium tracking-widest uppercase opacity-70">AI-Powered Trading Intelligence</span>
+              <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 text-zinc-300 px-4 py-1.5 mb-8 backdrop-blur-md">
+               Trusted by <span className=" font-medium tracking-widest uppercase text-white"> 10,000 </span>Traders
               </div>
 
               <h1 className="text-5xl md:text-8xl font-semibold tracking-tight mb-8">
