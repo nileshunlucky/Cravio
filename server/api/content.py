@@ -65,11 +65,11 @@ async def analyze_image(
         "and identify the current market condition to predict a trading decision (BUY or SELL) "
         "with a probability percentage. Then provide the following details:\n"
         "- Stop Loss level\n"
-        "- Profit Trade 1 level\n"
-        "- Profit Trade 2 level (always more than Profit Trade 1)\n"
+        "- Take Profit 1 level\n"
+        "- Take Profit 2 level (always more than Take Profit 1)\n"
         "Return ONLY JSON in the exact format below (no extra text or explanation):\n"
         "{ \"Prediction\": \"BUY\", \"Probability\": 87, \"Current Price\": 22600,  \"Stop Loss\": 22455, "
-        "\"Profit Trade 1\": 22505, \"Profit Trade 2\": 22553, }\n"
+        "\"Take Profit 1\": 22505, \"Take Profit 2\": 22553, }\n"
         "Ensure all values are realistic and consistent with the detected trend in the image."
         )
 

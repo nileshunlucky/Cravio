@@ -184,7 +184,7 @@ const Page = () => {
               <div className="grid grid-cols-1 gap-4">
   {Object.entries(selected.labels)
     .filter(([key]) => 
-      !["Stop Loss", "Profit Trade 1", "Profit Trade 2"].includes(key)
+      !["Stop Loss", "Take Profit 1", "Take Profit 2"].includes(key)
     )
           .map(([key, value]) => (
       <div key={key}>
@@ -223,15 +223,15 @@ const Page = () => {
             </p>
           </div>
           <div className="bg-gradient-to-t from-green-600 via-green-900 to-zinc-900 p-3 rounded-lg">
-            <p className="text-green-400 whitespace-nowrap">Profit Trade 1</p>
+            <p className="text-green-400 whitespace-nowrap">Take Profit 1</p>
             <p className="font-semibold">
-              {selected.labels["Profit Trade 1"] || "-"}
+              {selected.labels["Take Profit 1"] || "-"}
             </p>
           </div>
           <div className="bg-gradient-to-t from-green-600 via-green-900 to-zinc-900 p-3 rounded-lg">
-            <p className="text-green-400 whitespace-nowrap">Profit Trade 2</p>
+            <p className="text-green-400 whitespace-nowrap">Take Profit 2</p>
             <p className="font-semibold">
-              {selected.labels["Profit Trade 2"] || "-"}
+              {selected.labels["Take Profit 2"] || "-"}
             </p>
           </div>
         </div>

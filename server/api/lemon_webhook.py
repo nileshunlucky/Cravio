@@ -17,8 +17,7 @@ LEMON_SQUEEZING_WEBHOOK_SECRET = os.getenv("LEMON_SQUEEZING_WEBHOOK_SECRET")
 
 # Map your Lemon Squeezy plan variant IDs to the number of aura
 PLANS = {
-    971466: 250, 
-    971468: 3000, 
+    1255329: 100
 }
 
 # --- Helper Functions ---
@@ -99,6 +98,26 @@ async def lemon_webhook(request: Request, x_signature: str = Header(None)):
 
     # Event: A subscription is updated
     elif event == "subscription_updated":
+        aura_to_add = PLANS.get(variant_id)
+        if not aura_to_add:
+            return {
+                "status": "error",
+                "message": f"Invalid plan variant ID: {variant_id}",
+            }
+
+        users_collection.update_one(
+            {"email": email},
+            {
+                "$set": {
+                    "subscription_status": "active",
+                    "plan_variant_id": variant_id,
+                    "subscription_id": data.get("id"),
+                    "subscription_started_at": datetime.now(timezone.utc),
+                },
+                "$set": {"aura": aura_to_add},
+                "$set": {"user_paid": True},
+            },
+        )
         return {"status": "info", "message": "Subscription updated."}
 
     # Event: Subscription is cancelled by the user or admin
