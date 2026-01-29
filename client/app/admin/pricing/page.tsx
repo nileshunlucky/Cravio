@@ -80,7 +80,7 @@ const PricingPage = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="relative rounded-[2.5rem] p-8 border bg-[#121212] border-teal-500/50 shadow-[0_0_50px_rgba(20,184,166,0.15)]"
           >
-            <div className="absolute top-6 right-6 flex items-center gap-1.5 bg-teal-500/20 text-teal-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-teal-500/30">
+            <div className="absolute md:top-6 top-2 right-6 flex items-center gap-1.5 bg-teal-500/20 text-teal-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-teal-500/30">
               <span className="relative flex size-2">
   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-400 opacity-75"></span>
   <span className="relative inline-flex size-2 rounded-full bg-teal-400"></span>
