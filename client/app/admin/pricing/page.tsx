@@ -14,8 +14,8 @@ const PricingPage = () => {
   const email = user?.primaryEmailAddress?.emailAddress
 
   // Pricing Logic
-  const monthlyPrice = 29;
-  const annualMonthlyPrice = 14.5; // 50% discount
+  const monthlyPrice = 19;
+  const annualMonthlyPrice = 9.5; // 50% discount
   
   const currentPrice = billingCycle === 'annually' ? annualMonthlyPrice : monthlyPrice;
   const originalPrice = monthlyPrice;
@@ -46,7 +46,7 @@ const PricingPage = () => {
           >
             Start Creating <br /> with <span className="text-teal-400">Mellvitta</span> Today
           </motion.h1>
-          <p className="text-gray-400 text-lg mb-8">
+          <p className="text-gray-300 text-lg mb-8">
             No surprises or hidden fees. Cancel anytime.
           </p>
 
@@ -117,9 +117,26 @@ const PricingPage = () => {
               <p className="text-xs text-gray-500 font-medium mb-4">
                 {billingCycle === 'annually' ? 'Billed Annually' : 'Billed Monthly'}
               </p>
-              <p className="text-sm text-gray-300">
-                Generate up to <span className="text-teal-400 font-bold">{billingCycle === 'annually' ? '1200' : '100'} Clips</span> per {billingCycle === 'annually' ? 'year' : 'month'}.
-              </p>
+                <div className="space-y-4">
+            
+           {billingCycle === 'annually' ? (
+             <Link href={`https://richacle.lemonsqueezy.com/checkout/buy/b1fe3122-64f4-49a8-a670-a1ae56d856d3/?checkout[email]=${email}`}> <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full py-4 rounded-2xl font-bold bg-teal-400 text-black hover:bg-teal-300 transition-colors shadow-[0_0_20px_rgba(45,212,191,0.3)]"
+              >
+                Subscribe
+              </motion.button></Link>
+           ) : (
+             <Link href={`https://richacle.lemonsqueezy.com/checkout/buy/b48df0f9-1436-439e-934d-329ece481b75/?checkout[email]=${email}`}> <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full py-4 rounded-2xl font-bold bg-teal-400 text-black hover:bg-teal-300 transition-colors shadow-[0_0_20px_rgba(45,212,191,0.3)]"
+              >
+                Subscribe
+              </motion.button></Link>
+           )}
+            </div>
             </div>
 
             {/* Features List */}
@@ -146,27 +163,8 @@ const PricingPage = () => {
               ))}
             </div>
 
-            {/* Actions */}
-            <div className="space-y-4">
-            
-           {billingCycle === 'annually' ? (
-             <Link href={`https://mellvitta-ai.lemonsqueezy.com/checkout/buy/a3969d52-f3bb-45c4-8142-9a705f1ebb38/?checkout[email]=${email}`}> <motion.button 
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full py-4 rounded-2xl font-bold bg-teal-400 text-black hover:bg-teal-300 transition-colors shadow-[0_0_20px_rgba(45,212,191,0.3)]"
-              >
-                Subscribe Now
-              </motion.button></Link>
-           ) : (
-             <Link href={`https://mellvitta-ai.lemonsqueezy.com/checkout/buy/9426dea7-2b31-43b7-b496-c6d9c4716014/?checkout[email]=${email}`}> <motion.button 
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full py-4 rounded-2xl font-bold bg-teal-400 text-black hover:bg-teal-300 transition-colors shadow-[0_0_20px_rgba(45,212,191,0.3)]"
-              >
-                Subscribe Now
-              </motion.button></Link>
-           )}
-            </div>
+           {/* Actions */}
+           
           </motion.div>
         </div>
       </div>
