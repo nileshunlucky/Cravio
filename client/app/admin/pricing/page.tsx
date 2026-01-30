@@ -97,7 +97,7 @@ const PricingPage = () => {
 
             {/* Actions */}
             <div className="space-y-4">
-              <Link href={`https://richacle.lemonsqueezy.com/checkout/buy/7bdcd765-fca5-4da2-8b13-513828f790e6/?checkout[email]=${email}`}> 
+              <Link href={`https://richacle.lemonsqueezy.com/checkout/buy/136381cf-5a8e-4ab1-8e66-aee160d234e4/?checkout[email]=${email}`}> 
                 <motion.button 
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
