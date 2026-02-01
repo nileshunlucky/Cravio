@@ -4,7 +4,6 @@ import httpx
 from pydantic import BaseModel, EmailStr
 from db import users_collection
 from flow import flow_collection
-from api.vibe import router as vibe_router
 from api.lemon_webhook import router as lemon_webhook_router
 from api.persona import router as persona_router
 from api.persona2img import router as img2img_router
@@ -24,7 +23,6 @@ app.add_middleware(
 )
 
 # add routers
-app.include_router(vibe_router)
 app.include_router(lemon_webhook_router)
 app.include_router(persona_router)
 app.include_router(img2img_router)
