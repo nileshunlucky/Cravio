@@ -33,7 +33,7 @@ const AchievementsPage = () => {
         const data = await res.json();
 
         if (res.ok) {
-          setAchievements(data.achievements.slice().reverse() || []);
+          setAchievements(data?.achievements?.slice().reverse() || []);
         } else {
           toast.error("Failed to load user data");
         }
@@ -59,7 +59,7 @@ const AchievementsPage = () => {
   }
 
   if (!achievements || achievements.length === 0) {
-    return <p className="text-center mt-10 text-zinc-400">No achievements yet.</p>;
+    return <p className="text-center mt-10 text-zinc-400">No insights yet.</p>;
   }
 
   return (
