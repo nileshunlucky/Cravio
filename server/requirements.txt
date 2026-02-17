@@ -23,4 +23,4 @@ boto3
 opencv-python-headless
 apscheduler
 httpx
-googleapiclient
+google-api-python-client
