@@ -8,10 +8,11 @@ const page = () => {
 
   return (
     <div>
-      <OpusClip />
+      <OpusClip /> 
       <OpusVideos />
     </div>
   )
 }
-
+ 
 export default page
+ 
