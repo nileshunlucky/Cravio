@@ -120,7 +120,7 @@ const PricingPage = () => {
                 <div className="space-y-4">
             
            {billingCycle === 'annually' ? (
-             <Link href={`https://richacle.lemonsqueezy.com/checkout/buy/b1fe3122-64f4-49a8-a670-a1ae56d856d3/?checkout[email]=${email}`}> <motion.button 
+             <Link href={`https://richacle.lemonsqueezy.com/checkout/buy/204dc9cf-39c2-4bb8-ae46-19197c127bcb/?checkout[email]=${email}`}> <motion.button 
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="w-full py-4 rounded-2xl font-bold bg-teal-400 text-black hover:bg-teal-300 transition-colors shadow-[0_0_20px_rgba(45,212,191,0.3)]"
@@ -128,7 +128,7 @@ const PricingPage = () => {
                 Subscribe
               </motion.button></Link>
            ) : (
-             <Link href={`https://richacle.lemonsqueezy.com/checkout/buy/b48df0f9-1436-439e-934d-329ece481b75/?checkout[email]=${email}`}> <motion.button 
+             <Link href={`https://richacle.lemonsqueezy.com/checkout/buy/55c061f9-1d5d-480c-bd99-1753c4e69ee9/?checkout[email]=${email}`}> <motion.button 
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="w-full py-4 rounded-2xl font-bold bg-teal-400 text-black hover:bg-teal-300 transition-colors shadow-[0_0_20px_rgba(45,212,191,0.3)]"

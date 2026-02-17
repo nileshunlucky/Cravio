@@ -16,8 +16,8 @@ LEMON_SQUEEZING_WEBHOOK_SECRET = os.getenv("LEMON_SQUEEZING_WEBHOOK_SECRET")
 # Map your Lemon Squeezy plan variant IDs to the number of credits, backtest, copilot
 
 PLANS = {
-    1260294: 300,
-    1260295: 3600
+    1315674: 300,
+    1315676: 3600
 }
 
 
