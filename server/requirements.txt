@@ -24,3 +24,4 @@ opencv-python-headless
 apscheduler
 httpx
 google-api-python-client
+isodate

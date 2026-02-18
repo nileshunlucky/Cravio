@@ -9,9 +9,9 @@ const page = () => {
   return (
     <div>
       <OpusClip /> 
-      <OpusVideos />
+      <OpusVideos /> 
     </div>
-  )
+  ) 
 }
  
 export default page
