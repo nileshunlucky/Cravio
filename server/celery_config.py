@@ -9,8 +9,8 @@ ssl_context = {
 
 celery_app = Celery(
     "reddit_story_app",
-    broker="rediss://default:AV_tAAIjcDFkYzYyMDY1ZmE1MTI0OTE4ODY3ZmIwZjNkMDY0MjJjMnAxMA@present-wren-24557.upstash.io:6379",
-    backend="rediss://default:AV_tAAIjcDFkYzYyMDY1ZmE1MTI0OTE4ODY3ZmIwZjNkMDY0MjJjMnAxMA@present-wren-24557.upstash.io:6379",
+    broker="rediss://default:AWt_AAIncDEzNjJkZGY4YTcwZTg0Y2U5YjQ2ODUwODQ4Nzg0N2Q4YnAxMjc1MTk@genuine-skink-27519.upstash.io:6379",
+    backend="rediss://default:AWt_AAIncDEzNjJkZGY4YTcwZTg0Y2U5YjQ2ODUwODQ4Nzg0N2Q4YnAxMjc1MTk@genuine-skink-27519.upstash.io:6379",
     include=["tasks.opusclip_task"]
 )
 
