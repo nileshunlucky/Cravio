@@ -1,7 +1,5 @@
 "use client"
 
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/app-sidebar"
 import Navbar from "@/components/Navbar"
 import SendEmailToBackend from "@/components/SendEmailToBackend"
 import { SignedIn, useUser } from "@clerk/nextjs"
@@ -33,9 +31,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, [user])
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarTrigger />
       <div className="flex flex-col w-full h-full overflow-hidden">
         <Navbar credits={credits ?? 0} />
         <SignedIn>
@@ -44,6 +39,5 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {children}
         <Toaster position="top-right" richColors />
       </div>
-    </SidebarProvider>
   )
 }

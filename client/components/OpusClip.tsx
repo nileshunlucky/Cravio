@@ -6,7 +6,7 @@ import {
   Link,
   //  CloudUpload, 
   Loader2, AlertCircle, Info,
-  CloudUpload
+  CloudUpload, X
 } from 'lucide-react';
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -19,9 +19,16 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select"
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Card } from "@/components/ui/card"
 import { ClipRangeSlider } from "@/components/ClipRangeSlider"
-import { useRouter } from 'next/navigation';
+import Pricing from "@/components/Pricing";
 // Define TypeScript interfaces
 interface TaskResult {
   video_url: string;
@@ -45,6 +52,7 @@ export default function OpusClip() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress
   const [youtubeLink, setYoutubeLink] = useState<string>('');
+  const [showPricing, setShowPricing] = useState(true);
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [thumbnail, setThumbnail] = useState<string | null>(null);
@@ -64,7 +72,6 @@ export default function OpusClip() {
   const [creditUsage, setCreditUsage] = useState<number | null>(null);
   const [clipRange, setClipRange] = useState<[number, number]>([0, 60])
   const [videoDuration, setVideoDuration] = useState<number>(0);
-  const router = useRouter();
 
   // Automatically set clipRange when video duration is loaded
   useEffect(() => {
@@ -641,7 +648,7 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         position: "top-center",
         duration: 4000,
       })
-      router.push('/admin/plan'); 
+      setShowPricing(true);
     } finally {
       setIsLoading(false)
       setThumbnail(null);
@@ -937,6 +944,20 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
           </div>
         </motion.div>
       )}
+
+      <Dialog open={showPricing} onOpenChange={setShowPricing}>
+        <DialogContent className="max-w-4xl h-full p-0 overflow-y-auto scroll-hidden ">
+        <VisuallyHidden.Root>
+      <DialogTitle>Pricing Plans</DialogTitle>
+    </VisuallyHidden.Root>
+        <DialogClose className="absolute right-2 top-2 z-50  p-2 text-zinc-200 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none disabled:pointer-events-none">
+     <X size={16} className="bg-transparent" strokeWidth={3} />
+    </DialogClose>
+          <div className="scroll-hidden">
+      <Pricing /> 
+    </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
