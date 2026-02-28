@@ -581,9 +581,8 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 
       if (!res.ok) {
        if (res.status === 403) {
-      toast.error(errorData.message || "Not enough credits!");
        setShowPricing(true);
-      return; // Stop execution
+      return; 
     }
         throw new Error(`Failed to process request: ${res.status}`)
       }
