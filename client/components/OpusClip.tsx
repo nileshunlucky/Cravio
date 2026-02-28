@@ -373,12 +373,16 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         // Handle error response
         let errorMessage = 'Failed to process request';
 
-          if (response.status === 403) {
+          if (response?.status === 403) {
+    try {
       const errorData = await response.json();
       toast.error(errorData.message || "Not enough credits!");
-       setShowPricing(true);
-      return; 
+    } catch {
+      toast.error("Not enough credits!");
     }
+    setShowPricing(true);
+    return; // STOP HERE so the rest of the code doesn't run
+  }
         try {
           const errorData = await response?.json();
           console.error('API Error:', errorData);
