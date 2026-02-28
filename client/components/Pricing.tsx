@@ -16,6 +16,7 @@ const PricingPage = () => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('annually');
   const [packSize, setPackSize] = useState(1);
   const { user } = useUser();
+  const [open, setOpen] = useState(false);
   const email = user?.primaryEmailAddress?.emailAddress;
 
   const baseMonthly = 29;
@@ -201,16 +202,20 @@ const PricingPage = () => {
 
             {/* Features List */}
             <div className="bg-black/40 rounded-3xl p-6 border border-white/5 space-y-4">
-              <div className="flex items-center gap-2 text-teal-400 font-bold text-sm mb-2">
+              <div className="flex items-center gap-1 text-teal-400 font-bold text-sm mb-2">
                 <Check size={16} strokeWidth={3} />
                 <span>{totalCredits.toLocaleString()} credits</span>
                 <TooltipProvider>
-  <Tooltip delayDuration={0}>
+  <Tooltip 
+    delayDuration={0} 
+    open={open} 
+    onOpenChange={setOpen}
+  >
     <TooltipTrigger asChild>
-        <Info size={14} className="text-white cursor-pointer" />
+        <Info onClick={() => setOpen(true)} size={14} className="text-white cursor-pointer" />
     </TooltipTrigger>
     <TooltipContent >
-      <p>1 credit = 1 minute of video processing</p>
+      <p className="text-xs">1 credit = 1 minute of video processing</p>
     </TooltipContent>
   </Tooltip>
 </TooltipProvider>

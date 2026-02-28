@@ -56,7 +56,7 @@ import isodate # pip install isodate (to parse YouTube's duration format)
 router = APIRouter()
 
 # You'll need a free API Key from Google Cloud Console
-YOUTUBE_API_KEY = "AIzaSyABOLL5Z9lcveYX_aunPnDPLk0lCtZKvqU"
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
 
 
