@@ -115,7 +115,7 @@ async def upload_video(file: UploadFile = File(...)):
     user_credits = user.get("credits", 0)
     if user_credits <= 0:
         return JSONResponse(
-            status_code=403,  # Payment Required
+            status=403,  # Payment Required
             content={
                 "message": "Not enough credits",
             }
@@ -340,7 +340,7 @@ async def opusclip(request: OpusClipRequest):
         user_credits = user.get("credits", 0)
         if user_credits < request.creditUsage:
             return JSONResponse(
-                status_code=403,  # Payment Required
+                status=403,  # Payment Required
                 content={
                     "message": "Not enough credits",
                 }
