@@ -377,12 +377,11 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
           const errorData = await response?.json();
           console.error('API Error:', errorData);
 
-          if (response.status_code === 403) {
+          if (response.status === 403) {
       const errorData = await response.json();
-      // Use your toast library here
       toast.error(errorData.message || "Not enough credits!");
        setShowPricing(true);
-      return; // Stop execution
+      return; 
     }
 
           // Extract meaningful error message
@@ -577,7 +576,7 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       })
 
       if (!res.ok) {
-       if (res.status_code === 403) {
+       if (res.status === 403) {
       toast.error(errorData.message || "Not enough credits!");
        setShowPricing(true);
       return; // Stop execution
