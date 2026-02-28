@@ -83,7 +83,7 @@ const OpusVideos = () => {
     }, [user]); // Re-run effect when user object changes
 
     return (
-        <div className="p-4 sm:p-6 font-sans">
+        <div className="p-4 sm:p-6 font-sans z-50">
             <h2 className="text-xl sm:text-2xl font-bold mb-5 ">Your Clips</h2>
 
             {loading && (
