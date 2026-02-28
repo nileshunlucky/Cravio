@@ -668,6 +668,7 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     { label: "Simple", value: "white", src: "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576850/Video-288_wqhsdk.mp4" }
   ]
 
+
   return (
     <div className="min-h-screen bg-black selection:bg-teal-500/30 text-white flex flex-col items-center justify-center p-1 sm:p-6 gap-7">
     <div className="fixed -bottom-10 left-1/2 -translate-x-1/2 w-full h-[380px] bg-teal-500/70 blur-[120px] pointer-events-none" />
@@ -758,6 +759,7 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
               <p>{errorMessage}</p>
             </motion.div>
           )}
+
 
           <div className={cn(
             "inline-block rounded-xl hover:bg-zinc-800 hover:text-white text-zinc-400 transition-colors duration-200",

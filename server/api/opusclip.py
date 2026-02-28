@@ -59,9 +59,10 @@ router = APIRouter()
 YOUTUBE_API_KEY = "AIzaSyABOLL5Z9lcveYX_aunPnDPLk0lCtZKvqU"
 youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
 
+
 def extract_video_id(url: str):
-    """Extracts the 11-character YouTube ID using regex"""
-    regex = r"(?:v=|\/)([0-9A-Za-z_-]{11}).*"
+    # This regex looks for 11 chars after v= or / and stops before any query params (? or &)
+    regex = r"(?:v=|\/|be\/)([0-9A-Za-z_-]{11})(?:[\?&]|$)"
     match = re.search(regex, url)
     return match.group(1) if match else None
 
@@ -70,12 +71,8 @@ async def get_youtube_info(url: str):
     video_id = extract_video_id(url)
     
     if not video_id:
-        raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+        raise HTTPException(status_code=400, detail="Invalid YouTube URL format")
 
-    # 1. Get Thumbnail (No API needed for this)
-    thumbnail_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
-
-    # 2. Get Duration (Requires a quick API call)
     try:
         request = youtube.videos().list(
             part="contentDetails",
@@ -83,22 +80,23 @@ async def get_youtube_info(url: str):
         )
         response = request.execute()
 
-        if not response['items']:
-            raise HTTPException(status_code=404, detail="Video not found")
+        # If the ID exists but the video is private or deleted
+        if not response.get('items'):
+            raise HTTPException(status_code=404, detail="Video not found on YouTube")
 
-        # YouTube returns duration in ISO 8601 format (e.g., PT1M30S)
         duration_iso = response['items'][0]['contentDetails']['duration']
         duration_seconds = isodate.parse_duration(duration_iso).total_seconds()
 
         return {
             "video_id": video_id,
-            "thumbnail_url": thumbnail_url,
-            "duration_seconds": duration_seconds,
-            "formatted_duration": str(isodate.parse_duration(duration_iso))
+            "thumbnail_url": f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg",
+            "duration_seconds": duration_seconds
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # This prints the real error to your Render logs so you can see why it failed
+        print(f"DEBUG ERROR: {str(e)}") 
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 class ProcessingResponse(BaseModel):
     video_url: str
