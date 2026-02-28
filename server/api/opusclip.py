@@ -106,6 +106,20 @@ class ProcessingResponse(BaseModel):
 @router.post("/opusclip/upload-file", response_model=ProcessingResponse)
 async def upload_video(file: UploadFile = File(...)):
     """Upload a video file to S3 and process it with Celery"""
+
+    user = users_collection.find_one({"email": request.email})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # Check if user has enough credits
+    user_credits = user.get("credits", 0)
+    if user_credits <= 0:
+        return JSONResponse(
+            status_code=403,  # Payment Required
+            content={
+                "message": "Not enough credits",
+            }
+        )
     
     if not file.content_type or "video" not in file.content_type:
         raise HTTPException(status_code=400, detail="File must be a video")
@@ -326,11 +340,9 @@ async def opusclip(request: OpusClipRequest):
         user_credits = user.get("credits", 0)
         if user_credits < request.creditUsage:
             return JSONResponse(
-                status_code=402,  # Payment Required
+                status_code=403,  # Payment Required
                 content={
                     "message": "Not enough credits",
-                    "available_credits": user_credits,
-                    "required_credits": request.creditUsage
                 }
             )
         

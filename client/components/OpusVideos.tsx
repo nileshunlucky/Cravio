@@ -90,10 +90,10 @@ const OpusVideos = () => {
                 <div className="flex space-x-4 overflow-hidden">
                     {[...Array(3)].map((_, index) => (
                         <div key={index} className="flex-shrink-0 w-72 md:w-80 animate-pulse">
-                            <div className="aspect-[16/9] w-full bg-neutral-700 rounded-lg"></div>
+                            <div className="aspect-[16/9] w-full bg-zinc-700 rounded-lg"></div>
                             <div className="mt-2">
-                                <div className="h-4 bg-neutral-700 rounded w-3/4 mb-1"></div>
-                                <div className="h-3 bg-neutral-700 rounded w-1/2"></div>
+                                <div className="h-4 bg-zinc-700 rounded w-3/4 mb-1"></div>
+                                <div className="h-3 bg-zinc-700 rounded w-1/2"></div>
                             </div>
                         </div>
                     ))}
@@ -108,17 +108,17 @@ const OpusVideos = () => {
             )}
 
             {!loading && !error && opusclips.length === 0 && (
-                <p className="text-neutral-400 text-center py-8">
-                    No clips found. Start creating some amazing content!
+                <p className="text-zinc-4=200 text-center py-8">
+                    No clips found. Start clipping some amazing content!
                 </p>
             )}
 
             {!loading && !error && opusclips.length > 0 && (
-                <div className="flex overflow-x-auto scroll-hidden space-x-4 pb-4 scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-neutral-800">
+                <div className="flex overflow-x-auto scroll-hidden space-x-4 pb-4 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-800">
                     {[...opusclips].reverse().map((clip) => (
                         <div
                             key={clip.uniqueId} // Use uniqueId for the key
-                            className="flex-shrink-0 w-72 md:w-80 bg-neutral-800 rounded-xl overflow-hidden shadow-lg transition-all duration-300 ease-in-out hover:scale-105 group"
+                            className="flex-shrink-0 w-72 md:w-80 bg-zinc-800 rounded-xl overflow-hidden shadow-lg transition-all duration-300 ease-in-out hover:scale-105 group"
                         >
                             <Link href={`/admin/clips/${clip.uniqueId}`} className="block cursor-pointer">
                                 <div className="aspect-[16/9] w-full bg-black overflow-hidden">
@@ -135,7 +135,7 @@ const OpusVideos = () => {
                                     />
                                 </div>
                                 <div className="p-3 space-y-1">
-                                    <p className="text-xs text-neutral-400">
+                                    <p className="text-xs text-zinc-400">
                                         {getDaysLeft(clip.createdAt)}
                                     </p>
                                 </div>

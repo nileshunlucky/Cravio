@@ -68,7 +68,7 @@ export default function OpusClip() {
   const [duration, setDuration] = useState<string>('30 seconds');
   const [aspectRatio, setAspectRatio] = useState<string>('9:16');
   const [includeMoments, setIncludeMoments] = useState<string>('valuable engaging moments');
-  const [subtitleColor, setSubtitleColor] = useState<string>('yellow');
+  const [subtitleColor, setSubtitleColor] = useState<string>('green');
   const [creditUsage, setCreditUsage] = useState<number | null>(null);
   const [clipRange, setClipRange] = useState<[number, number]>([0, 60])
   const [videoDuration, setVideoDuration] = useState<number>(0);
@@ -221,37 +221,6 @@ export default function OpusClip() {
 
   const handleRemoveVideo = async () => {
     try {
-      // Check if we have video URL stored in state
-      if (videoUrl) {
-        setIsLoading(true);
-
-        // Call the delete API with the video URL
-        const response = await fetch('https://cravio-ai.onrender.com/delete-video', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            video_url: videoUrl
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || 'Failed to delete video');
-        }
-
-        const result = await response.json();
-        console.log('Video deleted successfully:', result);
-
-        // Show success message
-        toast.success("Video deleted successfully", {
-          position: "top-right",
-          duration: 3000,
-        });
-      }
-
-      // Reset the UI state regardless of API call result
       setThumbnail(null);
       setCreditUsage(null);
       setVideoProcessed(false);
@@ -261,13 +230,6 @@ export default function OpusClip() {
     } catch (error) {
       console.error('Error deleting video:', error);
       setErrorMessage('Failed to remove video. Please try again.');
-
-      toast.error("Failed to remove video", {
-        position: "top-center",
-        duration: 3000,
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -405,6 +367,7 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
           body: formData,
         });
       }
+      
 
       if (!response?.ok) {
         // Handle error response
@@ -413,6 +376,14 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         try {
           const errorData = await response?.json();
           console.error('API Error:', errorData);
+
+          if (response.status_code === 403) {
+      const errorData = await response.json();
+      // Use your toast library here
+      toast.error(errorData.message || "Not enough credits!");
+       setShowPricing(true);
+      return; // Stop execution
+    }
 
           // Extract meaningful error message
           if (errorData?.detail) {
@@ -492,7 +463,7 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setVideoUrl(result?.video_url);
         setIsLoading(false);
 
-        const creditsUsed = Math.ceil((taskResult.video_duration || 0) / 60);
+        const creditsUsed = Math.ceil((result.video_duration || 0) / 60);
         setCreditUsage(creditsUsed);
 
       }
@@ -606,8 +577,14 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       })
 
       if (!res.ok) {
+       if (res.status_code === 403) {
+      toast.error(errorData.message || "Not enough credits!");
+       setShowPricing(true);
+      return; // Stop execution
+    }
         throw new Error(`Failed to process request: ${res.status}`)
       }
+
 
       const data = await res.json()
       console.log(data)
@@ -657,9 +634,9 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const isSubmitEnabled = (isValidYoutubeLink || file) && !videoProcessed;
 
   const videoOptions = [
-    { label: "Beasty", value: "yellow", src: "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576854/Video-252_f4rrxp.mp4" },
-    { label: "Karaoke", value: "green", src: "https://res.cloudinary.com/db17zxsjc/video/upload/v1749891577/lv_0_20250614142604_ijtizd.mp4" },
-    { label: "Simple", value: "white", src: "https://res.cloudinary.com/db17zxsjc/video/upload/v1749576850/Video-288_wqhsdk.mp4" }
+    { label: "Beasty", value: "yellow", color: "text-yellow-400 "},
+    { label: "Karaoke", value: "green", color: "text-green-400 "},
+    { label: "Simple", value: "white" , color: "text-zinc-100 "}
   ]
 
   return (
@@ -823,29 +800,41 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
               <img
                 src={thumbnail || undefined}
                 alt="Video thumbnail"
-                className="absolute inset-0 w-full h-full object-contain"
+                className="absolute inset-0 rounded-xl w-full h-full object-contain"
               />
             </div>
 
             {/* Credit usage indicator and task info */}
             <div className="p-4 flex flex-col items-center justify-center gap-2">
               <div className="flex items-center gap-1">
-                <span className="text-zinc-400">Credit usage: </span>
-                <svg width="16" height="16" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor">
-                  <path fillRule="evenodd" clipRule="evenodd" d="M13.2319 2.28681C13.5409 2.38727 13.75 2.6752 13.75 3.00005V9.25005H19C19.2821 9.25005 19.5403 9.40834 19.6683 9.65972C19.7963 9.9111 19.7725 10.213 19.6066 10.4412L11.6066 21.4412C11.4155 21.7039 11.077 21.8137 10.7681 21.7133C10.4591 21.6128 10.25 21.3249 10.25 21.0001V14.7501H5C4.71791 14.7501 4.45967 14.5918 4.33167 14.3404C4.20366 14.089 4.22753 13.7871 4.39345 13.5589L12.3935 2.55892C12.5845 2.2962 12.923 2.18635 13.2319 2.28681Z" fill="url(#linearGradient)"></path>
-                  <defs>
-                    <linearGradient gradientTransform="rotate(90)" id="linearGradient">
-                      <stop offset="0%" stopColor="#FFE629"></stop>
-                      <stop offset="100%" stopColor="#FFA057"></stop>
-                    </linearGradient>
-                  </defs>
-                </svg>
+                <span className="text-zinc-200">Credit usage: </span>
+                 <svg 
+    width="16" 
+    height="16" 
+    viewBox="0 0 24 24" 
+    strokeWidth="1.5" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path 
+      fillRule="evenodd" 
+      clipRule="evenodd" 
+      d="M13.2319 2.28681C13.5409 2.38727 13.75 2.6752 13.75 3.00005V9.25005H19C19.2821 9.25005 19.5403 9.40834 19.6683 9.65972C19.7963 9.9111 19.7725 10.213 19.6066 10.4412L11.6066 21.4412C11.4155 21.7039 11.077 21.8137 10.7681 21.7133C10.4591 21.6128 10.25 21.3249 10.25 21.0001V14.7501H5C4.71791 14.7501 4.45967 14.5918 4.33167 14.3404C4.20366 14.089 4.22753 13.7871 4.39345 13.5589L12.3935 2.55892C12.5845 2.2962 12.923 2.18635 13.2319 2.28681Z" 
+      fill="url(#tealGlowGradient)"
+    />
+    <defs>
+      <linearGradient id="tealGlowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor="#47FFE7" />
+        <stop offset="100%" stopColor="#0EA5E9" />
+      </linearGradient>
+    </defs>
+  </svg>
                 <span className="font-medium ">{creditUsage}</span>
                 <TooltipProvider>
                   <Tooltip open={showMobileTip || undefined}>
                     <TooltipTrigger asChild>
                       <Info
-                        className="w-4 h-4 text-zinc-400 cursor-pointer"
+                        className="w-4 h-4 text-zinc-200 cursor-pointer"
                         onClick={toggleMobileTip}
                       />
                     </TooltipTrigger>
@@ -857,12 +846,12 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
               </div>
             </div>
 
-            <div className="p-1 items-center justify-center gap-2 text-sm text-zinc-400 text-center">
+            <div className="p-1 items-center justify-center gap-2 text-xs text-zinc-200 text-center">
               <p>Using video you don’t own may violate copyright laws. By continuing, you confirm this is your own original content.</p>
             </div>
 
             {/* Customization options */}
-            <div className="p-3 bg-zinc-900 text-zinc-400 flex flex-col gap-4 rounded-xl mt-3">
+            <div className="p-3 bg-zinc-950 text-zinc-200 flex flex-col gap-4 rounded-xl mt-3">
               <div className="flex items-center gap-5">
                 <div className="flex items-center gap-2">
                   <p>clip duration</p>
@@ -906,35 +895,28 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                   onChange={(val) => setClipRange(val)}
                 />
               </div>
-            </div>
+            
 
-            <div className={`p-3 bg-zinc-900 text-zinc-400 flex flex-col gap-4 rounded-xl mt-3 ${isLoading ? "opacity-50" : ""}`}>
-              <div className="flex flex-wrap justify-between items-center w-full">
+            <div className={` bg-zinc-950 text-zinc-400 flex flex-col gap-2 rounded-xl ${isLoading ? "opacity-50" : ""}`}>
+              <h1 className="text-zinc-200">Caption</h1>
+              <div className="flex gap-1 justify-between items-center ">
                 {videoOptions.map((option) => (
                   <Card
                     key={option.value}
                     onClick={() => !isLoading && setSubtitleColor(option.value)}
-                    className={`cursor-pointer transition-all w-24 sm:w-28 md:w-32 flex flex-col items-center border-2 rounded-xl overflow-hidden 
+                    className={`cursor-pointer py-2 transition-all  flex flex-col items-center border-2 rounded-xl overflow-hidden 
           ${subtitleColor === option.value ? "border-white" : "border-zinc-600 hover:border-white"} 
           ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
-                    <div className="w-full aspect-[9/16]">
-                      <video
-                        src={option.src}
-                        muted
-                        autoPlay
-                        loop
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="text-center text-xs py-2 text-zinc-300 capitalize w-full">
-                      {option.label}
+                    <div className="w-full">
+                      <h1 className="text-center uppercase text-white py-2 p-2 text-xs w-full">Get Started with  
+                      <span className={option.color}> {option.label}</span></h1>
                     </div>
                   </Card>
                 ))}
               </div>
             </div>
-
+</div>
           </div>
         </motion.div>
       )}
