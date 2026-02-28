@@ -141,7 +141,7 @@ Create 10x faster.
             <div className="flex flex-col items-center mt-6 gap-6">
               <Link href="/admin/dashboard"><Button className="bg-teal-400 hover:bg-teal-300 text-black py-7 px-12 rounded-full transition-transform active:scale-95 flex gap-2 text-lg">
                 <Star size={20} fill="currentColor" />
-                Get Free Clips
+                Clip Your First Content
               </Button></Link>
               
               <button className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors text-sm font-bold">

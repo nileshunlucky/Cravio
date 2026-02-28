@@ -56,7 +56,7 @@ import isodate # pip install isodate (to parse YouTube's duration format)
 router = APIRouter()
 
 # You'll need a free API Key from Google Cloud Console
-YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
+YOUTUBE_API_KEY = "AIzaSyABOLL5Z9lcveYX_aunPnDPLk0lCtZKvqU"
 youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
 
 
@@ -152,22 +152,33 @@ async def upload_video(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
         
 
-@router.post("/process-youtube", response_model=ProcessingResponse)
+@router.post("/process-youtube")
 async def process_youtube_video(request: YouTubeRequest):
     """Process a YouTube URL by sending it directly to the Celery task"""
+    url = request.youtube_url
+    video_id = extract_video_id(url)
+    
+    if not video_id:
+        raise HTTPException(status_code=400, detail="Invalid YouTube URL format")
     try:
-        # Start Celery task to download and process the YouTube video
-        task = process_video.delay(
-            youtube_url=request.youtube_url
+        request = youtube.videos().list(
+            part="contentDetails",
+            id=video_id
         )
-        
-        return JSONResponse(
-            status_code=202,
-            content={
-                "task_id": task.id,
-                "message": "YouTube video processing started"
-            }
-        )
+        response = request.execute()
+
+        # If the ID exists but the video is private or deleted
+        if not response.get('items'):
+            raise HTTPException(status_code=404, detail="Video not found on YouTube")
+
+        duration_iso = response['items'][0]['contentDetails']['duration']
+        duration_seconds = isodate.parse_duration(duration_iso).total_seconds()
+
+        return {
+            "video_url": url,
+            "thumbnail_url": f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg",
+            "video_duration": duration_seconds
+        }
         
     except Exception as e:
         logger.error(f"Error processing YouTube URL: {str(e)}")
