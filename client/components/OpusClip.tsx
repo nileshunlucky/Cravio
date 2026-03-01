@@ -50,7 +50,7 @@ const cn = (...classes: (string | undefined | null | false)[]) => {
 
 export default function OpusClip() {
   const { user } = useUser();
-  const email = user?.primaryEmailAddress?.emailAddress
+  const email = user?.primaryEmailAddress?.emailAddress || "";
   const [youtubeLink, setYoutubeLink] = useState<string>('');
   const [showPricing, setShowPricing] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -276,6 +276,7 @@ export default function OpusClip() {
 
 const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   // Skip if a video is already processed
+  if (!email) return;
   if (videoProcessed) return;
 
   const selectedFile = e.target.files?.[0];
