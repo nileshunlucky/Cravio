@@ -15,8 +15,8 @@ const Navbar = ({ credits = 0 }: { credits: number }) => {
       {/* Right: Credits + Clerk User Button */}
       <div className="flex items-center gap-5">
         <div className="text-sm flex items-center">
-          <span className="inline-flex items-center justify-center filter drop-shadow-[0_0_8px_rgba(71,255,231,0.6)]">
-  <svg 
+          <span className="inline-flex items-center justify-center filter ">
+ <svg 
     width="16" 
     height="16" 
     viewBox="0 0 24 24" 
@@ -28,15 +28,15 @@ const Navbar = ({ credits = 0 }: { credits: number }) => {
       fillRule="evenodd" 
       clipRule="evenodd" 
       d="M13.2319 2.28681C13.5409 2.38727 13.75 2.6752 13.75 3.00005V9.25005H19C19.2821 9.25005 19.5403 9.40834 19.6683 9.65972C19.7963 9.9111 19.7725 10.213 19.6066 10.4412L11.6066 21.4412C11.4155 21.7039 11.077 21.8137 10.7681 21.7133C10.4591 21.6128 10.25 21.3249 10.25 21.0001V14.7501H5C4.71791 14.7501 4.45967 14.5918 4.33167 14.3404C4.20366 14.089 4.22753 13.7871 4.39345 13.5589L12.3935 2.55892C12.5845 2.2962 12.923 2.18635 13.2319 2.28681Z" 
-      fill="url(#tealGlowGradient)"
+      fill="url(#yellowOrangeGradient)"
     />
     <defs>
-      <linearGradient id="tealGlowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stopColor="#47FFE7" />
-        <stop offset="100%" stopColor="#0EA5E9" />
+      <linearGradient id="yellowOrangeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor="#FDE047" /> {/* Bright Yellow */}
+        <stop offset="100%" stopColor="#F97316" /> {/* Vibrant Orange */}
       </linearGradient>
     </defs>
-  </svg>
+</svg>
 </span>
           <span className="font-bold ">{credits}</span>
         </div>

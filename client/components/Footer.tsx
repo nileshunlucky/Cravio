@@ -17,10 +17,10 @@ const Footer = () => {
           <div className="flex gap-4 mt-2">
 
             <Link href="https://www.instagram.com/mellvitta.ai" target="_blank">
-<Instagram className="hover:opacity-80 transition text-teal-500"/>
+<Instagram className="hover:opacity-80 transition text-white"/>
             </Link>
             <Link href="https://youtube.com/@mellvittaai" target="_blank">
-<Youtube  className="hover:opacity-80 transition text-teal-500"/>
+<Youtube  className="hover:opacity-80 transition text-white"/>
             </Link>
 
           </div>

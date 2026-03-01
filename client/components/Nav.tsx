@@ -13,9 +13,6 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 
 const Nav = () => {
-  // Common teal glow class
-  const tealGlowClass = "bg-[#2dd4bf] text-black hover:bg-[#26bba8] shadow-[0_0_15px_rgba(45,212,191,0.4)] border-none transition-all duration-300";
-  const outlineGlowClass = "border-[#2dd4bf] text-[#2dd4bf] hover:bg-[#2dd4bf]/10 shadow-[0_0_10px_rgba(45,212,191,0.2)] transition-all duration-300";
 
   return (
     <motion.nav
@@ -31,16 +28,16 @@ const Nav = () => {
       <div className="flex items-center gap-4">
         <SignedOut>
           <SignInButton mode="modal">
-            <Button className={tealGlowClass}>Sign In</Button>
+            <Button >Sign In</Button>
           </SignInButton>
           <SignUpButton mode="modal">
-            <Button variant="outline" className={outlineGlowClass}>Sign Up</Button>
+            <Button variant="outline">Sign Up</Button>
           </SignUpButton>
         </SignedOut>
 
         <SignedIn>
           <Link href="/admin/dashboard">
-            <Button className={tealGlowClass}>Dashboard</Button>
+            <Button >Dashboard</Button>
           </Link>
         </SignedIn>
       </div>

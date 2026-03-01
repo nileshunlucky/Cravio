@@ -30,17 +30,16 @@ const TestimonialsSection = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans py-24 px-6 relative overflow-hidden">
-      {/* Background Teal Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[600px] bg-teal-500/9 blur-[120px] pointer-events-none" />
+    <div className="min-h-screen bg-black text-white font-sans py-24 px-6 relative overflow-hidden">
+      {/* Background Teal Glow Removed */}
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-6xl font-bold mb-4 tracking-tight">
-            Don&apos;t <span className="text-teal-400">Just</span> Take <br /> Our Word for It
+            Don&apos;t <span className="text-white underline decoration-white/20">Just</span> Take <br /> Our Word for It
           </h2>
-          <p className="text-gray-400 text-lg font-medium">Here&apos;s what our users say:</p>
+          <p className="text-zinc-500 text-lg font-medium">Here&apos;s what our users say:</p>
         </div>
 
         {/* Testimonials Grid */}
@@ -52,51 +51,50 @@ const TestimonialsSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1, duration: 0.5 }}
-              className="bg-[#121212] border border-white/5 rounded-[2.5rem] p-8 flex flex-col h-full hover:border-teal-500/40 transition-all duration-300 group hover:shadow-[0_0_30px_rgba(20,184,166,0.05)]"
+              className="bg-[#0a0a0a] border border-white/10 rounded-[2.5rem] p-8 flex flex-col h-full hover:border-white/40 transition-all duration-300 group shadow-none"
             >
-              {/* Stars */}
+              {/* Stars - Modern White/zinc style */}
               <div className="flex gap-1 mb-6">
                 {[...Array(item.rating)].map((_, i) => (
                   <Star
                     key={i}
                     size={18}
-                    className="fill-teal-400 text-teal-400"
+                    className="fill-white text-white"
                   />
                 ))}
               </div>
 
               {/* Content */}
               <div className="flex-grow">
-                <h4 className="text-xl font-bold mb-4 leading-tight text-teal-50/90">
+                <h4 className="text-xl font-bold mb-4 leading-tight text-white">
                   {idx === 0 ? "Game changing quality" : 
                    idx === 1 ? "Absolutely Insane Speed" : 
                    "Premium Brand Consistency"}
                 </h4>
-                <p className="text-gray-400  text-[15px] mb-8">
+                <p className="text-zinc-300 text-[15px] mb-8 leading-relaxed">
                   {item.text}
                 </p>
               </div>
 
               {/* Footer / User Info */}
-              <div className="flex items-center gap-4 mt-auto pt-6 border-t border-white/5">
+              <div className="flex items-center gap-4 mt-auto pt-6 border-t border-white/10">
                 <div className="relative">
-                  <div className="w-14 h-14 rounded-full bg-teal-500/10 border border-teal-500/20 p-1">
+                  <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 p-1">
                     <img 
                       src={item.image} 
                       alt={item.name}
-                      className="w-full h-full rounded-full object-cover  transition-all duration-500"
+                      className="w-full h-full rounded-full object-cover transition-all duration-500"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${item.name}&background=14b8a6&color=fff`;
+                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${item.name}&background=333&color=fff`;
                       }}
                     />
                   </div>
-            
                 </div>
                 <div>
-                  <p className="font-bold text-base text-white group-hover:text-teal-400 transition-colors">
+                  <p className="font-bold text-base text-white">
                     {item.name}
                   </p>
-                  <p className="text-xs text-gray-500 lowercase">
+                  <p className="text-xs text-zinc-500 lowercase">
                     {item.handle}
                   </p>
                 </div>
@@ -105,8 +103,6 @@ const TestimonialsSection = () => {
           ))}
         </div>
       </div>
-      
-
     </div>
   );
 };
