@@ -252,18 +252,7 @@ class OpusClipProcessTask(Task):
         super().on_failure(exc, task_id, args, kwargs, einfo)
 
 @celery_app.task(bind=True, base=OpusClipProcessTask)
-def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, clips_duration=None, aspect_ratio=None, include_moments=None, subtitle_color=None, clip_range=None):
-    """
-    Process a video to create short viral clips
-    
-    Args:
-        s3_video_url (str): S3 URL of the uploaded video
-        s3_thumbnail_url (str): S3 URL of the video thumbnail
-        user_email (str, optional): Email of the user
-    
-    Returns:
-        dict: Contains original video details and generated clips
-    """
+def process_opusclip(self, youtube_url, s3_thumbnail_url, user_email=None, clips_duration=None, aspect_ratio=None, include_moments=None, subtitle_color=None, clip_range=None):
     try:
         # Generate a unique ID for this process
         unique_id = uuid.uuid4().hex
@@ -273,13 +262,7 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, clip
             'status': 'Starting viral clip processing', 
             'percent_complete': 5
         })
-        
-        # Extract S3 bucket and key from URLs
-        video_parsed_url = s3_video_url.replace('https://', '').split('/')
-        bucket_name = video_parsed_url[0].split('.')[0]
-        video_key = '/'.join(video_parsed_url[1:])
-        
-        # Create temporary file paths
+
         temp_video_path = os.path.join(TEMP_DIR, f"{unique_id}_source.mp4")
         temp_audio_path = os.path.join(TEMP_DIR, f"{unique_id}_audio.wav")
         temp_transcript_path = os.path.join(TEMP_DIR, f"{unique_id}_transcript.txt")
@@ -291,12 +274,29 @@ def process_opusclip(self, s3_video_url, s3_thumbnail_url, user_email=None, clip
         })
         
         try:
-            s3_client.download_file(bucket_name, video_key, temp_video_path)
+            cookies_path = "/tmp/cookies.txt"
+
+            # Write cookies.txt from environment variable
+            with open(cookies_path, "w") as f:
+                f.write(os.environ["COOKIES_TXT"])
             
-            logger.info(f"Downloaded video from S3 to {temp_video_path}")
-        except ClientError as e:
-            logger.error(f"S3 download error: {str(e)}")
-            raise Exception(f"Failed to download video from S3: {str(e)}")
+            # Download YouTube video
+            ydl_opts = {
+                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+                'outtmpl': temp_video_path,
+                'quiet': False,
+                'cookiefile': cookies_path,
+                'noplaylist': True,
+            }
+
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                # This performs the actual download
+                ydl.download([youtube_url])
+            
+            logger.info(f"Downloaded YouTube video to {temp_video_path}")
+        except Exception as e: # Changed from ClientError
+            logger.error(f"YouTube download error: {str(e)}")
+            raise Exception(f"Failed to download video from YouTube: {str(e)}")
         
         # If clip_range is provided, trim the video
         self.update_state(state='PROGRESS', meta={

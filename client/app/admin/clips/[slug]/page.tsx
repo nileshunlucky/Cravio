@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Download, ArrowLeft, MoreHorizontal } from 'lucide-react';
+import { Download, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -260,7 +260,7 @@ const ClipPage = () => {
             size="icon"
             className="hover:bg-neutral-800"
           >
-            <MoreHorizontal className="h-5 w-5" />
+           
           </Button>
         </motion.div>
 

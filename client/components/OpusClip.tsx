@@ -359,7 +359,8 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         console.log('Processing file upload:', fileToProcess.name);
 
         const formData = new FormData();
-        formData.append('file', fileToProcess);
+        formData.append('file', fileToProcess); 
+        formData.append('email', email); 
 
         // Use the opusclip endpoint for task-based processing
         response = await fetch(`https://cravio-ai.onrender.com/opusclip/upload-file`, {

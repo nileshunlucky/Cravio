@@ -104,10 +104,10 @@ class ProcessingResponse(BaseModel):
     credit_usage: int
 
 @router.post("/opusclip/upload-file", response_model=ProcessingResponse)
-async def upload_video(file: UploadFile = File(...)):
+async def upload_video(file: UploadFile = File(...), email: str = None):
     """Upload a video file to S3 and process it with Celery"""
 
-    user = users_collection.find_one({"email": request.email})
+    user = users_collection.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
@@ -356,7 +356,7 @@ async def opusclip(request: OpusClipRequest):
         
         # Start Celery task to process the video
         task = process_opusclip.delay(
-            s3_video_url=request.videoUrl,
+            youtube_url=request.videoUrl,
             s3_thumbnail_url=request.thumbnail,
             user_email=request.email,
             clips_duration=request.duration,
