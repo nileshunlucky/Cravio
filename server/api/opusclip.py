@@ -104,7 +104,9 @@ class ProcessingResponse(BaseModel):
     credit_usage: int
 
 @router.post("/opusclip/upload-file", response_model=ProcessingResponse)
-async def upload_video(file: UploadFile = File(...), email: str = None):
+async def upload_video(
+    file: UploadFile = File(...),
+    email: str = Form(...)):
     """Upload a video file to S3 and process it with Celery"""
 
     user = users_collection.find_one({"email": email})

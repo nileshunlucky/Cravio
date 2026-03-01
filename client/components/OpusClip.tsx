@@ -276,7 +276,6 @@ export default function OpusClip() {
 
 const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   // Skip if a video is already processed
-  if (!email) return;
   if (videoProcessed) return;
 
   const selectedFile = e.target.files?.[0];
