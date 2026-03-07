@@ -393,7 +393,7 @@ async def get_task_status(task_id: str):
                 'status': 'pending',
                 'message': 'Task is waiting for execution'
             }
-        elif task.state == 'PROGRESS':
+        elif task.state == 'PROGRESS':``
             meta = task.info or {}
             response = {
                 'status': 'progress',

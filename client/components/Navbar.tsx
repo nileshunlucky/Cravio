@@ -4,6 +4,7 @@ import React from 'react'
 import { UserButton } from '@clerk/nextjs'
 import Image from 'next/image'
 import Link from 'next/link'
+import { toast } from "sonner";
 
 const Navbar = ({ credits = 0 }: { credits: number }) => {
 
@@ -14,6 +15,7 @@ const Navbar = ({ credits = 0 }: { credits: number }) => {
 
       {/* Right: Credits + Clerk User Button */}
       <div className="flex items-center gap-5">
+         <span onClick={() => toast("We will notify you when free credits are received.")}>🎁</span>
         <div className="text-sm flex items-center">
           <span className="inline-flex items-center justify-center filter ">
  <svg 
