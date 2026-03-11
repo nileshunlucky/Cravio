@@ -55,7 +55,7 @@ export default function Home() {
       featured: false
     }
   ];
-
+    
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
