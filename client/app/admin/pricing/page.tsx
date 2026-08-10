@@ -53,7 +53,7 @@ const PricingPage = () => {
           {/* Toggle */}
           <div className="flex flex-col items-center gap-4">
             <div className="bg-[#1a1a1a] p-1 rounded-full flex items-center border border-white/5">
-              <button
+              <button  
                 onClick={() => setBillingCycle('monthly')}
                 className={`px-8 py-2 rounded-full text-sm font-medium transition-all ${billingCycle === 'monthly' ? 'bg-[#2a2a2a] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
               >
