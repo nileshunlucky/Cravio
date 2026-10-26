@@ -23,7 +23,6 @@ const API_URL = "https://richacle.onrender.com/api/subscription/create-razorpay"
 const features = [
   "Real time research",
   "Claude, GPT, Gemini, Grok, Deepseek usage",
-  "Binance Integration",
   "Priority access to new feature",
   "Exclusive support",
 ];
