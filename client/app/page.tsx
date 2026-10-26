@@ -6,9 +6,15 @@ import { motion, useReducedMotion } from "framer-motion";
 import { CircleCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+
+type RazorpayInstance = {
+  open: () => void;
+  on: (event: string, callback: () => void) => void;
+};
+
 declare global {
   interface Window {
-    Razorpay: any;
+    Razorpay: new (options: Record<string, unknown>) => RazorpayInstance;
   }
 }
 
